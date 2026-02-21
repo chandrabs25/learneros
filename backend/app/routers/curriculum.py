@@ -9,18 +9,41 @@ Routes:
   GET /api/chapters/{chapter_id:path}/graph            → knowledge graph (insights overlay if auth'd)
 """
 
+import time
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import get_optional_user
 from app.database import read_query
 
 router = APIRouter(prefix="/api", tags=["curriculum"])
+_cache: dict[str, tuple[float, object]] = {}
+_CACHE_TTL_SECONDS = 60.0
+
+
+def _cache_get(key: str):
+    row = _cache.get(key)
+    if not row:
+        return None
+    ts, payload = row
+    if (time.time() - ts) > _CACHE_TTL_SECONDS:
+        _cache.pop(key, None)
+        return None
+    return payload
+
+
+def _cache_set(key: str, payload):
+    _cache[key] = (time.time(), payload)
 
 
 # ─── Grades ──────────────────────────────────────────────────────────
 @router.get("/grades")
 async def list_grades():
     """Return available grade levels derived from Textbook nodes."""
+    key = "grades"
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
     rows = read_query("""
         MATCH (t:Textbook)-[:CONTAINS]->(ch:Chapter)
         WITH t.grade AS grade, t.id AS tid, count(ch) AS ch_count
@@ -34,6 +57,7 @@ async def list_grades():
 
     if not rows:
         raise HTTPException(status_code=404, detail="No grades found")
+    _cache_set(key, rows)
     return rows
 
 
@@ -41,6 +65,10 @@ async def list_grades():
 @router.get("/grades/{grade}/subjects")
 async def list_subjects(grade: int):
     """Return subjects available for a grade."""
+    key = f"subjects|{grade}"
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
     rows = read_query("""
         MATCH (s:Subject)-[:CONTAINS]->(t:Textbook {grade: $grade})
         OPTIONAL MATCH (t)-[:CONTAINS]->(ch:Chapter)
@@ -53,6 +81,7 @@ async def list_subjects(grade: int):
     """, grade=grade)
     if not rows:
         raise HTTPException(status_code=404, detail=f"No subjects found for grade {grade}")
+    _cache_set(key, rows)
     return rows
 
 
@@ -60,6 +89,10 @@ async def list_subjects(grade: int):
 @router.get("/grades/{grade}/subjects/{subject}/chapters")
 async def list_chapters(grade: int, subject: str):
     """Return chapters for a grade + subject combo."""
+    key = f"chapters|{grade}|{subject.lower()}"
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
     rows = read_query("""
         MATCH (t:Textbook {grade: $grade})<-[:CONTAINS]-(s:Subject {name: $subject})
         MATCH (t)-[:CONTAINS]->(ch:Chapter)
@@ -85,6 +118,7 @@ async def list_chapters(grade: int, subject: str):
             status_code=404,
             detail=f"No chapters found for grade {grade}, {subject}",
         )
+    _cache_set(key, rows)
     return rows
 
 
@@ -92,6 +126,10 @@ async def list_chapters(grade: int, subject: str):
 @router.get("/chapters/{chapter_id:path}/sections")
 async def list_sections(chapter_id: str):
     """Return sections for a chapter, with subsection + prerequisite counts."""
+    key = f"sections|{chapter_id}"
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
     rows = read_query("""
         MATCH (ch:Chapter {id: $chapter_id})-[:CONTAINS]->(sec:Section)
         OPTIONAL MATCH (sec)-[:CONTAINS]->(ss:Subsection)
@@ -108,6 +146,7 @@ async def list_sections(chapter_id: str):
     """, chapter_id=chapter_id)
     if not rows:
         raise HTTPException(status_code=404, detail=f"No sections found for {chapter_id}")
+    _cache_set(key, rows)
     return rows
 
 
@@ -115,6 +154,10 @@ async def list_sections(chapter_id: str):
 @router.get("/sections/{section_id:path}/subsections")
 async def list_subsections(section_id: str):
     """Return subsections with their content for a section."""
+    key = f"subsections|{section_id}"
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
     rows = read_query("""
         MATCH (sec:Section {id: $section_id})-[:CONTAINS]->(ss:Subsection)
         OPTIONAL MATCH (ss)-[:HAS_WORKED_EXAMPLE]->(we:WorkedExample)
@@ -136,6 +179,7 @@ async def list_subsections(section_id: str):
     """, section_id=section_id)
     if not rows:
         raise HTTPException(status_code=404, detail=f"No subsections found for {section_id}")
+    _cache_set(key, rows)
     return rows
 
 
@@ -143,6 +187,10 @@ async def list_subsections(section_id: str):
 @router.get("/sections/{section_id:path}/exercises")
 async def list_section_exercises(section_id: str):
     """Return exercises that test a section (via TESTS relationship)."""
+    key = f"section_exercises|{section_id}"
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
     rows = read_query("""
         MATCH (e:Exercise)-[:TESTS]->(sec:Section {id: $section_id})
         OPTIONAL MATCH (es:ExerciseSet)-[:CONTAINS]->(e)
@@ -155,6 +203,7 @@ async def list_section_exercises(section_id: str):
                es.title AS exercise_set
         ORDER BY e.number
     """, section_id=section_id)
+    _cache_set(key, rows)
     return rows
 
 
@@ -171,6 +220,11 @@ async def list_section_concepts(section_id: str):
     from pathlib import Path
 
     animations_dir = Path(__file__).resolve().parent.parent.parent.parent / "data" / "animations"
+
+    key = f"section_concepts|{section_id}"
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
 
     rows = read_query("""
         MATCH (sec:Section {id: $section_id})
@@ -203,6 +257,7 @@ async def list_section_concepts(section_id: str):
             "animation_url": f"/api/animations/{concept_key}.html",
         })
 
+    _cache_set(key, result)
     return result
 
 

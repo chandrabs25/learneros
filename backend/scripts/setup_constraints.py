@@ -30,21 +30,41 @@ CONSTRAINTS: list[tuple[str, str, str, str]] = [
     ("Subsection","id",    "subsection_id_unique","UNIQUE"),
     ("Concept",   "id",    "concept_id_unique",   "UNIQUE"),
     ("Exercise",  "id",    "exercise_id_unique",  "UNIQUE"),
+    ("Institute", "id",    "institute_id_unique", "UNIQUE"),
 
     # ── Runtime-created nodes ──────────────────────────────────────────
     ("Student",   "id",    "student_id_unique",   "UNIQUE"),
     ("Insight",   "id",    "insight_id_unique",   "UNIQUE"),
     ("TutorSession", "id", "tutor_session_id_unique", "UNIQUE"),
     ("TutorMessage", "id", "tutor_message_id_unique", "UNIQUE"),
+    ("Teacher", "id", "teacher_id_unique", "UNIQUE"),
+    ("TeacherApplication", "id", "teacher_application_id_unique", "UNIQUE"),
+    ("StudentClusterSnapshot", "id", "student_cluster_snapshot_id_unique", "UNIQUE"),
+    ("StudentCluster", "id", "student_cluster_id_unique", "UNIQUE"),
 
     # ── NOT NULL guards on critical properties ─────────────────────────
     ("Student",   "id",    "student_id_exists",   "NOT NULL"),
+    ("Institute", "id",    "institute_id_exists", "NOT NULL"),
     ("Insight",   "id",    "insight_id_exists",   "NOT NULL"),
     ("Insight",   "type",  "insight_type_exists", "NOT NULL"),
     ("Insight",   "category", "insight_cat_exists","NOT NULL"),
     ("Insight",   "is_active","insight_active_exists","NOT NULL"),
     ("TutorSession", "id", "tutor_session_id_exists", "NOT NULL"),
     ("TutorMessage", "id", "tutor_message_id_exists", "NOT NULL"),
+    ("Teacher", "id", "teacher_id_exists", "NOT NULL"),
+    ("TeacherApplication", "id", "teacher_application_id_exists", "NOT NULL"),
+    ("TeacherApplication", "status", "teacher_application_status_exists", "NOT NULL"),
+    ("StudentClusterSnapshot", "id", "student_cluster_snapshot_id_exists", "NOT NULL"),
+    ("StudentCluster", "id", "student_cluster_id_exists", "NOT NULL"),
+]
+
+INDEXES: list[tuple[str, str, str]] = [
+    ("Student", "institute_id", "student_institute_idx"),
+    ("Student", "grade", "student_grade_idx"),
+    ("Student", "role", "student_role_idx"),
+    ("Insight", "is_active", "insight_is_active_idx"),
+    ("Insight", "type", "insight_type_idx"),
+    ("Insight", "created_at", "insight_created_at_idx"),
 ]
 
 
@@ -74,6 +94,16 @@ def main() -> None:
             try:
                 session.run(cypher)
                 print(f"  ✓  {name}  ({kind} on {label}.{prop})")
+                ok += 1
+            except Exception as exc:
+                print(f"  ✗  {name}  — {exc}")
+                failed += 1
+
+        for label, prop, name in INDEXES:
+            cypher = f"CREATE INDEX {name} IF NOT EXISTS FOR (n:{label}) ON (n.{prop})"
+            try:
+                session.run(cypher)
+                print(f"  ✓  {name}  (INDEX on {label}.{prop})")
                 ok += 1
             except Exception as exc:
                 print(f"  ✗  {name}  — {exc}")

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useAuth } from "@/lib/auth-context";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -23,23 +25,81 @@ const GRADE_LABELS: Record<number, string> = {
   11: "Junior",
   12: "Senior",
 };
+const DEFAULT_START_GRADE = 11;
 
 export default function HubPage() {
+  const { user, getIdToken, role, loading: authLoading } = useAuth();
   const [apiGrades, setApiGrades] = useState<Grade[]>([]);
-  const [scrollIndex, setScrollIndex] = useState(0);
+  const [scrollIndex, setScrollIndex] = useState(
+    Math.max(0, ALL_GRADES.findIndex((g) => g === DEFAULT_START_GRADE))
+  );
   const [loading, setLoading] = useState(true);
+  const [roleChecked, setRoleChecked] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   useEffect(() => {
-    fetch(`${API_URL}/api/grades`)
-      .then((r) => r.json())
-      .then((data) => {
-        setApiGrades(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+    let cancelled = false;
+    (async () => {
+      if (authLoading) return;
+      if (!user) {
+        if (!cancelled) setRoleChecked(true);
+        return;
+      }
+      try {
+        if (cancelled) return;
+        if (role === "teacher") {
+          router.replace("/teacher/dashboard");
+          return;
+        }
+        if (role === "admin" || role === "superadmin") {
+          router.replace("/admin/dashboard");
+          return;
+        }
+      } catch {
+        // Fall through to student hub.
+      } finally {
+        if (!cancelled) setRoleChecked(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, role, authLoading, router]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (user) {
+          const token = await getIdToken();
+          if (token) {
+            const res = await fetch(`${API_URL}/api/students/me/dashboard/bootstrap`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!cancelled) {
+              const grades = Array.isArray(data?.grades) ? data.grades : [];
+              setApiGrades(grades);
+              setLoading(false);
+            }
+            return;
+          }
+        }
+        const r = await fetch(`${API_URL}/api/grades`);
+        const data = await r.json();
+        if (!cancelled) {
+          setApiGrades(Array.isArray(data) ? data : []);
+          setLoading(false);
+        }
+      } catch {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, getIdToken]);
 
   const availableGrades = new Set(apiGrades.map((g) => g.grade));
 
@@ -61,44 +121,61 @@ export default function HubPage() {
   const handleNext = () => scrollToIndex(Math.min(ALL_GRADES.length - 1, scrollIndex + 1));
 
   useEffect(() => {
-    const el = carouselRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      const cards = el.querySelectorAll<HTMLElement>(".grade-card");
-      const containerCenter = el.scrollLeft + el.clientWidth / 2;
-      let closest = 0;
-      let minDist = Infinity;
-      cards.forEach((card, i) => {
-        const cardCenter = card.offsetLeft + card.offsetWidth / 2;
-        const dist = Math.abs(containerCenter - cardCenter);
-        if (dist < minDist) {
-          minDist = dist;
-          closest = i;
-        }
-      });
-      setScrollIndex(closest);
+    let rafId = 0;
+    let cleanup: (() => void) | null = null;
+
+    const bindWhenReady = () => {
+      const el = carouselRef.current;
+      if (!el) {
+        rafId = window.requestAnimationFrame(bindWhenReady);
+        return;
+      }
+      const onScroll = () => {
+        const cards = el.querySelectorAll<HTMLElement>(".grade-card");
+        const containerCenter = el.scrollLeft + el.clientWidth / 2;
+        let closest = 0;
+        let minDist = Infinity;
+        cards.forEach((card, i) => {
+          const cardCenter = card.offsetLeft + card.offsetWidth / 2;
+          const dist = Math.abs(containerCenter - cardCenter);
+          if (dist < minDist) {
+            minDist = dist;
+            closest = i;
+          }
+        });
+        setScrollIndex(closest);
+      };
+      el.addEventListener("scroll", onScroll, { passive: true });
+      cleanup = () => el.removeEventListener("scroll", onScroll);
     };
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => el.removeEventListener("scroll", onScroll);
+
+    bindWhenReady();
+    return () => {
+      if (rafId) window.cancelAnimationFrame(rafId);
+      if (cleanup) cleanup();
+    };
   }, []);
 
   // Set initial scroll BEFORE first paint — no animation avoids the visible jump
   useLayoutEffect(() => {
-    if (loading || !carouselRef.current || apiGrades.length === 0) return;
-    const el = carouselRef.current;
-    const cards = el.querySelectorAll<HTMLElement>(".grade-card");
+    if (loading || !roleChecked) return;
+    const cards = carouselRef.current?.querySelectorAll<HTMLElement>(".grade-card");
+    if (!cards || cards.length === 0) return;
+    const preferredIdx = ALL_GRADES.findIndex((g) => g === DEFAULT_START_GRADE);
     const firstAvailableIdx = ALL_GRADES.findIndex((g) => availableGrades.has(g));
-    const startIdx = firstAvailableIdx >= 0 ? firstAvailableIdx : 0;
+    const startIdx = preferredIdx >= 0 ? preferredIdx : (firstAvailableIdx >= 0 ? firstAvailableIdx : 0);
     const targetCard = cards[startIdx];
     if (!targetCard) return;
-    // scroll-padding-left is 25vw in the 50vw window (centers card in window)
-    const scrollPaddingLeft = window.innerWidth * 0.25;
-    el.scrollLeft = targetCard.offsetLeft - scrollPaddingLeft + targetCard.offsetWidth / 2;
+    targetCard.scrollIntoView({
+      behavior: "auto",
+      inline: "center",
+      block: "nearest",
+    });
     setScrollIndex(startIdx);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, apiGrades]);
+  }, [loading, roleChecked, apiGrades]);
 
-  if (loading) {
+  if (!roleChecked || loading) {
     return (
       <div className="loading-container">
         <div className="spinner" />
@@ -228,6 +305,18 @@ export default function HubPage() {
           </div>
         </div>
       </div>
+
+      <footer className="hub-footer">
+        <div className="hub-footer-inner">
+          <Link href="/teacher/apply" className="hub-footer-link">
+            Apply as a Teacher
+          </Link>
+          <span className="hub-footer-sep">•</span>
+          <a className="hub-footer-link" href="mailto:srichandrasamanapallli@gmail.com">
+            Contact srichandrasamanapallli@gmail.com for any enquiries
+          </a>
+        </div>
+      </footer>
     </div>
   );
 }

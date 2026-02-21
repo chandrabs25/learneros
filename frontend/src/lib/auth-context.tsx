@@ -10,6 +10,8 @@ import {
 import {
     onAuthStateChanged,
     signInWithPopup,
+    signInWithRedirect,
+    getRedirectResult,
     signOut as firebaseSignOut,
     GoogleAuthProvider,
     createUserWithEmailAndPassword,
@@ -23,6 +25,7 @@ import { useRouter } from "next/navigation";
 interface AuthContextType {
     user: User | null;
     loading: boolean;
+    role: string;
     signInWithGoogle: () => Promise<void>;
     signInWithEmail: (email: string, password: string) => Promise<void>;
     signUpWithEmail: (name: string, email: string, password: string) => Promise<void>;
@@ -35,9 +38,22 @@ const googleProvider = new GoogleAuthProvider();
 
 const TO_ONBOARDING = "/onboarding/institute";
 
+async function getPostLoginRoute(user: User): Promise<string> {
+    try {
+        const tokenResult = await user.getIdTokenResult(true);
+        const role = String(tokenResult.claims?.role || "").toLowerCase();
+        if (role === "teacher") return "/teacher/dashboard";
+        if (role === "admin" || role === "superadmin") return "/admin/dashboard";
+        return TO_ONBOARDING;
+    } catch {
+        return TO_ONBOARDING;
+    }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+    const [role, setRole] = useState("");
     const router = useRouter();
 
     useEffect(() => {
@@ -48,21 +64,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return unsubscribe;
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        (async () => {
+            if (!user) {
+                if (!cancelled) setRole("");
+                return;
+            }
+            try {
+                const tokenResult = await user.getIdTokenResult(true);
+                if (!cancelled) setRole(String(tokenResult.claims?.role || "").toLowerCase());
+            } catch {
+                if (!cancelled) setRole("");
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [user]);
+
+    useEffect(() => {
+        // Handle Google redirect flow completion (popup fallback path).
+        getRedirectResult(auth)
+            .then(async (result) => {
+                if (result?.user) {
+                    router.replace(await getPostLoginRoute(result.user));
+                }
+            })
+            .catch(() => {
+                // Ignore; normal auth state listener still governs UI.
+            });
+    }, [router]);
+
     const signInWithGoogle = async () => {
-        const result = await signInWithPopup(auth, googleProvider);
-        if (result.user) router.push(TO_ONBOARDING);
+        try {
+            const result = await signInWithPopup(auth, googleProvider);
+            if (result.user) router.replace(await getPostLoginRoute(result.user));
+        } catch (e: unknown) {
+            const code = typeof e === "object" && e && "code" in e ? String((e as { code?: string }).code || "") : "";
+            // Browsers can block/limit popup close/opener behavior (COOP). Redirect is more reliable.
+            if (
+                code.includes("popup") ||
+                code.includes("cancelled") ||
+                code.includes("operation-not-supported")
+            ) {
+                await signInWithRedirect(auth, googleProvider);
+                return;
+            }
+            throw e;
+        }
     };
 
     const signInWithEmail = async (email: string, password: string) => {
         const result = await signInWithEmailAndPassword(auth, email, password);
-        if (result.user) router.push(TO_ONBOARDING);
+        if (result.user) router.replace(await getPostLoginRoute(result.user));
     };
 
     const signUpWithEmail = async (name: string, email: string, password: string) => {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         if (result.user) {
             await updateProfile(result.user, { displayName: name });
-            router.push(TO_ONBOARDING);
+            router.replace(await getPostLoginRoute(result.user));
         }
     };
 
@@ -78,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return (
         <AuthContext.Provider
-            value={{ user, loading, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut, getIdToken }}
+            value={{ user, loading, role, signInWithGoogle, signInWithEmail, signUpWithEmail, signOut, getIdToken }}
         >
             {children}
         </AuthContext.Provider>

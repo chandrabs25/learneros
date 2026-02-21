@@ -11,7 +11,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
-from app.routers import health, auth, curriculum, insights, institutes, test, tutor
+from app.routers import (
+    health,
+    auth,
+    admin,
+    curriculum,
+    insights,
+    institutes,
+    teacher_applications,
+    test,
+    tutor,
+    teacher_dashboard,
+)
 from app.database import close_driver
 from app.observability import setup_mlflow_tracing
 
@@ -50,11 +61,14 @@ app.add_middleware(
 # Routers
 app.include_router(health.router)
 app.include_router(auth.router)
+app.include_router(admin.router)
 app.include_router(curriculum.router)
 app.include_router(insights.router)
 app.include_router(institutes.router)
+app.include_router(teacher_applications.router)
 app.include_router(test.router)
 app.include_router(tutor.router)
+app.include_router(teacher_dashboard.router)
 
 # Serve animation HTML files as static assets
 if ANIMATIONS_DIR.is_dir():

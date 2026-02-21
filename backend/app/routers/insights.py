@@ -11,6 +11,7 @@ Routes:
 """
 
 import json
+import time
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 from pydantic import BaseModel
@@ -23,6 +24,36 @@ from app.database import read_query
 router = APIRouter(prefix="/api", tags=["insights"])
 _client: OpenAI | None = None
 _embedding_client: OpenAI | None = None
+_insights_cache: dict[str, tuple[float, object]] = {}
+_INSIGHTS_CACHE_TTL_SECONDS = 20.0
+
+
+def _cache_get(key: str):
+    row = _insights_cache.get(key)
+    if not row:
+        return None
+    ts, payload = row
+    if (time.time() - ts) > _INSIGHTS_CACHE_TTL_SECONDS:
+        _insights_cache.pop(key, None)
+        return None
+    return payload
+
+
+def _cache_set(key: str, payload):
+    _insights_cache[key] = (time.time(), payload)
+
+
+def _invalidate_student_cache(student_id: str) -> None:
+    to_delete = []
+    for k in list(_insights_cache.keys()):
+        if (
+            k.startswith(f"my_insights|{student_id}|")
+            or k.startswith(f"subsection_insights|{student_id}|")
+            or k.startswith(f"prereq_state|{student_id}|")
+        ):
+            to_delete.append(k)
+    for k in to_delete:
+        _insights_cache.pop(k, None)
 
 
 def _get_client() -> OpenAI:
@@ -119,12 +150,19 @@ def _get_insight_context(student_id: str, insight_id: str) -> dict | None:
 @router.get("/students/me/insights")
 async def get_my_insights(
     chapter_id: str | None = Query(default=None, description="Filter to insights about this chapter's sections/concepts"),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=200, ge=1, le=500),
     user: CurrentUser = Depends(get_current_user),
 ):
     """
     Returns all active insights for the current student.
     Optionally filtered to a chapter (by matching section and concept ids).
     """
+    cache_key = f"my_insights|{user.student_id}|{chapter_id or ''}|{page}|{limit}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
     if chapter_id:
         rows = read_query(
             """
@@ -154,9 +192,13 @@ async def get_my_insights(
                    c.id         AS concept_id,
                    c.name       AS concept_name
             ORDER BY i.created_at DESC
+            SKIP $skip
+            LIMIT $limit
             """,
             student_id=user.student_id,
             chapter_id=chapter_id,
+            skip=(page - 1) * limit,
+            limit=limit,
         )
     else:
         rows = read_query(
@@ -174,10 +216,15 @@ async def get_my_insights(
                    c.id         AS concept_id,
                    c.name       AS concept_name
             ORDER BY i.created_at DESC
+            SKIP $skip
+            LIMIT $limit
             """,
             student_id=user.student_id,
+            skip=(page - 1) * limit,
+            limit=limit,
         )
 
+    _cache_set(cache_key, rows)
     return rows
 
 
@@ -189,6 +236,10 @@ async def get_subsection_insights(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Return active insights linked to a specific subsection for the current student."""
+    cache_key = f"subsection_insights|{user.student_id}|{subsection_id}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
     rows = read_query(
         """
         MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true})
@@ -207,6 +258,7 @@ async def get_subsection_insights(
         student_id=user.student_id,
         subsection_id=subsection_id,
     )
+    _cache_set(cache_key, rows)
     return rows
 
 
@@ -441,6 +493,7 @@ Return STRICT JSON:
                 "source_id": ctx.get("source_id") or ctx.get("section_id"),
             },
         )
+        _invalidate_student_cache(user.student_id)
 
     return {
         "insight_id": insight_id,
@@ -471,6 +524,10 @@ async def get_prerequisites_state(
     Returns:
       [{ id, type (Section|Concept), title, insight_type, insight_category, insight_content }]
     """
+    cache_key = f"prereq_state|{user.student_id}|{section_id}"
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
     rows = read_query(
         """
         MATCH (sec:Section {id: $section_id})-[:REQUIRES]->(prereq)
@@ -489,4 +546,5 @@ async def get_prerequisites_state(
         section_id=section_id,
         student_id=user.student_id,
     )
+    _cache_set(cache_key, rows)
     return rows

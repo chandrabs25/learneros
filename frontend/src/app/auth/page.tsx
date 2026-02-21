@@ -7,8 +7,9 @@ import { useAuth } from "@/lib/auth-context";
 type Tab = "login" | "signup";
 
 export default function AuthPage() {
-    const { signInWithGoogle, signInWithEmail, signUpWithEmail, user, loading } = useAuth();
+    const { signInWithGoogle, signInWithEmail, signUpWithEmail, user, loading, getIdToken } = useAuth();
     const router = useRouter();
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
     const [tab, setTab] = useState<Tab>("login");
     const [name, setName] = useState("");
@@ -18,12 +19,40 @@ export default function AuthPage() {
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
 
-    // Redirect to home if already authenticated
+    // Redirect authenticated users based on role immediately.
     useEffect(() => {
-        if (!loading && user) {
-            router.replace("/");
-        }
-    }, [loading, user, router]);
+        let cancelled = false;
+        (async () => {
+            if (loading || !user) return;
+            try {
+                const token = await getIdToken();
+                if (!token) {
+                    if (!cancelled) router.replace("/onboarding/institute");
+                    return;
+                }
+                const res = await fetch(`${API_URL}/auth/me`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                const data = await res.json();
+                const role = String(data?.role || "").toLowerCase();
+                if (cancelled) return;
+                if (role === "teacher") {
+                    router.replace("/teacher/dashboard");
+                    return;
+                }
+                if (role === "admin" || role === "superadmin") {
+                    router.replace("/admin/dashboard");
+                    return;
+                }
+                router.replace("/onboarding/institute");
+            } catch {
+                if (!cancelled) router.replace("/onboarding/institute");
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [loading, user, getIdToken, router, API_URL]);
 
     if (!loading && user) {
         return null;
@@ -53,8 +82,9 @@ export default function AuthPage() {
         try {
             if (tab === "login") await signInWithEmail(email, password);
             else await signUpWithEmail(name, email, password);
-        } catch (err: any) {
-            setError(friendlyError(err.code || ""));
+        } catch (err: unknown) {
+            const code = typeof err === "object" && err && "code" in err ? String((err as { code?: string }).code || "") : "";
+            setError(friendlyError(code));
         } finally {
             setBusy(false);
         }
@@ -64,7 +94,10 @@ export default function AuthPage() {
         setError(null);
         setBusy(true);
         try { await signInWithGoogle(); }
-        catch (err: any) { setError(friendlyError(err.code || "")); }
+        catch (err: unknown) {
+            const code = typeof err === "object" && err && "code" in err ? String((err as { code?: string }).code || "") : "";
+            setError(friendlyError(code));
+        }
         finally { setBusy(false); }
     };
 

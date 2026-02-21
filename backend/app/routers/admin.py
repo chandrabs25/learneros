@@ -1,0 +1,131 @@
+"""
+Admin APIs for user claim management and operational controls.
+"""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
+from firebase_admin import auth as fb_auth
+
+from app.auth import CurrentAdmin, get_current_admin
+from app.database import read_query, write_query
+from app.firebase import get_firebase_app
+
+router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+class SetUserClaimsBody(BaseModel):
+    uid: str | None = None
+    email: str | None = None
+    role: Literal["student", "teacher", "admin", "superadmin"]
+    institute_id: str | None = None
+
+
+def _resolve_uid(uid: str | None, email: str | None) -> str:
+    if uid:
+        return uid
+    if not email:
+        raise HTTPException(status_code=400, detail="Either uid or email is required")
+    if "@" not in email:
+        raise HTTPException(status_code=400, detail="email must be a valid email address")
+    get_firebase_app()
+    try:
+        user = fb_auth.get_user_by_email(email)
+        return user.uid
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"User not found for email: {e}")
+
+
+def _ensure_teacher_link(uid: str, institute_id: str) -> None:
+    rows = read_query(
+        """
+        MATCH (i:Institute {id: $institute_id})
+        WHERE coalesce(i.is_active, true) = true
+        RETURN i.id AS id
+        LIMIT 1
+        """,
+        institute_id=institute_id,
+    )
+    if not rows:
+        raise HTTPException(status_code=404, detail="Institute not found or inactive")
+
+    teacher_id = f"teacher:{uid}"
+    write_query(
+        """
+        MERGE (t:Teacher {id: $teacher_id})
+        ON CREATE SET t.uid = $uid,
+                      t.created_at = datetime()
+        SET t.institute_id = $institute_id,
+            t.updated_at = datetime()
+        WITH t
+        MATCH (i:Institute {id: $institute_id})
+        MERGE (t)-[:BELONGS_TO]->(i)
+        """,
+        teacher_id=teacher_id,
+        uid=uid,
+        institute_id=institute_id,
+    )
+
+
+@router.post("/users/claims")
+async def admin_set_user_claims(
+    body: SetUserClaimsBody,
+    _: CurrentAdmin = Depends(get_current_admin),
+):
+    """
+    Set Firebase custom claims for a user (teacher/admin/student).
+    Teacher role requires institute_id.
+    """
+    uid = _resolve_uid(body.uid, body.email)
+    if body.role == "teacher" and not body.institute_id:
+        raise HTTPException(status_code=400, detail="institute_id is required for teacher role")
+
+    get_firebase_app()
+    try:
+        user = fb_auth.get_user(uid)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"User not found for uid: {e}")
+
+    claims = dict(user.custom_claims or {})
+    claims["role"] = body.role
+    if body.role == "teacher":
+        claims["institute_id"] = body.institute_id
+        _ensure_teacher_link(uid, body.institute_id or "")
+    else:
+        claims.pop("institute_id", None)
+
+    try:
+        fb_auth.set_custom_user_claims(uid, claims)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to set claims: {e}")
+
+    return {
+        "status": "ok",
+        "uid": uid,
+        "claims": claims,
+        "note": "User must refresh token (sign out/in or getIdToken(true)) to see updates.",
+    }
+
+
+@router.get("/users/claims")
+async def admin_get_user_claims(
+    uid: str | None = Query(default=None),
+    email: str | None = Query(default=None),
+    _: CurrentAdmin = Depends(get_current_admin),
+):
+    """Lookup current Firebase custom claims for a user."""
+    resolved_uid = _resolve_uid(uid, email)
+    get_firebase_app()
+    try:
+        user = fb_auth.get_user(resolved_uid)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"User not found: {e}")
+    return {
+        "uid": user.uid,
+        "email": user.email,
+        "display_name": user.display_name,
+        "custom_claims": user.custom_claims or {},
+    }

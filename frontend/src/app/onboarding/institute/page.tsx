@@ -21,6 +21,7 @@ export default function InstitutePage() {
     const [selected, setSelected] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [fetchingCurrent, setFetchingCurrent] = useState(true);
+    const [loadError, setLoadError] = useState("");
 
     // Redirect unauthenticated users to home
     useEffect(() => {
@@ -31,10 +32,25 @@ export default function InstitutePage() {
 
     // Load available institutes
     useEffect(() => {
-        fetch(`${API_URL}/api/institutes`)
-            .then((r) => r.json())
-            .then(setInstitutes)
-            .catch(console.error);
+        const controller = new AbortController();
+        (async () => {
+            try {
+                setLoadError("");
+                const r = await fetch(`${API_URL}/api/institutes`, { signal: controller.signal });
+                if (!r.ok) throw new Error(`Failed to load institutes (${r.status})`);
+                const data = await r.json();
+                setInstitutes(Array.isArray(data) ? data : []);
+            } catch (err: unknown) {
+                if (controller.signal.aborted) return;
+                setInstitutes([]);
+                setLoadError(
+                    err instanceof Error && err.message
+                        ? err.message
+                        : "Could not reach backend. Check if API server is running on port 8000."
+                );
+            }
+        })();
+        return () => controller.abort();
     }, []);
 
     // Pre-select if student already has an institute
@@ -66,7 +82,8 @@ export default function InstitutePage() {
         setSaving(true);
         try {
             const token = await getIdToken();
-            await fetch(`${API_URL}/api/students/me/institute`, {
+            if (!token) throw new Error("You are signed out. Please sign in again.");
+            const res = await fetch(`${API_URL}/api/students/me/institute`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -74,9 +91,13 @@ export default function InstitutePage() {
                 },
                 body: JSON.stringify({ institute_id: selected }),
             });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data?.detail || `Failed to save institute (${res.status})`);
+            }
             router.replace("/");
-        } catch (e) {
-            console.error(e);
+        } catch (e: unknown) {
+            setLoadError(e instanceof Error ? e.message : "Failed to save institute");
             setSaving(false);
         }
     };
@@ -96,11 +117,14 @@ export default function InstitutePage() {
                 <div className="onboarding-header">
                     <div className="onboarding-step">Step 1 of 1</div>
                     <h1>Which institute are you from?</h1>
-                    <p>We'll personalise your experience based on your institute's curriculum and schedule.</p>
+                    <p>We&apos;ll personalise your experience based on your institute&apos;s curriculum and schedule.</p>
                 </div>
 
                 {/* Institute List */}
                 <div className="institute-list">
+                    {!!loadError && (
+                        <div style={{ color: "#b91c1c", padding: "0.5rem 0.25rem" }}>{loadError}</div>
+                    )}
                     {institutes.map((inst) => (
                         <button
                             key={inst.id}

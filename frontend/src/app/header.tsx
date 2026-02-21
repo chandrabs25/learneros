@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 
 const HIDDEN_NAV_ROUTES = ["/auth", "/onboarding"];
@@ -16,7 +17,7 @@ export function Header() {
 }
 
 function HeaderInner() {
-    const { user, signOut } = useAuth();
+    const { user, signOut, role, loading } = useAuth();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -24,43 +25,49 @@ function HeaderInner() {
         if (!user) router.push("/auth");
     };
 
+    const isRoleKnownForNav = !user || !loading;
+    const isTeacherRole = role === "teacher";
+    const isAdminLike = role === "admin" || role === "superadmin";
+    const isStudentLike = !user || role === "student" || loading;
+    const profileHref = isStudentLike ? "/profile/settings" : "/teacher/profile/settings";
+    const homeHref = !isRoleKnownForNav
+        ? "/"
+        : isAdminLike
+            ? "/admin/dashboard"
+            : isTeacherRole
+                ? "/teacher/dashboard"
+                : "/";
+
     return (
         <header className="app-header">
             <div className="header-left">
-                <a href="/" className="logo-box">
+                <Link href={homeHref} className="logo-box">
                     <span className="material-symbols-outlined">navigation</span>
-                </a>
+                </Link>
                 <h2 className="header-title">The Hub</h2>
             </div>
 
             <div className="header-right">
                 <nav className="header-nav">
-                    <a href="#" className={pathname === "/resources" ? "header-nav-active" : ""}>Resources</a>
-                    <a href="#" className={pathname === "/curriculum" ? "header-nav-active" : ""}>Curriculum</a>
-                    <a href="/insights" className={pathname.startsWith("/insights") ? "header-nav-active" : ""}>Insights</a>
-                    <a href="#" className={pathname === "/support" ? "header-nav-active" : ""}>Support</a>
+                    {isRoleKnownForNav && isStudentLike && (
+                        <>
+                            <Link href="/" className={pathname === "/" ? "header-nav-active" : ""}>Home</Link>
+                            <Link href="/insights" className={pathname.startsWith("/insights") ? "header-nav-active" : ""}>Insights</Link>
+                        </>
+                    )}
+                    {isRoleKnownForNav && isTeacherRole && (
+                        <Link href="/teacher/dashboard" className={pathname.startsWith("/teacher/dashboard") ? "header-nav-active" : ""}>Teacher Dashboard</Link>
+                    )}
+                    {isRoleKnownForNav && isAdminLike && (
+                        <Link href="/admin/dashboard" className={pathname.startsWith("/admin/dashboard") ? "header-nav-active" : ""}>Admin Dashboard</Link>
+                    )}
+                    {isRoleKnownForNav && isStudentLike && (
+                        <Link href="/tutor" className={pathname.startsWith("/tutor") ? "header-nav-active" : ""} style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem" }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 17 }}>smart_toy</span>
+                            AI Tutor
+                        </Link>
+                    )}
                 </nav>
-
-                <button
-                    onClick={() => router.push("/tutor")}
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: "0.4rem",
-                        border: pathname.startsWith("/tutor") ? "1px solid #fb923c" : "none",
-                        borderRadius: 10,
-                        background: pathname.startsWith("/tutor") ? "#fff7ed" : "#ff7f50",
-                        color: pathname.startsWith("/tutor") ? "#c2410c" : "white",
-                        padding: "0.55rem 0.8rem",
-                        fontWeight: 700,
-                        cursor: "pointer",
-                        fontFamily: "var(--font-display)",
-                        fontSize: "0.82rem",
-                    }}
-                >
-                    <span className="material-symbols-outlined" style={{ fontSize: 17 }}>smart_toy</span>
-                    AI Tutor
-                </button>
 
                 <div
                     className={`header-profile-group ${!user ? "header-profile-clickable" : ""}`}
@@ -81,7 +88,13 @@ function HeaderInner() {
                                 </p>
                             </div>
                             <div className="profile-avatar-wrapper">
-                                <div className="profile-avatar-circle">
+                                <Link
+                                    href={profileHref}
+                                    className="profile-avatar-circle"
+                                    onClick={(e) => e.stopPropagation()}
+                                    title="Profile Settings"
+                                    style={{ cursor: "pointer", display: "block" }}
+                                >
                                     {user.photoURL ? (
                                         <img src={user.photoURL} alt={user.displayName || "Profile"} />
                                     ) : (
@@ -89,7 +102,7 @@ function HeaderInner() {
                                             {(user.displayName || user.email || "S")[0].toUpperCase()}
                                         </span>
                                     )}
-                                </div>
+                                </Link>
                             </div>
                         </>
                     ) : (
