@@ -4,6 +4,8 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "katex/dist/katex.min.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -116,6 +118,12 @@ interface SubsectionInsight {
     concept_name: string | null;
 }
 
+interface TutorMessage {
+    role: "user" | "assistant";
+    text: string;
+    matchedCount?: number;
+}
+
 export default function SectionViewerPage() {
     const params = useParams();
     const router = useRouter();
@@ -129,11 +137,20 @@ export default function SectionViewerPage() {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [conceptCount, setConceptCount] = useState(0);
+    const [chapterExerciseCount, setChapterExerciseCount] = useState(0);
     const [chapterSections, setChapterSections] = useState<SectionNavItem[]>([]);
     const [insightsOpen, setInsightsOpen] = useState(false);
     const [insightsLoading, setInsightsLoading] = useState(false);
     const [insightsError, setInsightsError] = useState("");
     const [subsectionInsights, setSubsectionInsights] = useState<SubsectionInsight[]>([]);
+    const [tutorOpen, setTutorOpen] = useState(false);
+    const [tutorSessionId, setTutorSessionId] = useState<string>("");
+    const [tutorInput, setTutorInput] = useState("");
+    const [tutorSending, setTutorSending] = useState(false);
+    const [tutorHistoryLoading, setTutorHistoryLoading] = useState(false);
+    const [tutorMessages, setTutorMessages] = useState<TutorMessage[]>([
+        { role: "assistant", text: "Ask me anything about this subsection. I will use the section context and your relevant active insights." },
+    ]);
 
     const sectionId = `ncert:${subject}:${grade}:${chapter}:${section}`;
     const chapterId = `ncert:${subject}:${grade}:${chapter}`;
@@ -152,6 +169,12 @@ export default function SectionViewerPage() {
             .then((r) => r.json())
             .then((data) => setConceptCount(Array.isArray(data) ? data.length : 0))
             .catch(() => setConceptCount(0));
+
+        // Check how many end exercises are available for this section
+        fetch(`${API_URL}/api/sections/${sectionId}/exercises`)
+            .then((r) => r.json())
+            .then((data) => setChapterExerciseCount(Array.isArray(data) ? data.length : 0))
+            .catch(() => setChapterExerciseCount(0));
 
         // Fetch all sections in this chapter for sidebar nav
         fetch(`${API_URL}/api/chapters/${chapterId}/sections`)
@@ -174,24 +197,7 @@ export default function SectionViewerPage() {
         return parts[parts.length - 1];
     };
 
-    if (loading) {
-        return (
-            <div className="loading-container">
-                <div className="spinner" />
-                Loading content...
-            </div>
-        );
-    }
-
     const current = subsections[currentIndex];
-    if (!current) {
-        return <div className="loading-container">No content found for this section.</div>;
-    }
-
-    const typeCfg = TYPE_CONFIG[current.content_type] || TYPE_CONFIG.explanation;
-    const validExamples = current.worked_examples?.filter((we) => we.label || we.problem) || [];
-    const validDiagrams = current.diagrams?.filter((d) => d.description) || [];
-    const validTables = current.tables?.filter((t) => t.caption || t.headers) || [];
 
     const loadSubsectionInsights = async () => {
         if (!current?.id) return;
@@ -222,12 +228,102 @@ export default function SectionViewerPage() {
         }
     };
 
+    const sendTutorMessage = async () => {
+        const message = tutorInput.trim();
+        if (!message || !current?.id || tutorSending) return;
+
+        setTutorInput("");
+        setTutorMessages((prev) => [...prev, { role: "user", text: message }]);
+        setTutorSending(true);
+        try {
+            const token = await getIdToken();
+            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            if (token) headers.Authorization = `Bearer ${token}`;
+
+            const res = await fetch(`${API_URL}/api/sections/${encodeURIComponent(sectionId)}/tutor/chat`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                    subsection_id: current.id,
+                    message,
+                    session_id: tutorSessionId || undefined,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+            if (!tutorSessionId && data?.session_id) setTutorSessionId(data.session_id);
+            setTutorMessages((prev) => [
+                ...prev,
+                {
+                    role: "assistant",
+                    text: data?.response || "I couldn't generate a response.",
+                    matchedCount: Array.isArray(data?.matched_insights) ? data.matched_insights.length : 0,
+                },
+            ]);
+        } catch (e: unknown) {
+            setTutorMessages((prev) => [
+                ...prev,
+                { role: "assistant", text: e instanceof Error ? e.message : "Failed to contact AI Tutor." },
+            ]);
+        } finally {
+            setTutorSending(false);
+        }
+    };
+
     useEffect(() => {
         if (insightsOpen) {
             loadSubsectionInsights();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [insightsOpen, current?.id, user]);
+
+    useEffect(() => {
+        if (!tutorOpen || !current?.id || !user) return;
+        let cancelled = false;
+        (async () => {
+            setTutorHistoryLoading(true);
+            try {
+                const token = await getIdToken();
+                if (!token) return;
+                const res = await fetch(
+                    `${API_URL}/api/sections/${encodeURIComponent(sectionId)}/tutor/session/latest?subsection_id=${encodeURIComponent(current.id)}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                const data = await res.json();
+                if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+                const history = Array.isArray(data?.messages) ? data.messages : [];
+                if (!cancelled && data?.session_id && history.length > 0) {
+                    setTutorSessionId(data.session_id);
+                    setTutorMessages(history.map((m: { role: "user" | "assistant"; content: string }) => ({ role: m.role, text: m.content })));
+                }
+            } catch {
+                // Keep current in-memory messages if loading fails.
+            } finally {
+                if (!cancelled) setTutorHistoryLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [tutorOpen, current?.id, user, getIdToken, sectionId]);
+
+    if (loading) {
+        return (
+            <div className="loading-container">
+                <div className="spinner" />
+                Loading content...
+            </div>
+        );
+    }
+
+    if (!current) {
+        return <div className="loading-container">No content found for this section.</div>;
+    }
+
+    const typeCfg = TYPE_CONFIG[current.content_type] || TYPE_CONFIG.explanation;
+    const validExamples = current.worked_examples?.filter((we) => we.label || we.problem) || [];
+    const validDiagrams = current.diagrams?.filter((d) => d.description) || [];
+    const validTables = current.tables?.filter((t) => t.caption || t.headers) || [];
 
     return (
         <div className="section-page-layout">
@@ -316,17 +412,43 @@ export default function SectionViewerPage() {
             <div className="section-main-content">
                 {/* Header */}
                 <div style={{ marginBottom: "2.5rem" }}>
-                    <nav className="breadcrumb">
-                        <Link href="/">Hub</Link>
-                        <span className="sep">›</span>
-                        <Link href={`/${grade}/${subject}`}>
-                            {subject.charAt(0).toUpperCase() + subject.slice(1)}
-                        </Link>
-                        <span className="sep">›</span>
-                        <Link href={`/${grade}/${subject}/${chapter}`}>Chapter {chapter}</Link>
-                        <span className="sep">›</span>
-                        <span className="current">Section {section}</span>
-                    </nav>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
+                        <nav className="breadcrumb">
+                            <Link href="/">Hub</Link>
+                            <span className="sep">›</span>
+                            <Link href={`/${grade}/${subject}`}>
+                                {subject.charAt(0).toUpperCase() + subject.slice(1)}
+                            </Link>
+                            <span className="sep">›</span>
+                            <Link href={`/${grade}/${subject}/${chapter}`}>Chapter {chapter}</Link>
+                            <span className="sep">›</span>
+                            <span className="current">Section {section}</span>
+                        </nav>
+
+                        <button
+                            onClick={() => router.push(`/${grade}/${subject}`)}
+                            style={{
+                                display: "flex", alignItems: "center", gap: "0.4rem",
+                                padding: "0.5rem 0.875rem", background: "white",
+                                border: "1px solid var(--border)", borderRadius: "999px",
+                                fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase",
+                                letterSpacing: "0.05em", color: "var(--text-secondary)",
+                                cursor: "pointer", boxShadow: "0 2px 5px rgba(0,0,0,0.02)",
+                                transition: "all 0.2s ease"
+                            }}
+                            onMouseOver={(e) => {
+                                e.currentTarget.style.background = "#f8fafc";
+                                e.currentTarget.style.borderColor = "#cbd5e1";
+                            }}
+                            onMouseOut={(e) => {
+                                e.currentTarget.style.background = "white";
+                                e.currentTarget.style.borderColor = "var(--border)";
+                            }}
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: "1rem" }}>arrow_back</span>
+                            Back to Textbook
+                        </button>
+                    </div>
 
                     {/* Content type badge */}
                     <div style={{
@@ -530,14 +652,16 @@ export default function SectionViewerPage() {
             </div>
 
             {/* Right-edge Insight tab + panel */}
-            <button
-                className="section-insights-tab"
-                onClick={() => setInsightsOpen((v) => !v)}
-                aria-label="Open insights panel"
-            >
-                <span className="material-symbols-outlined">auto_awesome</span>
-                <span className="section-insights-tab-label">Insights</span>
-            </button>
+            {!insightsOpen && (
+                <button
+                    className="section-insights-tab"
+                    onClick={() => setInsightsOpen((v) => !v)}
+                    aria-label="Open insights panel"
+                >
+                    <span className="material-symbols-outlined">auto_awesome</span>
+                    <span className="section-insights-tab-label">Insights</span>
+                </button>
+            )}
 
             {insightsOpen && (
                 <div className="section-insights-panel">
@@ -589,6 +713,118 @@ export default function SectionViewerPage() {
                             ))}
                         </div>
                     )}
+                </div>
+            )}
+
+            {tutorOpen && (
+                <div className="section-insights-panel" style={{ right: "20rem", width: "min(32rem, calc(100vw - 2rem))" }}>
+                    <div className="section-insights-panel-header">
+                        <div>
+                            <div className="section-insights-panel-kicker">AI Tutor</div>
+                            <h3 className="section-insights-panel-title">{current.title}</h3>
+                        </div>
+                        <button
+                            className="section-insights-panel-close"
+                            onClick={() => setTutorOpen(false)}
+                            aria-label="Close tutor panel"
+                        >
+                            <span className="material-symbols-outlined">close</span>
+                        </button>
+                    </div>
+
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", maxHeight: "50vh", overflowY: "auto", paddingRight: 4 }}>
+                        {tutorHistoryLoading ? (
+                            <div style={{ fontSize: "0.9rem", color: "#64748b" }}>Loading conversation...</div>
+                        ) : tutorMessages.map((m, i) => (
+                            <div
+                                key={i}
+                                style={{
+                                    alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+                                    maxWidth: "92%",
+                                    background: m.role === "user" ? "#0f172a" : "#f8fafc",
+                                    color: m.role === "user" ? "white" : "#0f172a",
+                                    border: m.role === "user" ? "none" : "1px solid #e2e8f0",
+                                    borderRadius: 12,
+                                    padding: "0.6rem 0.7rem",
+                                    fontSize: "0.9rem",
+                                    lineHeight: 1.5,
+                                }}
+                            >
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        p: ({ children }) => <p style={{ margin: "0 0 0.55rem 0" }}>{children}</p>,
+                                        ul: ({ children }) => <ul style={{ margin: "0.2rem 0 0.55rem 1.2rem" }}>{children}</ul>,
+                                        ol: ({ children }) => <ol style={{ margin: "0.2rem 0 0.55rem 1.2rem" }}>{children}</ol>,
+                                        code: ({ children }) => (
+                                            <code style={{ background: "rgba(148,163,184,0.2)", borderRadius: 6, padding: "0.1rem 0.3rem" }}>{children}</code>
+                                        ),
+                                        pre: ({ children }) => (
+                                            <pre style={{ background: "rgba(15,23,42,0.08)", borderRadius: 10, padding: "0.75rem", overflowX: "auto" }}>{children}</pre>
+                                        ),
+                                        table: ({ children }) => (
+                                            <div style={{ overflowX: "auto", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", marginBottom: "0.5rem" }}>
+                                                <table style={{ borderCollapse: "collapse", minWidth: "100%", fontSize: "0.84rem", color: "#0f172a" }}>{children}</table>
+                                            </div>
+                                        ),
+                                        th: ({ children }) => (
+                                            <th style={{ textAlign: "left", padding: "0.42rem 0.5rem", borderBottom: "1px solid #cbd5e1", background: "#f8fafc", fontWeight: 700, whiteSpace: "nowrap" }}>{children}</th>
+                                        ),
+                                        td: ({ children }) => (
+                                            <td style={{ padding: "0.38rem 0.5rem", borderTop: "1px solid #e2e8f0", verticalAlign: "top" }}>{children}</td>
+                                        ),
+                                    }}
+                                >
+                                    {m.text || ""}
+                                </ReactMarkdown>
+                                {m.role === "assistant" && typeof m.matchedCount === "number" && (
+                                    <div style={{ marginTop: 6, fontSize: "0.68rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
+                                        {m.matchedCount} matched insight{m.matchedCount === 1 ? "" : "s"} used
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
+                        <input
+                            value={tutorInput}
+                            onChange={(e) => setTutorInput(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    sendTutorMessage();
+                                }
+                            }}
+                            placeholder="Ask about this subsection..."
+                            style={{
+                                flex: 1,
+                                borderRadius: 10,
+                                border: "1px solid #cbd5e1",
+                                padding: "0.6rem 0.7rem",
+                                fontSize: "0.9rem",
+                                outline: "none",
+                                fontFamily: "var(--font-body)",
+                            }}
+                        />
+                        <button
+                            onClick={sendTutorMessage}
+                            disabled={tutorSending || !tutorInput.trim()}
+                            style={{
+                                border: "none",
+                                borderRadius: 10,
+                                background: "#13ecda",
+                                color: "#0a2e2b",
+                                padding: "0.6rem 0.9rem",
+                                fontWeight: 700,
+                                cursor: tutorSending || !tutorInput.trim() ? "not-allowed" : "pointer",
+                                opacity: tutorSending || !tutorInput.trim() ? 0.6 : 1,
+                                fontFamily: "var(--font-display)",
+                            }}
+                        >
+                            {tutorSending ? "..." : "Send"}
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -655,9 +891,11 @@ export default function SectionViewerPage() {
                                     fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", fontFamily: "var(--font-display)",
                                 }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: "1.125rem" }}>edit_note</span>
-                                Chapter End Exercises
+                                Chapter End Exercises ({chapterExerciseCount})
                             </button>
-                            <button style={{
+                            <button
+                                onClick={() => setTutorOpen(true)}
+                                style={{
                                 display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1.25rem",
                                 background: "#ff7f50", color: "white", border: "none", borderRadius: "var(--radius)",
                                 fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", fontFamily: "var(--font-display)",

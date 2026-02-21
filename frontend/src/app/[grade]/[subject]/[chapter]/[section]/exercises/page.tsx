@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Cropper from "react-easy-crop";
 import type { Area } from "react-easy-crop";
+import { useAuth } from "@/lib/auth-context";
 import "katex/dist/katex.min.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -325,6 +326,7 @@ export default function ExercisesPage() {
     const subject = params.subject as string;
     const chapter = params.chapter as string;
     const section = params.section as string;
+    const { getIdToken } = useAuth();
 
     const [exercises, setExercises] = useState<Exercise[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -332,10 +334,13 @@ export default function ExercisesPage() {
 
     // Upload / Camera / Crop state
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+    const [answerMode, setAnswerMode] = useState<"image" | "text">("image");
+    const [typedAnswer, setTypedAnswer] = useState("");
     const [rawImage, setRawImage] = useState<string | null>(null); // pre-crop
     const [showCamera, setShowCamera] = useState(false);
     const [showCrop, setShowCrop] = useState(false);
     const [selectedPreview, setSelectedPreview] = useState<number | null>(null);
+    const [submitting, setSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const sectionId = `ncert:${subject}:${grade}:${chapter}:${section}`;
@@ -352,6 +357,7 @@ export default function ExercisesPage() {
 
     useEffect(() => {
         setUploadedImages([]);
+        setTypedAnswer("");
         setRawImage(null);
         setSelectedPreview(null);
         window.scrollTo({ top: 0, behavior: "smooth" });
@@ -387,6 +393,50 @@ export default function ExercisesPage() {
     const removeImage = (index: number) => {
         setUploadedImages((prev) => prev.filter((_, i) => i !== index));
         if (selectedPreview === index) setSelectedPreview(null);
+    };
+
+    const submitForReview = async () => {
+        if (answerMode === "image" && uploadedImages.length === 0) {
+            fileInputRef.current?.click();
+            return;
+        }
+        if (answerMode === "text" && typedAnswer.trim().length === 0) {
+            alert("Please type your solution before submitting.");
+            return;
+        }
+
+        setSubmitting(true);
+        try {
+            const token = await getIdToken();
+            const headers: Record<string, string> = {
+                "Content-Type": "application/json",
+            };
+            if (token) headers.Authorization = `Bearer ${token}`;
+
+            const res = await fetch(`${API_URL}/api/sections/${sectionId}/test/exercises/evaluate`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                    exercise_id: current.id,
+                    problem: current.problem,
+                    answer_mode: answerMode,
+                    answer_text: answerMode === "text" ? typedAnswer : null,
+                    answer_images: answerMode === "image" ? uploadedImages : [],
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data?.detail || `HTTP ${res.status}`);
+            }
+            alert(
+                `Evaluation complete.\nScore: ${data.score ?? "-"} (${data.grade ?? "-"})\nInsights: ${(data.insights || []).length}\nPersistence: ${data.persistence_status || "unknown"}`
+            );
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "Failed to evaluate answer.";
+            alert(msg);
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     if (loading) {
@@ -455,6 +505,31 @@ export default function ExercisesPage() {
             }}>
                 {/* Left: Exercise Card + Upload */}
                 <div style={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: "2rem" }}>
+                    <div>
+                        <button
+                            onClick={() => router.push(`/${grade}/${subject}/${chapter}/${section}`)}
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.5rem",
+                                padding: "0.625rem 1rem",
+                                borderRadius: "9999px",
+                                border: "1px solid var(--border)",
+                                background: "white",
+                                color: "var(--text-secondary)",
+                                fontWeight: 700,
+                                fontSize: "0.8125rem",
+                                textTransform: "uppercase",
+                                letterSpacing: "0.08em",
+                                cursor: "pointer",
+                                fontFamily: "var(--font-display)",
+                            }}
+                        >
+                            <span className="material-symbols-outlined" style={{ fontSize: "1rem" }}>arrow_back</span>
+                            Back to Lesson
+                        </button>
+                    </div>
+
                     {/* Exercise Card */}
                     <div style={{
                         background: "var(--white)", borderRadius: "var(--radius-lg)",
@@ -503,12 +578,61 @@ export default function ExercisesPage() {
                     {/* Upload Solution Area */}
                     <div style={{
                         background: "var(--white)", borderRadius: "var(--radius-lg)",
-                        border: uploadedImages.length > 0 ? "1px solid var(--border)" : "2px dashed var(--border)",
+                        border: answerMode === "image" && uploadedImages.length === 0 ? "2px dashed var(--border)" : "1px solid var(--border)",
                         padding: "2rem",
                         display: "flex", flexDirection: "column", alignItems: "center",
-                        justifyContent: "center", minHeight: uploadedImages.length > 0 ? "auto" : 400,
+                        justifyContent: "center", minHeight: answerMode === "image" && uploadedImages.length === 0 ? 400 : "auto",
                         transition: "border-color 0.2s ease",
                     }}>
+                        <div style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.375rem",
+                            background: "#f8fafc",
+                            border: "1px solid var(--border)",
+                            borderRadius: 9999,
+                            padding: "0.25rem",
+                            marginBottom: "1.25rem",
+                            alignSelf: "flex-start",
+                        }}>
+                            <button
+                                onClick={() => setAnswerMode("image")}
+                                style={{
+                                    padding: "0.5rem 0.9rem",
+                                    borderRadius: 9999,
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontSize: "0.75rem",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.06em",
+                                    textTransform: "uppercase",
+                                    fontFamily: "var(--font-display)",
+                                    background: answerMode === "image" ? "#111" : "transparent",
+                                    color: answerMode === "image" ? "white" : "var(--text-muted)",
+                                }}
+                            >
+                                Image Input
+                            </button>
+                            <button
+                                onClick={() => setAnswerMode("text")}
+                                style={{
+                                    padding: "0.5rem 0.9rem",
+                                    borderRadius: 9999,
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontSize: "0.75rem",
+                                    fontWeight: 700,
+                                    letterSpacing: "0.06em",
+                                    textTransform: "uppercase",
+                                    fontFamily: "var(--font-display)",
+                                    background: answerMode === "text" ? "#111" : "transparent",
+                                    color: answerMode === "text" ? "white" : "var(--text-muted)",
+                                }}
+                            >
+                                Text Input
+                            </button>
+                        </div>
+
                         {/* Hidden file input */}
                         <input
                             ref={fileInputRef}
@@ -518,7 +642,48 @@ export default function ExercisesPage() {
                             onChange={handleFileUpload}
                         />
 
-                        {uploadedImages.length > 0 ? (
+                        {answerMode === "text" ? (
+                            <div style={{ width: "100%" }}>
+                                <div style={{
+                                    width: "100%",
+                                    borderRadius: "0.875rem",
+                                    border: "1px solid var(--border)",
+                                    background: "white",
+                                    padding: "0.875rem",
+                                }}>
+                                    <textarea
+                                        value={typedAnswer}
+                                        onChange={(e) => setTypedAnswer(e.target.value)}
+                                        placeholder="Type your full solution here. Include steps, equations, and final answer."
+                                        style={{
+                                            width: "100%",
+                                            minHeight: 260,
+                                            resize: "vertical",
+                                            border: "none",
+                                            outline: "none",
+                                            fontSize: "0.95rem",
+                                            lineHeight: 1.7,
+                                            color: "var(--text)",
+                                            fontFamily: "var(--font-body)",
+                                            background: "transparent",
+                                        }}
+                                    />
+                                </div>
+                                <div style={{
+                                    marginTop: "0.625rem",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    gap: "0.75rem",
+                                    color: "var(--text-muted)",
+                                    fontSize: "0.75rem",
+                                    fontWeight: 600,
+                                }}>
+                                    <span>Tip: Structure as given, steps, and final answer.</span>
+                                    <span>{typedAnswer.trim().length} chars</span>
+                                </div>
+                            </div>
+                        ) : uploadedImages.length > 0 ? (
                             /* ── Multi-image thumbnail grid ── */
                             <div style={{ width: "100%" }}>
                                 {/* Header */}
@@ -920,23 +1085,19 @@ export default function ExercisesPage() {
                             Back to Lesson
                         </button>
                         <button
-                            onClick={() => {
-                                if (uploadedImages.length === 0) {
-                                    fileInputRef.current?.click();
-                                    return;
-                                }
-                                alert(`Submitting ${uploadedImages.length} page(s) for AI review... (Coming soon!)`);
-                            }}
+                            onClick={submitForReview}
+                            disabled={submitting}
                             style={{
                                 display: "flex", alignItems: "center", gap: "0.5rem",
                                 padding: "0.75rem 2rem", background: "#111",
                                 color: "white", border: "none", borderRadius: "var(--radius)",
-                                fontWeight: 700, fontSize: "0.875rem", cursor: "pointer",
+                                fontWeight: 700, fontSize: "0.875rem", cursor: submitting ? "wait" : "pointer",
                                 boxShadow: "0 8px 16px rgba(0,0,0,0.15)",
                                 fontFamily: "var(--font-display)",
+                                opacity: submitting ? 0.75 : 1,
                             }}
                         >
-                            Submit for AI Review
+                            {submitting ? "Submitting..." : "Submit for AI Review"}
                             <span className="material-symbols-outlined" style={{ fontSize: "1.125rem" }}>send</span>
                         </button>
                     </div>

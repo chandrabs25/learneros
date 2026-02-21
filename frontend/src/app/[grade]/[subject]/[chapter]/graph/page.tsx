@@ -37,6 +37,11 @@ interface InsightItem {
     source_title?: string;
 }
 
+interface ChapterMeta {
+    id: string;
+    title: string;
+}
+
 export default function KnowledgeGraphPage() {
     const params = useParams();
     const router = useRouter();
@@ -54,6 +59,7 @@ export default function KnowledgeGraphPage() {
     const [panelInsights, setPanelInsights] = useState<InsightItem[]>([]);
     const [panelLoading, setPanelLoading] = useState(false);
     const [chapterTitle, setChapterTitle] = useState("");
+    const [chapterTitles, setChapterTitles] = useState<Record<string, string>>({});
     const [animationUrl, setAnimationUrl] = useState<string | null>(null);
 
     // Fetch graph data
@@ -87,7 +93,13 @@ export default function KnowledgeGraphPage() {
         fetch(`${API_URL}/api/grades/${grade}/subjects/${subjectName}/chapters`)
             .then((r) => r.json())
             .then((chapters) => {
-                const ch = chapters.find((c: { id: string }) => c.id === chapterId);
+                const list: ChapterMeta[] = Array.isArray(chapters) ? chapters : [];
+                const map: Record<string, string> = {};
+                for (const ch of list) {
+                    if (ch?.id) map[ch.id] = ch.title || "";
+                }
+                setChapterTitles(map);
+                const ch = list.find((c) => c.id === chapterId);
                 if (ch) setChapterTitle(ch.title || `Chapter ${chapter}`);
             })
             .catch(() => { });
@@ -139,7 +151,10 @@ export default function KnowledgeGraphPage() {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    setPanelInsights(Array.isArray(data) ? data : []);
+                    const active = Array.isArray(data)
+                        ? data.filter((ins: InsightItem) => ins.is_active !== false)
+                        : [];
+                    setPanelInsights(active);
                 } else {
                     // Fallback: use inline insight from graph data
                     if (node.insight) {
@@ -216,6 +231,34 @@ export default function KnowledgeGraphPage() {
         }
     };
 
+    const parseChapterIdFromSource = (sourceId?: string) => {
+        if (!sourceId) return null;
+        const parts = sourceId.split(":");
+        if (parts.length < 4) return null;
+        return `${parts[0]}:${parts[1]}:${parts[2]}:${parts[3]}`;
+    };
+
+    const chapterInsights = useMemo(() => {
+        if (selectedNode?.type !== "concept") return [];
+        const groups: Record<string, { chapterId: string; chapterLabel: string; items: InsightItem[] }> = {};
+        const order: string[] = [];
+        for (const ins of panelInsights) {
+            const chapterIdFromSource = parseChapterIdFromSource(ins.source_id) || chapterId;
+            const chapterNum = chapterIdFromSource.split(":")[3] || "?";
+            const chapterLabel = chapterTitles[chapterIdFromSource] || `Chapter ${chapterNum}`;
+            if (!groups[chapterIdFromSource]) {
+                groups[chapterIdFromSource] = {
+                    chapterId: chapterIdFromSource,
+                    chapterLabel,
+                    items: [],
+                };
+                order.push(chapterIdFromSource);
+            }
+            groups[chapterIdFromSource].items.push(ins);
+        }
+        return order.map((key) => groups[key]);
+    }, [panelInsights, selectedNode?.type, chapterId, chapterTitles]);
+
     if (loading) {
         return (
             <div className="kg-page">
@@ -234,16 +277,16 @@ export default function KnowledgeGraphPage() {
                 {/* Graph Canvas */}
                 <div
                     className="kg-canvas"
-                    style={{ width: selectedNode ? 'calc(100% - 400px)' : '100%', flex: 'none' }}
+                    style={{ width: selectedNode ? 'calc(100% - 440px)' : '100%', flex: 'none' }}
                 >
                     {/* Back to Chapter button */}
                     <Link
-                        href={`/${grade}/${subject}/${chapter}`}
+                        href={`/${grade}/${subject}`}
                         className="kg-back-btn"
                         style={{ position: "absolute", top: 16, left: 16, zIndex: 10 }}
                     >
                         <span className="material-symbols-outlined" style={{ fontSize: "1rem" }}>arrow_back</span>
-                        Back to Chapter
+                        Back to Textbook
                     </Link>
 
                     {/* Instructional Text */}
@@ -427,6 +470,12 @@ export default function KnowledgeGraphPage() {
                                             {panelInsights.filter((i) => i.type === "COMPETENCY").length}
                                         </span>
                                     </div>
+                                    <div className="kg-stat kg-stat--partial-understanding">
+                                        <p className="kg-stat-label">Partial Understanding</p>
+                                        <span className="kg-stat-count">
+                                            {panelInsights.filter((i) => i.type === "PARTIAL_UNDERSTANDING").length}
+                                        </span>
+                                    </div>
                                     <div className="kg-stat kg-stat--misconception">
                                         <p className="kg-stat-label">Misconception</p>
                                         <span className="kg-stat-count">
@@ -458,6 +507,46 @@ export default function KnowledgeGraphPage() {
                                             Complete lessons and exercises to build your knowledge profile.
                                         </p>
                                     </div>
+                                ) : selectedNode.type === "concept" ? (
+                                    chapterInsights.map((group) => (
+                                        <div key={group.chapterId}>
+                                            <div className="kg-panel-section-title" style={{ marginTop: "0.25rem" }}>
+                                                <span className="material-symbols-outlined" style={{ fontSize: "1rem", color: "var(--text-muted)" }}>menu_book</span>
+                                                <span>{`Chapter: ${group.chapterLabel}`}</span>
+                                            </div>
+                                            {group.items.map((ins, idx) => (
+                                                <div
+                                                    key={`${group.chapterId}-${ins.id || idx}`}
+                                                    className="kg-insight-card"
+                                                    style={{ borderLeftColor: insightColor(ins.type) }}
+                                                >
+                                                    <div className="kg-insight-header">
+                                                        <span
+                                                            className="material-symbols-outlined"
+                                                            style={{ fontSize: "1rem", color: insightColor(ins.type) }}
+                                                        >
+                                                            {insightIcon(ins.type)}
+                                                        </span>
+                                                        <span
+                                                            className="kg-insight-type"
+                                                            style={{ color: insightColor(ins.type) }}
+                                                        >
+                                                            {ins.type.replace(/_/g, " ")}
+                                                        </span>
+                                                        {ins.category && (
+                                                            <span className="kg-insight-category">{ins.category}</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="kg-insight-content">{ins.content}</p>
+                                                    {(ins.source_title || ins.source_id) && (
+                                                        <p className="kg-insight-content" style={{ marginTop: "0.35rem", fontSize: "0.74rem", opacity: 0.75 }}>
+                                                            Subsection: {ins.source_title || ins.source_id}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ))
                                 ) : (
                                     panelInsights.map((ins, idx) => (
                                         <div
@@ -483,9 +572,6 @@ export default function KnowledgeGraphPage() {
                                                 )}
                                             </div>
                                             <p className="kg-insight-content">{ins.content}</p>
-                                            {ins.is_active === false && (
-                                                <span className="kg-insight-superseded">Superseded</span>
-                                            )}
                                         </div>
                                     ))
                                 )}

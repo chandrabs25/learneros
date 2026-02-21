@@ -10,12 +10,108 @@ Routes:
   GET    /api/sections/{section_id}/prerequisites-state → Prerequisites + insight states
 """
 
-from fastapi import APIRouter, Depends, Query
+import json
+
+from fastapi import APIRouter, Depends, Query, HTTPException
+from pydantic import BaseModel
+from openai import OpenAI
 
 from app.auth import get_current_user, CurrentUser
+from app.config import settings
 from app.database import read_query
 
 router = APIRouter(prefix="/api", tags=["insights"])
+_client: OpenAI | None = None
+_embedding_client: OpenAI | None = None
+
+
+def _get_client() -> OpenAI:
+    global _client
+    if _client is None:
+        if not settings.FIREWORKS_API_KEY:
+            raise RuntimeError("FIREWORKS_API_KEY not configured")
+        _client = OpenAI(
+            api_key=settings.FIREWORKS_API_KEY,
+            base_url=settings.FIREWORKS_BASE_URL,
+        )
+    return _client
+
+
+def _get_embedding_client() -> OpenAI:
+    global _embedding_client
+    if _embedding_client is None:
+        api_key = settings.FIREWORKS_API_KEY_EMBEDDINGS or settings.FIREWORKS_API_KEY
+        if not api_key:
+            raise RuntimeError("FIREWORKS_API_KEY_EMBEDDINGS (or FIREWORKS_API_KEY) not configured")
+        _embedding_client = OpenAI(
+            api_key=api_key,
+            base_url=settings.FIREWORKS_BASE_URL,
+        )
+    return _embedding_client
+
+
+def _embed_text(text: str) -> list[float]:
+    text = (text or "").strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="query text is required")
+    client = _get_embedding_client()
+    resp = client.embeddings.create(
+        model=settings.FIREWORKS_EMBEDDING_MODEL,
+        input=text,
+    )
+    vec = resp.data[0].embedding if resp.data else None
+    if not vec:
+        raise HTTPException(status_code=502, detail="Embedding provider returned empty vector")
+    return [float(v) for v in vec]
+
+
+def _llm_json(prompt: str, model: str | None = None) -> dict:
+    client = _get_client()
+    response = client.chat.completions.create(
+        model=model or settings.FIREWORKS_MODEL,
+        messages=[
+            {"role": "system", "content": "Return only valid JSON matching the requested schema."},
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.1,
+        response_format={"type": "json_object"},
+        timeout=60,
+    )
+    content = response.choices[0].message.content or "{}"
+    if isinstance(content, list):
+        content = "".join(
+            p.get("text", "")
+            for p in content
+            if isinstance(p, dict) and p.get("type") == "text"
+        )
+    if content.startswith("```"):
+        content = content.split("\n", 1)[1].rsplit("```", 1)[0]
+    return json.loads(content)
+
+
+def _get_insight_context(student_id: str, insight_id: str) -> dict | None:
+    rows = read_query(
+        """
+        MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {id: $insight_id, is_active: true})
+        OPTIONAL MATCH (i)-[:ABOUT_SOURCE]->(src)
+        OPTIONAL MATCH (i)-[:ABOUT_CONCEPT]->(c:Concept)
+        OPTIONAL MATCH (sec:Section)-[:CONTAINS]->(ss:Subsection)
+        WHERE src = ss
+        RETURN i.id AS id,
+               i.type AS type,
+               i.category AS category,
+               i.content AS content,
+               src.id AS source_id,
+               coalesce(src.title, sec.title, src.id) AS source_title,
+               sec.id AS section_id,
+               c.id AS concept_id,
+               c.name AS concept_name
+        LIMIT 1
+        """,
+        student_id=student_id,
+        insight_id=insight_id,
+    )
+    return rows[0] if rows else None
 
 
 # ── GET /api/students/me/insights ─────────────────────────────────────────────
@@ -45,14 +141,18 @@ async def get_my_insights(
             MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true})
             WHERE any(sid IN sids WHERE (i)-[:ABOUT_SOURCE]->({id: sid}))
                OR any(cid IN cids WHERE (i)-[:ABOUT_CONCEPT]->(:Concept {id: cid}))
+            OPTIONAL MATCH (i)-[:ABOUT_SOURCE]->(src)
+            OPTIONAL MATCH (i)-[:ABOUT_CONCEPT]->(c:Concept)
 
             RETURN i.id         AS id,
                    i.type       AS type,
                    i.category   AS category,
                    i.content    AS content,
                    i.created_at AS created_at,
-                   [(i)-[:ABOUT_SOURCE]->(src) | src.id][0]  AS source_id,
-                   [(i)-[:ABOUT_CONCEPT]->(c)  | c.id][0]   AS concept_id
+                   src.id       AS source_id,
+                   src.title    AS source_title,
+                   c.id         AS concept_id,
+                   c.name       AS concept_name
             ORDER BY i.created_at DESC
             """,
             student_id=user.student_id,
@@ -62,13 +162,17 @@ async def get_my_insights(
         rows = read_query(
             """
             MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true})
+            OPTIONAL MATCH (i)-[:ABOUT_SOURCE]->(src)
+            OPTIONAL MATCH (i)-[:ABOUT_CONCEPT]->(c:Concept)
             RETURN i.id         AS id,
                    i.type       AS type,
                    i.category   AS category,
                    i.content    AS content,
                    i.created_at AS created_at,
-                   [(i)-[:ABOUT_SOURCE]->(src) | src.id][0]  AS source_id,
-                   [(i)-[:ABOUT_CONCEPT]->(c)  | c.id][0]   AS concept_id
+                   src.id       AS source_id,
+                   src.title    AS source_title,
+                   c.id         AS concept_id,
+                   c.name       AS concept_name
             ORDER BY i.created_at DESC
             """,
             student_id=user.student_id,
@@ -106,6 +210,74 @@ async def get_subsection_insights(
     return rows
 
 
+# ── GET /api/students/me/insights/search ──────────────────────────────────────
+
+@router.get("/students/me/insights/search")
+async def semantic_search_my_insights(
+    query: str = Query(..., description="Natural language query to match relevant active insights"),
+    k: int = Query(default=5, ge=1, le=20),
+    user: CurrentUser = Depends(get_current_user),
+):
+    """Semantic retrieval over the student's active insights using stored embeddings."""
+    embedding = _embed_text(query)
+
+    # Preferred: vector index query. Fallback: cosine similarity scan.
+    try:
+        rows = read_query(
+            """
+            CALL db.index.vector.queryNodes('insight_embedding_index', $n, $embedding)
+            YIELD node, score
+            MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(node)
+            WHERE node.is_active = true
+            OPTIONAL MATCH (node)-[:ABOUT_SOURCE]->(src)
+            OPTIONAL MATCH (node)-[:ABOUT_CONCEPT]->(c:Concept)
+            RETURN node.id AS id,
+                   node.type AS type,
+                   node.category AS category,
+                   node.content AS content,
+                   node.created_at AS created_at,
+                   src.id AS source_id,
+                   src.title AS source_title,
+                   c.id AS concept_id,
+                   c.name AS concept_name,
+                   score AS similarity
+            ORDER BY score DESC
+            LIMIT $k
+            """,
+            student_id=user.student_id,
+            embedding=embedding,
+            n=max(k * 4, 20),
+            k=k,
+        )
+    except Exception:
+        rows = read_query(
+            """
+            MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true})
+            WHERE i.embedding IS NOT NULL
+            WITH i, vector.similarity.cosine(i.embedding, $embedding) AS score
+            OPTIONAL MATCH (i)-[:ABOUT_SOURCE]->(src)
+            OPTIONAL MATCH (i)-[:ABOUT_CONCEPT]->(c:Concept)
+            RETURN i.id AS id,
+                   i.type AS type,
+                   i.category AS category,
+                   i.content AS content,
+                   i.created_at AS created_at,
+                   src.id AS source_id,
+                   src.title AS source_title,
+                   c.id AS concept_id,
+                   c.name AS concept_name,
+                   score AS similarity
+            ORDER BY score DESC
+            LIMIT $k
+            """,
+            student_id=user.student_id,
+            embedding=embedding,
+            k=k,
+        )
+
+    return rows
+
+
 # ── GET /api/students/me/insights/concept/{concept_id} ────────────────────────
 
 @router.get("/students/me/insights/concept/{concept_id:path}")
@@ -138,6 +310,150 @@ async def get_concept_insight_log(
         concept_id=concept_id,
     )
     return rows
+
+
+class InsightMCQEvaluatePayload(BaseModel):
+    question: str
+    options: dict
+    selected: str
+    correct_answer: str
+
+
+@router.post("/students/me/insights/{insight_id}/explain")
+async def explain_insight(
+    insight_id: str,
+    user: CurrentUser = Depends(get_current_user),
+):
+    ctx = _get_insight_context(user.student_id, insight_id)
+    if not ctx:
+        raise HTTPException(status_code=404, detail="Insight not found or inactive.")
+
+    prompt = f"""You are a tutor helping a student clear a misunderstanding.
+
+INSIGHT TYPE: {ctx["type"]}
+CATEGORY: {ctx["category"]}
+CONCEPT: {ctx.get("concept_name") or ctx.get("concept_id") or "General"}
+SOURCE: {ctx.get("source_title") or ctx.get("source_id") or "Unknown"}
+INSIGHT TEXT: {ctx.get("content") or ""}
+
+Respond in strict JSON:
+{{
+  "explanation": "Clear explanation in 4-8 sentences to correct/strengthen understanding.",
+  "key_points": ["point1", "point2", "point3"],
+  "quick_check": "One short self-check question"
+}}
+"""
+    data = _llm_json(prompt)
+    return {
+        "insight_id": insight_id,
+        "explanation": data.get("explanation", ""),
+        "key_points": data.get("key_points", []),
+        "quick_check": data.get("quick_check", ""),
+    }
+
+
+@router.post("/students/me/insights/{insight_id}/test/mcq")
+async def generate_insight_mcq(
+    insight_id: str,
+    user: CurrentUser = Depends(get_current_user),
+):
+    ctx = _get_insight_context(user.student_id, insight_id)
+    if not ctx:
+        raise HTTPException(status_code=404, detail="Insight not found or inactive.")
+
+    prompt = f"""Create ONE MCQ targeting this student insight.
+
+INSIGHT TYPE: {ctx["type"]}
+CATEGORY: {ctx["category"]}
+CONCEPT: {ctx.get("concept_name") or ctx.get("concept_id") or "General"}
+SOURCE: {ctx.get("source_title") or ctx.get("source_id") or "Unknown"}
+INSIGHT TEXT: {ctx.get("content") or ""}
+
+Return STRICT JSON:
+{{
+  "question": "Question text",
+  "options": {{"A": "...", "B": "...", "C": "...", "D": "..."}},
+  "correct_answer": "A or B or C or D",
+  "explanation": "Why correct option is correct"
+}}
+"""
+    data = _llm_json(prompt)
+    return {
+        "insight_id": insight_id,
+        "question": data.get("question", ""),
+        "options": data.get("options", {}),
+        "correct_answer": data.get("correct_answer", "A"),
+        "explanation": data.get("explanation", ""),
+    }
+
+
+@router.post("/students/me/insights/{insight_id}/test/mcq/evaluate")
+async def evaluate_insight_mcq(
+    insight_id: str,
+    body: InsightMCQEvaluatePayload,
+    user: CurrentUser = Depends(get_current_user),
+):
+    ctx = _get_insight_context(user.student_id, insight_id)
+    if not ctx:
+        raise HTTPException(status_code=404, detail="Insight not found or inactive.")
+
+    is_correct = body.selected == body.correct_answer
+    prompt = f"""Evaluate this insight-focused MCQ attempt.
+
+CONCEPT: {ctx.get("concept_name") or ctx.get("concept_id") or "General"}
+ORIGINAL INSIGHT: {ctx.get("content") or ""}
+QUESTION: {body.question}
+OPTIONS: {json.dumps(body.options)}
+CORRECT: {body.correct_answer}
+SELECTED: {body.selected}
+IS_CORRECT: {is_correct}
+
+Return STRICT JSON:
+{{
+  "feedback": "2-3 sentence feedback",
+  "type": "COMPETENCY or PARTIAL_UNDERSTANDING or MISCONCEPTION",
+  "content": "Single sentence new insight content"
+}}
+"""
+    data = _llm_json(prompt)
+    new_type = data.get("type", "PARTIAL_UNDERSTANDING")
+    if new_type not in ("COMPETENCY", "PARTIAL_UNDERSTANDING", "MISCONCEPTION"):
+        new_type = "COMPETENCY" if is_correct else "PARTIAL_UNDERSTANDING"
+    new_content = data.get("content", "")
+    if not isinstance(new_content, str) or not new_content.strip():
+        new_content = (
+            "Student now demonstrates stronger understanding of this concept."
+            if is_correct
+            else "Student still has gaps in this concept and needs more targeted practice."
+        )
+
+    if ctx.get("concept_id"):
+        # Reuse existing reconciliation + persistence implementation from test router.
+        from app.routers.test import _persist_insight_safe  # local import to avoid cycles
+
+        _persist_insight_safe(
+            user.student_id,
+            {
+                "concept_id": ctx["concept_id"],
+                "type": new_type,
+                "category": ctx.get("category") or "conceptual",
+                "content": new_content,
+                "source_id": ctx.get("source_id") or ctx.get("section_id"),
+            },
+        )
+
+    return {
+        "insight_id": insight_id,
+        "is_correct": is_correct,
+        "feedback": data.get("feedback", ""),
+        "new_insight": {
+            "type": new_type,
+            "category": ctx.get("category") or "conceptual",
+            "content": new_content,
+            "concept_id": ctx.get("concept_id"),
+            "source_id": ctx.get("source_id"),
+        },
+    }
 
 
 # ── GET /api/sections/{section_id}/prerequisites-state ────────────────────────

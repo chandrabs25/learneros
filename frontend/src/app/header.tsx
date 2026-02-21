@@ -15,16 +15,13 @@ export function Header() {
     return <HeaderInner />;
 }
 
-// Separate inner component so useAuth/useRouter only render when header is visible
 function HeaderInner() {
     const { user, signOut } = useAuth();
     const router = useRouter();
+    const pathname = usePathname();
 
     const handleProfileClick = () => {
-        if (!user) {
-            router.push("/auth");
-        }
-        // If signed in, clicking the avatar could open a menu in future — no-op for now
+        if (!user) router.push("/auth");
     };
 
     return (
@@ -38,12 +35,33 @@ function HeaderInner() {
 
             <div className="header-right">
                 <nav className="header-nav">
-                    <a href="#">Resources</a>
-                    <a href="#">Curriculum</a>
-                    <a href="#">Support</a>
+                    <a href="#" className={pathname === "/resources" ? "header-nav-active" : ""}>Resources</a>
+                    <a href="#" className={pathname === "/curriculum" ? "header-nav-active" : ""}>Curriculum</a>
+                    <a href="/insights" className={pathname.startsWith("/insights") ? "header-nav-active" : ""}>Insights</a>
+                    <a href="#" className={pathname === "/support" ? "header-nav-active" : ""}>Support</a>
                 </nav>
 
-                {/* Profile / Sign-in area */}
+                <button
+                    onClick={() => router.push("/tutor")}
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "0.4rem",
+                        border: pathname.startsWith("/tutor") ? "1px solid #fb923c" : "none",
+                        borderRadius: 10,
+                        background: pathname.startsWith("/tutor") ? "#fff7ed" : "#ff7f50",
+                        color: pathname.startsWith("/tutor") ? "#c2410c" : "white",
+                        padding: "0.55rem 0.8rem",
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        fontFamily: "var(--font-display)",
+                        fontSize: "0.82rem",
+                    }}
+                >
+                    <span className="material-symbols-outlined" style={{ fontSize: 17 }}>smart_toy</span>
+                    AI Tutor
+                </button>
+
                 <div
                     className={`header-profile-group ${!user ? "header-profile-clickable" : ""}`}
                     onClick={handleProfileClick}

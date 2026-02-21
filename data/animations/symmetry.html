@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -86,7 +87,7 @@
         /* Mode Toggle */
         .toggle-container {
             display: flex;
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
             border-radius: 8px;
             padding: 4px;
             margin-bottom: 10px;
@@ -110,7 +111,7 @@
         .toggle-btn.active {
             background: white;
             color: var(--text-main);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         /* Control Groups */
@@ -119,7 +120,7 @@
             flex-direction: column;
             gap: 8px;
             padding-bottom: 15px;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .control-header {
@@ -145,9 +146,11 @@
             width: 100%;
             background: transparent;
         }
+
         input[type=range]:focus {
             outline: none;
         }
+
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 6px;
@@ -155,6 +158,7 @@
             background: #d1d8e0;
             border-radius: 3px;
         }
+
         input[type=range]::-webkit-slider-thumb {
             height: 16px;
             width: 16px;
@@ -163,17 +167,28 @@
             cursor: pointer;
             -webkit-appearance: none;
             margin-top: -5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
             transition: transform 0.1s;
         }
+
         input[type=range]::-webkit-slider-thumb:hover {
             transform: scale(1.2);
         }
-        
+
         /* Specific slider colors */
-        #lambda::-webkit-slider-thumb { background: var(--accent-red); }
-        #gaussR::-webkit-slider-thumb, #gaussL::-webkit-slider-thumb { background: var(--accent-green); }
-        #resR::-webkit-slider-thumb, #volts::-webkit-slider-thumb { background: var(--accent-purple); }
+        #lambda::-webkit-slider-thumb {
+            background: var(--accent-red);
+        }
+
+        #gaussR::-webkit-slider-thumb,
+        #gaussL::-webkit-slider-thumb {
+            background: var(--accent-green);
+        }
+
+        #resR::-webkit-slider-thumb,
+        #volts::-webkit-slider-thumb {
+            background: var(--accent-purple);
+        }
 
         /* Formula Card */
         #formula-card {
@@ -203,15 +218,23 @@
             align-items: center;
         }
 
-        .formula-line span.var { color: var(--accent-red); font-weight: bold; }
-        .formula-line span.val { color: var(--text-main); font-weight: bold; margin-left: auto;}
-        
+        .formula-line span.var {
+            color: var(--accent-red);
+            font-weight: bold;
+        }
+
+        .formula-line span.val {
+            color: var(--text-main);
+            font-weight: bold;
+            margin-left: auto;
+        }
+
         .info-box {
             margin-top: 15px;
             font-size: 0.8rem;
             line-height: 1.4;
             color: var(--text-muted);
-            background: rgba(0,0,0,0.03);
+            background: rgba(0, 0, 0, 0.03);
             padding: 10px;
             border-radius: 6px;
             border-left: 3px solid var(--accent-orange);
@@ -224,7 +247,7 @@
             font-size: 12px;
             font-weight: 600;
             color: white;
-            background: rgba(0,0,0,0.6);
+            background: rgba(0, 0, 0, 0.6);
             padding: 4px 8px;
             border-radius: 4px;
             pointer-events: none;
@@ -234,10 +257,12 @@
             white-space: nowrap;
         }
 
-        .hidden { display: none !important; }
-
+        .hidden {
+            display: none !important;
+        }
     </style>
 </head>
+
 <body>
 
     <div id="canvas-container">
@@ -245,26 +270,36 @@
         <div id="formula-card" class="glass-panel">
             <div id="math-mode-a">
                 <div class="math-title">Gauss's Law (Cylindrical)</div>
-                <div class="formula-line">E = <span class="var">|λ|</span> / (2π<span style="font-size:0.8em">ε₀</span><span style="color:var(--accent-green)">r</span>)</div>
-                <div class="formula-line">Φ<span style="font-size:0.6em">total</span> = Φ<span style="font-size:0.6em">curved</span> + Φ<span style="font-size:0.6em">caps</span></div>
+                <div class="formula-line">E = <span class="var">|λ|</span> / (2π<span
+                        style="font-size:0.8em">ε₀</span><span style="color:var(--accent-green)">r</span>)</div>
+                <div class="formula-line">Φ<span style="font-size:0.6em">total</span> = Φ<span
+                        style="font-size:0.6em">curved</span> + Φ<span style="font-size:0.6em">caps</span></div>
                 <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin:10px 0;">
                 <div class="formula-line">|E| at surface: <span class="val" id="val-E">0.00</span> N/C</div>
-                <div class="formula-line">Φ<span style="font-size:0.6em">curved</span>: <span class="val" id="val-PhiC">0.00</span> V·m</div>
-                <div class="formula-line">Φ<span style="font-size:0.6em">caps</span>: <span class="val">0.00</span> V·m</div>
+                <div class="formula-line">Φ<span style="font-size:0.6em">curved</span>: <span class="val"
+                        id="val-PhiC">0.00</span> V·m</div>
+                <div class="formula-line">Φ<span style="font-size:0.6em">caps</span>: <span class="val">0.00</span> V·m
+                </div>
                 <div class="info-box">
-                    By symmetry, <b>E</b> is purely radial. It is parallel to <b>dA</b> on the curved surface, but perpendicular to <b>dA</b> on the end caps (flux = 0).
+                    By symmetry, <b>E</b> is purely radial. It is parallel to <b>dA</b> on the curved surface, but
+                    perpendicular to <b>dA</b> on the end caps (flux = 0).
                 </div>
             </div>
 
             <div id="math-mode-b" class="hidden">
                 <div class="math-title">Resistor Network (Cubic)</div>
-                <div class="formula-line">R<span style="font-size:0.6em">eq</span> = (5/6)<span class="var">R</span></div>
-                <div class="formula-line">I<span style="font-size:0.6em">total</span> = <span style="color:var(--accent-orange)">V</span> / R<span style="font-size:0.6em">eq</span></div>
+                <div class="formula-line">R<span style="font-size:0.6em">eq</span> = (5/6)<span class="var">R</span>
+                </div>
+                <div class="formula-line">I<span style="font-size:0.6em">total</span> = <span
+                        style="color:var(--accent-orange)">V</span> / R<span style="font-size:0.6em">eq</span></div>
                 <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin:10px 0;">
-                <div class="formula-line">R<span style="font-size:0.6em">eq</span>: <span class="val" id="val-Req">0.00</span> Ω</div>
-                <div class="formula-line">I<span style="font-size:0.6em">total</span>: <span class="val" id="val-Itot">0.00</span> A</div>
+                <div class="formula-line">R<span style="font-size:0.6em">eq</span>: <span class="val"
+                        id="val-Req">0.00</span> Ω</div>
+                <div class="formula-line">I<span style="font-size:0.6em">total</span>: <span class="val"
+                        id="val-Itot">0.00</span> A</div>
                 <div class="info-box">
-                    By symmetry, current splits equally into 3 paths at the source (I/3), then splits again (I/6), and recombines at the sink (I/3).
+                    By symmetry, current splits equally into 3 paths at the source (I/3), then splits again (I/6), and
+                    recombines at the sink (I/3).
                 </div>
             </div>
         </div>
@@ -295,7 +330,7 @@
                 </div>
                 <input type="range" id="lambda" min="-10" max="10" step="1" value="5">
             </div>
-            
+
             <div class="control-group">
                 <div class="control-header">
                     <span>Gaussian Radius (r)</span>
@@ -322,7 +357,7 @@
                 </div>
                 <input type="range" id="resR" min="1" max="100" step="1" value="10">
             </div>
-            
+
             <div class="control-group">
                 <div class="control-header">
                     <span>Voltage (V)</span>
@@ -411,7 +446,7 @@
         groupB.visible = false;
 
         // --- Mode A: Gauss's Law Objects ---
-        
+
         // 1. Charged Wire
         const wireGeo = new THREE.CylinderGeometry(0.03, 0.03, 20, 16);
         const wireMat = new THREE.MeshBasicMaterial({ color: colors.wirePos });
@@ -428,8 +463,7 @@
             opacity: 0.25,
             side: THREE.DoubleSide,
             roughness: 0.1,
-            transmission: 0.5,
-            thickness: 0.5
+            transmission: 0.5
         });
         const gaussEdgeMat = new THREE.LineBasicMaterial({ color: colors.gauss, opacity: 0.8, transparent: true });
 
@@ -460,9 +494,9 @@
             dAArrows.push(arrow);
             return arrow;
         }
-        
+
         // dA on curved surface (equator)
-        for(let i=0; i<4; i++) {
+        for (let i = 0; i < 4; i++) {
             const angle = (i / 4) * Math.PI * 2;
             const dir = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
             createDAArrow(dir, dir.clone(), colors.dA); // Position will be scaled
@@ -475,7 +509,7 @@
         const eFieldGroup = new THREE.Group();
         groupA.add(eFieldGroup);
         const eArrows = [];
-        
+
         // Create a grid of arrows
         const radii = [0.5, 1.0, 1.5, 2.0, 2.5];
         const heights = [-3, -1.5, 0, 1.5, 3];
@@ -483,7 +517,7 @@
 
         radii.forEach(r => {
             heights.forEach(y => {
-                for(let i=0; i<angles; i++) {
+                for (let i = 0; i < angles; i++) {
                     const theta = (i / angles) * Math.PI * 2;
                     const dir = new THREE.Vector3(Math.cos(theta), 0, Math.sin(theta));
                     const origin = new THREE.Vector3(r * Math.cos(theta), y, r * Math.sin(theta));
@@ -497,18 +531,18 @@
         });
 
         // --- Mode B: Resistor Cube Objects ---
-        
+
         // 1. Nodes and Edges
         const cubeSize = 3;
         const half = cubeSize / 2;
         const nodes = [];
         const edgesB = [];
-        
+
         // 8 corners
-        for(let x of [-1, 1]) {
-            for(let y of [-1, 1]) {
-                for(let z of [-1, 1]) {
-                    nodes.push(new THREE.Vector3(x*half, y*half, z*half));
+        for (let x of [-1, 1]) {
+            for (let y of [-1, 1]) {
+                for (let z of [-1, 1]) {
+                    nodes.push(new THREE.Vector3(x * half, y * half, z * half));
                 }
             }
         }
@@ -524,7 +558,7 @@
         // Source and Sink highlights
         const sourcePos = new THREE.Vector3(-half, -half, -half);
         const sinkPos = new THREE.Vector3(half, half, half);
-        
+
         const resGeo = new THREE.CylinderGeometry(0.04, 0.04, cubeSize, 8);
         const resMat = new THREE.MeshPhysicalMaterial({ color: colors.cube, metalness: 0.2, roughness: 0.5 });
 
@@ -534,7 +568,7 @@
             const dist = p1.distanceTo(p2);
             edge.scale.y = dist / cubeSize;
             edge.position.copy(p1).lerp(p2, 0.5);
-            edge.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), p2.clone().sub(p1).normalize());
+            edge.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p2.clone().sub(p1).normalize());
             groupB.add(edge);
             return { p1, p2, dist };
         }
@@ -542,31 +576,31 @@
         // Define the 12 edges and their current fractions based on symmetry
         // Source is (-,-,-), Sink is (+,+,+)
         const paths = [];
-        
+
         // Find adjacent nodes
-        for(let i=0; i<nodes.length; i++) {
-            for(let j=i+1; j<nodes.length; j++) {
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
                 let diffs = 0;
-                if(nodes[i].x !== nodes[j].x) diffs++;
-                if(nodes[i].y !== nodes[j].y) diffs++;
-                if(nodes[i].z !== nodes[j].z) diffs++;
-                
-                if(diffs === 1) { // They form an edge
+                if (nodes[i].x !== nodes[j].x) diffs++;
+                if (nodes[i].y !== nodes[j].y) diffs++;
+                if (nodes[i].z !== nodes[j].z) diffs++;
+
+                if (diffs === 1) { // They form an edge
                     // Determine direction of current (towards sink)
                     let start = nodes[i];
                     let end = nodes[j];
                     if (start.distanceTo(sinkPos) < end.distanceTo(sinkPos)) {
                         let temp = start; start = end; end = temp;
                     }
-                    
+
                     createEdge(start, end);
-                    
+
                     // Determine current fraction based on symmetry
-                    let fraction = 1/6; // middle edges
+                    let fraction = 1 / 6; // middle edges
                     if (start.equals(sourcePos) || end.equals(sinkPos)) {
-                        fraction = 1/3; // edges connected to source or sink
+                        fraction = 1 / 3; // edges connected to source or sink
                     }
-                    
+
                     paths.push({ start, end, fraction });
                 }
             }
@@ -581,7 +615,7 @@
 
         const dummy = new THREE.Object3D();
         const particles = [];
-        for(let i=0; i<particleCount; i++) {
+        for (let i = 0; i < particleCount; i++) {
             particles.push({
                 pathIdx: Math.floor(Math.random() * paths.length),
                 progress: Math.random(),
@@ -593,7 +627,7 @@
 
         function updateModeA() {
             const { lambda, r, L } = state.A;
-            
+
             // Update UI text
             ui.dispLambda.innerText = (lambda > 0 ? '+' : '') + lambda + ' μC/m';
             ui.dispGaussR.innerText = r.toFixed(1) + ' m';
@@ -611,36 +645,36 @@
 
             // Update dA Arrows
             let dAIndex = 0;
-            for(let i=0; i<4; i++) {
+            for (let i = 0; i < 4; i++) {
                 const angle = (i / 4) * Math.PI * 2;
                 dAArrows[dAIndex].position.set(r * Math.cos(angle), 0, r * Math.sin(angle));
                 dAIndex++;
             }
-            dAArrows[dAIndex].position.set(0, L/2, 0); // Top
+            dAArrows[dAIndex].position.set(0, L / 2, 0); // Top
             dAIndex++;
-            dAArrows[dAIndex].position.set(0, -L/2, 0); // Bottom
+            dAArrows[dAIndex].position.set(0, -L / 2, 0); // Bottom
 
             // Physics Constants (Scaled for visualization)
             const k = 2.0; // Visual scaling factor representing 1/(2πε₀)
-            
+
             // Update E-Field Arrows
             eArrows.forEach(arrow => {
                 const dist = arrow.userData.r;
                 // E = k * |λ| / r.  Add small offset to prevent infinite length at r=0
-                let magnitude = (k * Math.abs(lambda)) / (dist + 0.5); 
-                
+                let magnitude = (k * Math.abs(lambda)) / (dist + 0.5);
+
                 // Clamp magnitude for visual sanity
                 magnitude = Math.max(0.1, Math.min(magnitude, 2.5));
 
                 if (lambda === 0) magnitude = 0.001; // Hide essentially
 
                 arrow.setLength(magnitude, 0.15 * Math.min(1, magnitude), 0.1 * Math.min(1, magnitude));
-                
+
                 // Direction
                 const dir = arrow.userData.baseDir.clone();
                 if (lambda < 0) dir.negate();
                 arrow.setDirection(dir);
-                
+
                 // Color
                 arrow.setColor(lambda >= 0 ? colors.eField : colors.eFieldNeg);
             });
@@ -657,34 +691,34 @@
 
         function updateModeB() {
             const { R, V } = state.B;
-            
+
             ui.dispResR.innerText = R + ' Ω';
             ui.dispVolts.innerText = V + ' V';
 
-            const Req = (5/6) * R;
+            const Req = (5 / 6) * R;
             const Itot = V / Req;
 
             ui.valReq.innerText = Req.toFixed(2);
             ui.valItot.innerText = Itot.toFixed(2);
 
             // Particle speed is proportional to total current
-            state.B.baseSpeed = Itot * 0.002; 
+            state.B.baseSpeed = Itot * 0.002;
         }
 
         function updateLabelsA(r, L) {
-            if(state.mode !== 'A') return;
-            
+            if (state.mode !== 'A') return;
+
             // Project 3D pos to 2D screen
             const project = (vec) => {
                 const projected = vec.clone().project(camera);
                 const x = (projected.x * .5 + .5) * container.clientWidth;
                 const y = (projected.y * -.5 + .5) * container.clientHeight;
-                return {x, y, z: projected.z};
+                return { x, y, z: projected.z };
             };
 
             // dA Curved (pick one on the right)
             const pCurved = project(new THREE.Vector3(r, 0, 0));
-            if(pCurved.z < 1) {
+            if (pCurved.z < 1) {
                 ui.labelDACurved.style.left = pCurved.x + 20 + 'px';
                 ui.labelDACurved.style.top = pCurved.y + 'px';
                 ui.labelDACurved.classList.remove('hidden');
@@ -693,8 +727,8 @@
             }
 
             // dA Cap (top)
-            const pCap = project(new THREE.Vector3(0, L/2, 0));
-            if(pCap.z < 1) {
+            const pCap = project(new THREE.Vector3(0, L / 2, 0));
+            if (pCap.z < 1) {
                 ui.labelDACap.style.left = pCap.x + 20 + 'px';
                 ui.labelDACap.style.top = pCap.y - 20 + 'px';
                 ui.labelDACap.classList.remove('hidden');
@@ -704,7 +738,7 @@
 
             // E Field (pick one representative arrow)
             const pE = project(new THREE.Vector3(1.5, 1.5, 0));
-            if(pE.z < 1 && state.A.lambda !== 0) {
+            if (pE.z < 1 && state.A.lambda !== 0) {
                 ui.labelEField.style.left = pE.x + 'px';
                 ui.labelEField.style.top = pE.y - 20 + 'px';
                 ui.labelEField.classList.remove('hidden');
@@ -716,15 +750,15 @@
         // --- Event Listeners ---
 
         // Mode Switching
-        window.setMode = function(mode) {
+        window.setMode = function (mode) {
             state.mode = mode;
-            
+
             document.getElementById('btn-mode-a').classList.toggle('active', mode === 'A');
             document.getElementById('btn-mode-b').classList.toggle('active', mode === 'B');
-            
+
             document.getElementById('controls-mode-a').classList.toggle('hidden', mode !== 'A');
             document.getElementById('controls-mode-b').classList.toggle('hidden', mode !== 'B');
-            
+
             document.getElementById('math-mode-a').classList.toggle('hidden', mode !== 'A');
             document.getElementById('math-mode-b').classList.toggle('hidden', mode !== 'B');
 
@@ -769,12 +803,12 @@
         });
 
         // --- Animation Loop ---
-        
+
         let lastTime = performance.now();
 
         function animate() {
             requestAnimationFrame(animate);
-            
+
             const time = performance.now();
             const delta = time - lastTime;
             lastTime = time;
@@ -794,15 +828,15 @@
 
                 // Animate Particles
                 const baseSpeed = state.B.baseSpeed || 0.02;
-                
-                for(let i=0; i<particleCount; i++) {
+
+                for (let i = 0; i < particleCount; i++) {
                     const p = particles[i];
                     const path = paths[p.pathIdx];
-                    
+
                     // Speed depends on current fraction in that branch
                     // fraction is 1/3 or 1/6. Multiply by 3 to normalize (1.0 or 0.5)
-                    const branchMultiplier = path.fraction * 3; 
-                    
+                    const branchMultiplier = path.fraction * 3;
+
                     p.progress += baseSpeed * p.speedOffset * branchMultiplier;
 
                     if (p.progress >= 1) {
@@ -814,7 +848,7 @@
                     // Interpolate position
                     const currentPath = paths[p.pathIdx];
                     const pos = currentPath.start.clone().lerp(currentPath.end, p.progress);
-                    
+
                     dummy.position.copy(pos);
                     dummy.updateMatrix();
                     particleMesh.setMatrixAt(i, dummy.matrix);
@@ -831,4 +865,5 @@
 
     </script>
 </body>
+
 </html>

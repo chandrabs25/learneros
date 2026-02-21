@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import LatexText from "@/components/LatexText";
@@ -24,6 +24,12 @@ interface InsightItem {
     concept_id?: string;
     created_at?: string;
     is_active?: boolean;
+    source_title?: string;
+}
+
+interface ChapterMeta {
+    id: string;
+    title: string;
 }
 
 /* ── insight type → colour ── */
@@ -72,6 +78,9 @@ export default function ConceptsPage() {
     const [showInsights, setShowInsights] = useState(false);
     const [insights, setInsights] = useState<InsightItem[]>([]);
     const [insightsLoading, setInsightsLoading] = useState(false);
+    const [insightsError, setInsightsError] = useState("");
+    const [chapterTitles, setChapterTitles] = useState<Record<string, string>>({});
+    const [currentChapterTitle, setCurrentChapterTitle] = useState("");
 
     useEffect(() => {
         fetch(`${API_URL}/api/sections/${sectionId}/concepts`)
@@ -91,30 +100,88 @@ export default function ConceptsPage() {
             })
             .catch(() => { });
 
-        // Fetch student insights for this chapter
-        const chapterId = `ncert:${subject}:${grade}:${chapter}`;
+        const subjectName = subject.charAt(0).toUpperCase() + subject.slice(1);
+        fetch(`${API_URL}/api/grades/${grade}/subjects/${subjectName}/chapters`)
+            .then((r) => r.json())
+            .then((data) => {
+                const list: ChapterMeta[] = Array.isArray(data) ? data : [];
+                const map: Record<string, string> = {};
+                for (const ch of list) {
+                    if (ch?.id) map[ch.id] = ch.title || "";
+                }
+                setChapterTitles(map);
+                const current = list.find((ch) => ch.id === `ncert:${subject}:${grade}:${chapter}`);
+                if (current?.title) setCurrentChapterTitle(current.title);
+            })
+            .catch(() => setChapterTitles({}));
+    }, [sectionId, subject, grade, chapter, getIdToken]);
+
+    // Fetch concept-specific active insights when modal opens or concept changes
+    useEffect(() => {
+        if (!showInsights) return;
+        const selectedConcept = concepts[selectedIdx];
+        if (!selectedConcept?.id) {
+            setInsights([]);
+            return;
+        }
         setInsightsLoading(true);
+        setInsightsError("");
         (async () => {
             try {
                 const token = await getIdToken();
-                const headers: Record<string, string> = {};
-                if (token) headers["Authorization"] = `Bearer ${token}`;
-                const r = await fetch(`${API_URL}/api/students/me/insights?chapter_id=${chapterId}`, { headers });
-                if (!r.ok) throw new Error();
+                if (!token) {
+                    setInsights([]);
+                    setInsightsError("Sign in to view your active concept insights.");
+                    return;
+                }
+                const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+                const r = await fetch(
+                    `${API_URL}/api/students/me/insights/concept/${encodeURIComponent(selectedConcept.id)}`,
+                    { headers }
+                );
                 const data = await r.json();
-                setInsights(Array.isArray(data) ? data : []);
-            } catch {
+                if (!r.ok) throw new Error(data?.detail || `HTTP ${r.status}`);
+                const active = Array.isArray(data) ? data.filter((ins: InsightItem) => ins.is_active !== false) : [];
+                setInsights(active);
+            } catch (e: unknown) {
                 setInsights([]);
+                setInsightsError(e instanceof Error ? e.message : "Failed to load insights.");
             } finally {
                 setInsightsLoading(false);
             }
         })();
-    }, [sectionId, subject, grade, chapter, getIdToken]);
+    }, [showInsights, concepts, selectedIdx, getIdToken]);
 
     const selected = concepts[selectedIdx] ?? null;
     const animationSrc = selected
         ? `${API_URL}${selected.animation_url}?v=${Date.now()}`
         : null;
+
+    const parseChapterIdFromSource = (sourceId?: string) => {
+        if (!sourceId) return null;
+        const parts = sourceId.split(":");
+        if (parts.length < 4) return null;
+        return `${parts[0]}:${parts[1]}:${parts[2]}:${parts[3]}`;
+    };
+
+    const groupedInsights = useMemo(() => {
+        const groups: Record<string, { chapterLabel: string; items: InsightItem[] }> = {};
+        const order: string[] = [];
+        for (const ins of insights) {
+            const chapterIdFromSource = parseChapterIdFromSource(ins.source_id) || `ncert:${subject}:${grade}:${chapter}`;
+            const chapterNum = chapterIdFromSource.split(":")[3] || "?";
+            const chapterLabel =
+                chapterTitles[chapterIdFromSource] ||
+                (chapterIdFromSource === `ncert:${subject}:${grade}:${chapter}` ? currentChapterTitle : "") ||
+                `Chapter ${chapterNum}`;
+            if (!groups[chapterIdFromSource]) {
+                groups[chapterIdFromSource] = { chapterLabel, items: [] };
+                order.push(chapterIdFromSource);
+            }
+            groups[chapterIdFromSource].items.push(ins);
+        }
+        return order.map((k) => ({ chapterId: k, ...groups[k] }));
+    }, [insights, subject, grade, chapter, chapterTitles, currentChapterTitle]);
 
     /* ── Loading state ── */
     if (loading) {
@@ -299,6 +366,13 @@ export default function ConceptsPage() {
                                             <span className="material-symbols-outlined" style={{ fontSize: 28, color: C.blue, animation: "spin 1s linear infinite" }}>progress_activity</span>
                                             <p style={{ margin: "12px 0 0", fontSize: 13, color: "rgba(26,26,26,0.5)", fontWeight: 500 }}>Loading insights…</p>
                                         </div>
+                                    ) : insightsError ? (
+                                        <div style={{ textAlign: "center", padding: "32px 0" }}>
+                                            <span className="material-symbols-outlined" style={{ fontSize: 32, color: "rgba(26,26,26,0.2)" }}>info</span>
+                                            <p style={{ margin: "12px 0 0", fontSize: 13, color: "rgba(26,26,26,0.55)", fontWeight: 600 }}>
+                                                {insightsError}
+                                            </p>
+                                        </div>
                                     ) : insights.length === 0 ? (
                                         <div style={{ textAlign: "center", padding: "32px 0" }}>
                                             <span className="material-symbols-outlined" style={{ fontSize: 40, color: "rgba(26,26,26,0.15)" }}>psychology</span>
@@ -327,37 +401,63 @@ export default function ConceptsPage() {
                                                 })}
                                             </div>
 
-                                            {/* Insights list */}
-                                            <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
-                                                {insights.map((ins, idx) => (
-                                                    <li key={ins.id || idx} style={{
-                                                        display: "flex", gap: 12, padding: "12px 14px",
-                                                        background: "rgba(26,26,26,0.02)", borderRadius: 12,
-                                                        border: `1px solid ${insightColor(ins.type)}20`,
-                                                    }}>
-                                                        <span className="material-symbols-outlined" style={{
-                                                            fontSize: 18, color: insightColor(ins.type), flexShrink: 0, marginTop: 1,
-                                                        }}>{insightIcon(ins.type)}</span>
-                                                        <div style={{ flex: 1 }}>
-                                                            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                                                                <span style={{
-                                                                    fontSize: 9, fontWeight: 700, textTransform: "uppercase",
-                                                                    letterSpacing: "0.08em", color: insightColor(ins.type),
-                                                                }}>{ins.type.replace("_", " ")}</span>
-                                                                <span style={{
-                                                                    fontSize: 8, fontWeight: 600, textTransform: "uppercase",
-                                                                    color: "rgba(26,26,26,0.35)", letterSpacing: "0.05em",
-                                                                    background: "rgba(26,26,26,0.05)", padding: "2px 6px",
-                                                                    borderRadius: 4,
-                                                                }}>{ins.category}</span>
-                                                            </div>
-                                                            <LatexText as="p" style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "rgba(26,26,26,0.75)", fontWeight: 500 }}>
-                                                                {ins.content}
-                                                            </LatexText>
+                                            {/* Insights grouped by chapter */}
+                                            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                                                {groupedInsights.map((group) => (
+                                                    <div key={group.chapterId}>
+                                                        <div style={{
+                                                            fontSize: 11,
+                                                            fontWeight: 900,
+                                                            textTransform: "uppercase",
+                                                            letterSpacing: "0.1em",
+                                                            color: "rgba(26,26,26,0.68)",
+                                                            marginBottom: 10
+                                                        }}>
+                                                            Chapter: {group.chapterLabel}
                                                         </div>
-                                                    </li>
+                                                        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                                                            {group.items.map((ins, idx) => (
+                                                                <li key={`${group.chapterId}-${ins.id || idx}`} style={{
+                                                                    display: "flex", gap: 12, padding: "12px 14px",
+                                                                    background: "rgba(26,26,26,0.02)", borderRadius: 12,
+                                                                    border: `1px solid ${insightColor(ins.type)}20`,
+                                                                }}>
+                                                                    <span className="material-symbols-outlined" style={{
+                                                                        fontSize: 18, color: insightColor(ins.type), flexShrink: 0, marginTop: 1,
+                                                                    }}>{insightIcon(ins.type)}</span>
+                                                                    <div style={{ flex: 1 }}>
+                                                                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                                                                            <span style={{
+                                                                                fontSize: 9, fontWeight: 700, textTransform: "uppercase",
+                                                                                letterSpacing: "0.08em", color: insightColor(ins.type),
+                                                                            }}>{ins.type.replace("_", " ")}</span>
+                                                                            <span style={{
+                                                                                fontSize: 8, fontWeight: 600, textTransform: "uppercase",
+                                                                                color: "rgba(26,26,26,0.35)", letterSpacing: "0.05em",
+                                                                                background: "rgba(26,26,26,0.05)", padding: "2px 6px",
+                                                                                borderRadius: 4,
+                                                                            }}>{ins.category}</span>
+                                                                        </div>
+                                                                        <LatexText as="p" style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "rgba(26,26,26,0.75)", fontWeight: 500 }}>
+                                                                            {ins.content}
+                                                                        </LatexText>
+                                                                        <p style={{
+                                                                            margin: "8px 0 0 0",
+                                                                            fontSize: 10,
+                                                                            fontWeight: 700,
+                                                                            letterSpacing: "0.06em",
+                                                                            textTransform: "uppercase",
+                                                                            color: "rgba(26,26,26,0.45)"
+                                                                        }}>
+                                                                            Subsection: {ins.source_title || ins.source_id || "Unknown"}
+                                                                        </p>
+                                                                    </div>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
                                                 ))}
-                                            </ul>
+                                            </div>
                                         </>
                                     )}
 

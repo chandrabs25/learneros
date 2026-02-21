@@ -12,6 +12,10 @@ from __future__ import annotations
 import json
 import logging
 import uuid
+from typing import Literal
+from urllib import error as urlerror
+from urllib import parse as urlparse
+from urllib import request as urlrequest
 from pydantic import BaseModel
 
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
@@ -26,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 # ── Fireworks OpenAI-compatible client (lazy singleton) ─────────────────
 _client: OpenAI | None = None
+_embedding_client: OpenAI | None = None
 
 
 def _get_client() -> OpenAI:
@@ -40,8 +45,25 @@ def _get_client() -> OpenAI:
     return _client
 
 
+def _get_embedding_client() -> OpenAI:
+    global _embedding_client
+    if _embedding_client is None:
+        api_key = settings.FIREWORKS_API_KEY_EMBEDDINGS or settings.FIREWORKS_API_KEY
+        if not api_key:
+            raise HTTPException(
+                status_code=500,
+                detail="FIREWORKS_API_KEY_EMBEDDINGS (or FIREWORKS_API_KEY) not configured",
+            )
+        _embedding_client = OpenAI(
+            api_key=api_key,
+            base_url=settings.FIREWORKS_BASE_URL,
+        )
+    return _embedding_client
+
+
 MODEL = settings.FIREWORKS_MODEL
 EVAL_MODEL = settings.FIREWORKS_MODEL
+EXERCISE_EVAL_MODEL = "gemini-3.1-pro-preview"
 
 
 def _generate_reconcile_text(prompt: str) -> str:
@@ -101,6 +123,106 @@ def _generate_json_with_retry(prompt: str, *, model: str, retries: int = 2) -> d
     return data
 
 
+def _embed_text_with_fireworks(text: str, retries: int = 2) -> list[float]:
+    """Create an embedding vector for text using Fireworks embeddings API."""
+    clean_text = (text or "").strip()
+    if not clean_text:
+        raise ValueError("Cannot embed empty insight content")
+
+    last_err: Exception | None = None
+    for _ in range(retries):
+        try:
+            client = _get_embedding_client()
+            resp = client.embeddings.create(
+                model=settings.FIREWORKS_EMBEDDING_MODEL,
+                input=clean_text,
+            )
+            vector = resp.data[0].embedding if resp.data else None
+            if not vector:
+                raise ValueError("Embedding API returned empty vector")
+            return [float(x) for x in vector]
+        except Exception as exc:  # pragma: no cover
+            last_err = exc
+    raise RuntimeError(f"Embedding generation failed: {last_err}")
+
+
+def _parse_data_url_image(image_data_url: str) -> tuple[str, str]:
+    """Parse a data URL image into (mime_type, base64_data)."""
+    if not image_data_url.startswith("data:"):
+        raise ValueError("image must be a data URL")
+    header, b64_data = image_data_url.split(",", 1)
+    if ";base64" not in header:
+        raise ValueError("image data URL must be base64 encoded")
+    mime_type = header[5:].split(";")[0] or "image/jpeg"
+    if not b64_data.strip():
+        raise ValueError("image base64 payload is empty")
+    return mime_type, b64_data
+
+
+def _generate_gemini_json_with_retry(
+    prompt: str,
+    *,
+    model: str,
+    image_data_urls: list[str] | None = None,
+    retries: int = 2,
+) -> dict:
+    """Generate strict JSON via Gemini REST API; supports optional image inputs."""
+    if not settings.GEMINI_API_KEY:
+        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
+
+    parts: list[dict] = [{"text": prompt}]
+    for data_url in image_data_urls or []:
+        mime_type, b64_data = _parse_data_url_image(data_url)
+        parts.append(
+            {
+                "inline_data": {
+                    "mime_type": mime_type,
+                    "data": b64_data,
+                }
+            }
+        )
+
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/"
+        f"{urlparse.quote(model, safe='')}:generateContent?key={settings.GEMINI_API_KEY}"
+    )
+    payload = {
+        "contents": [{"role": "user", "parts": parts}],
+        "generationConfig": {
+            "temperature": 0.0,
+            "responseMimeType": "application/json",
+        },
+    }
+    body = json.dumps(payload).encode("utf-8")
+
+    for attempt in range(retries):
+        try:
+            req = urlrequest.Request(
+                url,
+                data=body,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urlrequest.urlopen(req, timeout=90) as resp:
+                raw = resp.read().decode("utf-8")
+            parsed = json.loads(raw)
+            parts = (
+                parsed.get("candidates", [{}])[0]
+                .get("content", {})
+                .get("parts", [])
+            )
+            text = "".join(p.get("text", "") for p in parts if isinstance(p, dict))
+            if text.startswith("```"):
+                text = text.split("\n", 1)[1]
+                text = text.rsplit("```", 1)[0]
+            return json.loads(text)
+        except (json.JSONDecodeError, KeyError, IndexError, urlerror.URLError, ValueError):
+            if attempt == retries - 1:
+                raise
+
+    raise RuntimeError("Gemini call failed after retries")
+
+
 # ── Helpers ────────────────────────────────────────────────────────────
 
 def _fetch_section_meta(section_id: str) -> dict:
@@ -139,18 +261,18 @@ def _fetch_section_meta(section_id: str) -> dict:
         
     full_text = "\n\n".join(text_blocks)
 
-    # Concepts linked to this section (via REQUIRES + exercises that TEST concepts)
+    # Concepts for evaluation context:
+    # Always include all prerequisite concepts used by subsections in the same chapter.
+    # Also include section-level prerequisite concepts in that chapter as a fallback.
     concept_rows = read_query(
         """
-        // Concepts linked directly via REQUIRES
-        MATCH (sec:Section {id: $section_id})-[:REQUIRES]->(c:Concept)
-        RETURN DISTINCT c.id AS id, c.name AS name
-
-        UNION
-
-        // Concepts tested by exercises in the same chapter
-        MATCH (sec:Section {id: $section_id})<-[:CONTAINS]-(ch:Chapter)
-              -[:HAS_EXERCISE_SET]->()-[:CONTAINS]->(ex:Exercise)-[:TESTS]->(c:Concept)
+        MATCH (sec:Section {id: $section_id})<-[:CONTAINS]-(ch:Chapter)-[:CONTAINS]->(sec2:Section)
+        OPTIONAL MATCH (sec2)-[:CONTAINS]->(ss:Subsection)-[:REQUIRES]->(c_sub:Concept)
+        OPTIONAL MATCH (sec2)-[:REQUIRES]->(c_sec:Concept)
+        WITH collect(DISTINCT c_sub) + collect(DISTINCT c_sec) AS all_concepts
+        UNWIND all_concepts AS c
+        WITH DISTINCT c
+        WHERE c IS NOT NULL
         RETURN DISTINCT c.id AS id, c.name AS name
         """,
         section_id=section_id,
@@ -497,6 +619,7 @@ def _persist_insight(student_id: str, ins: dict) -> None:
     )
     ins["type"] = reconciled["type"]
     ins["content"] = reconciled["content"]
+    ins["embedding"] = _embed_text_with_fireworks(ins["content"], retries=2)
 
     insight_id = f"insight:{uuid.uuid4().hex}"
     rows = write_query(
@@ -515,6 +638,8 @@ def _persist_insight(student_id: str, ins: dict) -> None:
             type:       $type,
             category:   $category,
             content:    $content,
+            embedding:  $embedding,
+            embedding_model: $embedding_model,
             is_active:  true,
             created_at: datetime()
         })
@@ -538,6 +663,8 @@ def _persist_insight(student_id: str, ins: dict) -> None:
         type=ins["type"],
         category=ins["category"],
         content=ins["content"],
+        embedding=ins["embedding"],
+        embedding_model=settings.FIREWORKS_EMBEDDING_MODEL,
         source_id=ins["source_id"],
         concept_id=concept_id,
     )
@@ -606,6 +733,7 @@ def _persist_insight_safe(student_id: str, ins: dict) -> None:
 async def generate_mcq(
     section_id: str,
     subsection_id: str,
+    concept_id: str | None = None,
 ):
     """Generate a conceptual MCQ from full section context, targeted to one subsection."""
     meta = _fetch_section_meta(section_id)
@@ -620,6 +748,29 @@ async def generate_mcq(
         )
     target_sub = next(s for s in meta["subsections"] if s["id"] == subsection_id)
 
+    focus_concept = None
+    if concept_id:
+        concept_map = {c["id"]: c for c in meta["concepts"]}
+        if concept_id not in concept_map:
+            raise HTTPException(
+                status_code=400,
+                detail=f"concept_id '{concept_id}' not linked to section '{section_id}'",
+            )
+        focus_concept = concept_map[concept_id]
+
+    concept_focus_block = ""
+    concept_rule = ""
+    if focus_concept:
+        concept_focus_block = (
+            "\nFOCUS CONCEPT:\n"
+            f'- concept_id: "{focus_concept["id"]}"\n'
+            f'- concept_name: "{focus_concept["name"]}"\n'
+        )
+        concept_rule = (
+            "\n- The question MUST directly test the FOCUS CONCEPT.\n"
+            "- Make distractors around common confusion related to this concept."
+        )
+
     prompt = f"""You are an educational assessment AI. Based on the following study material,
 generate ONE conceptual multiple-choice question (MCQ) that tests deep understanding
 (not simple recall). The question should require the student to apply, analyze, or
@@ -633,7 +784,7 @@ Generate the MCQ for THIS SUBSECTION ONLY.
 Do NOT generate a question about any other subsection.
 
 STUDY MATERIAL:
-{context}
+{context}{concept_focus_block}
 
 Respond in STRICT JSON with exactly these keys:
 {{
@@ -654,6 +805,7 @@ RULES:
 - Make all 4 options plausible (no obviously silly answers)
 - The question should test understanding, NOT memorization
 - Distractors should reflect common misconceptions
+- Keep the question anchored to the target subsection only.{concept_rule}
 - Return ONLY valid JSON, no markdown fences, no extra text."""
 
     try:
@@ -811,6 +963,159 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
         "correct_answer": body.correct_answer,
         "feedback": data.get("feedback", ""),
         "explanation": data.get("explanation", ""),
+        "insights": insights,
+        "persistence_status": persistence_status,
+    }
+
+
+class ExerciseAnswerPayload(BaseModel):
+    exercise_id: str
+    problem: str
+    answer_mode: Literal["text", "image"]
+    answer_text: str | None = None
+    answer_images: list[str] | None = None
+
+
+@router.post("/sections/{section_id:path}/test/exercises/evaluate")
+async def evaluate_exercise_answer(
+    section_id: str,
+    body: ExerciseAnswerPayload,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    user: CurrentUser | None = Depends(get_optional_user),
+):
+    """Evaluate chapter-end exercise answers (text or image) and persist reconciled insights."""
+    meta = _fetch_section_meta(section_id)
+    context = meta["full_text"]
+    source_id = section_id
+
+    answer_text = (body.answer_text or "").strip()
+    answer_images = body.answer_images or []
+    if body.answer_mode == "text" and not answer_text:
+        raise HTTPException(status_code=400, detail="answer_text is required for text mode")
+    if body.answer_mode == "image" and not answer_images:
+        raise HTTPException(status_code=400, detail="answer_images is required for image mode")
+
+    concept_list = "\n".join(
+        f'  - concept_id: "{c["id"]}", name: "{c["name"]}"'
+        for c in meta["concepts"]
+    ) or "  (no concepts linked)"
+
+    answer_block = (
+        f"STUDENT ANSWER (TEXT): {answer_text}"
+        if body.answer_mode == "text"
+        else f"STUDENT ANSWER: {len(answer_images)} handwritten image(s) attached."
+    )
+    input_mode_line = "INPUT MODE: IMAGE" if body.answer_mode == "image" else "INPUT MODE: TEXT"
+
+    prompt = f"""You are an expert physics teacher evaluating a student's chapter-end exercise response.
+
+STUDY MATERIAL (ground truth):
+{context}
+
+EXERCISE ID: {body.exercise_id}
+EXERCISE QUESTION:
+{body.problem}
+
+{input_mode_line}
+{answer_block}
+
+CONCEPTS LINKED TO THIS SECTION:
+{concept_list}
+
+TASK:
+1. Evaluate accuracy, completeness, and reasoning quality.
+2. If the answer is from image input, read the student's handwritten work from the attached images.
+3. Generate insights ONLY for concepts directly tested by this exercise and evidenced in the student's response.
+4. It is valid to return an empty insights array if no direct concept signal exists.
+
+Insight types:
+- COMPETENCY
+- PARTIAL_UNDERSTANDING
+- MISCONCEPTION
+
+Respond in STRICT JSON:
+{{
+  "score": <number 0-100>,
+  "grade": "<A/B/C/D/F>",
+  "feedback": "2-4 sentences",
+  "strengths": ["point1", "point2"],
+  "improvements": ["point1", "point2"],
+  "model_answer": "A concise ideal answer in 3-6 sentences",
+  "insights": [
+    {{
+      "concept_id": "<exact concept_id from the concept list above>",
+      "concept_name": "<concept name>",
+      "type": "<COMPETENCY|PARTIAL_UNDERSTANDING|MISCONCEPTION>",
+      "category": "<conceptual|mathematical>",
+      "content": "One sentence describing what the student understood or misunderstood"
+    }}
+  ]
+}}
+
+Return ONLY valid JSON."""
+
+    try:
+        data = _generate_gemini_json_with_retry(
+            prompt,
+            model=EXERCISE_EVAL_MODEL,
+            image_data_urls=answer_images if body.answer_mode == "image" else None,
+            retries=2,
+        )
+    except Exception:
+        data = {
+            "score": 50,
+            "grade": "C",
+            "feedback": "Could not fully evaluate. Please try again.",
+            "strengths": [],
+            "improvements": ["Try providing clearer step-by-step reasoning."],
+            "model_answer": "",
+            "insights": [],
+        }
+
+    valid_concept_ids = {c["id"] for c in meta["concepts"]}
+    insights = []
+    for ins in data.get("insights", []):
+        concept_id = ins.get("concept_id", "")
+        ins_type = ins.get("type", "")
+        ins_category = ins.get("category", "conceptual")
+        if concept_id not in valid_concept_ids:
+            continue
+        if ins_type not in ("COMPETENCY", "PARTIAL_UNDERSTANDING", "MISCONCEPTION"):
+            continue
+        if ins_category not in ("conceptual", "mathematical"):
+            continue
+        insights.append({
+            "concept_id": concept_id,
+            "concept_name": ins.get("concept_name", ""),
+            "type": ins_type,
+            "category": ins_category,
+            "content": ins.get("content", ""),
+            "source_id": source_id,
+        })
+
+    auth_header_present = bool(request.headers.get("authorization"))
+    persistence_status = "skipped_no_insights"
+    if user and insights:
+        persistence_status = "queued"
+        for ins in insights:
+            background_tasks.add_task(_persist_insight_safe, user.student_id, dict(ins))
+    elif not user:
+        persistence_status = (
+            "skipped_invalid_auth" if auth_header_present else "skipped_unauthenticated"
+        )
+
+    return {
+        "section_id": section_id,
+        "exercise_id": body.exercise_id,
+        "model": EXERCISE_EVAL_MODEL,
+        "answer_mode": body.answer_mode,
+        "score": data.get("score", 0),
+        "grade": data.get("grade", ""),
+        "feedback": data.get("feedback", ""),
+        "strengths": data.get("strengths", []),
+        "improvements": data.get("improvements", []),
+        "model_answer": data.get("model_answer", ""),
         "insights": insights,
         "persistence_status": persistence_status,
     }

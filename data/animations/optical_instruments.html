@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -126,18 +127,18 @@
             background: white;
             border-radius: 50%;
             transition: 0.3s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
         }
 
         input[type="checkbox"] {
             display: none;
         }
 
-        input[type="checkbox"]:checked + .toggle-switch {
+        input[type="checkbox"]:checked+.toggle-switch {
             background: #06D6A0;
         }
 
-        input[type="checkbox"]:checked + .toggle-switch::after {
+        input[type="checkbox"]:checked+.toggle-switch::after {
             transform: translateX(20px);
         }
 
@@ -179,14 +180,14 @@
             font-weight: 600;
             pointer-events: none;
             transform: translate(-50%, -50%);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             transition: opacity 0.2s;
             white-space: nowrap;
         }
 
         .legend {
             margin-top: auto;
-            background: rgba(255,255,255,0.5);
+            background: rgba(255, 255, 255, 0.5);
             padding: 15px;
             border-radius: 8px;
             font-size: 0.8rem;
@@ -206,13 +207,31 @@
         }
 
         @media (max-width: 768px) {
-            #canvas-container { width: 100%; height: 60%; }
-            #ui-panel { width: 100%; height: 40%; top: 60%; flex-direction: row; flex-wrap: wrap; overflow-y: auto;}
-            .control-group { width: 45%; }
-            .legend { display: none; }
+            #canvas-container {
+                width: 100%;
+                height: 60%;
+            }
+
+            #ui-panel {
+                width: 100%;
+                height: 40%;
+                top: 60%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                overflow-y: auto;
+            }
+
+            .control-group {
+                width: 45%;
+            }
+
+            .legend {
+                display: none;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <div id="canvas-container"></div>
@@ -221,7 +240,8 @@
         <div class="formula-math">1/v - 1/u = 1/f</div>
         <div class="formula-line">v = <span id="val-v">0.00</span> m</div>
         <div class="formula-line">m = <span id="val-m">0.00</span> &times;</div>
-        <div class="formula-line" id="image-type" style="color: #4361EE; font-weight: bold; margin-top: 8px;">Real Image</div>
+        <div class="formula-line" id="image-type" style="color: #4361EE; font-weight: bold; margin-top: 8px;">Real Image
+        </div>
     </div>
 
     <div id="ui-panel">
@@ -259,10 +279,17 @@
 
         <div class="legend">
             <div style="font-weight: 600; margin-bottom: 8px;">Ray Legend</div>
-            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Parallel Ray</div>
-            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Central Ray</div>
-            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> Focal Ray</div>
-            <div class="legend-item" style="margin-top: 8px; font-style: italic; color: #666;">Dashed lines indicate virtual extensions.</div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #F77F00;"></div> Parallel Ray
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #06D6A0;"></div> Central Ray
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #7209B7;"></div> Focal Ray
+            </div>
+            <div class="legend-item" style="margin-top: 8px; font-style: italic; color: #666;">Dashed lines indicate
+                virtual extensions.</div>
         </div>
     </div>
 
@@ -321,7 +348,7 @@
         scene.add(dirLight);
 
         // --- Geometries & Materials ---
-        
+
         // Optical Axis
         const axisGeo = new THREE.BufferGeometry().setFromPoints([
             new THREE.Vector3(0, 0, -20),
@@ -346,8 +373,7 @@
             transmission: 0.8, // glass-like
             opacity: 1,
             transparent: true,
-            ior: 1.5,
-            thickness: 0.5
+            ior: 1.5
         });
         const lens = new THREE.Mesh(lensGeo, lensMat);
         scene.add(lens);
@@ -363,16 +389,16 @@
         // Arrow Helper Function
         function createArrow(color) {
             const group = new THREE.Group();
-            
+
             const cylGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.8, 16);
             const cylMat = new THREE.MeshPhongMaterial({ color: color });
             const cyl = new THREE.Mesh(cylGeo, cylMat);
             cyl.position.y = 0.4;
-            
+
             const coneGeo = new THREE.ConeGeometry(0.2, 0.2, 16);
             const cone = new THREE.Mesh(coneGeo, cylMat);
             cone.position.y = 0.9;
-            
+
             group.add(cyl);
             group.add(cone);
             return group;
@@ -386,10 +412,10 @@
 
         // Screen
         const screenGeo = new THREE.PlaneGeometry(4, 4);
-        const screenMat = new THREE.MeshBasicMaterial({ 
-            color: 0xffffff, 
-            transparent: true, 
-            opacity: 0.3, 
+        const screenMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.3,
             side: THREE.DoubleSide,
             depthWrite: false
         });
@@ -424,7 +450,7 @@
 
         function updatePhysics() {
             const { u, f, ho } = params;
-            
+
             // Lens Formula: 1/v - 1/u = 1/f => 1/v = 1/f + 1/u => v = (f*u)/(f+u)
             let v, m, hi;
             const denom = f + u;
@@ -445,7 +471,7 @@
             // Update UI Text
             document.getElementById('val-v').innerText = isInfinity ? "∞" : v.toFixed(2);
             document.getElementById('val-m').innerText = isInfinity ? "∞" : m.toFixed(2);
-            
+
             const typeEl = document.getElementById('image-type');
             if (isInfinity) {
                 typeEl.innerText = "Image at Infinity";
@@ -470,19 +496,19 @@
                 imgArrow.position.set(0, 0, v);
                 // If hi is negative, scaling by negative flips it automatically
                 imgArrow.scale.set(1, hi, 1);
-                
+
                 // Virtual images are slightly transparent
                 imgArrow.children.forEach(child => {
                     child.material.transparent = isVirtual;
                     child.material.opacity = isVirtual ? 0.5 : 1.0;
                 });
 
-                screenMesh.position.set(0, hi/2, v);
+                screenMesh.position.set(0, hi / 2, v);
                 screenMesh.visible = params.showScreen && !isVirtual; // Screen only catches real images
             }
 
             // Update Lens Shape (thickness based on f)
-            lens.scale.set(1, 1, 0.1 + (1/f)*0.3);
+            lens.scale.set(1, 1, 0.1 + (1 / f) * 0.3);
 
             // Update Focal Points
             f1Mesh.position.set(0, 0, -f);
@@ -490,11 +516,11 @@
 
             // --- Ray Tracing ---
             // Clear old rays
-            while(raysGroup.children.length > 0){ 
+            while (raysGroup.children.length > 0) {
                 const child = raysGroup.children[0];
                 child.geometry.dispose();
                 child.material.dispose();
-                raysGroup.remove(child); 
+                raysGroup.remove(child);
             }
 
             const P_obj = new THREE.Vector3(0, ho, u);
@@ -508,7 +534,7 @@
             if (!isInfinity) {
                 const dir1 = new THREE.Vector3().subVectors(P_img, R1_lens).normalize();
                 const R1_end = new THREE.Vector3().copy(R1_lens).add(dir1.multiplyScalar(Z_max));
-                
+
                 if (isVirtual) {
                     // Solid line diverging forward
                     const dir1_fwd = new THREE.Vector3().subVectors(R1_lens, P_img).normalize();
@@ -551,7 +577,7 @@
             // Intersects lens at y = hi (derived from similar triangles)
             if (!isInfinity) {
                 const R3_lens = new THREE.Vector3(0, hi, 0);
-                
+
                 // Only draw Ray 3 if object is not exactly at focal point
                 raysGroup.add(createTube(P_obj, R3_lens, colors.ray3));
 
@@ -595,13 +621,13 @@
             const widthHalf = container.clientWidth / 2;
             const heightHalf = container.clientHeight / 2;
 
-            const projectLabel = (mesh, elementId, offset = new THREE.Vector3(0,0,0)) => {
+            const projectLabel = (mesh, elementId, offset = new THREE.Vector3(0, 0, 0)) => {
                 const el = document.getElementById(elementId);
                 if (!mesh.visible && elementId === 'label-img') {
                     el.style.opacity = 0;
                     return;
                 }
-                
+
                 const pos = new THREE.Vector3();
                 mesh.getWorldPosition(pos);
                 pos.add(offset);
@@ -618,11 +644,11 @@
             };
 
             projectLabel(objArrow, 'label-obj', new THREE.Vector3(0, params.ho + 0.3, 0));
-            
+
             // Image label offset depends on whether it's inverted
-            const imgOffset = params.u + params.f > 0 ? new THREE.Vector3(0, (params.f*params.u/(params.f+params.u)/params.u)*params.ho + 0.3, 0) : new THREE.Vector3(0, (params.f*params.u/(params.f+params.u)/params.u)*params.ho - 0.3, 0);
+            const imgOffset = params.u + params.f > 0 ? new THREE.Vector3(0, (params.f * params.u / (params.f + params.u) / params.u) * params.ho + 0.3, 0) : new THREE.Vector3(0, (params.f * params.u / (params.f + params.u) / params.u) * params.ho - 0.3, 0);
             projectLabel(imgArrow, 'label-img', imgOffset);
-            
+
             projectLabel(lens, 'label-lens', new THREE.Vector3(0, 2.8, 0));
             projectLabel(f1Mesh, 'label-f1', new THREE.Vector3(0, -0.4, 0));
             projectLabel(f2Mesh, 'label-f2', new THREE.Vector3(0, -0.4, 0));
@@ -649,4 +675,5 @@
 
     </script>
 </body>
+
 </html>

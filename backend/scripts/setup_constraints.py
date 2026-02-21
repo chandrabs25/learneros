@@ -34,6 +34,8 @@ CONSTRAINTS: list[tuple[str, str, str, str]] = [
     # ── Runtime-created nodes ──────────────────────────────────────────
     ("Student",   "id",    "student_id_unique",   "UNIQUE"),
     ("Insight",   "id",    "insight_id_unique",   "UNIQUE"),
+    ("TutorSession", "id", "tutor_session_id_unique", "UNIQUE"),
+    ("TutorMessage", "id", "tutor_message_id_unique", "UNIQUE"),
 
     # ── NOT NULL guards on critical properties ─────────────────────────
     ("Student",   "id",    "student_id_exists",   "NOT NULL"),
@@ -41,6 +43,8 @@ CONSTRAINTS: list[tuple[str, str, str, str]] = [
     ("Insight",   "type",  "insight_type_exists", "NOT NULL"),
     ("Insight",   "category", "insight_cat_exists","NOT NULL"),
     ("Insight",   "is_active","insight_active_exists","NOT NULL"),
+    ("TutorSession", "id", "tutor_session_id_exists", "NOT NULL"),
+    ("TutorMessage", "id", "tutor_message_id_exists", "NOT NULL"),
 ]
 
 

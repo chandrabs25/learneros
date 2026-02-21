@@ -1,10 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Microscopic States of Matter & Kinetic Theory</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --bg-color: #f0f4f8;
@@ -126,7 +129,7 @@
         .val-display {
             font-family: 'Roboto Mono', monospace;
             font-size: 0.85rem;
-            background: rgba(0,0,0,0.05);
+            background: rgba(0, 0, 0, 0.05);
             padding: 2px 8px;
             border-radius: 4px;
         }
@@ -137,6 +140,7 @@
             width: 100%;
             background: transparent;
         }
+
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none;
             height: 18px;
@@ -145,17 +149,23 @@
             background: var(--accent-blue);
             cursor: pointer;
             margin-top: -6px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
             transition: background 0.3s;
         }
-        input[type=range]#temp-slider::-webkit-slider-thumb { background: var(--accent-red); }
-        input[type=range]#size-slider::-webkit-slider-thumb { background: var(--accent-purple); }
-        
+
+        input[type=range]#temp-slider::-webkit-slider-thumb {
+            background: var(--accent-red);
+        }
+
+        input[type=range]#size-slider::-webkit-slider-thumb {
+            background: var(--accent-purple);
+        }
+
         input[type=range]::-webkit-slider-runnable-track {
             width: 100%;
             height: 6px;
             cursor: pointer;
-            background: rgba(0,0,0,0.1);
+            background: rgba(0, 0, 0, 0.1);
             border-radius: 3px;
         }
 
@@ -164,8 +174,8 @@
             width: 100%;
             padding: 10px;
             border-radius: 8px;
-            border: 1px solid rgba(0,0,0,0.1);
-            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.5);
             font-family: 'Inter', sans-serif;
             font-size: 1rem;
             font-weight: 600;
@@ -181,7 +191,7 @@
             gap: 10px;
             cursor: pointer;
         }
-        
+
         .toggle-group input {
             width: 18px;
             height: 18px;
@@ -192,7 +202,7 @@
         hr {
             border: none;
             height: 1px;
-            background: rgba(0,0,0,0.1);
+            background: rgba(0, 0, 0, 0.1);
             margin: 10px 0;
         }
 
@@ -205,6 +215,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <div id="app">
@@ -302,7 +313,7 @@
         const k_B = 1.38e-23;
         const mass = 6.64e-26; // Approx Argon mass for realistic v_rms
         const visualSpeedScale = 0.015; // Scales real v_rms to visual units/sec
-        
+
         // Colors
         const colorCold = new THREE.Color('#4361EE');
         const colorMed = new THREE.Color('#7209B7');
@@ -346,7 +357,6 @@
             metalness: 0,
             roughness: 0.1,
             ior: 1.5,
-            thickness: 0.1,
             transparent: true,
             side: THREE.BackSide
         });
@@ -377,19 +387,19 @@
             constructor(id) {
                 this.id = id;
                 this.mesh = new THREE.Mesh(
-                    sphereGeo, 
+                    sphereGeo,
                     new THREE.MeshPhongMaterial({ color: colorMed, shininess: 80 })
                 );
                 this.mesh.scale.setScalar(state.diameter / 2);
-                
+
                 this.velocity = new THREE.Vector3();
                 this.basePos = new THREE.Vector3(); // For solid state
                 this.targetPos = new THREE.Vector3(); // For transitions
                 this.phaseOffset = Math.random() * Math.PI * 2; // For solid vibration
-                
-                this.arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), this.mesh.position, 1, colorVector);
+
+                this.arrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), this.mesh.position, 1, colorVector);
                 this.arrow.visible = false;
-                
+
                 particleGroup.add(this.mesh);
                 scene.add(this.arrow);
 
@@ -429,9 +439,9 @@
                     // Initial placement based on phase
                     let r = state.boxSize / 2 - state.diameter / 2;
                     if (state.phase === 'Gas') {
-                        p.mesh.position.set((Math.random()-0.5)*2*r, (Math.random()-0.5)*2*r, (Math.random()-0.5)*2*r);
+                        p.mesh.position.set((Math.random() - 0.5) * 2 * r, (Math.random() - 0.5) * 2 * r, (Math.random() - 0.5) * 2 * r);
                     } else if (state.phase === 'Liquid') {
-                        p.mesh.position.set((Math.random()-0.5)*2*r, -r + Math.random()*(state.boxSize*0.3), (Math.random()-0.5)*2*r);
+                        p.mesh.position.set((Math.random() - 0.5) * 2 * r, -r + Math.random() * (state.boxSize * 0.3), (Math.random() - 0.5) * 2 * r);
                     }
                     randomizeVelocity(p.velocity, getVisualSpeed());
                     particles.push(p);
@@ -442,7 +452,7 @@
                 }
                 particles.splice(state.particleCount);
             }
-            
+
             if (state.phase === 'Solid') calculateSolidGrid();
         }
 
@@ -457,19 +467,19 @@
             state.transitioning = true;
             const N = particles.length;
             // Find grid dimensions
-            let side = Math.ceil(Math.pow(N, 1/3));
+            let side = Math.ceil(Math.pow(N, 1 / 3));
             let spacing = state.diameter * 1.2;
             let offset = (side - 1) * spacing / 2;
 
             let idx = 0;
-            for(let x=0; x<side; x++) {
-                for(let y=0; y<side; y++) {
-                    for(let z=0; z<side; z++) {
+            for (let x = 0; x < side; x++) {
+                for (let y = 0; y < side; y++) {
+                    for (let z = 0; z < side; z++) {
                         if (idx < N) {
                             let p = particles[idx];
                             p.targetPos.set(
                                 x * spacing - offset,
-                                y * spacing - offset - (state.boxSize/2 - offset - spacing), // settle at bottom
+                                y * spacing - offset - (state.boxSize / 2 - offset - spacing), // settle at bottom
                                 z * spacing - offset
                             );
                             idx++;
@@ -477,7 +487,7 @@
                     }
                 }
             }
-            
+
             // Reset trace
             tracePoints = [];
             traceLine.geometry.setFromPoints([]);
@@ -519,27 +529,27 @@
             let dx = p2.mesh.position.x - p1.mesh.position.x;
             let dy = p2.mesh.position.y - p1.mesh.position.y;
             let dz = p2.mesh.position.z - p1.mesh.position.z;
-            let distSq = dx*dx + dy*dy + dz*dz;
+            let distSq = dx * dx + dy * dy + dz * dz;
             let minSq = state.diameter * state.diameter;
 
             if (distSq < minSq && distSq > 0) {
                 let dist = Math.sqrt(distSq);
                 let nx = dx / dist, ny = dy / dist, nz = dz / dist;
-                
+
                 // Relative velocity
                 let vx = p1.velocity.x - p2.velocity.x;
                 let vy = p1.velocity.y - p2.velocity.y;
                 let vz = p1.velocity.z - p2.velocity.z;
-                
-                let velAlongNormal = vx*nx + vy*ny + vz*nz;
-                
+
+                let velAlongNormal = vx * nx + vy * ny + vz * nz;
+
                 // Only resolve if moving towards each other
                 if (velAlongNormal > 0) {
                     // Equal mass elastic collision -> swap velocity components along normal
                     p1.velocity.x -= velAlongNormal * nx;
                     p1.velocity.y -= velAlongNormal * ny;
                     p1.velocity.z -= velAlongNormal * nz;
-                    
+
                     p2.velocity.x += velAlongNormal * nx;
                     p2.velocity.y += velAlongNormal * ny;
                     p2.velocity.z += velAlongNormal * nz;
@@ -555,7 +565,7 @@
                 p1.mesh.position.x -= nx * correction;
                 p1.mesh.position.y -= ny * correction;
                 p1.mesh.position.z -= nz * correction;
-                
+
                 p2.mesh.position.x += nx * correction;
                 p2.mesh.position.y += ny * correction;
                 p2.mesh.position.z += nz * correction;
@@ -591,17 +601,17 @@
                 const amplitude = Math.sqrt(state.temp) * 0.005;
                 const freq = Math.sqrt(state.temp) * 0.5;
                 const time = performance.now() * 0.001;
-                
+
                 particles.forEach(p => {
                     p.mesh.position.x = p.basePos.x + Math.sin(time * freq + p.phaseOffset) * amplitude;
                     p.mesh.position.y = p.basePos.y + Math.cos(time * freq * 1.1 + p.phaseOffset) * amplitude;
                     p.mesh.position.z = p.basePos.z + Math.sin(time * freq * 0.9 + p.phaseOffset) * amplitude;
-                    
+
                     // Color based on temp directly
                     let t = state.temp / 1000;
                     if (t < 0.5) p.mesh.material.color.lerpColors(colorCold, colorMed, t * 2);
                     else p.mesh.material.color.lerpColors(colorMed, colorHot, (t - 0.5) * 2);
-                    
+
                     p.arrow.visible = false;
                 });
                 traceLine.visible = false;
@@ -611,19 +621,19 @@
 
                 for (let i = 0; i < particles.length; i++) {
                     let p = particles[i];
-                    
+
                     // Move
                     p.mesh.position.addScaledVector(p.velocity, dt);
 
                     // Wall Collisions
-                    if (p.mesh.position.x > halfBox - r) { p.mesh.position.x = halfBox - r; p.velocity.x *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
-                    if (p.mesh.position.x < -halfBox + r) { p.mesh.position.x = -halfBox + r; p.velocity.x *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
-                    
-                    if (p.mesh.position.y > boundsY[1]) { p.mesh.position.y = boundsY[1]; p.velocity.y *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
-                    if (p.mesh.position.y < boundsY[0]) { p.mesh.position.y = boundsY[0]; p.velocity.y *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
-                    
-                    if (p.mesh.position.z > halfBox - r) { p.mesh.position.z = halfBox - r; p.velocity.z *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
-                    if (p.mesh.position.z < -halfBox + r) { p.mesh.position.z = -halfBox + r; p.velocity.z *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
+                    if (p.mesh.position.x > halfBox - r) { p.mesh.position.x = halfBox - r; p.velocity.x *= -1; if (p.isTrace) addTracePoint(p.mesh.position); }
+                    if (p.mesh.position.x < -halfBox + r) { p.mesh.position.x = -halfBox + r; p.velocity.x *= -1; if (p.isTrace) addTracePoint(p.mesh.position); }
+
+                    if (p.mesh.position.y > boundsY[1]) { p.mesh.position.y = boundsY[1]; p.velocity.y *= -1; if (p.isTrace) addTracePoint(p.mesh.position); }
+                    if (p.mesh.position.y < boundsY[0]) { p.mesh.position.y = boundsY[0]; p.velocity.y *= -1; if (p.isTrace) addTracePoint(p.mesh.position); }
+
+                    if (p.mesh.position.z > halfBox - r) { p.mesh.position.z = halfBox - r; p.velocity.z *= -1; if (p.isTrace) addTracePoint(p.mesh.position); }
+                    if (p.mesh.position.z < -halfBox + r) { p.mesh.position.z = -halfBox + r; p.velocity.z *= -1; if (p.isTrace) addTracePoint(p.mesh.position); }
 
                     // Particle Collisions (O(N^2) but N is small)
                     for (let j = i + 1; j < particles.length; j++) {
@@ -672,7 +682,7 @@
 
             // Mean Free Path: lambda = 1 / (sqrt(2) * pi * d^2 * (N/V))
             // Assume V = 1000 m^3 for formula mapping based on d in meters
-            let V = 1000; 
+            let V = 1000;
             let n_v = state.particleCount / V;
             let mfp = 1 / (Math.SQRT2 * Math.PI * Math.pow(state.diameter, 2) * n_v);
             // Scale for display (convert to nm roughly for readability)
@@ -713,12 +723,12 @@
 
         document.getElementById('toggle-trace').addEventListener('change', (e) => {
             state.showTrace = e.target.checked;
-            if(!state.showTrace) traceLine.visible = false;
+            if (!state.showTrace) traceLine.visible = false;
         });
 
         document.getElementById('toggle-vectors').addEventListener('change', (e) => {
             state.showVectors = e.target.checked;
-            if(!state.showVectors) {
+            if (!state.showVectors) {
                 particles.forEach(p => p.arrow.visible = false);
             }
         });
@@ -731,14 +741,14 @@
 
         // --- Main Loop ---
         let lastTime = performance.now();
-        
+
         function animate() {
             requestAnimationFrame(animate);
-            
+
             let currentTime = performance.now();
             let dt = (currentTime - lastTime) / 1000;
             lastTime = currentTime;
-            
+
             // Clamp dt to prevent physics explosions on lag
             if (dt > 0.03) dt = 0.03;
 
@@ -754,4 +764,5 @@
 
     </script>
 </body>
+
 </html>

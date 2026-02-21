@@ -2,6 +2,7 @@
 AI Tutor — Configuration (loaded from environment variables)
 """
 
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
 
 
@@ -23,8 +24,13 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: str = ""
     # Fireworks-hosted Kimi 2.5 (OpenAI-compatible API)
     FIREWORKS_API_KEY: str = ""
+    FIREWORKS_API_KEY_EMBEDDINGS: str = Field(
+        default="",
+        validation_alias=AliasChoices("FIREWORKS_API_KEY_EMBEDDINGS", "FIREWORKS_API_KEY_embeddings"),
+    )
     FIREWORKS_BASE_URL: str = "https://api.fireworks.ai/inference/v1"
     FIREWORKS_MODEL: str = "accounts/fireworks/models/kimi-k2p5"
+    FIREWORKS_EMBEDDING_MODEL: str = "fireworks/qwen3-embedding-8b"
     # MLflow GenAI tracing (optional)
     MLFLOW_ENABLE_TRACING: bool = False
     MLFLOW_TRACKING_URI: str = "sqlite:///mlflow.db"

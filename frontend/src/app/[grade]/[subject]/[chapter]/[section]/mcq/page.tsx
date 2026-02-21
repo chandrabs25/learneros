@@ -7,7 +7,10 @@ import { useAuth } from "@/lib/auth-context";
 import LatexText from "@/components/LatexText";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const TOTAL_QUESTIONS = 2;
+
+interface SectionConcept {
+    id: string;
+}
 
 interface MCQData {
     question: string;
@@ -69,6 +72,7 @@ export default function MCQPracticePage() {
     const sectionId = `ncert:${subject}:${grade}:${chapter}:${section}`;
 
     const [questionIndex, setQuestionIndex] = useState(0);
+    const [questionPlan, setQuestionPlan] = useState<Array<string | null>>([]);
     const [mcq, setMcq] = useState<MCQData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<string | null>(null);
@@ -78,6 +82,7 @@ export default function MCQPracticePage() {
     const [allInsights, setAllInsights] = useState<MCQResult["insights"]>([]);
     const [persistenceMessage, setPersistenceMessage] = useState("");
     const [error, setError] = useState("");
+    const totalQuestions = questionPlan.length || 2;
 
     // Fetch a new MCQ question
     const fetchQuestion = useCallback(async () => {
@@ -94,8 +99,10 @@ export default function MCQPracticePage() {
             const token = await getIdToken();
             const headers: Record<string, string> = {};
             if (token) headers["Authorization"] = `Bearer ${token}`;
+            const targetConceptId = questionPlan[questionIndex];
+            const conceptPart = targetConceptId ? `&concept_id=${encodeURIComponent(targetConceptId)}` : "";
             const r = await fetch(
-                `${API_URL}/api/sections/${sectionId}/test/mcq?subsection_id=${encodeURIComponent(targetSubsection)}`,
+                `${API_URL}/api/sections/${sectionId}/test/mcq?subsection_id=${encodeURIComponent(targetSubsection)}${conceptPart}`,
                 { headers }
             );
             const data = await r.json();
@@ -106,11 +113,43 @@ export default function MCQPracticePage() {
             setMcq(null);
         }
         setLoading(false);
-    }, [sectionId, targetSubsection, getIdToken]);
+    }, [sectionId, targetSubsection, questionPlan, questionIndex, getIdToken]);
+
+    // Build question plan: minimum 2 questions, else one per concept.
+    useEffect(() => {
+        if (!targetSubsection) {
+            setError("No subsection specified. Please navigate from a section page.");
+            setLoading(false);
+            setQuestionPlan([]);
+            return;
+        }
+        (async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/sections/${sectionId}/concepts`);
+                const data = await res.json();
+                const conceptIds = Array.isArray(data)
+                    ? Array.from(new Set((data as SectionConcept[]).map((c) => c.id).filter(Boolean)))
+                    : [];
+
+                if (conceptIds.length === 0) {
+                    setQuestionPlan([null, null]);
+                } else if (conceptIds.length === 1) {
+                    setQuestionPlan([conceptIds[0], conceptIds[0]]);
+                } else {
+                    setQuestionPlan(conceptIds);
+                }
+                setQuestionIndex(0);
+            } catch {
+                setQuestionPlan([null, null]);
+                setQuestionIndex(0);
+            }
+        })();
+    }, [sectionId, targetSubsection]);
 
     useEffect(() => {
+        if (questionPlan.length === 0) return;
         fetchQuestion();
-    }, [fetchQuestion]);
+    }, [questionPlan, questionIndex, fetchQuestion]);
 
     // Submit answer
     const handleSubmit = async () => {
@@ -168,15 +207,14 @@ export default function MCQPracticePage() {
 
     // Next question
     const handleNext = () => {
-        if (questionIndex >= TOTAL_QUESTIONS - 1) {
+        if (questionIndex >= totalQuestions - 1) {
             router.push(`/${grade}/${subject}/${chapter}/${section}`);
             return;
         }
         setQuestionIndex((i) => i + 1);
-        fetchQuestion();
     };
 
-    const progressPct = Math.round(((questionIndex + (result ? 1 : 0)) / TOTAL_QUESTIONS) * 100);
+    const progressPct = Math.round(((questionIndex + (result ? 1 : 0)) / totalQuestions) * 100);
     const optionLabels = ["A", "B", "C", "D"];
 
     return (
@@ -205,11 +243,11 @@ export default function MCQPracticePage() {
                 {/* Progress bar */}
                 <div className="mcq-progress-area">
                     <div className="mcq-progress-meta">
-                        <span>Question {questionIndex + 1} of {TOTAL_QUESTIONS}</span>
+                        <span>Question {questionIndex + 1} of {totalQuestions}</span>
                         <span className="mcq-progress-pct">{progressPct}% Complete</span>
                     </div>
                     <div className="mcq-progress-track">
-                        {Array.from({ length: TOTAL_QUESTIONS }).map((_, i) => (
+                        {Array.from({ length: totalQuestions }).map((_, i) => (
                             <div
                                 key={i}
                                 className={`mcq-progress-step ${i < questionIndex || (i === questionIndex && result)
@@ -347,7 +385,7 @@ export default function MCQPracticePage() {
                                     </>
                                 ) : (
                                     <button className="mcq-next-btn" onClick={handleNext}>
-                                        {questionIndex >= TOTAL_QUESTIONS - 1 ? "Finish" : "Next Question"}
+                                        {questionIndex >= totalQuestions - 1 ? "Finish" : "Next Question"}
                                         <span className="material-symbols-outlined" style={{ fontSize: "1.125rem" }}>arrow_forward</span>
                                     </button>
                                 )}
