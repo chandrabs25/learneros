@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linear Momentum & Collisions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.4);
+            --text-main: #2d3748;
+            --color-m1: #FF3366;
+            --color-m2: #4361EE;
+            --color-v: #06D6A0;
+            --color-p: #F77F00;
+            --color-cm: #FFD166;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 0;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Right Control Panel */
+        #controls {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 25%;
+            min-width: 280px;
+            max-width: 350px;
+            padding: 20px;
+            z-index: 10;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        #controls h2 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #1a202c;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .control-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display { font-family: 'Roboto Mono', monospace; font-weight: 700; }
+        .val-m1 { color: var(--color-m1); }
+        .val-m2 { color: var(--color-m2); }
+        .val-v { color: var(--color-v); }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px; width: 16px;
+            border-radius: 50%;
+            background: #fff;
+            border: 2px solid #cbd5e0;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        #m1-slider::-webkit-slider-thumb { border-color: var(--color-m1); }
+        #m2-slider::-webkit-slider-thumb { border-color: var(--color-m2); }
+        #v1-slider::-webkit-slider-thumb { border-color: var(--color-v); }
+        #v2-slider::-webkit-slider-thumb { border-color: var(--color-v); }
+
+        .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+        #play-btn { background: var(--color-v); color: white; box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3); }
+        #play-btn:hover { background: #05b586; }
+        #reset-btn { background: #e2e8f0; color: var(--text-main); }
+        #reset-btn:hover { background: #cbd5e0; }
+
+        /* Formula Card Top Left */
+        #formula-card {
+            position: absolute;
+            top: 20px; left: 20px;
+            padding: 15px 20px;
+            z-index: 10;
+            min-width: 300px;
+        }
+        .formula-title { font-size: 0.85rem; text-transform: uppercase; font-weight: 800; color: #718096; margin-bottom: 8px; }
+        .math-line { font-family: 'Roboto Mono', monospace; font-size: 1rem; margin-bottom: 6px; display: flex; align-items: center; }
+        .math-line span { margin-right: 5px; }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; color: white; }
+        .bg-p { background: var(--color-p); }
+        .bg-cm { background: var(--color-cm); color: #000; }
+
+        /* Total Momentum Top Center */
+        #total-p-container {
+            position: absolute;
+            top: 20px; left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px 20px;
+        }
+        #p-arrow-container {
+            width: 200px; height: 20px;
+            position: relative;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #p-arrow {
+            height: 8px;
+            background: var(--color-p);
+            position: absolute;
+            transition: width 0.1s, left 0.1s, right 0.1s;
+        }
+        #p-arrow::after {
+            content: '';
+            position: absolute;
+            top: -6px;
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+        }
+        #p-arrow.right { left: 50%; }
+        #p-arrow.right::after { right: -10px; border-left: 15px solid var(--color-p); }
+        #p-arrow.left { right: 50%; }
+        #p-arrow.left::after { left: -10px; border-right: 15px solid var(--color-p); }
+
+        /* 3D Object Labels */
+        .floating-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- Top Left: Formula Card -->
+    <div id="formula-card" class="glass-panel">
+        <div class="formula-title">System State</div>
+        <div class="math-line">
+            <span class="badge bg-p">P<sub>total</sub></span> = <span id="val-ptotal">0.00</span> kg·m/s
+        </div>
+        <div class="math-line" style="font-size: 0.85rem; color: #4a5568;">
+            (<span style="color:var(--color-m1)">p₁</span> + <span style="color:var(--color-m2)">p₂</span>) = <span id="val-p1">0.00</span> + <span id="val-p2">0.00</span>
+        </div>
+        <div class="math-line" style="margin-top: 10px;">
+            <span class="badge bg-cm">V<sub>cm</sub></span> = <span id="val-vcm">0.00</span> m/s
+        </div>
+    </div>
+
+    <!-- Top Center: Total Momentum Arrow -->
+    <div id="total-p-container" class="glass-panel">
+        <div class="formula-title" style="margin-bottom:0;">Total Momentum Vector</div>
+        <div id="p-arrow-container">
+            <div id="p-arrow" class="right" style="width: 0px;"></div>
+        </div>
+    </div>
+
+    <!-- Right: Controls -->
+    <div id="controls" class="glass-panel">
+        <h2>Parameters</h2>
+        
+        <div class="control-group">
+            <div class="label-row">
+                <span>Mass 1 (m₁)</span>
+                <span class="val-display val-m1" id="m1-val">2.0 kg</span>
+            </div>
+            <input type="range" id="m1-slider" min="0.5" max="10.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <span>Mass 2 (m₂)</span>
+                <span class="val-display val-m2" id="m2-val">2.0 kg</span>
+            </div>
+            <input type="range" id="m2-slider" min="0.5" max="10.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <span>Init Velocity 1 (v₁)</span>
+                <span class="val-display val-v" id="v1-val">2.0 m/s</span>
+            </div>
+            <input type="range" id="v1-slider" min="-5.0" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <span>Init Velocity 2 (v₂)</span>
+                <span class="val-display val-v" id="v2-val">-1.0 m/s</span>
+            </div>
+            <input type="range" id="v2-slider" min="-5.0" max="5.0" step="0.1" value="-1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="label-row">
+                <span>Restitution (e)</span>
+                <span class="val-display" id="e-val" style="color:#F6AD55">1.00</span>
+            </div>
+            <input type="range" id="e-slider" min="0.0" max="1.0" step="0.01" value="1.0">
+            <div style="font-size: 0.75rem; color: #718096; margin-top: 5px; text-align: right;">
+                1 = Elastic, 0 = Inelastic
+            </div>
+        </div>
+
+        <div class="btn-row">
+            <button id="play-btn">Play</button>
+            <button id="reset-btn">Reset</button>
+        </div>
+    </div>
+
+    <!-- Floating Labels -->
+    <div id="label-m1" class="floating-label" style="color: var(--color-m1);">m₁</div>
+    <div id="label-m2" class="floating-label" style="color: var(--color-m2);">m₂</div>
+    <div id="label-cm" class="floating-label" style="color: var(--color-cm); font-size: 12px;">CM</div>
+
+    <script>
+        // --- Physics State ---
+        let state = {
+            m1: 2.0, m2: 2.0,
+            v1: 2.0, v2: -1.0,
+            x1: -6.0, x2: 6.0,
+            e: 1.0,
+            isPlaying: false
+        };
+
+        const initialPositions = { x1: -6.0, x2: 6.0 };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.Fog('#f0f4f8', 15, 40);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 8, 18);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.minDistance = 5;
+        controls.maxDistance = 30;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 15, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        scene.add(dirLight);
+
+        // --- Environment ---
+        const grid = new THREE.GridHelper(40, 40, 0xcccccc, 0xe2e8f0);
+        grid.position.y = -0.5;
+        scene.add(grid);
+
+        // Glass Track
+        const trackGeo = new THREE.BoxGeometry(40, 0.2, 2);
+        const trackMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.4,
+            roughness: 0.1,
+            transmission: 0.9,
+            thickness: 0.5
+        });
+        const track = new THREE.Mesh(trackGeo, trackMat);
+        track.position.y = -0.4;
+        track.receiveShadow = true;
+        scene.add(track);
+
+        // --- Objects ---
+        const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
+        
+        const mat1 = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.2, metalness: 0.1 });
+        const sphere1 = new THREE.Mesh(sphereGeo, mat1);
+        sphere1.castShadow = true;
+        scene.add(sphere1);
+
+        const mat2 = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.2, metalness: 0.1 });
+        const sphere2 = new THREE.Mesh(sphereGeo, mat2);
+        sphere2.castShadow = true;
+        scene.add(sphere2);
+
+        // CM Marker
+        const cmGeo = new THREE.OctahedronGeometry(0.3);
+        const cmMat = new THREE.MeshStandardMaterial({ color: 0xFFD166, emissive: 0xFFD166, emissiveIntensity: 0.5 });
+        const cmMarker = new THREE.Mesh(cmGeo, cmMat);
+        cmMarker.position.y = -0.2;
+        scene.add(cmMarker);
+
+        // --- Arrows ---
+        function createArrow(color) {
+            const dir = new THREE.Vector3(1, 0, 0);
+            const origin = new THREE.Vector3(0, 0, 0);
+            return new THREE.ArrowHelper(dir, origin, 1, color, 0.4, 0.3);
+        }
+
+        const vArrow1 = createArrow(0x06D6A0); scene.add(vArrow1);
+        const vArrow2 = createArrow(0x06D6A0); scene.add(vArrow2);
+        const pArrow1 = createArrow(0xF77F00); scene.add(pArrow1);
+        const pArrow2 = createArrow(0xF77F00); scene.add(pArrow2);
+
+        // --- UI Elements ---
+        const ui = {
+            m1: document.getElementById('m1-slider'),
+            m2: document.getElementById('m2-slider'),
+            v1: document.getElementById('v1-slider'),
+            v2: document.getElementById('v2-slider'),
+            e: document.getElementById('e-slider'),
+            m1Val: document.getElementById('m1-val'),
+            m2Val: document.getElementById('m2-val'),
+            v1Val: document.getElementById('v1-val'),
+            v2Val: document.getElementById('v2-val'),
+            eVal: document.getElementById('e-val'),
+            playBtn: document.getElementById('play-btn'),
+            resetBtn: document.getElementById('reset-btn'),
+            ptotal: document.getElementById('val-ptotal'),
+            p1: document.getElementById('val-p1'),
+            p2: document.getElementById('val-p2'),
+            vcm: document.getElementById('val-vcm'),
+            pArrow: document.getElementById('p-arrow'),
+            lblM1: document.getElementById('label-m1'),
+            lblM2: document.getElementById('label-m2'),
+            lblCM: document.getElementById('label-cm')
+        };
+
+        // --- Logic & Updates ---
+        function getRadius(mass) {
+            return Math.pow(mass, 1/3) * 0.5;
+        }
+
+        function updateArrowVisuals(arrow, origin, value, isMomentum = false) {
+            if (Math.abs(value) < 0.05) {
+                arrow.visible = false;
+                return;
+            }
+            arrow.visible = true;
+            arrow.position.copy(origin);
+            arrow.setDirection(new THREE.Vector3(Math.sign(value), 0, 0));
+            
+            let length = Math.abs(value) * 0.5;
+            let headLength = Math.min(0.4, length * 0.5);
+            let headWidth = isMomentum ? 0.4 : 0.3;
+            
+            arrow.setLength(length, headLength, headWidth);
+            
+            // Make momentum arrows thicker by scaling the line
+            if (isMomentum) {
+                arrow.line.scale.set(2, 2, 2);
+            } else {
+                arrow.line.scale.set(1, 1, 1);
+            }
+        }
+
+        function projectToScreen(vector, element) {
+            const tempV = vector.clone();
+            tempV.project(camera);
+            const x = (tempV.x *  .5 + .5) * window.innerWidth;
+            const y = (tempV.y * -.5 + .5) * window.innerHeight;
+            
+            // Hide if behind camera
+            if (tempV.z > 1) {
+                element.style.display = 'none';
+            } else {
+                element.style.display = 'block';
+                element.style.left = `${x}px`;
+                element.style.top = `${y}px`;
+            }
+        }
+
+        function updateVisuals() {
+            const r1 = getRadius(state.m1);
+            const r2 = getRadius(state.m2);
+
+            // Spheres
+            sphere1.scale.set(r1, r1, r1);
+            sphere1.position.set(state.x1, r1 - 0.5, 0);
+            
+            sphere2.scale.set(r2, r2, r2);
+            sphere2.position.set(state.x2, r2 - 0.5, 0);
+
+            // Center of Mass
+            const x_cm = (state.m1 * state.x1 + state.m2 * state.x2) / (state.m1 + state.m2);
+            cmMarker.position.x = x_cm;
+
+            // Physics Values
+            const p1 = state.m1 * state.v1;
+            const p2 = state.m2 * state.v2;
+            const pTotal = p1 + p2;
+            const v_cm = pTotal / (state.m1 + state.m2);
+
+            // Arrows
+            updateArrowVisuals(vArrow1, sphere1.position, state.v1);
+            updateArrowVisuals(vArrow2, sphere2.position, state.v2);
+            
+            updateArrowVisuals(pArrow1, new THREE.Vector3(state.x1, r1 * 2 + 0.2, 0), p1, true);
+            updateArrowVisuals(pArrow2, new THREE.Vector3(state.x2, r2 * 2 + 0.2, 0), p2, true);
+
+            // UI Text
+            ui.ptotal.innerText = pTotal.toFixed(2);
+            ui.p1.innerText = p1.toFixed(2);
+            ui.p2.innerText = p2.toFixed(2);
+            ui.vcm.innerText = v_cm.toFixed(2);
+
+            // Total Momentum CSS Arrow
+            const maxP = 50; // Scale factor for CSS arrow
+            let arrowWidth = Math.min(100, (Math.abs(pTotal) / maxP) * 100); // percentage
+            ui.pArrow.style.width = `${arrowWidth}%`;
+            if (pTotal >= 0) {
+                ui.pArrow.className = 'right';
+            } else {
+                ui.pArrow.className = 'left';
+            }
+
+            // Floating Labels
+            projectToScreen(new THREE.Vector3(state.x1, -0.8, 0), ui.lblM1);
+            projectToScreen(new THREE.Vector3(state.x2, -0.8, 0), ui.lblM2);
+            projectToScreen(new THREE.Vector3(x_cm, -0.8, 0), ui.lblCM);
+
+            // Update Sliders if playing (to reflect post-collision velocities)
+            if (state.isPlaying) {
+                ui.v1.value = state.v1;
+                ui.v2.value = state.v2;
+                ui.v1Val.innerText = state.v1.toFixed(1) + ' m/s';
+                ui.v2Val.innerText = state.v2.toFixed(1) + ' m/s';
+            }
+        }
+
+        function handleCollision() {
+            const r1 = getRadius(state.m1);
+            const r2 = getRadius(state.m2);
+            const dist = Math.abs(state.x1 - state.x2);
+            const minDist = r1 + r2;
+
+            if (dist <= minDist) {
+                // Check if they are moving towards each other to prevent sticking
+                const relativeVelocity = state.v1 - state.v2;
+                const relativePosition = state.x1 - state.x2;
+                
+                if (relativeVelocity * relativePosition < 0) {
+                    // Collision formulas
+                    const m1 = state.m1, m2 = state.m2, v1 = state.v1, v2 = state.v2, e = state.e;
+                    const v1_new = (m1*v1 + m2*v2 - m2*e*(v1 - v2)) / (m1 + m2);
+                    const v2_new = (m1*v1 + m2*v2 + m1*e*(v1 - v2)) / (m1 + m2);
+                    
+                    state.v1 = v1_new;
+                    state.v2 = v2_new;
+
+                    // Positional correction to prevent overlap
+                    const overlap = minDist - dist;
+                    if (state.x1 < state.x2) {
+                        state.x1 -= overlap / 2;
+                        state.x2 += overlap / 2;
+                    } else {
+                        state.x1 += overlap / 2;
+                        state.x2 -= overlap / 2;
+                    }
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        function readUI() {
+            state.m1 = parseFloat(ui.m1.value);
+            state.m2 = parseFloat(ui.m2.value);
+            if (!state.isPlaying) {
+                state.v1 = parseFloat(ui.v1.value);
+                state.v2 = parseFloat(ui.v2.value);
+            }
+            state.e = parseFloat(ui.e.value);
+
+            ui.m1Val.innerText = state.m1.toFixed(1) + ' kg';
+            ui.m2Val.innerText = state.m2.toFixed(1) + ' kg';
+            ui.v1Val.innerText = state.v1.toFixed(1) + ' m/s';
+            ui.v2Val.innerText = state.v2.toFixed(1) + ' m/s';
+            ui.eVal.innerText = state.e.toFixed(2);
+            
+            updateVisuals();
+        }
+
+        [ui.m1, ui.m2, ui.v1, ui.v2, ui.e].forEach(el => el.addEventListener('input', readUI));
+
+        ui.playBtn.addEventListener('click', () => {
+            state.isPlaying = !state.isPlaying;
+            if (state.isPlaying) {
+                ui.playBtn.innerText = 'Pause';
+                ui.playBtn.style.background = '#F77F00'; // Orange when playing
+                ui.playBtn.style.boxShadow = '0 4px 15px rgba(247, 127, 0, 0.3)';
+            } else {
+                ui.playBtn.innerText = 'Play';
+                ui.playBtn.style.background = 'var(--color-v)';
+                ui.playBtn.style.boxShadow = '0 4px 15px rgba(6, 214, 160, 0.3)';
+            }
+        });
+
+        ui.resetBtn.addEventListener('click', () => {
+            state.isPlaying = false;
+            ui.playBtn.innerText = 'Play';
+            ui.playBtn.style.background = 'var(--color-v)';
+            ui.playBtn.style.boxShadow = '0 4px 15px rgba(6, 214, 160, 0.3)';
+            
+            state.x1 = initialPositions.x1;
+            state.x2 = initialPositions.x2;
+            
+            // Re-read initial velocities from sliders
+            state.v1 = parseFloat(ui.v1.value);
+            state.v2 = parseFloat(ui.v2.value);
+            
+            updateVisuals();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            updateVisuals(); // Update label positions
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.1); // Cap dt to prevent huge jumps
+
+            if (state.isPlaying) {
+                // Fixed time step for physics stability
+                const steps = 4;
+                const sub_dt = dt / steps;
+                
+                for(let i=0; i<steps; i++) {
+                    state.x1 += state.v1 * sub_dt;
+                    state.x2 += state.v2 * sub_dt;
+                    handleCollision();
+                }
+                
+                // Wrap around logic (optional, keeps them on screen)
+                if (state.x1 > 20) state.x1 = -20;
+                if (state.x1 < -20) state.x1 = 20;
+                if (state.x2 > 20) state.x2 = -20;
+                if (state.x2 < -20) state.x2 = 20;
+            }
+
+            controls.update();
+            updateVisuals();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        readUI();
+        animate();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trigonometric Functions in SHM & Wave Mechanics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            width: 25%;
+            min-width: 300px;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-right: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #1e293b;
+            line-height: 1.3;
+        }
+
+        /* Formula Card */
+        .formula-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(255, 255, 255, 1);
+        }
+
+        .main-eq {
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #1e293b;
+            background: #f8fafc;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .live-data {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .live-y { color: #4361EE; background: rgba(67, 97, 238, 0.1); }
+        .live-v { color: #06D6A0; background: rgba(6, 214, 160, 0.1); }
+        .live-a { color: #F77F00; background: rgba(247, 127, 0, 0.1); }
+
+        /* Controls */
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .val-display {
+            font-family: monospace;
+            color: #4361EE;
+            font-weight: bold;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Specific slider colors */
+        #omega::-webkit-slider-thumb { background: #FF3366; }
+        #phase::-webkit-slider-thumb { background: #8A2BE2; }
+        #k::-webkit-slider-thumb { background: #06D6A0; }
+        #timeScale::-webkit-slider-thumb { background: #F77F00; }
+
+        /* Canvas Container */
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            pointer-events: none;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .legend-item:last-child { margin-bottom: 0; }
+        .color-box {
+            width: 12px; height: 12px; border-radius: 3px; margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <h1>Trigonometric Functions in SHM & Waves</h1>
+        
+        <div class="formula-card">
+            <div class="main-eq">y(t) = A sin(ωt + φ)</div>
+            <div class="live-data live-y">
+                <span>Displacement (y)</span>
+                <span id="val-y">0.00 m</span>
+            </div>
+            <div class="live-data live-v">
+                <span>Velocity (v)</span>
+                <span id="val-v">0.00 m/s</span>
+            </div>
+            <div class="live-data live-a">
+                <span>Acceleration (a)</span>
+                <span id="val-a">0.00 m/s²</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Amplitude (A)</span>
+                <span class="val-display" id="amp-val">2.0</span>
+            </div>
+            <input type="range" id="amplitude" min="0.5" max="3.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Angular Freq (ω)</span>
+                <span class="val-display" id="omega-val" style="color:#FF3366">2.0</span>
+            </div>
+            <input type="range" id="omega" min="0.5" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Phase Constant (φ)</span>
+                <span class="val-display" id="phase-val" style="color:#8A2BE2">0.0</span>
+            </div>
+            <input type="range" id="phase" min="0" max="6.28" step="0.1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Wave Number (k)</span>
+                <span class="val-display" id="k-val" style="color:#06D6A0">1.5</span>
+            </div>
+            <input type="range" id="k" min="0.5" max="3.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Time Scale</span>
+                <span class="val-display" id="timeScale-val" style="color:#F77F00">1.0</span>
+            </div>
+            <input type="range" id="timeScale" min="0" max="2" step="0.1" value="1.0">
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div>Circular Motion</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div>SHM & Wave History</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div>Velocity Vector</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div>Acceleration Vector</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Parameters ---
+        const params = {
+            amplitude: 2.0,
+            omega: 2.0,
+            phase: 0.0,
+            k: 1.5,
+            timeScale: 1.0
+        };
+
+        // --- UI Binding ---
+        function bindSlider(id, paramKey) {
+            const slider = document.getElementById(id);
+            const display = document.getElementById(id + '-val');
+            slider.addEventListener('input', (e) => {
+                params[paramKey] = parseFloat(e.target.value);
+                display.innerText = params[paramKey].toFixed(1);
+            });
+        }
+        bindSlider('amplitude', 'amplitude');
+        bindSlider('omega', 'omega');
+        bindSlider('phase', 'phase');
+        bindSlider('k', 'k');
+        bindSlider('timeScale', 'timeScale');
+
+        const elY = document.getElementById('val-y');
+        const elV = document.getElementById('val-v');
+        const elA = document.getElementById('val-a');
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(8, 6, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 5);
+
+        // --- Scene Objects ---
+
+        // 1. Grid and Axes
+        const gridHelper = new THREE.GridHelper(40, 40, 0xd1d9e6, 0xd1d9e6);
+        scene.add(gridHelper);
+        const axesHelper = new THREE.AxesHelper(3);
+        scene.add(axesHelper);
+
+        // Helper function for text labels
+        function createTextSprite(text, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.font = 'bold 40px Inter, sans-serif';
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 64, 32);
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(2, 1, 1);
+            return sprite;
+        }
+        const xLabel = createTextSprite('X', '#ff4444'); xLabel.position.set(3.5, 0.2, 0); scene.add(xLabel);
+        const yLabel = createTextSprite('Y', '#44ff44'); yLabel.position.set(0, 3.5, 0); scene.add(yLabel);
+        const zLabel = createTextSprite('Z', '#4444ff'); zLabel.position.set(0, 0.2, 3.5); scene.add(zLabel);
+
+        // 2. Reference Circle (XY Plane)
+        const circleGeo = new THREE.BufferGeometry();
+        const circlePoints = [];
+        for(let i = 0; i <= 64; i++) {
+            const t = (i / 64) * Math.PI * 2;
+            circlePoints.push(new THREE.Vector3(Math.cos(t), Math.sin(t), 0));
+        }
+        circleGeo.setFromPoints(circlePoints);
+        const circleMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+        const referenceCircle = new THREE.Line(circleGeo, circleMat);
+        scene.add(referenceCircle);
+
+        // 3. Particles
+        const particleGeo = new THREE.SphereGeometry(0.25, 32, 32);
+        
+        const circParticleMat = new THREE.MeshBasicMaterial({ color: 0xFF3366 });
+        const circParticle = new THREE.Mesh(particleGeo, circParticleMat);
+        scene.add(circParticle);
+
+        const shmParticleMat = new THREE.MeshBasicMaterial({ color: 0x4361EE });
+        const shmParticle = new THREE.Mesh(particleGeo, shmParticleMat);
+        scene.add(shmParticle);
+
+        // 4. Connecting Dashed Line
+        const dashGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]);
+        const dashMat = new THREE.LineDashedMaterial({ color: 0x94a3b8, dashSize: 0.2, gapSize: 0.15, linewidth: 1 });
+        const dashLine = new THREE.Line(dashGeo, dashMat);
+        scene.add(dashLine);
+
+        // 5. 3D Traveling Wave (BufferGeometry for performance)
+        const numWavePoints = 300;
+        const waveLengthZ = 20;
+        const waveGeo = new THREE.BufferGeometry();
+        const wavePositions = new Float32Array(numWavePoints * 3);
+        waveGeo.setAttribute('position', new THREE.BufferAttribute(wavePositions, 3));
+        const waveMat = new THREE.LineBasicMaterial({ color: 0x4361EE, linewidth: 2 });
+        const waveLine = new THREE.Line(waveGeo, waveMat);
+        scene.add(waveLine);
+
+        // 6. Physics Vectors
+        const origin = new THREE.Vector3(0, 0, 0);
+        const phasorArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), origin, 1, 0xFF3366, 0.3, 0.2);
+        scene.add(phasorArrow);
+
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), origin, 1, 0x06D6A0, 0.4, 0.25);
+        scene.add(velArrow);
+
+        const accArrow = new THREE.ArrowHelper(new THREE.Vector3(0,-1,0), origin, 1, 0xF77F00, 0.4, 0.25);
+        scene.add(accArrow);
+
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            time += delta * params.timeScale;
+
+            const A = params.amplitude;
+            const w = params.omega;
+            const phi = params.phase;
+            const k = params.k;
+
+            // Phase Angle
+            const theta = w * time + phi;
+
+            // 1. Update Reference Circle
+            referenceCircle.scale.set(A, A, 1);
+
+            // 2. Update Circular Particle & Phasor
+            const cx = A * Math.cos(theta);
+            const cy = A * Math.sin(theta);
+            circParticle.position.set(cx, cy, 0);
+            
+            const phasorDir = new THREE.Vector3(cx, cy, 0).normalize();
+            phasorArrow.setDirection(phasorDir);
+            phasorArrow.setLength(A, 0.3, 0.2);
+
+            // 3. Update SHM Particle
+            shmParticle.position.set(0, cy, 0);
+
+            // 4. Update Dashed Line
+            const dashPos = dashLine.geometry.attributes.position.array;
+            dashPos[0] = cx; dashPos[1] = cy; dashPos[2] = 0;
+            dashPos[3] = 0;  dashPos[4] = cy; dashPos[5] = 0;
+            dashLine.geometry.attributes.position.needsUpdate = true;
+            dashLine.computeLineDistances();
+
+            // 5. Update Traveling Wave
+            // Wave equation: y(z,t) = A * sin(wt - kz + phi) 
+            // This ensures the wave at z=0 perfectly matches the SHM particle y = A*sin(wt + phi)
+            const wavePos = waveLine.geometry.attributes.position.array;
+            for(let i = 0; i < numWavePoints; i++) {
+                const z = i * (waveLengthZ / (numWavePoints - 1));
+                const y = A * Math.sin(w * time - k * z + phi);
+                
+                wavePos[i*3] = 0;     // x
+                wavePos[i*3+1] = y;   // y
+                wavePos[i*3+2] = z;   // z
+            }
+            waveLine.geometry.attributes.position.needsUpdate = true;
+
+            // 6. Update Physics Vectors on SHM Particle
+            const vy = A * w * Math.cos(theta);
+            const ay = -A * w * w * Math.sin(theta);
+
+            // Velocity Vector (Scaled for visual clarity)
+            const vScale = 0.4; 
+            if (Math.abs(vy) > 0.01) {
+                velArrow.setDirection(new THREE.Vector3(0, Math.sign(vy), 0));
+                velArrow.setLength(Math.abs(vy) * vScale, 0.3, 0.2);
+                velArrow.position.copy(shmParticle.position);
+                velArrow.visible = true;
+            } else {
+                velArrow.visible = false;
+            }
+
+            // Acceleration Vector (Scaled for visual clarity)
+            const aScale = 0.15;
+            if (Math.abs(ay) > 0.01) {
+                accArrow.setDirection(new THREE.Vector3(0, Math.sign(ay), 0));
+                accArrow.setLength(Math.abs(ay) * aScale, 0.3, 0.2);
+                accArrow.position.copy(shmParticle.position);
+                accArrow.visible = true;
+            } else {
+                accArrow.visible = false;
+            }
+
+            // 7. Update UI Live Data
+            elY.innerText = `${cy >= 0 ? '+' : ''}${cy.toFixed(2)} m`;
+            elV.innerText = `${vy >= 0 ? '+' : ''}${vy.toFixed(2)} m/s`;
+            elA.innerText = `${ay >= 0 ? '+' : ''}${ay.toFixed(2)} m/s²`;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Window Resize Handling ---
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // Start Animation
+        animate();
+    </script>
+</body>
+</html>

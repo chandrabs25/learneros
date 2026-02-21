@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Modulus & Speed of Sound Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
+            color: #333;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #formula-card h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+            color: #1a1a1a;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.05);
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .live-values {
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        .live-value-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+        }
+
+        .live-value-row span:first-child {
+            color: #666;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .live-value-row span:last-child {
+            font-weight: 700;
+            color: #FF3366;
+        }
+
+        /* Sidebar Controls */
+        #sidebar {
+            width: 380px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -5px 0 25px rgba(0,0,0,0.03);
+            padding: 30px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-header label {
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #2b2b2b;
+        }
+
+        .control-header .val-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: #4361EE;
+            background: #fff;
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d9e6;
+            border-radius: 3px;
+        }
+
+        /* Mode Toggle */
+        .mode-toggle {
+            display: flex;
+            background: #e9ecef;
+            border-radius: 8px;
+            overflow: hidden;
+            padding: 4px;
+        }
+
+        .mode-toggle input[type="radio"] {
+            display: none;
+        }
+
+        .mode-toggle label {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #6c757d;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .mode-toggle input[type="radio"]:checked + label {
+            background: #fff;
+            color: #4361EE;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .legend {
+            margin-top: auto;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .legend-item:last-child { margin-bottom: 0; }
+        .color-box { width: 16px; height: 16px; border-radius: 4px; }
+        .c-blue { background: #4361EE; }
+        .c-red { background: #FF3366; }
+        .c-cyan { background: #00F5FF; }
+        .c-green { background: #06D6A0; opacity: 0.6; }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <h2>Physics Engine</h2>
+            <div class="formula">B = -V<sub>0</sub> &middot; &Delta;P / &Delta;V</div>
+            <div class="formula">v = &radic;(B / &rho;)</div>
+            
+            <div class="live-values">
+                <div class="live-value-row">
+                    <span>Speed of Sound (v):</span>
+                    <span id="out-v">0.0 m/s</span>
+                </div>
+                <div class="live-value-row">
+                    <span>Volume Change (&Delta;V):</span>
+                    <span id="out-dv">0.0 m&sup3;</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <div class="mode-toggle">
+            <input type="radio" id="mode-static" name="mode" value="static" checked>
+            <label for="mode-static">Static Compression</label>
+            <input type="radio" id="mode-wave" name="mode" value="wave">
+            <label for="mode-wave">Wave Propagation</label>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Bulk Modulus (B)</label>
+                <div class="val-display"><span id="val-b">2.2</span> &times; 10&sup9; Pa</div>
+            </div>
+            <input type="range" id="slider-b" min="0.5" max="200" step="0.5" value="2.2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Density (&rho;)</label>
+                <div class="val-display"><span id="val-rho">1000</span> kg/m&sup3;</div>
+            </div>
+            <input type="range" id="slider-rho" min="500" max="10000" step="100" value="1000">
+        </div>
+
+        <div class="control-group" id="group-p">
+            <div class="control-header">
+                <label>Applied Pressure (&Delta;P)</label>
+                <div class="val-display"><span id="val-p">0</span> &times; 10&sup6; Pa</div>
+            </div>
+            <input type="range" id="slider-p" min="0" max="100" step="1" value="0">
+        </div>
+
+        <div class="control-group" id="group-f" style="opacity: 0.4; pointer-events: none;">
+            <div class="control-header">
+                <label>Frequency (f)</label>
+                <div class="val-display"><span id="val-f">1.0</span> Hz</div>
+            </div>
+            <input type="range" id="slider-f" min="0.5" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box c-blue"></div> Equilibrium</div>
+            <div class="legend-item"><div class="color-box c-red"></div> High Pressure (Compression)</div>
+            <div class="legend-item"><div class="color-box c-cyan"></div> Low Pressure (Rarefaction)</div>
+            <div class="legend-item" id="legend-wave" style="display:none;"><div class="color-box c-green"></div> Wave Front (Peak)</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Setup Three.js Scene ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(14, 12, 18);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Objects ---
+
+        // 1. InstancedMesh for Particles (10x10x10)
+        const gridSize = 10;
+        const particleCount = gridSize * gridSize * gridSize;
+        const geometry = new THREE.SphereGeometry(0.18, 16, 16);
+        const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        const particles = new THREE.InstancedMesh(geometry, material, particleCount);
+        
+        const dummy = new THREE.Object3D();
+        const color = new THREE.Color();
+        const basePositions = [];
+        
+        const colorBlue = new THREE.Color(0x4361EE);
+        const colorRed = new THREE.Color(0xFF3366);
+        const colorCyan = new THREE.Color(0x00F5FF);
+
+        let idx = 0;
+        const offset = (gridSize - 1) / 2;
+        for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y < gridSize; y++) {
+                for (let z = 0; z < gridSize; z++) {
+                    let px = x - offset;
+                    let py = y - offset;
+                    let pz = z - offset;
+                    basePositions.push({ x: px, y: py, z: pz });
+                    
+                    dummy.position.set(px, py, pz);
+                    dummy.updateMatrix();
+                    particles.setMatrixAt(idx, dummy.matrix);
+                    particles.setColorAt(idx, colorBlue);
+                    idx++;
+                }
+            }
+        }
+        scene.add(particles);
+
+        // 2. Wireframe Container
+        const boxGeo = new THREE.BoxGeometry(gridSize, gridSize, gridSize);
+        const boxMat = new THREE.MeshBasicMaterial({ color: 0xD1D9E6, wireframe: true, transparent: true, opacity: 0.5 });
+        const wireframeCube = new THREE.Mesh(boxGeo, boxMat);
+        scene.add(wireframeCube);
+
+        // 3. Force Vectors (Arrows)
+        const arrows = [];
+        const arrowDirs = [
+            new THREE.Vector3(-1, 0, 0), new THREE.Vector3(1, 0, 0),
+            new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 1, 0),
+            new THREE.Vector3(0, 0, -1), new THREE.Vector3(0, 0, 1)
+        ];
+        const arrowOrigins = [
+            new THREE.Vector3(5, 0, 0), new THREE.Vector3(-5, 0, 0),
+            new THREE.Vector3(0, 5, 0), new THREE.Vector3(0, -5, 0),
+            new THREE.Vector3(0, 0, 5), new THREE.Vector3(0, 0, -5)
+        ];
+        
+        for (let i = 0; i < 6; i++) {
+            let arrow = new THREE.ArrowHelper(arrowDirs[i], arrowOrigins[i], 0.001, 0xF77F00, 0.6, 0.4);
+            scene.add(arrow);
+            arrows.push(arrow);
+        }
+
+        // 4. Wave Front Planes
+        const wavePlanes = [];
+        const planeGeo = new THREE.PlaneGeometry(gridSize + 1, gridSize + 1);
+        const planeMat = new THREE.MeshBasicMaterial({ color: 0x06D6A0, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+        
+        for(let i=0; i<5; i++) {
+            let plane = new THREE.Mesh(planeGeo, planeMat);
+            plane.rotation.y = Math.PI / 2;
+            plane.visible = false;
+            scene.add(plane);
+            wavePlanes.push(plane);
+        }
+
+        // --- UI & State Management ---
+        const ui = {
+            mode: document.querySelectorAll('input[name="mode"]'),
+            b: document.getElementById('slider-b'),
+            rho: document.getElementById('slider-rho'),
+            p: document.getElementById('slider-p'),
+            f: document.getElementById('slider-f'),
+            valB: document.getElementById('val-b'),
+            valRho: document.getElementById('val-rho'),
+            valP: document.getElementById('val-p'),
+            valF: document.getElementById('val-f'),
+            outV: document.getElementById('out-v'),
+            outDV: document.getElementById('out-dv'),
+            groupP: document.getElementById('group-p'),
+            groupF: document.getElementById('group-f'),
+            legendWave: document.getElementById('legend-wave')
+        };
+
+        let currentMode = 'static';
+        const V0 = 1000; // 10x10x10
+
+        ui.mode.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentMode = e.target.value;
+                if (currentMode === 'static') {
+                    ui.groupP.style.opacity = '1';
+                    ui.groupP.style.pointerEvents = 'auto';
+                    ui.groupF.style.opacity = '0.4';
+                    ui.groupF.style.pointerEvents = 'none';
+                    ui.legendWave.style.display = 'none';
+                    wavePlanes.forEach(p => p.visible = false);
+                } else {
+                    ui.groupP.style.opacity = '0.4';
+                    ui.groupP.style.pointerEvents = 'none';
+                    ui.groupF.style.opacity = '1';
+                    ui.groupF.style.pointerEvents = 'auto';
+                    ui.legendWave.style.display = 'flex';
+                    arrows.forEach(a => a.visible = false);
+                    wireframeCube.scale.set(1, 1, 1);
+                }
+            });
+        });
+
+        function updateUIValues() {
+            ui.valB.innerText = parseFloat(ui.b.value).toFixed(1);
+            ui.valRho.innerText = ui.rho.value;
+            ui.valP.innerText = ui.p.value;
+            ui.valF.innerText = parseFloat(ui.f.value).toFixed(1);
+        }
+
+        [ui.b, ui.rho, ui.p, ui.f].forEach(slider => {
+            slider.addEventListener('input', updateUIValues);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            let dt = clock.getDelta();
+            time += dt;
+
+            // Physics Variables
+            let B = parseFloat(ui.b.value) * 1e9;
+            let rho = parseFloat(ui.rho.value);
+            let deltaP = parseFloat(ui.p.value) * 1e6;
+            let f = parseFloat(ui.f.value);
+
+            // Calculations
+            let v_real = Math.sqrt(B / rho);
+            let dV_real = - (V0 * deltaP) / B;
+
+            // Update Formula Card
+            ui.outV.innerText = v_real.toFixed(1) + " m/s";
+            ui.outDV.innerText = dV_real.toExponential(2) + " m³";
+
+            if (currentMode === 'static') {
+                // --- STATIC MODE ---
+                let scale = Math.pow((V0 + dV_real) / V0, 1/3);
+                wireframeCube.scale.set(scale, scale, scale);
+
+                let arrowLen = (deltaP / 1e8) * 3; 
+                
+                for (let i = 0; i < 6; i++) {
+                    if (arrowLen > 0.05) {
+                        arrows[i].visible = true;
+                        arrows[i].setLength(arrowLen, 0.6, 0.4);
+                        // Position arrow tip at the surface of the scaled cube
+                        arrows[i].position.copy(arrowOrigins[i]).normalize().multiplyScalar(5 * scale + arrowLen);
+                    } else {
+                        arrows[i].visible = false;
+                    }
+                }
+
+                for (let i = 0; i < particleCount; i++) {
+                    let bp = basePositions[i];
+                    dummy.position.set(bp.x * scale, bp.y * scale, bp.z * scale);
+                    dummy.updateMatrix();
+                    particles.setMatrixAt(i, dummy.matrix);
+                    particles.setColorAt(i, colorBlue);
+                }
+                particles.instanceMatrix.needsUpdate = true;
+                particles.instanceColor.needsUpdate = true;
+
+            } else {
+                // --- WAVE MODE ---
+                // Visual scaling to make wave fit in the 10x10 box
+                let v_vis = v_real * 0.004; 
+                let w = 2 * Math.PI * f;
+                let k_vis = w / v_vis;
+                let amplitude = 0.4;
+
+                // Wave Front Planes (Tracking Compression Peaks)
+                let lambda = 2 * Math.PI / k_vis;
+                // Peak occurs where cos(kx - wt) = -1 -> kx - wt = PI -> x = (wt + PI)/k
+                let basePeak = (w * time + Math.PI) / k_vis;
+                
+                for(let i=0; i<5; i++) {
+                    // Generate multiple planes spaced by lambda
+                    let px = basePeak + (i - 2) * lambda;
+                    // Wrap around logic to keep planes flowing through the box
+                    px = ((px + 5) % lambda);
+                    if (px < 0) px += lambda;
+                    px -= 5;
+
+                    if (px >= -5 && px <= 5) {
+                        wavePlanes[i].visible = true;
+                        wavePlanes[i].position.x = px;
+                    } else {
+                        wavePlanes[i].visible = false;
+                    }
+                }
+
+                for (let i = 0; i < particleCount; i++) {
+                    let bp = basePositions[i];
+                    let phase = k_vis * bp.x - w * time;
+                    
+                    // Longitudinal displacement
+                    let sx = amplitude * Math.sin(phase);
+                    
+                    dummy.position.set(bp.x + sx, bp.y, bp.z);
+                    dummy.updateMatrix();
+                    particles.setMatrixAt(i, dummy.matrix);
+
+                    // Pressure variation for color mapping
+                    // dp = -B * A * k * cos(kx - wt). 
+                    // We map -cos(kx - wt) to color. 1 = Max Compression (Red), -1 = Max Rarefaction (Cyan)
+                    let pressurePhase = -Math.cos(phase); 
+                    
+                    if (pressurePhase > 0) {
+                        color.lerpColors(colorBlue, colorRed, pressurePhase);
+                    } else {
+                        color.lerpColors(colorBlue, colorCyan, -pressurePhase);
+                    }
+                    particles.setColorAt(i, color);
+                }
+                particles.instanceMatrix.needsUpdate = true;
+                particles.instanceColor.needsUpdate = true;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        updateUIValues();
+        animate();
+
+    </script>
+</body>
+</html>

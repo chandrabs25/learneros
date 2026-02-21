@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relative Velocity Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1a202c;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 75%;
+            height: 100vh;
+        }
+
+        /* Glassmorphic Control Panel */
+        #control-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25%;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .control-group h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            background: #edf2f7;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            color: #4a5568;
+        }
+
+        /* Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 2px solid #a0aec0;
+        }
+        
+        #slider-velA::-webkit-slider-thumb { border-color: #FF3366; }
+        #slider-velB::-webkit-slider-thumb { border-color: #4361EE; }
+
+        /* Radio Buttons */
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .radio-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+        .radio-label input {
+            margin-right: 0.5rem;
+            cursor: pointer;
+        }
+
+        /* Buttons */
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: auto;
+        }
+        button {
+            flex: 1;
+            padding: 0.8rem;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #edf2f7;
+            color: #2d3748;
+        }
+        button:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        button.primary {
+            background: #06D6A0;
+            color: white;
+        }
+        button.primary:hover {
+            background: #05b587;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            z-index: 10;
+            min-width: 280px;
+        }
+        #formula-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: #2d3748;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 0.5rem;
+        }
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+            color: #1a202c;
+        }
+        .math-line span.red { color: #FF3366; font-weight: bold; }
+        .math-line span.blue { color: #4361EE; font-weight: bold; }
+        .math-line span.green { color: #06D6A0; font-weight: bold; }
+        
+        #observer-text {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #718096;
+            background: #edf2f7;
+            padding: 0.5rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        /* 3D Labels */
+        .car-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 0.8rem;
+            pointer-events: none;
+            transform: translate(-50%, -100%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: opacity 0.1s;
+            z-index: 5;
+        }
+        #label-A { color: #FF3366; border: 1px solid #FF3366; }
+        #label-B { color: #4361EE; border: 1px solid #4361EE; }
+
+        @media (max-width: 768px) {
+            #canvas-container { width: 100%; height: 60vh; }
+            #control-panel { top: 60vh; width: 100%; height: 40vh; border-left: none; border-top: 1px solid rgba(255,255,255,0.5); }
+            #formula-card { top: 10px; left: 10px; padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <h3>Relative Velocity</h3>
+        <div class="math-line">v<sub>A</sub> = <span class="red" id="math-vA">20</span> m/s</div>
+        <div class="math-line">v<sub>B</sub> = <span class="blue" id="math-vB">10</span> m/s</div>
+        <div style="margin: 10px 0; border-top: 1px dashed #cbd5e0;"></div>
+        <div id="math-relative-container">
+            <div class="math-line">v<sub>BA</sub> = v<sub>B</sub> - v<sub>A</sub></div>
+            <div class="math-line">&nbsp;&nbsp;&nbsp;&nbsp;= (<span class="blue" id="math-vB-sub">10</span>) - (<span class="red" id="math-vA-sub">20</span>)</div>
+            <div class="math-line">&nbsp;&nbsp;&nbsp;&nbsp;= <span class="green" id="math-vBA">-10</span> m/s</div>
+        </div>
+        <div id="observer-text">Observing from: Ground</div>
+    </div>
+
+    <div id="control-panel">
+        <h1>Reference Frames</h1>
+        
+        <div class="control-group">
+            <h2>Car A Velocity <span class="val-display" id="val-velA">20 m/s</span></h2>
+            <input type="range" id="slider-velA" min="-50" max="50" step="1" value="20">
+        </div>
+
+        <div class="control-group">
+            <h2>Car B Velocity <span class="val-display" id="val-velB">10 m/s</span></h2>
+            <input type="range" id="slider-velB" min="-50" max="50" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <h2>Reference Frame</h2>
+            <div class="radio-group">
+                <label class="radio-label">
+                    <input type="radio" name="frame" value="Ground" checked> Ground (Stationary)
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="frame" value="Car A"> Car A (Red)
+                </label>
+                <label class="radio-label">
+                    <input type="radio" name="frame" value="Car B"> Car B (Blue)
+                </label>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-play" class="primary">Pause</button>
+            <button id="btn-reset">Reset</button>
+        </div>
+    </div>
+
+    <div id="label-A" class="car-label">Car A</div>
+    <div id="label-B" class="car-label">Car B</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        let isPlaying = true;
+        let velA = 20;
+        let velB = 10;
+        let frameMode = 'Ground';
+        
+        // Absolute ground positions
+        let posA = 0;
+        let posB = 30; // B starts ahead
+        
+        let lastTime = performance.now();
+
+        // --- DOM Elements ---
+        const sliderVelA = document.getElementById('slider-velA');
+        const sliderVelB = document.getElementById('slider-velB');
+        const valVelA = document.getElementById('val-velA');
+        const valVelB = document.getElementById('val-velB');
+        const frameRadios = document.querySelectorAll('input[name="frame"]');
+        const btnPlay = document.getElementById('btn-play');
+        const btnReset = document.getElementById('btn-reset');
+        
+        const mathVA = document.getElementById('math-vA');
+        const mathVB = document.getElementById('math-vB');
+        const mathVASub = document.getElementById('math-vA-sub');
+        const mathVBSub = document.getElementById('math-vB-sub');
+        const mathVBA = document.getElementById('math-vBA');
+        const observerText = document.getElementById('observer-text');
+        const mathRelativeContainer = document.getElementById('math-relative-container');
+
+        const labelA = document.getElementById('label-A');
+        const labelB = document.getElementById('label-B');
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.Fog('#f0f4f8', 50, 200);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 25, 50);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.minDistance = 10;
+        controls.maxDistance = 150;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(20, 50, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 50;
+        dirLight.shadow.camera.bottom = -50;
+        dirLight.shadow.camera.left = -50;
+        dirLight.shadow.camera.right = 50;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // --- Materials & Geometries ---
+        const colorRed = 0xFF3366;
+        const colorBlue = 0x4361EE;
+        const colorGreen = 0x06D6A0;
+        const colorGrey = 0xE2E8F0;
+        const colorDarkGrey = 0x4A5568;
+
+        // Road Texture Generation
+        function createRoadTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 1024;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            
+            // Base road
+            ctx.fillStyle = '#cbd5e0'; // slightly darker than background
+            ctx.fillRect(0, 0, 1024, 256);
+            
+            // Lane markings
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 1024; i += 64) {
+                ctx.fillRect(i, 120, 32, 16);
+            }
+            
+            // Edges
+            ctx.fillStyle = '#a0aec0';
+            ctx.fillRect(0, 10, 1024, 8);
+            ctx.fillRect(0, 238, 1024, 8);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(50, 1); // Repeat along length
+            return texture;
+        }
+
+        const roadTexture = createRoadTexture();
+        const roadGeo = new THREE.PlaneGeometry(2000, 24);
+        const roadMat = new THREE.MeshStandardMaterial({ 
+            map: roadTexture, 
+            roughness: 0.8, 
+            metalness: 0.1 
+        });
+        const road = new THREE.Mesh(roadGeo, roadMat);
+        road.rotation.x = -Math.PI / 2;
+        road.receiveShadow = true;
+        scene.add(road);
+
+        // Car Builder
+        function createCar(color) {
+            const group = new THREE.Group();
+            
+            // Body
+            const bodyGeo = new THREE.BoxGeometry(4.5, 1.0, 2.2);
+            const bodyMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3, metalness: 0.2 });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.8;
+            body.castShadow = true;
+            body.receiveShadow = true;
+            group.add(body);
+
+            // Cabin
+            const cabinGeo = new THREE.BoxGeometry(2.5, 0.8, 1.8);
+            const cabinMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.8 });
+            const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+            cabin.position.set(-0.2, 1.7, 0);
+            cabin.castShadow = true;
+            group.add(cabin);
+
+            // Wheels
+            const wheelGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.4, 16);
+            wheelGeo.rotateX(Math.PI / 2);
+            const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1a202c, roughness: 0.9 });
+            
+            const positions = [
+                [-1.5, 0.4, 1.1], [1.5, 0.4, 1.1],
+                [-1.5, 0.4, -1.1], [1.5, 0.4, -1.1]
+            ];
+            
+            positions.forEach(pos => {
+                const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+                wheel.position.set(...pos);
+                wheel.castShadow = true;
+                group.add(wheel);
+            });
+
+            return group;
+        }
+
+        const carA = createCar(colorRed);
+        carA.position.z = 3; // Front lane
+        scene.add(carA);
+
+        const carB = createCar(colorBlue);
+        carB.position.z = -3; // Back lane
+        scene.add(carB);
+
+        // Thick 3D Arrow Builder
+        function createThickArrow(color) {
+            const group = new THREE.Group();
+            
+            const shaftGeo = new THREE.CylinderGeometry(0.2, 0.2, 1, 16);
+            shaftGeo.translate(0, 0.5, 0);
+            shaftGeo.rotateZ(-Math.PI / 2); // Point along X
+            const mat = new THREE.MeshStandardMaterial({ color: color, emissive: color, emissiveIntensity: 0.2 });
+            const shaft = new THREE.Mesh(shaftGeo, mat);
+            group.add(shaft);
+
+            const headGeo = new THREE.ConeGeometry(0.6, 1.2, 16);
+            headGeo.translate(0, -0.6, 0);
+            headGeo.rotateZ(Math.PI / 2); // Point along X
+            const head = new THREE.Mesh(headGeo, mat);
+            // Head position will be updated dynamically based on length
+            group.add(head);
+
+            group.shaft = shaft;
+            group.head = head;
+            
+            return group;
+        }
+
+        const arrowA = createThickArrow(colorGreen);
+        arrowA.position.y = 3.5;
+        carA.add(arrowA);
+
+        const arrowB = createThickArrow(colorGreen);
+        arrowB.position.y = 3.5;
+        carB.add(arrowB);
+
+        function updateArrow(arrowGroup, velocity) {
+            if (Math.abs(velocity) < 0.1) {
+                arrowGroup.visible = false;
+                return;
+            }
+            arrowGroup.visible = true;
+            
+            const scale = 0.2; // Visual scaling factor
+            const length = Math.abs(velocity) * scale;
+            const sign = Math.sign(velocity);
+
+            // Scale shaft
+            arrowGroup.shaft.scale.set(1, length, 1);
+            
+            // Position head at end of shaft
+            arrowGroup.head.position.x = length * sign;
+            
+            // Rotate head based on direction
+            if (sign < 0) {
+                arrowGroup.shaft.rotation.z = Math.PI / 2;
+                arrowGroup.head.rotation.z = -Math.PI / 2;
+            } else {
+                arrowGroup.shaft.rotation.z = -Math.PI / 2;
+                arrowGroup.head.rotation.z = Math.PI / 2;
+            }
+        }
+
+        // Poles (Reference Markers)
+        const poles = [];
+        const poleGeo = new THREE.CylinderGeometry(0.15, 0.15, 6, 8);
+        const poleMat = new THREE.MeshStandardMaterial({ color: colorDarkGrey });
+        
+        for (let i = 0; i < 40; i++) {
+            const pole = new THREE.Mesh(poleGeo, poleMat);
+            pole.position.y = 3;
+            pole.position.z = -14;
+            pole.castShadow = true;
+            scene.add(pole);
+            poles.push({ mesh: pole, baseIndex: i });
+        }
+
+        // Observer Indicator (Spotlight/Eye)
+        const observerGroup = new THREE.Group();
+        const obsGeo = new THREE.ConeGeometry(0.8, 2, 16);
+        obsGeo.rotateX(Math.PI); // Point down
+        const obsMat = new THREE.MeshStandardMaterial({ color: 0xFFD166, emissive: 0xFFD166, emissiveIntensity: 0.5 });
+        const obsMesh = new THREE.Mesh(obsGeo, obsMat);
+        obsMesh.position.y = 8;
+        observerGroup.add(obsMesh);
+        
+        const obsLight = new THREE.PointLight(0xFFD166, 1, 20);
+        obsLight.position.y = 7;
+        observerGroup.add(obsLight);
+        scene.add(observerGroup);
+
+        // --- Event Listeners ---
+        sliderVelA.addEventListener('input', (e) => {
+            velA = parseFloat(e.target.value);
+            valVelA.textContent = `${velA} m/s`;
+            updateMathUI();
+        });
+
+        sliderVelB.addEventListener('input', (e) => {
+            velB = parseFloat(e.target.value);
+            valVelB.textContent = `${velB} m/s`;
+            updateMathUI();
+        });
+
+        frameRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                frameMode = e.target.value;
+                updateMathUI();
+            });
+        });
+
+        btnPlay.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            btnPlay.textContent = isPlaying ? 'Pause' : 'Play';
+            btnPlay.style.background = isPlaying ? '#06D6A0' : '#FFD166';
+        });
+
+        btnReset.addEventListener('click', () => {
+            posA = 0;
+            posB = 30;
+            velA = 20;
+            velB = 10;
+            sliderVelA.value = velA;
+            sliderVelB.value = velB;
+            valVelA.textContent = `${velA} m/s`;
+            valVelB.textContent = `${velB} m/s`;
+            frameMode = 'Ground';
+            document.querySelector('input[value="Ground"]').checked = true;
+            updateMathUI();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- UI Update Logic ---
+        function updateMathUI() {
+            mathVA.textContent = velA;
+            mathVB.textContent = velB;
+            
+            if (frameMode === 'Ground') {
+                observerText.textContent = 'Observing from: Ground';
+                mathRelativeContainer.style.display = 'none';
+            } else if (frameMode === 'Car A') {
+                observerText.textContent = 'Observing from: Car A (Red)';
+                mathRelativeContainer.style.display = 'block';
+                mathRelativeContainer.innerHTML = `
+                    <div class="math-line">v<sub>BA</sub> = v<sub>B</sub> - v<sub>A</sub></div>
+                    <div class="math-line">&nbsp;&nbsp;&nbsp;&nbsp;= (<span class="blue">${velB}</span>) - (<span class="red">${velA}</span>)</div>
+                    <div class="math-line">&nbsp;&nbsp;&nbsp;&nbsp;= <span class="green">${velB - velA}</span> m/s</div>
+                `;
+            } else if (frameMode === 'Car B') {
+                observerText.textContent = 'Observing from: Car B (Blue)';
+                mathRelativeContainer.style.display = 'block';
+                mathRelativeContainer.innerHTML = `
+                    <div class="math-line">v<sub>AB</sub> = v<sub>A</sub> - v<sub>B</sub></div>
+                    <div class="math-line">&nbsp;&nbsp;&nbsp;&nbsp;= (<span class="red">${velA}</span>) - (<span class="blue">${velB}</span>)</div>
+                    <div class="math-line">&nbsp;&nbsp;&nbsp;&nbsp;= <span class="green">${velA - velB}</span> m/s</div>
+                `;
+            }
+        }
+        updateMathUI();
+
+        function updateLabels() {
+            const tempV = new THREE.Vector3();
+            
+            // Car A Label
+            tempV.copy(carA.position).add(new THREE.Vector3(0, 2, 0));
+            tempV.project(camera);
+            if (tempV.z < 1) {
+                const xA = (tempV.x * .5 + .5) * container.clientWidth;
+                const yA = (tempV.y * -.5 + .5) * container.clientHeight;
+                labelA.style.left = `${xA}px`;
+                labelA.style.top = `${yA}px`;
+                labelA.style.opacity = 1;
+            } else {
+                labelA.style.opacity = 0;
+            }
+
+            // Car B Label
+            tempV.copy(carB.position).add(new THREE.Vector3(0, 2, 0));
+            tempV.project(camera);
+            if (tempV.z < 1) {
+                const xB = (tempV.x * .5 + .5) * container.clientWidth;
+                const yB = (tempV.y * -.5 + .5) * container.clientHeight;
+                labelB.style.left = `${xB}px`;
+                labelB.style.top = `${yB}px`;
+                labelB.style.opacity = 1;
+            } else {
+                labelB.style.opacity = 0;
+            }
+        }
+
+        // --- Main Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const currentTime = performance.now();
+            const dt = Math.min((currentTime - lastTime) / 1000, 0.1); // Cap dt
+            lastTime = currentTime;
+
+            // 1. Update Absolute Physics
+            if (isPlaying) {
+                posA += velA * dt;
+                posB += velB * dt;
+            }
+
+            // 2. Apply Frame of Reference Logic
+            let renderPosA, renderPosB, roadOffset;
+            let vRelA, vRelB;
+
+            if (frameMode === 'Ground') {
+                renderPosA = posA;
+                renderPosB = posB;
+                roadOffset = 0;
+                vRelA = velA;
+                vRelB = velB;
+                observerGroup.visible = false;
+            } else if (frameMode === 'Car A') {
+                renderPosA = 0;
+                renderPosB = posB - posA;
+                roadOffset = posA;
+                vRelA = 0;
+                vRelB = velB - velA;
+                
+                observerGroup.visible = true;
+                observerGroup.position.x = renderPosA;
+                observerGroup.position.z = carA.position.z;
+            } else if (frameMode === 'Car B') {
+                renderPosA = posA - posB;
+                renderPosB = 0;
+                roadOffset = posB;
+                vRelA = velA - velB;
+                vRelB = 0;
+
+                observerGroup.visible = true;
+                observerGroup.position.x = renderPosB;
+                observerGroup.position.z = carB.position.z;
+            }
+
+            // 3. Update Meshes
+            carA.position.x = renderPosA;
+            carB.position.x = renderPosB;
+
+            // Road texture repeats every 2000 units / 50 repeats = 40 units per repeat
+            // To make it move left when car moves right, we add offset
+            roadTexture.offset.x = roadOffset / 40;
+
+            // Update Poles (Infinite treadmill effect)
+            const poleSpacing = 20;
+            const totalPoles = poles.length;
+            const domainSize = totalPoles * poleSpacing;
+            const halfDomain = domainSize / 2;
+
+            poles.forEach(p => {
+                // Absolute ground position of this pole
+                let absoluteX = p.baseIndex * poleSpacing;
+                
+                // Apparent position based on reference frame
+                let apparentX = absoluteX - roadOffset;
+                
+                // Wrap around logic to keep poles near the camera (x=0)
+                while (apparentX > halfDomain) apparentX -= domainSize;
+                while (apparentX < -halfDomain) apparentX += domainSize;
+                
+                p.mesh.position.x = apparentX;
+            });
+
+            // Update Velocity Vectors
+            updateArrow(arrowA, vRelA);
+            updateArrow(arrowB, vRelB);
+
+            // Animate observer indicator
+            if (observerGroup.visible) {
+                observerGroup.children[0].position.y = 8 + Math.sin(currentTime * 0.005) * 0.5;
+            }
+
+            // Camera tracking logic (keep action centered if in ground frame and cars move far)
+            if (frameMode === 'Ground') {
+                // Optional: make camera follow the midpoint
+                // const midX = (posA + posB) / 2;
+                // controls.target.set(midX, 0, 0);
+                // camera.position.x = midX;
+                
+                // For this spec, we keep camera stationary and let cars drive.
+                // If they go too far, wrap them for continuous viewing in ground mode
+                if (posA > 200 && posB > 200) { posA -= 400; posB -= 400; }
+                if (posA < -200 && posB < -200) { posA += 400; posB += 400; }
+                controls.target.set(0, 0, 0);
+            } else {
+                controls.target.set(0, 0, 0); // Reference frame is always at 0
+            }
+
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Start
+        animate();
+
+    </script>
+</body>
+</html>

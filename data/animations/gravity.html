@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Gravity Lab: From Projectiles to Planetary Altitudes</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent-red: #FF3366;
+            --accent-purple: #7209B7;
+            --accent-green: #06D6A0;
+            --accent-orange: #F77F00;
+            --accent-blue: #4361EE;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            z-index: 10;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            min-width: 300px;
+        }
+
+        #formula-card h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .math-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .live-value {
+            font-weight: 700;
+            color: var(--accent-orange);
+        }
+
+        /* Control Panel */
+        #control-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25%;
+            min-width: 320px;
+            max-width: 400px;
+            height: 100vh;
+            border-radius: 0;
+            border-left: 1px solid #ffffff;
+            padding: 30px 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--accent-purple);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-readout {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-blue);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        /* Specific slider colors */
+        #v0::-webkit-slider-thumb {
+            background: var(--accent-green);
+        }
+
+        #theta::-webkit-slider-thumb {
+            background: var(--accent-purple);
+        }
+
+        #h::-webkit-slider-thumb {
+            background: var(--accent-blue);
+        }
+
+        #mass::-webkit-slider-thumb {
+            background: var(--accent-red);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #btn-launch {
+            background-color: var(--accent-green);
+            color: white;
+        }
+
+        #btn-launch:hover {
+            background-color: #05b586;
+            transform: translateY(-2px);
+        }
+
+        #btn-reset {
+            background-color: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        #btn-reset:hover {
+            background-color: #cbd5e1;
+            transform: translateY(-2px);
+        }
+
+        #btn-toggle-orbit {
+            background-color: var(--accent-blue);
+            color: white;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        #btn-toggle-orbit:hover {
+            background-color: #324ed4;
+            transform: translateY(-2px);
+        }
+
+        .telemetry {
+            background: rgba(255, 255, 255, 0.6);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: auto;
+        }
+
+        .telemetry h3 {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+
+        .telemetry-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* 3D Vector Labels */
+        .vector-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 20;
+            display: none;
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        #label-v {
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        #label-g {
+            color: var(--accent-orange);
+            border: 1px solid var(--accent-orange);
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="label-v" class="vector-label">v</div>
+    <div id="label-g" class="vector-label">g</div>
+
+    <div id="formula-card" class="glass-panel">
+        <h3>Gravity at Altitude</h3>
+        <div class="math-display">
+            g(h) = g₀ [ R_E / (R_E + h) ]²
+        </div>
+        <div class="math-display" style="font-size: 0.9rem; color: var(--text-muted);">
+            g₀ = 9.81 m/s²<br>
+            R_E = 6371 km
+        </div>
+        <div style="margin-top: 15px; font-size: 1.1rem;">
+            Effective g: <span id="out-geff" class="live-value">9.81</span> m/s²
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <h1>The Gravity Lab</h1>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="v0">Initial Velocity (v₀)</label>
+                <span class="value-readout"><span id="val-v0">50</span> m/s</span>
+            </div>
+            <input type="range" id="v0" min="0" max="100" step="1" value="50">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="theta">Launch Angle (θ)</label>
+                <span class="value-readout"><span id="val-theta">45</span>°</span>
+            </div>
+            <input type="range" id="theta" min="0" max="90" step="1" value="45">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="h">Altitude (h)</label>
+                <span class="value-readout"><span id="val-h">0</span> km</span>
+            </div>
+            <input type="range" id="h" min="0" max="5000" step="100" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="mass">Mass (m)</label>
+                <span class="value-readout"><span id="val-mass">10</span> kg</span>
+            </div>
+            <input type="range" id="mass" min="1" max="100" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="timeScale">Sim Speed</label>
+                <span class="value-readout"><span id="val-timeScale">1.0</span>x</span>
+            </div>
+            <input type="range" id="timeScale" min="0" max="2" step="0.1" value="1">
+        </div>
+
+        <div class="button-group">
+            <button id="btn-launch">Launch</button>
+            <button id="btn-reset">Reset</button>
+        </div>
+
+        <button id="btn-toggle-orbit">Toggle Orbital View</button>
+
+        <div class="telemetry">
+            <h3>Live Telemetry</h3>
+            <div class="telemetry-row">
+                <span>Time (t):</span>
+                <span id="tel-time" style="color: var(--text-main)">0.00 s</span>
+            </div>
+            <div class="telemetry-row">
+                <span>Height (y):</span>
+                <span id="tel-y" style="color: var(--accent-purple)">0.0 m</span>
+            </div>
+            <div class="telemetry-row">
+                <span>Distance (x):</span>
+                <span id="tel-x" style="color: var(--accent-purple)">0.0 m</span>
+            </div>
+            <div class="telemetry-row">
+                <span>Total Velocity (v):</span>
+                <span id="tel-v" style="color: var(--accent-green)">0.0 m/s</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Constants ---
+        const g0 = 9.81;
+        const RE = 6371; // km
+
+        // --- State Variables ---
+        let state = {
+            v0: 50,
+            theta: 45,
+            h: 0,
+            mass: 10,
+            timeScale: 1,
+            isPlaying: false,
+            time: 0,
+            orbitalMode: false
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.0005);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 20000);
+        camera.position.set(0, 150, 600);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(200, 0, 0);
+        controls.maxPolarAngle = Math.PI / 2 - 0.01; // Don't go below ground
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(500, 1000, 500);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 1000;
+        dirLight.shadow.camera.bottom = -1000;
+        dirLight.shadow.camera.left = -1000;
+        dirLight.shadow.camera.right = 1000;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // --- Objects ---
+
+        // 1. Ground
+        const groundGeo = new THREE.PlaneGeometry(10000, 10000);
+        const groundMat = new THREE.MeshStandardMaterial({ color: 0xD1D9E6, roughness: 0.8 });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const gridHelper = new THREE.GridHelper(10000, 200, 0xa0aabf, 0xcbd5e1);
+        gridHelper.position.y = 0.1;
+        scene.add(gridHelper);
+
+        // 2. Launch Platform
+        const platformGeo = new THREE.CylinderGeometry(10, 12, 5, 32);
+        const platformMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.2 });
+        const platform = new THREE.Mesh(platformGeo, platformMat);
+        platform.position.y = 2.5;
+        platform.receiveShadow = true;
+        platform.castShadow = true;
+        scene.add(platform);
+
+        // 3. Projectile
+        const baseRadius = 3;
+        const sphereGeo = new THREE.SphereGeometry(baseRadius, 32, 32);
+        const sphereMat = new THREE.MeshStandardMaterial({
+            color: 0xFF3366,
+            roughness: 0.2,
+            metalness: 0.1
+        });
+        const projectile = new THREE.Mesh(sphereGeo, sphereMat);
+        projectile.castShadow = true;
+        scene.add(projectile);
+
+        // 4. Trajectory Line
+        const MAX_POINTS = 3000;
+        const trajectoryGeo = new THREE.BufferGeometry();
+        const positions = new Float32Array(MAX_POINTS * 3);
+        trajectoryGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const trajectoryMat = new THREE.LineDashedMaterial({
+            color: 0x7209B7,
+            linewidth: 2,
+            scale: 1,
+            dashSize: 10,
+            gapSize: 5,
+        });
+        const trajectoryLine = new THREE.Line(trajectoryGeo, trajectoryMat);
+        scene.add(trajectoryLine);
+        let pointCount = 0;
+
+        // 5. Vectors (Arrows)
+        const vColor = 0x06D6A0;
+        const gColor = 0xF77F00;
+
+        const vArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 1, 0).normalize(), new THREE.Vector3(0, 0, 0), 20, vColor, 6, 4);
+        const gArrow = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 0), 20, gColor, 6, 4);
+        scene.add(vArrow);
+        scene.add(gArrow);
+
+        // 6. Earth (Orbital Mode)
+        const earthRadius = 4000;
+        const earthGeo = new THREE.SphereGeometry(earthRadius, 64, 64);
+        const earthMat = new THREE.MeshBasicMaterial({
+            color: 0x4361EE,
+            transparent: true,
+            opacity: 0.3,
+            wireframe: true
+        });
+        const earth = new THREE.Mesh(earthGeo, earthMat);
+        earth.visible = false;
+        scene.add(earth);
+
+        // --- UI Elements ---
+        const ui = {
+            v0: document.getElementById('v0'),
+            theta: document.getElementById('theta'),
+            h: document.getElementById('h'),
+            mass: document.getElementById('mass'),
+            timeScale: document.getElementById('timeScale'),
+
+            valV0: document.getElementById('val-v0'),
+            valTheta: document.getElementById('val-theta'),
+            valH: document.getElementById('val-h'),
+            valMass: document.getElementById('val-mass'),
+            valTimeScale: document.getElementById('val-timeScale'),
+
+            outGeff: document.getElementById('out-geff'),
+
+            telTime: document.getElementById('tel-time'),
+            telY: document.getElementById('tel-y'),
+            telX: document.getElementById('tel-x'),
+            telV: document.getElementById('tel-v'),
+
+            btnLaunch: document.getElementById('btn-launch'),
+            btnReset: document.getElementById('btn-reset'),
+            btnOrbit: document.getElementById('btn-toggle-orbit'),
+
+            labelV: document.getElementById('label-v'),
+            labelG: document.getElementById('label-g')
+        };
+
+        // --- Core Functions ---
+
+        function getEffectiveG() {
+            return g0 * Math.pow(RE / (RE + state.h), 2);
+        }
+
+        function updateVisualsFromState() {
+            // Update Mass scale
+            const scale = Math.pow(state.mass / 10, 1 / 3);
+            projectile.scale.setScalar(scale);
+
+            // Update Earth position based on altitude (Visual shrinking/distance)
+            if (state.orbitalMode) {
+                // Visual representation: create a gap that grows with altitude
+                const visualGap = (state.h / 5000) * 1500;
+                earth.position.y = -earthRadius - visualGap;
+            }
+
+            // Update UI text
+            ui.valV0.innerText = state.v0;
+            ui.valTheta.innerText = state.theta;
+            ui.valH.innerText = state.h;
+            ui.valMass.innerText = state.mass;
+            ui.valTimeScale.innerText = state.timeScale.toFixed(1);
+            ui.outGeff.innerText = getEffectiveG().toFixed(3);
+
+            // Initial position update if not playing
+            if (!state.isPlaying && state.time === 0) {
+                projectile.position.set(0, 5 + baseRadius * scale, 0);
+
+                // Set initial arrows
+                const rad = state.theta * Math.PI / 180;
+                const vx = state.v0 * Math.cos(rad);
+                const vy = state.v0 * Math.sin(rad);
+
+                vArrow.position.copy(projectile.position);
+                if (state.v0 > 0) {
+                    vArrow.setDirection(new THREE.Vector3(vx, vy, 0).normalize());
+                    vArrow.setLength(state.v0 * 0.8);
+                    vArrow.visible = true;
+                } else {
+                    vArrow.visible = false;
+                }
+
+                gArrow.position.copy(projectile.position);
+                gArrow.setLength(getEffectiveG() * 3);
+                gArrow.visible = true;
+
+                updateLabels();
+            }
+        }
+
+        function resetSimulation() {
+            state.isPlaying = false;
+            state.time = 0;
+            pointCount = 0;
+            trajectoryGeo.setDrawRange(0, 0);
+
+            ui.telTime.innerText = "0.00 s";
+            ui.telY.innerText = "0.0 m";
+            ui.telX.innerText = "0.0 m";
+            ui.telV.innerText = "0.0 m/s";
+
+            updateVisualsFromState();
+        }
+
+        function launchSimulation() {
+            resetSimulation();
+            state.isPlaying = true;
+        }
+
+        function toggleOrbitalMode() {
+            state.orbitalMode = !state.orbitalMode;
+            earth.visible = state.orbitalMode;
+            ground.visible = !state.orbitalMode;
+            gridHelper.visible = !state.orbitalMode;
+            scene.fog.density = state.orbitalMode ? 0 : 0.0005;
+
+            if (state.orbitalMode) {
+                controls.maxPolarAngle = Math.PI; // Allow looking under
+                camera.position.set(0, 500, 1500);
+            } else {
+                controls.maxPolarAngle = Math.PI / 2 - 0.01;
+                camera.position.set(0, 150, 600);
+            }
+            updateVisualsFromState();
+        }
+
+        function updateLabels() {
+            if (!vArrow.visible && !gArrow.visible) {
+                ui.labelV.style.display = 'none';
+                ui.labelG.style.display = 'none';
+                return;
+            }
+
+            ui.labelV.style.display = state.v0 > 0 ? 'block' : 'none';
+            ui.labelG.style.display = 'block';
+
+            const offset = 10; // visual offset for label
+
+            // Project V vector tip to 2D screen
+            if (state.v0 > 0) {
+                const vTip = vArrow.position.clone().add(new THREE.Vector3(0, 1, 0).applyQuaternion(vArrow.quaternion).multiplyScalar(vArrow.line.scale.y + offset));
+                vTip.project(camera);
+                const xV = (vTip.x * .5 + .5) * window.innerWidth;
+                const yV = -(vTip.y * .5 - .5) * window.innerHeight;
+                ui.labelV.style.left = `${xV}px`;
+                ui.labelV.style.top = `${yV}px`;
+            }
+
+            // Project G vector tip to 2D screen
+            const gTip = gArrow.position.clone().add(new THREE.Vector3(0, 1, 0).applyQuaternion(gArrow.quaternion).multiplyScalar(gArrow.line.scale.y + offset));
+            gTip.project(camera);
+            const xG = (gTip.x * .5 + .5) * window.innerWidth;
+            const yG = -(gTip.y * .5 - .5) * window.innerHeight;
+            ui.labelG.style.left = `${xG}px`;
+            ui.labelG.style.top = `${yG}px`;
+        }
+
+        // --- Event Listeners ---
+
+        const inputs = ['v0', 'theta', 'h', 'mass', 'timeScale'];
+        inputs.forEach(id => {
+            ui[id].addEventListener('input', (e) => {
+                state[id] = parseFloat(e.target.value);
+                updateVisualsFromState();
+                if (!state.isPlaying) resetSimulation();
+            });
+        });
+
+        ui.btnLaunch.addEventListener('click', launchSimulation);
+        ui.btnReset.addEventListener('click', resetSimulation);
+        ui.btnOrbit.addEventListener('click', toggleOrbitalMode);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = clock.getDelta();
+
+            if (state.isPlaying) {
+                const simDt = dt * state.timeScale;
+                state.time += simDt;
+
+                const g_eff = getEffectiveG();
+                const rad = state.theta * Math.PI / 180;
+
+                // Physics Equations
+                const x = state.v0 * Math.cos(rad) * state.time;
+                // Add initial height (platform + radius)
+                const y0 = 5 + baseRadius * Math.pow(state.mass / 10, 1 / 3);
+                const y = y0 + (state.v0 * Math.sin(rad) * state.time) - (0.5 * g_eff * state.time * state.time);
+
+                const vx = state.v0 * Math.cos(rad);
+                const vy = state.v0 * Math.sin(rad) - g_eff * state.time;
+                const vTotal = Math.sqrt(vx * vx + vy * vy);
+
+                if (y >= baseRadius * Math.pow(state.mass / 10, 1 / 3)) {
+                    projectile.position.set(x, y, 0);
+
+                    // Update Trajectory
+                    if (pointCount < MAX_POINTS) {
+                        positions[pointCount * 3] = x;
+                        positions[pointCount * 3 + 1] = y;
+                        positions[pointCount * 3 + 2] = 0;
+                        pointCount++;
+                        trajectoryGeo.setDrawRange(0, pointCount);
+                        trajectoryGeo.attributes.position.needsUpdate = true;
+                        trajectoryLine.computeLineDistances();
+                    }
+
+                    // Update Vectors
+                    vArrow.position.copy(projectile.position);
+                    const vDir = new THREE.Vector3(vx, vy, 0);
+                    if (vDir.lengthSq() > 0.001) {
+                        vArrow.setDirection(vDir.normalize());
+                        vArrow.setLength(vTotal * 0.8);
+                    }
+
+                    gArrow.position.copy(projectile.position);
+                    gArrow.setLength(g_eff * 3);
+
+                    // Update Telemetry
+                    ui.telTime.innerText = `${state.time.toFixed(2)} s`;
+                    ui.telY.innerText = `${Math.max(0, y - y0).toFixed(1)} m`;
+                    ui.telX.innerText = `${x.toFixed(1)} m`;
+                    ui.telV.innerText = `${vTotal.toFixed(1)} m/s`;
+
+                    // Camera follow logic (optional, keeping it simple for now)
+                    // controls.target.set(x/2, 0, 0);
+
+                } else {
+                    // Hit Ground
+                    projectile.position.y = baseRadius * Math.pow(state.mass / 10, 1 / 3);
+                    state.isPlaying = false;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+
+            // Update HTML labels after render to sync with camera projection
+            updateLabels();
+        }
+
+        // Initialize
+        resetSimulation();
+        animate();
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>State Function: Electric Potential</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent-red: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-green: #06D6A0;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        h1 span {
+            color: var(--accent-blue);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-red);
+            font-weight: 700;
+            background: rgba(255,51,102,0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .math-symbol {
+            font-weight: 700;
+        }
+
+        .highlight-box {
+            margin-top: 16px;
+            padding: 12px;
+            background: rgba(6, 214, 160, 0.1);
+            border-left: 4px solid var(--accent-green);
+            border-radius: 4px;
+        }
+
+        .highlight-box .math-line {
+            margin: 0;
+            color: #049670;
+            font-weight: 700;
+        }
+
+        /* Tooltip */
+        #tooltip {
+            position: absolute;
+            background: rgba(45, 55, 72, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 20;
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        #tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border-width: 6px;
+            border-style: solid;
+            border-color: rgba(45, 55, 72, 0.9) transparent transparent transparent;
+        }
+
+        /* 3D Labels */
+        .node-label {
+            position: absolute;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 8px;
+            border-radius: 12px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            z-index: 10;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .color-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-title">Kirchhoff's Loop Rule</div>
+        <div class="math-line">
+            <span>R<sub>eq</sub> (Cube)</span>
+            <span>= <span id="val-req">8.33</span> Ω</span>
+        </div>
+        <div class="math-line">
+            <span>I<sub>total</sub></span>
+            <span>= <span id="val-itot">1.44</span> A</span>
+        </div>
+        <div class="highlight-box">
+            <div class="formula-title" style="color: #049670; margin-bottom: 4px;">State Function Proof</div>
+            <div class="math-line">
+                <span>&Sigma; &Delta;V<sub>path</sub></span>
+                <span>= <span id="val-work">0.00</span> V</span>
+            </div>
+        </div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 12px; line-height: 1.4;">
+            Regardless of the path taken from A to B, the total potential drop equals V<sub>in</sub>. V is a state function.
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Electric Potential<br><span>State Function</span></h1>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <label for="voltage">Input Voltage (V<sub>in</sub>)</label>
+                <span class="value-display" id="voltage-val">12 V</span>
+            </div>
+            <input type="range" id="voltage" min="1" max="24" step="1" value="12">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="resistance">Resistance (R)</label>
+                <span class="value-display" id="resistance-val">10 Ω</span>
+            </div>
+            <input type="range" id="resistance" min="1" max="100" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="path">Test Charge Path</label>
+            </div>
+            <select id="path">
+                <option value="0">Shortest Path (3 Edges)</option>
+                <option value="1">Long Path (5 Edges)</option>
+                <option value="2">Symmetric Flow (All Paths)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="speed">Animation Speed</label>
+                <span class="value-display" id="speed-val" style="color: var(--text-main); background: #e2e8f0;">1.0x</span>
+            </div>
+            <input type="range" id="speed" min="0.5" max="3" step="0.1" value="1">
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="color-box" style="background: var(--accent-red);"></div> High V
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background: var(--accent-blue);"></div> Low V
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background: var(--accent-green);"></div> Path
+        </div>
+    </div>
+
+    <div id="tooltip">V = 12.00V</div>
+    
+    <div id="label-A" class="node-label" style="background: var(--accent-red);">A</div>
+    <div id="label-B" class="node-label" style="background: var(--accent-blue);">B</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics & State Variables ---
+        let Vin = 12;
+        let R = 10;
+        let speedMult = 1.0;
+        let currentPathIdx = 0;
+        
+        let Req = (5/6) * R;
+        let Itot = Vin / Req;
+        
+        // Node definitions (0 to 7 for a cube)
+        // 0: (0,0,0) -> A
+        // 1: (1,0,0), 2: (0,1,0), 3: (0,0,1) -> Tier 1
+        // 4: (1,1,0), 5: (1,0,1), 6: (0,1,1) -> Tier 2
+        // 7: (1,1,1) -> B
+        const L = 8; // Physical size of cube
+        const nodeCoords = [
+            new THREE.Vector3(0, 0, 0),
+            new THREE.Vector3(L, 0, 0), new THREE.Vector3(0, L, 0), new THREE.Vector3(0, 0, L),
+            new THREE.Vector3(L, L, 0), new THREE.Vector3(L, 0, L), new THREE.Vector3(0, L, L),
+            new THREE.Vector3(L, L, L)
+        ];
+        
+        // Center the cube
+        const offset = new THREE.Vector3(-L/2, -L/2, -L/2);
+        nodeCoords.forEach(v => v.add(offset));
+
+        const edges = [
+            [0,1], [0,2], [0,3], // from A
+            [1,4], [1,5],        // from 1
+            [2,4], [2,6],        // from 2
+            [3,5], [3,6],        // from 3
+            [4,7], [5,7], [6,7]  // to B
+        ];
+
+        const paths = [
+            [0, 1, 4, 7], // Shortest
+            [0, 1, 5, 3, 6, 7], // Long (Note: 5->3 goes against main current, valid for test charge)
+            [[0,1,4,7], [0,2,6,7], [0,3,5,7]] // Symmetric (3 simultaneous paths)
+        ];
+
+        let nodePotentials = new Array(8).fill(0);
+        
+        function calculatePhysics() {
+            Req = (5/6) * R;
+            Itot = Vin / Req;
+            
+            nodePotentials[0] = Vin;
+            nodePotentials[1] = nodePotentials[2] = nodePotentials[3] = Vin - (Itot/3)*R; // = 3/5 Vin
+            nodePotentials[4] = nodePotentials[5] = nodePotentials[6] = nodePotentials[1] - (Itot/6)*R; // = 2/5 Vin
+            nodePotentials[7] = 0;
+
+            // Update UI
+            document.getElementById('val-req').innerText = Req.toFixed(2);
+            document.getElementById('val-itot').innerText = Itot.toFixed(2);
+        }
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.FogExp2('#f0f4f8', 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 12, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 50;
+        controls.minDistance = 10;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        const fillLight = new THREE.DirectionalLight(0xe2e8f0, 0.5);
+        fillLight.position.set(-10, -10, -10);
+        scene.add(fillLight);
+
+        // --- Visual Elements ---
+        const colorHigh = new THREE.Color('#FF3366');
+        const colorLow = new THREE.Color('#4361EE');
+        const colorResistor = new THREE.Color('#7F8C8D');
+        const colorPath = new THREE.Color('#06D6A0');
+
+        const mainGroup = new THREE.Group();
+        mainGroup.position.x = 6; // Shift right to make room for elevation map
+        scene.add(mainGroup);
+
+        const ghostGroup = new THREE.Group();
+        ghostGroup.position.x = -10; // Shift left
+        scene.add(ghostGroup);
+
+        // Grid helper
+        const gridHelper = new THREE.GridHelper(40, 40, 0xd1d9e6, 0xd1d9e6);
+        gridHelper.position.y = -L;
+        scene.add(gridHelper);
+
+        // Arrays to hold meshes for updating
+        const nodeMeshes = [];
+        const resistorMeshes = [];
+        const pathHighlightMeshes = [];
+        const ghostNodeMeshes = [];
+        const ghostEdgeMeshes = [];
+        const charges = [];
+
+        // Helper to create cylinder between two points
+        function createCylinder(p1, p2, radius, mat) {
+            const distance = p1.distanceTo(p2);
+            const geometry = new THREE.CylinderGeometry(radius, radius, distance, 12);
+            const mesh = new THREE.Mesh(geometry, mat);
+            const position = p2.clone().add(p1).divideScalar(2);
+            mesh.position.copy(position);
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p2.clone().sub(p1).normalize());
+            return mesh;
+        }
+
+        // Build Main Cube
+        const nodeGeo = new THREE.SphereGeometry(0.6, 32, 32);
+        
+        for (let i = 0; i < 8; i++) {
+            const mat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 100 });
+            const mesh = new THREE.Mesh(nodeGeo, mat);
+            mesh.position.copy(nodeCoords[i]);
+            mesh.userData = { id: i };
+            mainGroup.add(mesh);
+            nodeMeshes.push(mesh);
+        }
+
+        const resMat = new THREE.MeshPhongMaterial({ color: colorResistor });
+        edges.forEach(edge => {
+            const mesh = createCylinder(nodeCoords[edge[0]], nodeCoords[edge[1]], 0.15, resMat);
+            mainGroup.add(mesh);
+            resistorMeshes.push(mesh);
+
+            // Create invisible path highlights (slightly thicker)
+            const pathMat = new THREE.MeshBasicMaterial({ 
+                color: colorPath, 
+                transparent: true, 
+                opacity: 0,
+                blending: THREE.AdditiveBlending
+            });
+            const pathMesh = createCylinder(nodeCoords[edge[0]], nodeCoords[edge[1]], 0.25, pathMat);
+            pathMesh.userData = { edge: edge };
+            mainGroup.add(pathMesh);
+            pathHighlightMeshes.push(pathMesh);
+        });
+
+        // Build Ghost Grid (Potential Elevation Map)
+        const ghostNodeGeo = new THREE.SphereGeometry(0.3, 16, 16);
+        const ghostMat = new THREE.MeshBasicMaterial({ color: 0xa0aec0, transparent: true, opacity: 0.5 });
+        const ghostLineMat = new THREE.LineBasicMaterial({ color: 0xa0aec0, transparent: true, opacity: 0.3 });
+
+        for (let i = 0; i < 8; i++) {
+            const mesh = new THREE.Mesh(ghostNodeGeo, ghostMat);
+            ghostGroup.add(mesh);
+            ghostNodeMeshes.push(mesh);
+            
+            // Vertical drop line
+            const points = [new THREE.Vector3(0,0,0), new THREE.Vector3(0,-10,0)];
+            const lineGeo = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(lineGeo, new THREE.LineDashedMaterial({ color: 0xcbd5e0, dashSize: 0.5, gapSize: 0.5, transparent: true, opacity: 0.5 }));
+            line.computeLineDistances();
+            mesh.add(line);
+        }
+
+        edges.forEach(edge => {
+            const points = [new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]; // placeholder
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geo, ghostLineMat);
+            ghostGroup.add(line);
+            ghostEdgeMeshes.push({ line: line, e: edge });
+        });
+
+        // Add Ghost Grid Label
+        const canvasTexture = document.createElement('canvas');
+        canvasTexture.width = 256; canvasTexture.height = 64;
+        const ctx = canvasTexture.getContext('2d');
+        ctx.fillStyle = '#718096';
+        ctx.font = '24px Inter';
+        ctx.fillText('Potential Elevation Map', 0, 30);
+        const tex = new THREE.CanvasTexture(canvasTexture);
+        const spriteMat = new THREE.SpriteMaterial({ map: tex });
+        const sprite = new THREE.Sprite(spriteMat);
+        sprite.position.set(0, L, 0);
+        sprite.scale.set(10, 2.5, 1);
+        ghostGroup.add(sprite);
+
+        // Test Charges
+        const chargeGeo = new THREE.SphereGeometry(0.4, 16, 16);
+        const chargeMat = new THREE.MeshBasicMaterial({ color: 0xFFD700 });
+        for(let i=0; i<3; i++) {
+            const charge = new THREE.Mesh(chargeGeo, chargeMat);
+            
+            // Glow effect
+            const glowGeo = new THREE.SphereGeometry(0.6, 16, 16);
+            const glowMat = new THREE.MeshBasicMaterial({ color: 0xFFD700, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
+            const glow = new THREE.Mesh(glowGeo, glowMat);
+            charge.add(glow);
+            
+            charge.visible = false;
+            mainGroup.add(charge);
+            charges.push(charge);
+        }
+
+        // --- Update Functions ---
+        function updateVisuals() {
+            calculatePhysics();
+
+            // Update Node Colors
+            for (let i = 0; i < 8; i++) {
+                const vRatio = nodePotentials[i] / Vin;
+                nodeMeshes[i].material.color.lerpColors(colorLow, colorHigh, vRatio);
+                
+                // Emissive for source/sink
+                if(i===0) nodeMeshes[i].material.emissive.setHex(0x330000);
+                else if(i===7) nodeMeshes[i].material.emissive.setHex(0x000033);
+                else nodeMeshes[i].material.emissive.setHex(0x000000);
+            }
+
+            // Update Resistor Thickness based on R
+            const scale = Math.max(0.5, Math.min(2.0, R / 10));
+            resistorMeshes.forEach(mesh => {
+                mesh.scale.set(scale, 1, scale);
+            });
+
+            // Update Ghost Grid (Elevation = Potential)
+            const heightScale = 0.8; // Scale V to Y axis
+            for (let i = 0; i < 8; i++) {
+                const pos = nodeCoords[i].clone();
+                // Map Y to potential, keep X and Z same for layout
+                ghostNodeMeshes[i].position.set(pos.x, nodePotentials[i] * heightScale - L/2, pos.z);
+                ghostNodeMeshes[i].material.color.copy(nodeMeshes[i].material.color);
+            }
+
+            ghostEdgeMeshes.forEach(item => {
+                const p1 = ghostNodeMeshes[item.e[0]].position;
+                const p2 = ghostNodeMeshes[item.e[1]].position;
+                item.line.geometry.setFromPoints([p1, p2]);
+            });
+
+            updatePathHighlights();
+        }
+
+        function updatePathHighlights() {
+            // Reset all
+            pathHighlightMeshes.forEach(m => m.material.opacity = 0);
+            
+            let activeEdges = [];
+            if (currentPathIdx === 2) {
+                // Symmetric - highlight all forward edges
+                activeEdges = edges;
+            } else {
+                const p = paths[currentPathIdx];
+                for(let i=0; i<p.length-1; i++) {
+                    // Find edge ignoring direction
+                    const e = edges.find(edge => (edge[0]===p[i] && edge[1]===p[i+1]) || (edge[1]===p[i] && edge[0]===p[i+1]));
+                    if(e) activeEdges.push(e);
+                }
+            }
+
+            pathHighlightMeshes.forEach(m => {
+                if(activeEdges.includes(m.userData.edge)) {
+                    m.material.opacity = 0.6;
+                }
+            });
+        }
+
+        // --- Animation Logic ---
+        let animProgress = 0;
+        let accumulatedWork = 0;
+
+        function animateCharges(delta) {
+            // Speed proportional to Current (Vin/R) and user multiplier
+            const baseSpeed = (Vin / R) * 0.5; 
+            animProgress += delta * baseSpeed * speedMult;
+            
+            if (animProgress >= 1) {
+                animProgress = 0;
+                accumulatedWork = 0; // Reset work at start of path
+            }
+
+            charges.forEach(c => c.visible = false);
+
+            if (currentPathIdx === 2) {
+                // Symmetric - 3 charges
+                const pList = paths[2];
+                let currentV = Vin;
+                
+                for(let i=0; i<3; i++) {
+                    const p = pList[i];
+                    const numSegments = p.length - 1;
+                    const scaledProgress = animProgress * numSegments;
+                    const segIdx = Math.min(Math.floor(scaledProgress), numSegments - 1);
+                    const segProgress = scaledProgress - segIdx;
+
+                    const n1 = p[segIdx];
+                    const n2 = p[segIdx + 1];
+
+                    charges[i].visible = true;
+                    charges[i].position.lerpVectors(nodeCoords[n1], nodeCoords[n2], segProgress);
+                    
+                    // Work calculation for UI (just track one of them)
+                    if(i===0) {
+                        currentV = THREE.MathUtils.lerp(nodePotentials[n1], nodePotentials[n2], segProgress);
+                        accumulatedWork = Vin - currentV;
+                    }
+                }
+            } else {
+                // Single path
+                const p = paths[currentPathIdx];
+                const numSegments = p.length - 1;
+                const scaledProgress = animProgress * numSegments;
+                const segIdx = Math.min(Math.floor(scaledProgress), numSegments - 1);
+                const segProgress = scaledProgress - segIdx;
+
+                const n1 = p[segIdx];
+                const n2 = p[segIdx + 1];
+
+                charges[0].visible = true;
+                charges[0].position.lerpVectors(nodeCoords[n1], nodeCoords[n2], segProgress);
+
+                const currentV = THREE.MathUtils.lerp(nodePotentials[n1], nodePotentials[n2], segProgress);
+                accumulatedWork = Vin - currentV;
+            }
+
+            document.getElementById('val-work').innerText = accumulatedWork.toFixed(2);
+        }
+
+        // --- Interaction & Events ---
+        document.getElementById('voltage').addEventListener('input', (e) => {
+            Vin = parseFloat(e.target.value);
+            document.getElementById('voltage-val').innerText = Vin + ' V';
+            updateVisuals();
+        });
+
+        document.getElementById('resistance').addEventListener('input', (e) => {
+            R = parseFloat(e.target.value);
+            document.getElementById('resistance-val').innerText = R + ' Ω';
+            updateVisuals();
+        });
+
+        document.getElementById('speed').addEventListener('input', (e) => {
+            speedMult = parseFloat(e.target.value);
+            document.getElementById('speed-val').innerText = speedMult.toFixed(1) + 'x';
+        });
+
+        document.getElementById('path').addEventListener('change', (e) => {
+            currentPathIdx = parseInt(e.target.value);
+            animProgress = 0;
+            accumulatedWork = 0;
+            updatePathHighlights();
+        });
+
+        // Raycaster for Tooltips
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip');
+
+        window.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(nodeMeshes);
+
+            if (intersects.length > 0) {
+                const id = intersects[0].object.userData.id;
+                const v = nodePotentials[id];
+                tooltip.style.opacity = 1;
+                tooltip.style.left = event.clientX + 'px';
+                tooltip.style.top = event.clientY + 'px';
+                tooltip.innerText = `Node ${id===0?'A':id===7?'B':id} | V = ${v.toFixed(2)}V`;
+                document.body.style.cursor = 'pointer';
+            } else {
+                tooltip.style.opacity = 0;
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Main Loop ---
+        updateVisuals();
+        const clock = new THREE.Clock();
+
+        const labelA = document.getElementById('label-A');
+        const labelB = document.getElementById('label-B');
+
+        function updateLabels() {
+            // Project 3D pos to 2D screen
+            const posA = nodeCoords[0].clone().applyMatrix4(mainGroup.matrixWorld);
+            posA.project(camera);
+            const xA = (posA.x * .5 + .5) * window.innerWidth;
+            const yA = (posA.y * -.5 + .5) * window.innerHeight;
+            labelA.style.left = `${xA}px`;
+            labelA.style.top = `${yA - 20}px`;
+
+            const posB = nodeCoords[7].clone().applyMatrix4(mainGroup.matrixWorld);
+            posB.project(camera);
+            const xB = (posB.x * .5 + .5) * window.innerWidth;
+            const yB = (posB.y * -.5 + .5) * window.innerHeight;
+            labelB.style.left = `${xB}px`;
+            labelB.style.top = `${yB + 20}px`;
+            
+            // Hide if behind camera
+            labelA.style.display = posA.z > 1 ? 'none' : 'block';
+            labelB.style.display = posB.z > 1 ? 'none' : 'block';
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            
+            controls.update();
+            animateCharges(delta);
+            updateLabels();
+
+            // Slowly rotate ghost grid for better 3D perception
+            ghostGroup.rotation.y = Math.sin(clock.getElapsedTime() * 0.2) * 0.1;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

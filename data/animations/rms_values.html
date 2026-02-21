@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RMS Values Interactive Physics Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 75%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            box-sizing: border-box;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: #1a1a1a;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #444;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #1a1a1a;
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Specific slider colors */
+        #freq-slider::-webkit-slider-thumb { background: #7209B7; }
+        #res-slider::-webkit-slider-thumb { background: #F77F00; }
+        #dc-slider::-webkit-slider-thumb { background: #FF3366; }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .checkbox-group input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: #06D6A0;
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            cursor: pointer;
+            color: #06D6A0;
+            font-weight: 700;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: calc(25% + 20px);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border-left: 5px solid #06D6A0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #2b2b2b;
+        }
+
+        .math-line {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+
+        .math-symbol {
+            color: #4361EE;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        .math-symbol.power { color: #7209B7; }
+        .math-symbol.rms { color: #06D6A0; }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            #ui-container { width: 35%; }
+            #canvas-container { width: 65%; }
+            #formula-card { left: calc(35% + 20px); }
+        }
+        @media (max-width: 600px) {
+            #ui-container { width: 100%; height: 40%; bottom: 0; top: auto; border-right: none; border-top: 1px solid rgba(255,255,255,0.5); }
+            #canvas-container { width: 100%; height: 60%; }
+            #formula-card { top: 10px; left: 10px; font-size: 0.75rem; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <h1>RMS & AC Power</h1>
+        <p class="subtitle">Match the DC current to the AC circuit to find the equivalent heating power (RMS).</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>AC Peak Current (I₀)</label>
+                <span class="value-display" id="val-i0">3.0 A</span>
+            </div>
+            <input type="range" id="i0-slider" min="1.0" max="5.0" step="0.1" value="3.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Frequency (f)</label>
+                <span class="value-display" id="val-freq">0.5 Hz</span>
+            </div>
+            <input type="range" id="freq-slider" min="0.1" max="2.0" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Resistance (R)</label>
+                <span class="value-display" id="val-res">10 Ω</span>
+            </div>
+            <input type="range" id="res-slider" min="1" max="20" step="1" value="10">
+        </div>
+
+        <div class="control-group" style="border: 1px solid #06D6A0; background: rgba(6, 214, 160, 0.05);">
+            <div class="checkbox-group">
+                <input type="checkbox" id="match-rms-check">
+                <label for="match-rms-check">Match DC to RMS</label>
+            </div>
+            <div class="control-header">
+                <label>DC Current (I_dc)</label>
+                <span class="value-display" id="val-dc">2.1 A</span>
+            </div>
+            <input type="range" id="dc-slider" min="0.0" max="5.0" step="0.1" value="2.1">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> AC Current i(t)</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> RMS Current (I_rms)</div>
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> DC Current (I_dc)</div>
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> Inst. Power P(t)</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Average Power (P_avg)</div>
+        </div>
+    </div>
+
+    <div id="formula-card">
+        <div class="math-line"><span class="math-symbol">i(t)</span> = I₀ sin(2πft)</div>
+        <div class="math-line"><span class="math-symbol rms">I_rms</span> = I₀ / √2 = <span id="calc-irms">2.12</span> A</div>
+        <div class="math-line"><span class="math-symbol power">P_avg</span> = I_rms² R = <span id="calc-pavg">45.0</span> W</div>
+        <div class="math-line" style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed #ccc;">
+            <span class="math-symbol" style="color:#FF3366">P_dc</span> = I_dc² R = <span id="calc-pdc">44.1</span> W
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics State ---
+        const state = {
+            I0: 3.0,
+            f: 0.5,
+            R: 10,
+            Idc: 2.1,
+            matchRMS: false,
+            time: 0,
+            phase: 0
+        };
+
+        // --- UI Elements ---
+        const ui = {
+            i0Slider: document.getElementById('i0-slider'),
+            freqSlider: document.getElementById('freq-slider'),
+            resSlider: document.getElementById('res-slider'),
+            dcSlider: document.getElementById('dc-slider'),
+            matchCheck: document.getElementById('match-rms-check'),
+            valI0: document.getElementById('val-i0'),
+            valFreq: document.getElementById('val-freq'),
+            valRes: document.getElementById('val-res'),
+            valDc: document.getElementById('val-dc'),
+            calcIrms: document.getElementById('calc-irms'),
+            calcPavg: document.getElementById('calc-pavg'),
+            calcPdc: document.getElementById('calc-pdc')
+        };
+
+        // --- Colors ---
+        const COLORS = {
+            bg: 0xf0f4f8,
+            acBlue: 0x4361EE,
+            dcRed: 0xFF3366,
+            rmsGreen: 0x06D6A0,
+            powerPurple: 0x7209B7,
+            heatOrange: 0xF77F00,
+            heatYellow: 0xFFD166,
+            wire: 0x94a3b8,
+            resistorBase: 0x334155
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(COLORS.bg);
+        scene.fog = new THREE.Fog(COLORS.bg, 10, 30);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 4, 14);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below ground
+        controls.minDistance = 5;
+        controls.maxDistance = 25;
+        controls.target.set(0, 2, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(5, 10, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        scene.add(dirLight);
+
+        // --- Scene Objects ---
+
+        // Ground plane for shadows
+        const groundGeo = new THREE.PlaneGeometry(50, 50);
+        const groundMat = new THREE.MeshStandardMaterial({ color: COLORS.bg, depthWrite: false });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Grid helper
+        const grid = new THREE.GridHelper(50, 50, 0x000000, 0x000000);
+        grid.material.opacity = 0.05;
+        grid.material.transparent = true;
+        grid.position.y = -1.99;
+        scene.add(grid);
+
+        // Materials
+        const wireMat = new THREE.MeshStandardMaterial({ color: COLORS.wire, roughness: 0.4, metalness: 0.8 });
+        const acResMat = new THREE.MeshStandardMaterial({ color: COLORS.resistorBase, emissive: COLORS.heatOrange, emissiveIntensity: 0 });
+        const dcResMat = new THREE.MeshStandardMaterial({ color: COLORS.resistorBase, emissive: COLORS.heatOrange, emissiveIntensity: 0 });
+        
+        // Geometries
+        const resGeo = new THREE.CylinderGeometry(0.6, 0.6, 2.5, 32);
+        resGeo.rotateZ(Math.PI / 2);
+        const wireGeo = new THREE.CylinderGeometry(0.1, 0.1, 6, 16);
+        wireGeo.rotateZ(Math.PI / 2);
+
+        // AC Circuit (Left)
+        const acGroup = new THREE.Group();
+        acGroup.position.set(-3.5, 0, 2);
+        scene.add(acGroup);
+
+        const acWire = new THREE.Mesh(wireGeo, wireMat);
+        acWire.castShadow = true;
+        acGroup.add(acWire);
+
+        const acResistor = new THREE.Mesh(resGeo, acResMat);
+        acResistor.castShadow = true;
+        acGroup.add(acResistor);
+
+        // Add labels
+        const createLabel = (text, color, yOffset) => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.font = 'bold 32px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 128, 32);
+            const tex = new THREE.CanvasTexture(canvas);
+            const mat = new THREE.SpriteMaterial({ map: tex });
+            const sprite = new THREE.Sprite(mat);
+            sprite.scale.set(3, 0.75, 1);
+            sprite.position.y = yOffset;
+            return sprite;
+        };
+
+        acGroup.add(createLabel("AC CIRCUIT", "#4361EE", -1.5));
+
+        // DC Circuit (Right)
+        const dcGroup = new THREE.Group();
+        dcGroup.position.set(3.5, 0, 2);
+        scene.add(dcGroup);
+
+        const dcWire = new THREE.Mesh(wireGeo, wireMat);
+        dcWire.castShadow = true;
+        dcGroup.add(dcWire);
+
+        const dcResistor = new THREE.Mesh(resGeo, dcResMat);
+        dcResistor.castShadow = true;
+        dcGroup.add(dcResistor);
+
+        dcGroup.add(createLabel("DC CIRCUIT", "#FF3366", -1.5));
+
+        // Electrons
+        const electronGeo = new THREE.SphereGeometry(0.18, 16, 16);
+        const acElectronMat = new THREE.MeshStandardMaterial({ color: COLORS.acBlue, emissive: COLORS.acBlue, emissiveIntensity: 0.5 });
+        const dcElectronMat = new THREE.MeshStandardMaterial({ color: COLORS.dcRed, emissive: COLORS.dcRed, emissiveIntensity: 0.5 });
+
+        const acElectrons = [];
+        const dcElectrons = [];
+        const numElectrons = 12;
+
+        for (let i = 0; i < numElectrons; i++) {
+            // AC
+            const eAC = new THREE.Mesh(electronGeo, acElectronMat);
+            eAC.position.y = 0.3; // Sit on top of wire
+            acGroup.add(eAC);
+            acElectrons.push({ mesh: eAC, baseOffset: (i - numElectrons/2 + 0.5) * 0.5 });
+
+            // DC
+            const eDC = new THREE.Mesh(electronGeo, dcElectronMat);
+            eDC.position.y = 0.3;
+            dcGroup.add(eDC);
+            dcElectrons.push({ mesh: eDC, baseOffset: (i / numElectrons) * 6 - 3 }); // Spread along wire length 6
+        }
+
+        // --- Graphs ---
+        const graphGroup = new THREE.Group();
+        graphGroup.position.set(0, 4, -2);
+        scene.add(graphGroup);
+
+        const numGraphPoints = 200;
+        const graphWidth = 12;
+        const graphXOffset = -graphWidth / 2;
+
+        // Helper to create line geometry
+        function createLine(color, isDashed = false) {
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(numGraphPoints * 3);
+            for(let i=0; i<numGraphPoints; i++) {
+                pos[i*3] = graphXOffset + (i / (numGraphPoints-1)) * graphWidth;
+                pos[i*3+1] = 0;
+                pos[i*3+2] = 0;
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            
+            let mat;
+            if (isDashed) {
+                mat = new THREE.LineDashedMaterial({ color: color, linewidth: 2, scale: 1, dashSize: 0.2, gapSize: 0.1 });
+            } else {
+                mat = new THREE.LineBasicMaterial({ color: color, linewidth: 2 });
+            }
+            const line = new THREE.Line(geo, mat);
+            if(isDashed) line.computeLineDistances();
+            return line;
+        }
+
+        // Current Graph (Top)
+        const currentGraphY = 3;
+        const lineIac = createLine(COLORS.acBlue);
+        const lineIrms = createLine(COLORS.rmsGreen, true);
+        const lineIdc = createLine(COLORS.dcRed, true);
+        
+        lineIac.position.y = currentGraphY;
+        lineIrms.position.y = currentGraphY;
+        lineIdc.position.y = currentGraphY;
+        
+        graphGroup.add(lineIac);
+        graphGroup.add(lineIrms);
+        graphGroup.add(lineIdc);
+
+        // Power Graph (Bottom)
+        const powerGraphY = -1;
+        const linePac = createLine(COLORS.powerPurple);
+        const linePavg = createLine(COLORS.heatOrange);
+        const linePdc = createLine(COLORS.dcRed);
+
+        linePac.position.y = powerGraphY;
+        linePavg.position.y = powerGraphY;
+        linePdc.position.y = powerGraphY;
+
+        graphGroup.add(linePac);
+        graphGroup.add(linePavg);
+        graphGroup.add(linePdc);
+
+        // Graph Backgrounds/Axes
+        const axisMat = new THREE.LineBasicMaterial({ color: 0xcccccc });
+        const createAxis = (y) => {
+            const geo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(graphXOffset, y, 0),
+                new THREE.Vector3(-graphXOffset, y, 0)
+            ]);
+            return new THREE.Line(geo, axisMat);
+        };
+        graphGroup.add(createAxis(currentGraphY));
+        graphGroup.add(createAxis(powerGraphY));
+
+        graphGroup.add(createLabel("CURRENT i(t)", "#1a1a1a", currentGraphY + 2.5));
+        graphGroup.add(createLabel("POWER P(t)", "#1a1a1a", powerGraphY + 3.5));
+
+        // Data arrays for graphs
+        const historyIac = new Array(numGraphPoints).fill(0);
+        const historyPac = new Array(numGraphPoints).fill(0);
+
+        // --- Heat Particles ---
+        const particleCount = 400;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePos = new Float32Array(particleCount * 3);
+        const particleColors = new Float32Array(particleCount * 3);
+        const particleData = []; // store velocity, life, type
+
+        const colorYellow = new THREE.Color(COLORS.heatYellow);
+        const colorOrange = new THREE.Color(COLORS.heatOrange);
+
+        for(let i=0; i<particleCount; i++) {
+            particlePos[i*3] = 0; particlePos[i*3+1] = -10; particlePos[i*3+2] = 0; // hidden initially
+            particleColors[i*3] = colorYellow.r; particleColors[i*3+1] = colorYellow.g; particleColors[i*3+2] = colorYellow.b;
+            particleData.push({ life: 0, vel: new THREE.Vector3(), type: 'ac' });
+        }
+
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+        particleGeo.setAttribute('color', new THREE.BufferAttribute(particleColors, 3));
+
+        // Create a circular sprite for particles
+        const canvas = document.createElement('canvas');
+        canvas.width = 16; canvas.height = 16;
+        const context = canvas.getContext('2d');
+        const gradient = context.createRadialGradient(8, 8, 0, 8, 8, 8);
+        gradient.addColorStop(0, 'rgba(255,255,255,1)');
+        gradient.addColorStop(0.2, 'rgba(255,209,102,1)');
+        gradient.addColorStop(1, 'rgba(255,209,102,0)');
+        context.fillStyle = gradient;
+        context.fillRect(0, 0, 16, 16);
+        const particleTex = new THREE.CanvasTexture(canvas);
+
+        const particleMat = new THREE.PointsMaterial({
+            size: 0.4,
+            map: particleTex,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particleSystem = new THREE.Points(particleGeo, particleMat);
+        scene.add(particleSystem);
+
+        function spawnParticle(type, powerLevel) {
+            // Find dead particle
+            for(let i=0; i<particleCount; i++) {
+                if(particleData[i].life <= 0) {
+                    const group = type === 'ac' ? acGroup : dcGroup;
+                    const x = group.position.x + (Math.random() - 0.5) * 2;
+                    const y = group.position.y + (Math.random() - 0.5) * 0.5;
+                    const z = group.position.z + (Math.random() - 0.5) * 0.5;
+                    
+                    particlePos[i*3] = x;
+                    particlePos[i*3+1] = y;
+                    particlePos[i*3+2] = z;
+                    
+                    particleData[i].life = 1.0;
+                    particleData[i].vel.set((Math.random()-0.5)*0.5, Math.random()*2 + 1, (Math.random()-0.5)*0.5);
+                    particleData[i].type = type;
+
+                    // Color based on power
+                    const c = powerLevel > 0.7 ? colorYellow : colorOrange;
+                    particleColors[i*3] = c.r; particleColors[i*3+1] = c.g; particleColors[i*3+2] = c.b;
+                    break;
+                }
+            }
+        }
+
+        // --- Logic & Updates ---
+
+        function updateUI() {
+            state.I0 = parseFloat(ui.i0Slider.value);
+            state.f = parseFloat(ui.freqSlider.value);
+            state.R = parseFloat(ui.resSlider.value);
+            state.matchRMS = ui.matchCheck.checked;
+
+            const Irms = state.I0 / Math.SQRT2;
+            
+            if (state.matchRMS) {
+                state.Idc = Irms;
+                ui.dcSlider.value = state.Idc;
+                ui.dcSlider.disabled = true;
+            } else {
+                state.Idc = parseFloat(ui.dcSlider.value);
+                ui.dcSlider.disabled = false;
+            }
+
+            const Pavg = Irms * Irms * state.R;
+            const Pdc = state.Idc * state.Idc * state.R;
+
+            ui.valI0.innerText = state.I0.toFixed(1) + ' A';
+            ui.valFreq.innerText = state.f.toFixed(1) + ' Hz';
+            ui.valRes.innerText = state.R.toFixed(0) + ' Ω';
+            ui.valDc.innerText = state.Idc.toFixed(2) + ' A';
+
+            ui.calcIrms.innerText = Irms.toFixed(2);
+            ui.calcPavg.innerText = Pavg.toFixed(1);
+            ui.calcPdc.innerText = Pdc.toFixed(1);
+        }
+
+        // Event Listeners
+        ui.i0Slider.addEventListener('input', updateUI);
+        ui.freqSlider.addEventListener('input', updateUI);
+        ui.resSlider.addEventListener('input', updateUI);
+        ui.dcSlider.addEventListener('input', updateUI);
+        ui.matchCheck.addEventListener('change', updateUI);
+
+        // Initial update
+        updateUI();
+
+        const clock = new THREE.Clock();
+        let dcPhase = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = clock.getDelta();
+            state.time += dt;
+            
+            // Physics Calculations
+            const w = 2 * Math.PI * state.f;
+            state.phase += w * dt;
+            
+            const i_ac = state.I0 * Math.sin(state.phase);
+            const P_ac = i_ac * i_ac * state.R;
+            
+            const Irms = state.I0 / Math.SQRT2;
+            const P_avg = Irms * Irms * state.R;
+            const P_dc = state.Idc * state.Idc * state.R;
+
+            // Max possible power for scaling visuals (I0_max = 5, R_max = 20 -> P_max = 500)
+            const P_max = 500; 
+
+            // Update Resistor Glow
+            acResMat.emissiveIntensity = (P_ac / P_max) * 5; // Scale for visual pop
+            dcResMat.emissiveIntensity = (P_dc / P_max) * 5;
+
+            // Update Electrons
+            // AC: Position maps to -cos(phase) to represent integral of current (charge position)
+            // -cos(phase) = sin(phase - pi/2)
+            const acPosOffset = Math.sin(state.phase - Math.PI/2) * (state.I0 * 0.4); 
+            acElectrons.forEach(e => {
+                e.mesh.position.x = e.baseOffset + acPosOffset;
+            });
+
+            // DC: Constant velocity
+            dcPhase += state.Idc * dt * 0.5;
+            dcElectrons.forEach(e => {
+                let x = e.baseOffset + dcPhase;
+                // Wrap around wire length 6 (from -3 to 3)
+                x = ((x + 3) % 6) - 3;
+                if(x < -3) x += 6; // handle negative Idc if allowed
+                e.mesh.position.x = x;
+            });
+
+            // Update Graphs
+            historyIac.shift(); historyIac.push(i_ac);
+            historyPac.shift(); historyPac.push(P_ac);
+
+            const posIac = lineIac.geometry.attributes.position.array;
+            const posPac = linePac.geometry.attributes.position.array;
+            const posIrms = lineIrms.geometry.attributes.position.array;
+            const posIdc = lineIdc.geometry.attributes.position.array;
+            const posPavg = linePavg.geometry.attributes.position.array;
+            const posPdc = linePdc.geometry.attributes.position.array;
+
+            // Scaling factors for graphs
+            const iScale = 0.4; // Max I0 is 5, fits in height 2
+            const pScale = 0.006; // Max P is 500, fits in height 3
+
+            for(let i=0; i<numGraphPoints; i++) {
+                // Current
+                posIac[i*3+1] = historyIac[i] * iScale;
+                posIrms[i*3+1] = Irms * iScale;
+                posIdc[i*3+1] = state.Idc * iScale;
+
+                // Power
+                posPac[i*3+1] = historyPac[i] * pScale;
+                posPavg[i*3+1] = P_avg * pScale;
+                posPdc[i*3+1] = P_dc * pScale;
+            }
+
+            lineIac.geometry.attributes.position.needsUpdate = true;
+            lineIrms.geometry.attributes.position.needsUpdate = true;
+            lineIdc.geometry.attributes.position.needsUpdate = true;
+            linePac.geometry.attributes.position.needsUpdate = true;
+            linePavg.geometry.attributes.position.needsUpdate = true;
+            linePdc.geometry.attributes.position.needsUpdate = true;
+
+            // Update Particles
+            // Emission probability based on power
+            if (Math.random() < (P_ac / P_max) * 2) spawnParticle('ac', P_ac / P_max);
+            if (Math.random() < (P_dc / P_max) * 2) spawnParticle('dc', P_dc / P_max);
+
+            const pPos = particleSystem.geometry.attributes.position.array;
+            const pCol = particleSystem.geometry.attributes.color.array;
+
+            for(let i=0; i<particleCount; i++) {
+                if(particleData[i].life > 0) {
+                    particleData[i].life -= dt * 0.8; // fade out speed
+                    
+                    pPos[i*3] += particleData[i].vel.x * dt;
+                    pPos[i*3+1] += particleData[i].vel.y * dt;
+                    pPos[i*3+2] += particleData[i].vel.z * dt;
+
+                    // Fade color to background
+                    const fade = Math.max(0, particleData[i].life);
+                    // Just rely on material opacity/blending, but we can dim the color
+                    pCol[i*3] *= fade;
+                    pCol[i*3+1] *= fade;
+                    pCol[i*3+2] *= fade;
+
+                    if(particleData[i].life <= 0) {
+                        pPos[i*3+1] = -10; // hide
+                    }
+                }
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+            particleSystem.geometry.attributes.color.needsUpdate = true;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        animate();
+
+    </script>
+</body>
+</html>

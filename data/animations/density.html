@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Density-Gravity-Pressure Nexus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            display: flex;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            font-family: 'Roboto Mono', monospace;
+            pointer-events: none;
+            min-width: 250px;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0 0 15px 0;
+            color: #1a1a1a;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        h2 {
+            font-size: 1rem;
+            margin: 0 0 10px 0;
+            color: #444;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 8px;
+        }
+
+        .radio-group label {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            justify-content: center;
+        }
+
+        .radio-group input[type="radio"] {
+            display: none;
+        }
+
+        .radio-group input[type="radio"]:checked + label {
+            background: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            color: #4361EE;
+        }
+
+        .math-line {
+            margin: 8px 0;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .math-symbol {
+            font-weight: bold;
+            display: inline-block;
+            width: 60px;
+        }
+
+        .color-red { color: #FF3366; }
+        .color-orange { color: #F77F00; }
+        .color-blue { color: #4361EE; }
+        .color-green { color: #06D6A0; }
+
+        .hidden { display: none !important; }
+
+        /* Custom slider colors based on context */
+        #depth::-webkit-slider-thumb { background: #06D6A0; }
+        #coreDensity::-webkit-slider-thumb { background: #FF3366; }
+        #mantleDensity::-webkit-slider-thumb { background: #F77F00; }
+        #altitude::-webkit-slider-thumb { background: #FF3366; }
+        #scaleHeight::-webkit-slider-thumb { background: #4361EE; }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <!-- Dynamic Content -->
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>The Density-Gravity-Pressure Nexus</h1>
+        
+        <div class="radio-group">
+            <input type="radio" id="mode-earth" name="mode" value="earth" checked>
+            <label for="mode-earth">Earth's Interior</label>
+            
+            <input type="radio" id="mode-atmos" name="mode" value="atmos">
+            <label for="mode-atmos">Atmosphere</label>
+        </div>
+
+        <!-- Earth Controls -->
+        <div id="controls-earth">
+            <h2>Shell Theorem Parameters</h2>
+            
+            <div class="control-group">
+                <label>Probe Depth (d) <span class="val-display" id="val-depth">0 km</span></label>
+                <input type="range" id="depth" min="0" max="100" step="1" value="0">
+            </div>
+
+            <div class="control-group">
+                <label>Core Density (&rho;<sub>core</sub>) <span class="val-display" id="val-coreDensity">13000 kg/m³</span></label>
+                <input type="range" id="coreDensity" min="5000" max="15000" step="100" value="13000">
+            </div>
+
+            <div class="control-group">
+                <label>Mantle Density (&rho;<sub>mantle</sub>) <span class="val-display" id="val-mantleDensity">4500 kg/m³</span></label>
+                <input type="range" id="mantleDensity" min="2000" max="5000" step="100" value="4500">
+            </div>
+        </div>
+
+        <!-- Atmosphere Controls -->
+        <div id="controls-atmos" class="hidden">
+            <h2>Exponential Decay Parameters</h2>
+            
+            <div class="control-group">
+                <label>Altitude (h) <span class="val-display" id="val-altitude">0.0 km</span></label>
+                <input type="range" id="altitude" min="0" max="50" step="0.5" value="0">
+            </div>
+
+            <div class="control-group">
+                <label>Scale Height (H) <span class="val-display" id="val-scaleHeight">8.5 km</span></label>
+                <input type="range" id="scaleHeight" min="5" max="15" step="0.1" value="8.5">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        scene.add(dirLight);
+
+        // --- Groups ---
+        const earthGroup = new THREE.Group();
+        const atmosGroup = new THREE.Group();
+        scene.add(earthGroup);
+        scene.add(atmosGroup);
+        atmosGroup.visible = false;
+
+        // --- Constants & Colors ---
+        const C_RED = 0xFF3366;
+        const C_ORANGE = 0xF77F00;
+        const C_BLUE = 0x4361EE;
+        const C_GREEN = 0x06D6A0;
+
+        // --- Mode A: Earth's Interior ---
+        const R_VISUAL = 100;
+        const R_CORE_VISUAL = 20;
+        const R_MANTLE_VISUAL = 80;
+        
+        // Materials
+        const matCore = new THREE.MeshStandardMaterial({ color: C_RED, transparent: true, opacity: 0.85, roughness: 0.3 });
+        const matMantle = new THREE.MeshStandardMaterial({ color: C_ORANGE, transparent: true, opacity: 0.35, roughness: 0.7 });
+        const matCrust = new THREE.MeshStandardMaterial({ color: C_BLUE, transparent: true, opacity: 0.15, roughness: 0.9 });
+
+        // Spheres
+        const geoCore = new THREE.SphereGeometry(R_CORE_VISUAL, 32, 32);
+        const meshCore = new THREE.Mesh(geoCore, matCore);
+        earthGroup.add(meshCore);
+
+        const geoMantle = new THREE.SphereGeometry(R_MANTLE_VISUAL, 32, 32);
+        const meshMantle = new THREE.Mesh(geoMantle, matMantle);
+        earthGroup.add(meshMantle);
+
+        const geoCrust = new THREE.SphereGeometry(R_VISUAL, 32, 32);
+        const meshCrust = new THREE.Mesh(geoCrust, matCrust);
+        earthGroup.add(meshCrust);
+
+        // Probe & Wireframe
+        const probeGeo = new THREE.SphereGeometry(2, 16, 16);
+        const probeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const probe = new THREE.Mesh(probeGeo, probeMat);
+        earthGroup.add(probe);
+
+        const wireGeo = new THREE.SphereGeometry(1, 32, 16);
+        const wireMat = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.4 });
+        const wireSphere = new THREE.Mesh(wireGeo, wireMat);
+        earthGroup.add(wireSphere);
+
+        // Gravity Vector
+        const gArrow = new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), new THREE.Vector3(R_VISUAL, 0, 0), 20, C_GREEN, 4, 2);
+        earthGroup.add(gArrow);
+
+        // --- Mode B: Atmospheric Column ---
+        const ATMOS_HEIGHT = 100;
+        const ATMOS_WIDTH = 40;
+
+        // Container (Glassy Prism)
+        const boxGeo = new THREE.BoxGeometry(ATMOS_WIDTH, ATMOS_HEIGHT, ATMOS_WIDTH);
+        const boxMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.05, depthWrite: false });
+        const boxEdges = new THREE.EdgesGeometry(boxGeo);
+        const boxLines = new THREE.LineSegments(boxEdges, new THREE.LineBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.3 }));
+        const atmosContainer = new THREE.Mesh(boxGeo, boxMat);
+        atmosContainer.position.y = ATMOS_HEIGHT / 2;
+        boxLines.position.y = ATMOS_HEIGHT / 2;
+        atmosGroup.add(atmosContainer);
+        atmosGroup.add(boxLines);
+
+        // Particles (BufferGeometry + Rejection Sampling)
+        const PARTICLE_COUNT = 2000;
+        const particleGeo = new THREE.BufferGeometry();
+        const particleMat = new THREE.PointsMaterial({ color: C_BLUE, size: 0.8, transparent: true, opacity: 0.8 });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        atmosGroup.add(particles);
+
+        function updateParticles(scaleHeightVisual) {
+            const pos = new Float32Array(PARTICLE_COUNT * 3);
+            for(let i = 0; i < PARTICLE_COUNT; i++) {
+                let accepted = false;
+                while(!accepted) {
+                    let y = Math.random() * ATMOS_HEIGHT;
+                    let prob = Math.exp(-y / scaleHeightVisual);
+                    if(Math.random() < prob) {
+                        pos[i*3] = (Math.random() - 0.5) * (ATMOS_WIDTH - 2);
+                        pos[i*3+1] = y;
+                        pos[i*3+2] = (Math.random() - 0.5) * (ATMOS_WIDTH - 2);
+                        accepted = true;
+                    }
+                }
+            }
+            particleGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        }
+
+        // Pressure Gauge
+        const gaugeGeo = new THREE.PlaneGeometry(ATMOS_WIDTH - 1, ATMOS_WIDTH - 1);
+        const gaugeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+        const gauge = new THREE.Mesh(gaugeGeo, gaugeMat);
+        gauge.rotation.x = -Math.PI / 2;
+        atmosGroup.add(gauge);
+
+        // Force Vectors
+        const weightArrow = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, 0, 0), 20, C_RED, 4, 2);
+        atmosGroup.add(weightArrow);
+
+        const pressureArrows = new THREE.Group();
+        const pOffsets = [[-10, -10], [10, -10], [-10, 10], [10, 10], [0,0]];
+        pOffsets.forEach(offset => {
+            const pArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(offset[0], 0, offset[1]), 10, C_BLUE, 2, 1);
+            pressureArrows.add(pArrow);
+        });
+        atmosGroup.add(pressureArrows);
+
+        // --- Logic & State ---
+        let currentMode = 'earth';
+        
+        // DOM Elements
+        const uiEarth = document.getElementById('controls-earth');
+        const uiAtmos = document.getElementById('controls-atmos');
+        const formulaCard = document.getElementById('formula-card');
+        
+        const inDepth = document.getElementById('depth');
+        const inCoreDens = document.getElementById('coreDensity');
+        const inMantleDens = document.getElementById('mantleDensity');
+        const inAlt = document.getElementById('altitude');
+        const inScaleH = document.getElementById('scaleHeight');
+
+        const valDepth = document.getElementById('val-depth');
+        const valCoreDens = document.getElementById('val-coreDensity');
+        const valMantleDens = document.getElementById('val-mantleDensity');
+        const valAlt = document.getElementById('val-altitude');
+        const valScaleH = document.getElementById('val-scaleHeight');
+
+        // Mode Switching
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                currentMode = e.target.value;
+                if(currentMode === 'earth') {
+                    uiEarth.classList.remove('hidden');
+                    uiAtmos.classList.add('hidden');
+                    earthGroup.visible = true;
+                    atmosGroup.visible = false;
+                    camera.position.set(0, 50, 220);
+                    controls.target.set(0, 0, 0);
+                } else {
+                    uiEarth.classList.add('hidden');
+                    uiAtmos.classList.remove('hidden');
+                    earthGroup.visible = false;
+                    atmosGroup.visible = true;
+                    camera.position.set(0, 50, 120);
+                    controls.target.set(0, 50, 0);
+                    updateParticles(parseFloat(inScaleH.value) * 2); // Init particles
+                }
+            });
+        });
+
+        // Particle update listener
+        inScaleH.addEventListener('input', () => {
+            updateParticles(parseFloat(inScaleH.value) * 2);
+        });
+
+        // Initialize Camera
+        camera.position.set(0, 50, 220);
+        controls.target.set(0, 0, 0);
+
+        // --- Update Loop ---
+        function updatePhysics() {
+            if (currentMode === 'earth') {
+                const depth = parseFloat(inDepth.value);
+                const rho_c = parseFloat(inCoreDens.value);
+                const rho_m = parseFloat(inMantleDens.value);
+
+                valDepth.innerText = depth + ' km';
+                valCoreDens.innerText = rho_c + ' kg/m³';
+                valMantleDens.innerText = rho_m + ' kg/m³';
+
+                // Map visual 0-100 to real 0-6371km
+                const r_visual = 100 - depth;
+                const r_real_m = (r_visual / 100) * 6371000;
+                const R_core_real_m = (R_CORE_VISUAL / 100) * 6371000;
+
+                let M_enc = 0;
+                let local_rho = 0;
+
+                if (r_real_m <= R_core_real_m) {
+                    M_enc = (4/3) * Math.PI * Math.pow(r_real_m, 3) * rho_c;
+                    local_rho = rho_c;
+                } else {
+                    const M_core = (4/3) * Math.PI * Math.pow(R_core_real_m, 3) * rho_c;
+                    const M_shell = (4/3) * Math.PI * (Math.pow(r_real_m, 3) - Math.pow(R_core_real_m, 3)) * rho_m;
+                    M_enc = M_core + M_shell;
+                    local_rho = rho_m;
+                }
+
+                const G = 6.674e-11;
+                let g = 0;
+                if (r_real_m > 0) {
+                    g = (G * M_enc) / Math.pow(r_real_m, 2);
+                }
+
+                // Visual Updates
+                probe.position.set(r_visual, 0, 0);
+                wireSphere.scale.set(r_visual, r_visual, r_visual);
+                wireSphere.visible = r_visual > 0;
+
+                if (r_visual > 0.1) {
+                    gArrow.visible = true;
+                    gArrow.position.set(r_visual, 0, 0);
+                    // Scale arrow length visually
+                    const arrowLen = Math.max(2, g * 2.5); 
+                    gArrow.setLength(arrowLen, arrowLen * 0.2, arrowLen * 0.1);
+                } else {
+                    gArrow.visible = false;
+                }
+
+                // Update Core Color Saturation based on density
+                const sat = 0.4 + 0.6 * ((rho_c - 5000) / 10000);
+                matCore.color.setHSL(345/360, sat, 0.6);
+
+                // Update Formula Card
+                formulaCard.innerHTML = `
+                    <div style="font-weight:bold; margin-bottom:10px; color:#1a1a1a;">Shell Theorem</div>
+                    <div class="math-line"><span class="math-symbol">r</span> = ${(r_real_m/1000).toFixed(0)} km</div>
+                    <div class="math-line"><span class="math-symbol">&rho;<sub>local</sub></span> = <span class="${local_rho === rho_c ? 'color-red' : 'color-orange'}">${local_rho}</span> kg/m³</div>
+                    <div class="math-line"><span class="math-symbol">M<sub>enc</sub></span> = ${(M_enc / 1e24).toFixed(2)} &times; 10<sup>24</sup> kg</div>
+                    <div class="math-line"><span class="math-symbol color-green">g</span> = <span class="color-green">${g.toFixed(2)} m/s²</span></div>
+                `;
+
+            } else {
+                const h = parseFloat(inAlt.value);
+                const H = parseFloat(inScaleH.value);
+
+                valAlt.innerText = h.toFixed(1) + ' km';
+                valScaleH.innerText = H.toFixed(1) + ' km';
+
+                // Map 0-50km to 0-100 visual units
+                const y_visual = h * 2;
+                const H_visual = H * 2;
+
+                const rho_0 = 1.225;
+                const P_0 = 1.0;
+                
+                const decayFactor = Math.exp(-h / H);
+                const rho = rho_0 * decayFactor;
+                const P = P_0 * decayFactor;
+
+                // Visual Updates
+                gauge.position.y = y_visual;
+
+                const wLen = Math.max(1, 30 * decayFactor);
+                weightArrow.position.set(0, y_visual + wLen, 0);
+                weightArrow.setLength(wLen, wLen*0.2, wLen*0.1);
+
+                const pLen = Math.max(1, 15 * decayFactor);
+                pressureArrows.children.forEach(arrow => {
+                    arrow.position.y = y_visual - pLen;
+                    arrow.setLength(pLen, pLen*0.3, pLen*0.15);
+                });
+
+                // Update Formula Card
+                formulaCard.innerHTML = `
+                    <div style="font-weight:bold; margin-bottom:10px; color:#1a1a1a;">Barometric Formula</div>
+                    <div class="math-line"><span class="math-symbol">h</span> = ${h.toFixed(1)} km</div>
+                    <div class="math-line"><span class="math-symbol">H</span> = ${H.toFixed(1)} km</div>
+                    <div class="math-line"><span class="math-symbol color-blue">&rho;(h)</span> = <span class="color-blue">${rho.toFixed(3)} kg/m³</span></div>
+                    <div class="math-line"><span class="math-symbol color-red">P(h)</span> = <span class="color-red">${P.toFixed(3)} atm</span></div>
+                `;
+            }
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Update light position to follow camera slightly for better shading
+            dirLight.position.copy(camera.position);
+            dirLight.position.y += 50;
+
+            controls.update();
+            updatePhysics();
+            
+            // Slow rotation for Earth layers
+            if(currentMode === 'earth') {
+                meshCrust.rotation.y += 0.001;
+                meshMantle.rotation.y += 0.0015;
+                meshCore.rotation.y += 0.002;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        updateParticles(parseFloat(inScaleH.value) * 2);
+        animate();
+
+    </script>
+</body>
+</html>

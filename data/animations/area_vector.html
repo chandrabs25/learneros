@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electric Flux & Area Vector Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --disk-color: #4361EE;
+            --area-color: #FF3366;
+            --field-color: #06D6A0;
+            --flux-color: #FFD166;
+            --angle-color: #F77F00;
+            --text-main: #2b3a4a;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f0f4f8 0%, #ffffff 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            box-sizing: border-box;
+        }
+
+        #ui-panel h2 {
+            margin: 0 0 20px 0;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .slider-group {
+            margin-bottom: 20px;
+        }
+
+        .slider-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: 3px solid #ccc;
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        #E-slider::-webkit-slider-thumb { border-color: var(--field-color); }
+        #A-slider::-webkit-slider-thumb { border-color: var(--area-color); }
+        #theta-slider::-webkit-slider-thumb { border-color: var(--angle-color); }
+        #speed-slider::-webkit-slider-thumb { border-color: var(--disk-color); }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 20px 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            z-index: 10;
+            font-size: 1.1rem;
+        }
+
+        .formula-title {
+            font-weight: 800;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            font-size: 1.2rem;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        .result-line {
+            margin-top: 16px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        /* Colors for text */
+        .c-field { color: var(--field-color); }
+        .c-area { color: var(--area-color); }
+        .c-angle { color: var(--angle-color); }
+        .c-disk { color: var(--disk-color); }
+
+        /* 3D Labels */
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 5;
+            overflow: hidden;
+        }
+
+        .label-3d {
+            position: absolute;
+            top: 0;
+            left: 0;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1.4rem;
+            text-shadow: 0 2px 10px rgba(255,255,255,0.9), 0 0 4px white, 0 0 2px white;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        .instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #666;
+            z-index: 10;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="labels-container">
+        <div id="label-A" class="label-3d c-area">A</div>
+        <div id="label-E" class="label-3d c-field">E</div>
+        <div id="label-theta" class="label-3d c-angle">θ</div>
+    </div>
+
+    <div id="formula-card">
+        <div class="formula-title">Electric Flux (Φ)</div>
+        <div class="math-line">Φ = <b class="c-field">E</b> · <b class="c-area">A</b></div>
+        <div class="math-line">Φ = |<span class="c-field">E</span>| |<span class="c-area">A</span>| cos(<span class="c-angle">θ</span>)</div>
+        <div class="math-line" style="margin-top: 15px;">
+            Φ = <span class="c-field" id="form-E">5.0</span> × <span class="c-area" id="form-A">3.0</span> × cos(<span class="c-angle" id="form-theta">0°</span>)
+        </div>
+        <div class="result-line">
+            = <span id="form-flux">15.00</span> V·m
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h2>Simulation Controls</h2>
+        
+        <div class="slider-group">
+            <label>
+                <span>Field Strength (E)</span> 
+                <span class="val-display c-field" id="val-E">5.0</span>
+            </label>
+            <input type="range" id="E-slider" min="0" max="10" step="0.1" value="5">
+        </div>
+        
+        <div class="slider-group">
+            <label>
+                <span>Area Magnitude (A)</span> 
+                <span class="val-display c-area" id="val-A">3.0</span>
+            </label>
+            <input type="range" id="A-slider" min="1" max="5" step="0.1" value="3">
+        </div>
+        
+        <div class="slider-group">
+            <label>
+                <span>Tilt Angle (θ)</span> 
+                <span class="val-display c-angle" id="val-theta">0°</span>
+            </label>
+            <input type="range" id="theta-slider" min="0" max="180" step="1" value="0">
+        </div>
+        
+        <div class="slider-group">
+            <label>
+                <span>Flow Speed</span> 
+                <span class="val-display" id="val-speed">1.0</span>
+            </label>
+            <input type="range" id="speed-slider" min="0" max="2" step="0.1" value="1">
+        </div>
+    </div>
+
+    <div class="instructions">Left Click to Rotate • Scroll to Zoom • Right Click to Pan</div>
+
+    <script>
+        // --- Scene Setup ---
+        const scene = new THREE.Scene();
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(8, 6, 10);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 15, 10);
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        fillLight.position.set(-10, -5, -10);
+        scene.add(fillLight);
+
+        // --- Grid ---
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xeaeaea);
+        gridHelper.position.y = -4;
+        scene.add(gridHelper);
+
+        // --- State Variables ---
+        const params = {
+            E: 5.0,
+            A: 3.0,
+            theta: 0, // in radians
+            speed: 1.0
+        };
+
+        // --- Geometries & Materials ---
+        
+        // 1. The Surface (Disk)
+        const diskGroup = new THREE.Group();
+        
+        const diskGeo = new THREE.CylinderGeometry(1, 1, 0.04, 64);
+        diskGeo.rotateX(Math.PI / 2); // Orient normal to +Z
+        const diskMat = new THREE.MeshPhysicalMaterial({ 
+            color: 0x4361EE, 
+            transparent: true, 
+            opacity: 0.4, 
+            side: THREE.DoubleSide,
+            roughness: 0.2,
+            metalness: 0.1,
+            clearcoat: 1.0
+        });
+        const disk = new THREE.Mesh(diskGeo, diskMat);
+        
+        const edgeGeo = new THREE.EdgesGeometry(diskGeo);
+        const edgeMat = new THREE.LineBasicMaterial({ color: 0x1133AA, linewidth: 2 });
+        const diskEdges = new THREE.LineSegments(edgeGeo, edgeMat);
+        
+        diskGroup.add(disk);
+        diskGroup.add(diskEdges);
+        scene.add(diskGroup);
+
+        // 2. The Area Vector (A)
+        const areaVectorGroup = new THREE.Group();
+        const vectorMat = new THREE.MeshPhysicalMaterial({ color: 0xFF3366, roughness: 0.2, metalness: 0.1 });
+        
+        const shaftGeo = new THREE.CylinderGeometry(0.06, 0.06, 1, 16);
+        shaftGeo.translate(0, 0.5, 0);
+        shaftGeo.rotateX(Math.PI / 2);
+        const vectorShaft = new THREE.Mesh(shaftGeo, vectorMat);
+        
+        const headGeo = new THREE.ConeGeometry(0.18, 0.4, 16);
+        headGeo.translate(0, 0.2, 0);
+        headGeo.rotateX(Math.PI / 2);
+        const vectorHead = new THREE.Mesh(headGeo, vectorMat);
+        
+        areaVectorGroup.add(vectorShaft);
+        areaVectorGroup.add(vectorHead);
+        diskGroup.add(areaVectorGroup); // Attach to disk so it rotates together
+
+        // 3. Electric Field Lines (E)
+        const fieldGroup = new THREE.Group();
+        const fieldArrows = [];
+        const fieldMat = new THREE.MeshPhysicalMaterial({ 
+            color: 0x06D6A0, 
+            transparent: true, 
+            opacity: 0.7,
+            roughness: 0.2 
+        });
+
+        function createFieldArrow(x, y) {
+            const group = new THREE.Group();
+            const sGeo = new THREE.CylinderGeometry(0.02, 0.02, 10, 8);
+            sGeo.rotateX(Math.PI / 2);
+            const shaft = new THREE.Mesh(sGeo, fieldMat);
+            
+            const hGeo = new THREE.ConeGeometry(0.1, 0.3, 8);
+            hGeo.translate(0, 5, 0); // Tip at z=5
+            hGeo.rotateX(Math.PI / 2);
+            const head = new THREE.Mesh(hGeo, fieldMat);
+            
+            group.add(shaft);
+            group.add(head);
+            group.position.set(x, y, 0);
+            return group;
+        }
+
+        // 5x5 Grid of field lines
+        for(let x = -3; x <= 3; x += 1.5) {
+            for(let y = -3; y <= 3; y += 1.5) {
+                const arrow = createFieldArrow(x, y);
+                fieldGroup.add(arrow);
+                fieldArrows.push(arrow);
+            }
+        }
+        scene.add(fieldGroup);
+
+        // 4. Flux Particles (Flow)
+        const particleCount = 800;
+        const particleGeo = new THREE.SphereGeometry(0.05, 16, 16);
+        const particleMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const particles = new THREE.InstancedMesh(particleGeo, particleMat, particleCount);
+        
+        const dummy = new THREE.Object3D();
+        const particleData = [];
+        const bounds = { x: 3.5, y: 3.5, zMin: -6, zMax: 6 };
+        
+        const colorWhite = new THREE.Color(0xffffff);
+        const colorYellow = new THREE.Color(0xFFD166);
+
+        for(let i = 0; i < particleCount; i++) {
+            const x = (Math.random() - 0.5) * bounds.x * 2;
+            const y = (Math.random() - 0.5) * bounds.y * 2;
+            const z = bounds.zMin + Math.random() * (bounds.zMax - bounds.zMin);
+            particleData.push({ x, y, z, highlightTimer: 0 });
+            
+            dummy.position.set(x, y, z);
+            dummy.updateMatrix();
+            particles.setMatrixAt(i, dummy.matrix);
+            particles.setColorAt(i, colorWhite);
+        }
+        scene.add(particles);
+
+        // 5. Angle Arc (θ)
+        const arcMat = new THREE.LineBasicMaterial({ color: 0xF77F00, linewidth: 4 });
+        const arcGeo = new THREE.BufferGeometry();
+        const arcLine = new THREE.Line(arcGeo, arcMat);
+        scene.add(arcLine);
+
+        // --- UI Event Listeners ---
+        const sliders = {
+            E: document.getElementById('E-slider'),
+            A: document.getElementById('A-slider'),
+            theta: document.getElementById('theta-slider'),
+            speed: document.getElementById('speed-slider')
+        };
+
+        Object.values(sliders).forEach(slider => {
+            slider.addEventListener('input', updateStateFromUI);
+        });
+
+        function updateStateFromUI() {
+            params.E = parseFloat(sliders.E.value);
+            params.A = parseFloat(sliders.A.value);
+            params.theta = parseFloat(sliders.theta.value) * Math.PI / 180;
+            params.speed = parseFloat(sliders.speed.value);
+            
+            updateVisuals();
+        }
+
+        // --- Core Update Logic ---
+        function updateVisuals() {
+            // Calculate Physics
+            let flux = params.E * params.A * Math.cos(params.theta);
+            if (Math.abs(flux) < 0.001) flux = 0; // Prevent -0.00
+
+            // Update UI Text
+            document.getElementById('val-E').innerText = params.E.toFixed(1);
+            document.getElementById('val-A').innerText = params.A.toFixed(1);
+            document.getElementById('val-theta').innerText = (params.theta * 180 / Math.PI).toFixed(0) + '°';
+            document.getElementById('val-speed').innerText = params.speed.toFixed(1);
+            
+            document.getElementById('form-E').innerText = params.E.toFixed(1);
+            document.getElementById('form-A').innerText = params.A.toFixed(1);
+            document.getElementById('form-theta').innerText = (params.theta * 180 / Math.PI).toFixed(0) + '°';
+            document.getElementById('form-flux').innerText = flux.toFixed(2);
+
+            // 1. Update Disk Scale & Rotation
+            const radius = Math.sqrt(params.A / Math.PI);
+            diskGroup.scale.set(radius, radius, 1);
+            diskGroup.rotation.y = params.theta;
+
+            // 2. Update Area Vector Length
+            const aLen = (params.A * 0.5) + 0.5; // Visual scaling
+            vectorShaft.scale.z = aLen;
+            vectorHead.position.z = aLen;
+
+            // 3. Update Field Arrows (Opacity based on E)
+            const fieldOpacity = params.E === 0 ? 0 : 0.2 + (params.E / 10) * 0.8;
+            fieldMat.opacity = fieldOpacity;
+            fieldGroup.visible = params.E > 0;
+
+            // 4. Update Angle Arc
+            const arcPoints = [];
+            const arcRadius = 1.6;
+            const segments = 32;
+            for(let i = 0; i <= segments; i++) {
+                const angle = (i / segments) * params.theta;
+                // Arc goes from Z-axis (0,0,1) towards Area Vector (sin(theta), 0, cos(theta))
+                arcPoints.push(new THREE.Vector3(arcRadius * Math.sin(angle), 0, arcRadius * Math.cos(angle)));
+            }
+            arcGeo.setFromPoints(arcPoints);
+            arcLine.visible = params.theta > 0.05;
+        }
+
+        // --- 3D to 2D Label Projection ---
+        const labelA = document.getElementById('label-A');
+        const labelE = document.getElementById('label-E');
+        const labelTheta = document.getElementById('label-theta');
+        const tempV = new THREE.Vector3();
+
+        function updateLabels() {
+            // Area Vector Label (A)
+            const aLen = (params.A * 0.5) + 0.5;
+            tempV.set(0, 0, aLen + 0.4);
+            tempV.applyMatrix4(diskGroup.matrixWorld);
+            projectAndPosition(tempV, labelA);
+
+            // Field Label (E)
+            if (params.E > 0) {
+                tempV.set(1.5, 1.5, 4.5); // Near top right arrow
+                projectAndPosition(tempV, labelE);
+                labelE.style.opacity = 1;
+            } else {
+                labelE.style.opacity = 0;
+            }
+
+            // Theta Label (θ)
+            if (params.theta > 0.05) {
+                const arcRadius = 1.9;
+                const halfTheta = params.theta / 2;
+                tempV.set(arcRadius * Math.sin(halfTheta), 0, arcRadius * Math.cos(halfTheta));
+                projectAndPosition(tempV, labelTheta);
+                labelTheta.style.opacity = 1;
+            } else {
+                labelTheta.style.opacity = 0;
+            }
+        }
+
+        function projectAndPosition(vector3, element) {
+            const pos = vector3.clone();
+            pos.project(camera);
+            
+            if (pos.z > 1) { // Behind camera
+                element.style.display = 'none';
+                return;
+            }
+            
+            element.style.display = 'block';
+            const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (pos.y * -0.5 + 0.5) * window.innerHeight;
+            element.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            controls.update();
+
+            // Particle Animation & Physics Intersection
+            if (params.E > 0 && params.speed > 0) {
+                particles.visible = true;
+                const moveStep = delta * params.speed * 6;
+                const radius = Math.sqrt(params.A / Math.PI);
+                const cosT = Math.cos(params.theta);
+                const sinT = Math.sin(params.theta);
+
+                let colorNeedsUpdate = false;
+
+                for(let i = 0; i < particleCount; i++) {
+                    const p = particleData[i];
+                    
+                    // Local Z distance from plane BEFORE move
+                    const zLocalPrev = p.x * sinT + p.z * cosT;
+                    
+                    // Move particle along world Z (Field direction)
+                    p.z += moveStep;
+                    
+                    // Reset if out of bounds
+                    if(p.z > bounds.zMax) {
+                        p.z = bounds.zMin;
+                        p.x = (Math.random() - 0.5) * bounds.x * 2;
+                        p.y = (Math.random() - 0.5) * bounds.y * 2;
+                        p.highlightTimer = 0;
+                        particles.setColorAt(i, colorWhite);
+                        colorNeedsUpdate = true;
+                    }
+                    
+                    // Local Z distance AFTER move
+                    const zLocalCurr = p.x * sinT + p.z * cosT;
+                    
+                    // Check Intersection: Did it cross the plane?
+                    // It crosses if local Z changes sign.
+                    if (zLocalPrev * zLocalCurr <= 0 && zLocalPrev !== zLocalCurr) {
+                        
+                        // Calculate exact intersection point
+                        let zInt;
+                        if (Math.abs(cosT) < 0.0001) { // Theta = 90 deg
+                            zInt = p.z;
+                        } else {
+                            // Plane eq: X*sinT + Z*cosT = 0
+                            zInt = -p.x * sinT / cosT; 
+                        }
+                        
+                        // Convert intersection point to disk's local XY coordinates
+                        const xLocal = p.x * cosT - zInt * sinT;
+                        const yLocal = p.y;
+                        
+                        // Check if intersection is within the disk radius
+                        if (xLocal * xLocal + yLocal * yLocal <= radius * radius) {
+                            p.highlightTimer = 25; // Frames to stay yellow
+                        }
+                    }
+                    
+                    // Handle Highlight Visuals
+                    let scale = 1.0;
+                    if (p.highlightTimer > 0) {
+                        particles.setColorAt(i, colorYellow);
+                        scale = 1.6; // Pulse size
+                        p.highlightTimer--;
+                        colorNeedsUpdate = true;
+                    } else if (p.highlightTimer === 0) {
+                        particles.setColorAt(i, colorWhite);
+                        p.highlightTimer = -1; // Prevent continuous color setting
+                        colorNeedsUpdate = true;
+                    }
+
+                    dummy.position.set(p.x, p.y, p.z);
+                    dummy.scale.set(scale, scale, scale);
+                    dummy.updateMatrix();
+                    particles.setMatrixAt(i, dummy.matrix);
+                }
+                
+                particles.instanceMatrix.needsUpdate = true;
+                if (colorNeedsUpdate) particles.instanceColor.needsUpdate = true;
+            } else {
+                particles.visible = false;
+            }
+
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // --- Window Resize ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize
+        updateStateFromUI();
+        animate();
+
+    </script>
+</body>
+</html>

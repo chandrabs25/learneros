@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photoelectric Effect Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-top: #f0f4f8;
+            --bg-bottom: #d9e2ec;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --panel-border: rgba(255, 255, 255, 0.6);
+            --text-main: #2B2D42;
+            --text-warning: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-green: #06D6A0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            position: absolute;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            z-index: 10;
+        }
+
+        /* Top Left: Live Data */
+        #data-panel {
+            top: 20px;
+            left: 20px;
+            min-width: 220px;
+        }
+
+        #data-panel h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 8px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .data-value {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+        }
+
+        #warning-msg {
+            color: var(--text-warning);
+            font-weight: 600;
+            text-align: center;
+            margin-top: 10px;
+            min-height: 1.2em;
+        }
+
+        /* Right: Controls */
+        #controls-panel {
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-blue);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #wavelength-slider::-webkit-slider-thumb {
+            background: #7209B7; /* Will be updated via JS */
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            border-radius: 6px;
+            background: #e2e8f0;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #cbd5e1;
+        }
+
+        button.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        /* Bottom Center: Graph */
+        #graph-panel {
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #graph-panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        canvas#graphCanvas {
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.5);
+            border-radius: 8px;
+        }
+
+        /* Scrollbar for panel */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- Live Data Panel -->
+    <div id="data-panel" class="glass-panel">
+        <h2>Live Physics Data</h2>
+        <div class="data-row">
+            <span>Photon Energy (E)</span>
+            <span class="data-value" id="val-e">0.00 eV</span>
+        </div>
+        <div class="data-row">
+            <span>Work Function (Φ₀)</span>
+            <span class="data-value" id="val-phi">0.00 eV</span>
+        </div>
+        <div class="data-row">
+            <span>Max Kinetic Energy</span>
+            <span class="data-value" id="val-kmax">0.00 eV</span>
+        </div>
+        <div id="warning-msg"></div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div id="controls-panel" class="glass-panel">
+        <div class="control-group">
+            <div class="control-header">
+                <span>Wavelength (λ)</span>
+                <span class="control-value" id="lbl-wavelength">500 nm</span>
+            </div>
+            <input type="range" id="wavelength-slider" min="300" max="800" step="1" value="500">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Light Intensity (I)</span>
+                <span class="control-value" id="lbl-intensity">5</span>
+            </div>
+            <input type="range" id="intensity-slider" min="1" max="20" step="1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Work Function (Φ₀)</span>
+                <span class="control-value" id="lbl-workfunction">2.0 eV</span>
+            </div>
+            <input type="range" id="workfunction-slider" min="1.0" max="5.0" step="0.1" value="2.0">
+            
+            <div class="preset-buttons">
+                <button class="preset-btn" data-val="2.1">Cesium<br>(2.1 eV)</button>
+                <button class="preset-btn" data-val="2.4">Sodium<br>(2.4 eV)</button>
+                <button class="preset-btn" data-val="4.7">Copper<br>(4.7 eV)</button>
+            </div>
+        </div>
+        
+        <div class="control-group" style="margin-bottom: 0;">
+            <div class="control-header">
+                <span>Threshold Freq (ν₀)</span>
+                <span class="control-value" style="color: var(--text-main);" id="lbl-threshold">0.00 x10¹⁴ Hz</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graph Panel -->
+    <div id="graph-panel" class="glass-panel">
+        <h3>K.E. vs Frequency</h3>
+        <canvas id="graphCanvas" width="600" height="300"></canvas>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        // --- 1. Physics Constants & State ---
+        const HC = 1240; // eV*nm
+        const PLANCK_EV_S = 4.136e-15; // eV*s
+        const C_NM_S = 3e17; // nm/s
+        
+        const params = {
+            wavelength: 500,
+            intensity: 5,
+            workFunction: 2.0,
+            E: 0,
+            Kmax: 0,
+            nu0: 0,
+            nu: 0
+        };
+
+        // --- 2. Helper Functions ---
+        function getWavelengthColor(wl) {
+            let r, g, b;
+            if (wl >= 380 && wl < 440) {
+                r = -(wl - 440) / (440 - 380); g = 0; b = 1;
+            } else if (wl >= 440 && wl < 490) {
+                r = 0; g = (wl - 440) / (490 - 440); b = 1;
+            } else if (wl >= 490 && wl < 510) {
+                r = 0; g = 1; b = -(wl - 510) / (510 - 490);
+            } else if (wl >= 510 && wl < 580) {
+                r = (wl - 510) / (580 - 510); g = 1; b = 0;
+            } else if (wl >= 580 && wl < 645) {
+                r = 1; g = -(wl - 645) / (645 - 580); b = 0;
+            } else if (wl >= 645 && wl <= 780) {
+                r = 1; g = 0; b = 0;
+            } else {
+                r = 0; g = 0; b = 0;
+            }
+
+            let factor = 1;
+            if (wl >= 380 && wl < 420) factor = 0.3 + 0.7 * (wl - 380) / (420 - 380);
+            else if (wl >= 700 && wl <= 780) factor = 0.3 + 0.7 * (780 - wl) / (780 - 700);
+            
+            if (wl < 380) return new THREE.Color(0.3, 0, 0.5); // UV representation
+            if (wl > 780) return new THREE.Color(0.5, 0, 0);   // IR representation
+
+            return new THREE.Color(r * factor, g * factor, b * factor);
+        }
+
+        function updatePhysics() {
+            params.E = HC / params.wavelength;
+            params.Kmax = Math.max(0, params.E - params.workFunction);
+            // Frequency in 10^14 Hz
+            params.nu = 3000 / params.wavelength; 
+            params.nu0 = params.workFunction / 0.4136; 
+        }
+
+        // --- 3. Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Background is handled by CSS, make renderer transparent
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 5;
+        controls.maxDistance = 20;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Don't go too far below
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(10, 10, 10);
+        scene.add(dirLight);
+
+        // --- 4. Static Objects ---
+        // Cathode (Emitter Plate)
+        const cathodeGeo = new THREE.BoxGeometry(1, 6, 6);
+        const cathodeMat = new THREE.MeshStandardMaterial({ color: 0xCED4DA, roughness: 0.4, metalness: 0.6 });
+        const cathode = new THREE.Mesh(cathodeGeo, cathodeMat);
+        cathode.position.set(-6, 0, 0);
+        scene.add(cathode);
+
+        // Potential Well (Work Function Barrier)
+        const wellGeo = new THREE.BoxGeometry(1.1, 6.1, 6.1);
+        const wellMat = new THREE.MeshBasicMaterial({ 
+            color: 0x4361EE, 
+            transparent: true, 
+            opacity: 0.3,
+            side: THREE.DoubleSide
+        });
+        const well = new THREE.Mesh(wellGeo, wellMat);
+        well.position.set(-6, 0, 0);
+        scene.add(well);
+
+        // Anode (Detector)
+        const anodeGeo = new THREE.BoxGeometry(0.2, 6, 6);
+        const anodeMat = new THREE.MeshStandardMaterial({ 
+            color: 0x495057,
+            transparent: true,
+            opacity: 0.5,
+            wireframe: true
+        });
+        const anode = new THREE.Mesh(anodeGeo, anodeMat);
+        anode.position.set(6, 0, 0);
+        scene.add(anode);
+
+        // --- 5. Particle Systems ---
+        const activePhotons = [];
+        const activeElectrons = [];
+        const electronGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        const electronMat = new THREE.MeshBasicMaterial({ color: 0x06D6A0 });
+
+        function createPhotonWave(wavelength, colorHex) {
+            const points = [];
+            const length = 2;
+            const segments = 40;
+            const freq = 1500 / wavelength; 
+            
+            for (let i = 0; i <= segments; i++) {
+                const x = (i / segments) * length;
+                const envelope = Math.sin((i / segments) * Math.PI); // Taper ends
+                const y = Math.sin(x * freq * Math.PI * 2) * 0.4 * envelope;
+                points.push(new THREE.Vector3(x - length/2, y, 0));
+            }
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({ color: colorHex, linewidth: 2 });
+            return new THREE.Line(geometry, material);
+        }
+
+        function spawnPhoton() {
+            const color = getWavelengthColor(params.wavelength);
+            const mesh = createPhotonWave(params.wavelength, color);
+            
+            // Randomize start position slightly within plate bounds
+            const yOffset = (Math.random() - 0.5) * 5;
+            const zOffset = (Math.random() - 0.5) * 5;
+            
+            mesh.position.set(-12, yOffset, zOffset);
+            scene.add(mesh);
+            
+            activePhotons.push({
+                mesh: mesh,
+                wavelength: params.wavelength,
+                energy: HC / params.wavelength
+            });
+        }
+
+        function spawnElectron(y, z, velocity) {
+            const mesh = new THREE.Mesh(electronGeo, electronMat);
+            mesh.position.set(-5.4, y, z); // Just outside the barrier
+            scene.add(mesh);
+            
+            // Add slight random spread to y/z velocity, but mainly +x
+            const vy = (Math.random() - 0.5) * velocity * 0.1;
+            const vz = (Math.random() - 0.5) * velocity * 0.1;
+
+            activeElectrons.push({
+                mesh: mesh,
+                vx: velocity,
+                vy: vy,
+                vz: vz
+            });
+        }
+
+        // --- 6. UI & Graph Updates ---
+        const uiE = document.getElementById('val-e');
+        const uiPhi = document.getElementById('val-phi');
+        const uiKmax = document.getElementById('val-kmax');
+        const uiWarning = document.getElementById('warning-msg');
+        const uiThreshold = document.getElementById('lbl-threshold');
+        
+        const sliderThumbColor = document.getElementById('wavelength-slider');
+
+        const graphCanvas = document.getElementById('graphCanvas');
+        const ctx = graphCanvas.getContext('2d');
+
+        function updateUI() {
+            uiE.textContent = params.E.toFixed(2) + " eV";
+            uiPhi.textContent = params.workFunction.toFixed(2) + " eV";
+            uiKmax.textContent = params.Kmax.toFixed(2) + " eV";
+            uiThreshold.textContent = params.nu0.toFixed(2) + " x10¹⁴ Hz";
+
+            if (params.E < params.workFunction) {
+                uiE.style.color = "var(--text-warning)";
+                uiWarning.textContent = "No Emission (E < Φ₀)";
+            } else {
+                uiE.style.color = "var(--text-main)";
+                uiWarning.textContent = "";
+            }
+
+            // Update barrier visual
+            wellMat.opacity = params.workFunction * 0.15;
+
+            // Update slider thumb color
+            const color = getWavelengthColor(params.wavelength);
+            sliderThumbColor.style.setProperty('--thumb-color', `#${color.getHexString()}`);
+            // Hack to style webkit thumb dynamically
+            const style = document.createElement('style');
+            style.innerHTML = `#wavelength-slider::-webkit-slider-thumb { background: #${color.getHexString()} !important; }`;
+            document.head.appendChild(style);
+        }
+
+        function drawGraph() {
+            const w = graphCanvas.width;
+            const h = graphCanvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            const padding = 40;
+            const graphW = w - padding * 2;
+            const graphH = h - padding * 2;
+
+            // Coordinate mapping functions
+            // X-axis: Frequency (0 to 15 x10^14 Hz)
+            // Y-axis: Kmax (-2 to 5 eV)
+            const mapX = (nu) => padding + (nu / 15) * graphW;
+            const mapY = (k) => h - padding - ((k + 2) / 7) * graphH;
+
+            // Draw Axes
+            ctx.strokeStyle = '#2B2D42';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            // Y-axis
+            ctx.moveTo(mapX(0), mapY(5));
+            ctx.lineTo(mapX(0), mapY(-2));
+            // X-axis (at y=0)
+            ctx.moveTo(mapX(0), mapY(0));
+            ctx.lineTo(mapX(15), mapY(0));
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = '#2B2D42';
+            ctx.font = '12px Inter';
+            ctx.fillText('Freq (x10¹⁴ Hz)', w - padding - 40, mapY(0) + 15);
+            ctx.fillText('K.E. (eV)', padding - 30, padding - 10);
+            ctx.fillText('0', mapX(0) - 15, mapY(0) + 15);
+
+            // Draw theoretical line: Kmax = h*nu - phi
+            // h in eV*s for 10^14 Hz unit is 0.4136
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(mapX(0), mapY(-params.workFunction));
+            ctx.lineTo(mapX(15), mapY(0.4136 * 15 - params.workFunction));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw active line (above threshold)
+            ctx.strokeStyle = '#4361EE';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(mapX(params.nu0), mapY(0));
+            ctx.lineTo(mapX(15), mapY(0.4136 * 15 - params.workFunction));
+            ctx.stroke();
+
+            // Draw current state dot
+            ctx.fillStyle = params.Kmax > 0 ? '#06D6A0' : '#FF3366';
+            ctx.beginPath();
+            ctx.arc(mapX(params.nu), mapY(params.E - params.workFunction), 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // --- 7. Event Listeners ---
+        document.getElementById('wavelength-slider').addEventListener('input', (e) => {
+            params.wavelength = parseFloat(e.target.value);
+            document.getElementById('lbl-wavelength').textContent = params.wavelength + " nm";
+            updatePhysics();
+            updateUI();
+            drawGraph();
+        });
+
+        document.getElementById('intensity-slider').addEventListener('input', (e) => {
+            params.intensity = parseInt(e.target.value);
+            document.getElementById('lbl-intensity').textContent = params.intensity;
+        });
+
+        const wfSlider = document.getElementById('workfunction-slider');
+        const wfLabel = document.getElementById('lbl-workfunction');
+        const presetBtns = document.querySelectorAll('.preset-btn');
+
+        function setWorkFunction(val) {
+            params.workFunction = parseFloat(val);
+            wfSlider.value = params.workFunction;
+            wfLabel.textContent = params.workFunction.toFixed(1) + " eV";
+            
+            presetBtns.forEach(btn => {
+                if(parseFloat(btn.dataset.val) === params.workFunction) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+
+            updatePhysics();
+            updateUI();
+            drawGraph();
+        }
+
+        wfSlider.addEventListener('input', (e) => {
+            setWorkFunction(e.target.value);
+        });
+
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                setWorkFunction(e.target.dataset.val);
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 8. Animation Loop ---
+        let frameCount = 0;
+        const PHOTON_SPEED = 0.2;
+        const ELECTRON_SPEED_SCALE = 0.15; // Visual scaling for velocity
+
+        // Initialize
+        updatePhysics();
+        updateUI();
+        drawGraph();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            frameCount++;
+
+            // Spawn photons based on intensity (1-20)
+            // Intensity 20 = spawn every 3 frames. Intensity 1 = spawn every 60 frames.
+            const spawnRate = Math.max(2, Math.floor(62 - params.intensity * 3));
+            if (frameCount % spawnRate === 0) {
+                spawnPhoton();
+            }
+
+            // Update Photons
+            for (let i = activePhotons.length - 1; i >= 0; i--) {
+                const p = activePhotons[i];
+                p.mesh.position.x += PHOTON_SPEED;
+
+                // Check collision with cathode surface (x = -5.5)
+                if (p.mesh.position.x >= -5.5) {
+                    scene.remove(p.mesh);
+                    p.mesh.geometry.dispose();
+                    p.mesh.material.dispose();
+                    
+                    // Check Photoelectric emission
+                    if (p.energy > params.workFunction) {
+                        const kMax = p.energy - params.workFunction;
+                        const v = ELECTRON_SPEED_SCALE * Math.sqrt(kMax);
+                        spawnElectron(p.mesh.position.y, p.mesh.position.z, v);
+                    }
+                    
+                    activePhotons.splice(i, 1);
+                }
+            }
+
+            // Update Electrons
+            for (let i = activeElectrons.length - 1; i >= 0; i--) {
+                const e = activeElectrons[i];
+                e.mesh.position.x += e.vx;
+                e.mesh.position.y += e.vy;
+                e.mesh.position.z += e.vz;
+
+                // Check collision with anode (x = 5.9)
+                if (e.mesh.position.x >= 5.9) {
+                    scene.remove(e.mesh);
+                    activeElectrons.splice(i, 1);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

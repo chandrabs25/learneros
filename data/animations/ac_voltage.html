@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AC Voltage Across a Resistor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #2d3436;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        .glass-panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            z-index: 10;
+        }
+
+        #stats-panel {
+            top: 24px;
+            left: 24px;
+            min-width: 220px;
+        }
+
+        #controls-panel {
+            bottom: 24px;
+            right: 24px;
+            width: 320px;
+        }
+
+        h2 {
+            margin: 0 0 16px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1e272e;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .stat-label {
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+        }
+
+        .color-v { color: #FF3366; }
+        .color-i { color: #4361EE; }
+        .color-p { color: #F77F00; }
+
+        .divider {
+            height: 1px;
+            background: rgba(0,0,0,0.1);
+            margin: 12px 0;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #dfe6e9;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #2d3436;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #slider-v::-webkit-slider-thumb { border-color: #FF3366; }
+        #slider-f::-webkit-slider-thumb { border-color: #00b894; }
+        #slider-r::-webkit-slider-thumb { border-color: #4361EE; }
+
+        .scene-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 1px 3px rgba(255,255,255,0.9);
+            z-index: 5;
+        }
+
+        #legend {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            display: flex;
+            gap: 16px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: rgba(255,255,255,0.7);
+            padding: 6px 12px;
+            border-radius: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="stats-panel" class="glass-panel">
+        <h2>Live Circuit Values</h2>
+        <div class="stat-row color-v">
+            <span class="stat-label">v(t)</span>
+            <span class="stat-value"><span id="val-v">0.00</span> V</span>
+        </div>
+        <div class="stat-row color-i">
+            <span class="stat-label">i(t)</span>
+            <span class="stat-value"><span id="val-i">0.00</span> A</span>
+        </div>
+        <div class="stat-row color-p">
+            <span class="stat-label">p(t)</span>
+            <span class="stat-value"><span id="val-p">0.00</span> W</span>
+        </div>
+        <div class="divider"></div>
+        <div class="stat-row">
+            <span class="stat-label">V_rms</span>
+            <span class="stat-value"><span id="val-vrms">0.00</span> V</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">I_rms</span>
+            <span class="stat-value"><span id="val-irms">0.00</span> A</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">P_avg</span>
+            <span class="stat-value"><span id="val-pavg">0.00</span> W</span>
+        </div>
+    </div>
+
+    <div id="controls-panel" class="glass-panel">
+        <h2>Circuit Parameters</h2>
+        <div class="control-group">
+            <div class="control-header color-v">
+                <span>Peak Voltage (V_m)</span>
+                <span id="lbl-v">5.0 V</span>
+            </div>
+            <input type="range" id="slider-v" min="1" max="10" step="0.5" value="5">
+        </div>
+        <div class="control-group">
+            <div class="control-header" style="color: #00b894;">
+                <span>Frequency (f)</span>
+                <span id="lbl-f">0.5 Hz</span>
+            </div>
+            <input type="range" id="slider-f" min="0.1" max="2.0" step="0.1" value="0.5">
+        </div>
+        <div class="control-group">
+            <div class="control-header color-i">
+                <span>Resistance (R)</span>
+                <span id="lbl-r">2.0 Ω</span>
+            </div>
+            <input type="range" id="slider-r" min="1" max="10" step="0.5" value="2">
+        </div>
+    </div>
+
+    <div id="legend">
+        <div class="legend-item"><div class="legend-dot" style="background: #FF3366;"></div>Voltage</div>
+        <div class="legend-item"><div class="legend-dot" style="background: #4361EE;"></div>Current</div>
+        <div class="legend-item"><div class="legend-dot" style="background: #F77F00;"></div>Power</div>
+    </div>
+
+    <!-- 3D Scene Labels -->
+    <div id="label-phasor" class="scene-label" style="color: #2d3436;">Phasors</div>
+    <div id="label-resistor" class="scene-label" style="color: #2d3436; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px;">Resistor (R)</div>
+    <div id="label-source" class="scene-label" style="color: #2d3436; background: rgba(255,255,255,0.8); padding: 2px 6px; border-radius: 4px;">AC Source v(t)</div>
+    <div id="label-wave" class="scene-label" style="color: #2d3436;">Time Domain Waveforms</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        let Vm = 5.0;
+        let f = 0.5;
+        let R = 2.0;
+        let time = 0;
+
+        // --- DOM Elements ---
+        const valV = document.getElementById('val-v');
+        const valI = document.getElementById('val-i');
+        const valP = document.getElementById('val-p');
+        const valVrms = document.getElementById('val-vrms');
+        const valIrms = document.getElementById('val-irms');
+        const valPavg = document.getElementById('val-pavg');
+        
+        const lblV = document.getElementById('lbl-v');
+        const lblF = document.getElementById('lbl-f');
+        const lblR = document.getElementById('lbl-r');
+
+        const labelPhasor = document.getElementById('label-phasor');
+        const labelResistor = document.getElementById('label-resistor');
+        const labelSource = document.getElementById('label-source');
+        const labelWave = document.getElementById('label-wave');
+
+        // --- Event Listeners ---
+        document.getElementById('slider-v').addEventListener('input', (e) => { Vm = parseFloat(e.target.value); lblV.innerText = Vm.toFixed(1) + ' V'; });
+        document.getElementById('slider-f').addEventListener('input', (e) => { f = parseFloat(e.target.value); lblF.innerText = f.toFixed(1) + ' Hz'; });
+        document.getElementById('slider-r').addEventListener('input', (e) => { R = parseFloat(e.target.value); lblR.innerText = R.toFixed(1) + ' Ω'; });
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 0, 16);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 30;
+        controls.minDistance = 5;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // --- 1. The 3D Circuit (Center) ---
+        const circuitCenter = new THREE.Vector3(-1, 0, 0);
+        const w = 2, h = 2, r = 0.4;
+        
+        // Create rounded rectangle path for the wire
+        const wirePath = new THREE.CurvePath();
+        wirePath.add(new THREE.LineCurve3(new THREE.Vector3(-w+r, h, 0), new THREE.Vector3(w-r, h, 0)));
+        wirePath.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(w-r, h, 0), new THREE.Vector3(w, h, 0), new THREE.Vector3(w, h-r, 0)));
+        wirePath.add(new THREE.LineCurve3(new THREE.Vector3(w, h-r, 0), new THREE.Vector3(w, -h+r, 0)));
+        wirePath.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(w, -h+r, 0), new THREE.Vector3(w, -h, 0), new THREE.Vector3(w-r, -h, 0)));
+        wirePath.add(new THREE.LineCurve3(new THREE.Vector3(w-r, -h, 0), new THREE.Vector3(-w+r, -h, 0)));
+        wirePath.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-w+r, -h, 0), new THREE.Vector3(-w, -h, 0), new THREE.Vector3(-w, -h+r, 0)));
+        wirePath.add(new THREE.LineCurve3(new THREE.Vector3(-w, -h+r, 0), new THREE.Vector3(-w, h-r, 0)));
+        wirePath.add(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-w, h-r, 0), new THREE.Vector3(-w, h, 0), new THREE.Vector3(-w+r, h, 0)));
+
+        const wireGeo = new THREE.TubeGeometry(wirePath, 100, 0.08, 12, true);
+        const wireMat = new THREE.MeshStandardMaterial({ color: 0xd1d8e0, roughness: 0.4, metalness: 0.2 });
+        const wireMesh = new THREE.Mesh(wireGeo, wireMat);
+        wireMesh.position.copy(circuitCenter);
+        scene.add(wireMesh);
+
+        // Resistor
+        const resistorGeo = new THREE.CylinderGeometry(0.25, 0.25, 1.8, 16);
+        const resistorMat = new THREE.MeshStandardMaterial({ color: 0x2d3436, roughness: 0.9 });
+        const resistorMesh = new THREE.Mesh(resistorGeo, resistorMat);
+        resistorMesh.position.set(circuitCenter.x + w, circuitCenter.y, circuitCenter.z);
+        scene.add(resistorMesh);
+
+        // AC Source
+        const sourceGeo = new THREE.SphereGeometry(0.5, 32, 32);
+        const sourceMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa, emissive: 0x000000, roughness: 0.2 });
+        const sourceMesh = new THREE.Mesh(sourceGeo, sourceMat);
+        sourceMesh.position.set(circuitCenter.x, circuitCenter.y - h, circuitCenter.z);
+        scene.add(sourceMesh);
+
+        // Charge Carriers (Electrons)
+        const numElectrons = 24;
+        const electrons = [];
+        const electronGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        const electronMat = new THREE.MeshStandardMaterial({ color: 0x4361EE, emissive: 0x4361EE, emissiveIntensity: 0.4 });
+        
+        for(let i=0; i<numElectrons; i++) {
+            const mesh = new THREE.Mesh(electronGeo, electronMat);
+            mesh.userData.u = i / numElectrons; // Parameter along the path [0, 1]
+            scene.add(mesh);
+            electrons.push(mesh);
+        }
+
+        // --- 2. Phasor Diagram (Left) ---
+        const phasorCenter = new THREE.Vector3(-6.5, 0, 0);
+        
+        // Background Circle
+        const circleGeo = new THREE.RingGeometry(2.95, 3.0, 64);
+        const circleMat = new THREE.MeshBasicMaterial({ color: 0xbdc3c7, side: THREE.DoubleSide, transparent: true, opacity: 0.3 });
+        const circleMesh = new THREE.Mesh(circleGeo, circleMat);
+        circleMesh.position.copy(phasorCenter);
+        scene.add(circleMesh);
+
+        // Axes
+        const axisMat = new THREE.LineDashedMaterial({ color: 0xbdc3c7, dashSize: 0.2, gapSize: 0.1 });
+        const xAxisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-9.5, 0, 0), new THREE.Vector3(-3.5, 0, 0)]);
+        const yAxisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6.5, -3, 0), new THREE.Vector3(-6.5, 3, 0)]);
+        const xAxis = new THREE.Line(xAxisGeo, axisMat); xAxis.computeLineDistances();
+        const yAxis = new THREE.Line(yAxisGeo, axisMat); yAxis.computeLineDistances();
+        scene.add(xAxis); scene.add(yAxis);
+
+        // Arrows
+        const vArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), phasorCenter, 1, 0xFF3366, 0.4, 0.3);
+        const iArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), phasorCenter, 1, 0x4361EE, 0.4, 0.3);
+        // Make lines thicker by scaling
+        vArrow.line.material.linewidth = 3; 
+        iArrow.line.material.linewidth = 3;
+        scene.add(vArrow);
+        scene.add(iArrow);
+
+        // Projection Lines
+        const projMat = new THREE.LineDashedMaterial({ color: 0x7f8c8d, dashSize: 0.1, gapSize: 0.1 });
+        const vProjGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]);
+        const iProjGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]);
+        const vProjLine = new THREE.Line(vProjGeo, projMat);
+        const iProjLine = new THREE.Line(iProjGeo, projMat);
+        scene.add(vProjLine);
+        scene.add(iProjLine);
+
+        // --- 3. Dynamic Waveforms (Right) ---
+        const waveStart = 3.5;
+        const waveLen = 6.0;
+        const numPts = 200;
+        
+        // Wave Axes
+        const wAxisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(waveStart, 0, 0), new THREE.Vector3(waveStart+waveLen, 0, 0)]);
+        const wAxis = new THREE.Line(wAxisGeo, axisMat); wAxis.computeLineDistances();
+        scene.add(wAxis);
+
+        // History Arrays
+        const vHist = new Array(numPts).fill(0);
+        const iHist = new Array(numPts).fill(0);
+        const pHist = new Array(numPts).fill(0);
+
+        // Geometries
+        const vWaveGeo = new THREE.BufferGeometry();
+        const iWaveGeo = new THREE.BufferGeometry();
+        const pWaveGeo = new THREE.BufferGeometry();
+        
+        const vPts = new Float32Array(numPts * 3);
+        const iPts = new Float32Array(numPts * 3);
+        const pPts = new Float32Array(numPts * 3);
+
+        for(let j=0; j<numPts; j++) {
+            const x = waveStart + ((numPts - 1 - j) / (numPts - 1)) * waveLen;
+            vPts[j*3] = x; iPts[j*3] = x; pPts[j*3] = x;
+        }
+
+        vWaveGeo.setAttribute('position', new THREE.BufferAttribute(vPts, 3));
+        iWaveGeo.setAttribute('position', new THREE.BufferAttribute(iPts, 3));
+        pWaveGeo.setAttribute('position', new THREE.BufferAttribute(pPts, 3));
+
+        const vWaveLine = new THREE.Line(vWaveGeo, new THREE.LineBasicMaterial({ color: 0xFF3366 }));
+        const iWaveLine = new THREE.Line(iWaveGeo, new THREE.LineBasicMaterial({ color: 0x4361EE }));
+        const pWaveLine = new THREE.Line(pWaveGeo, new THREE.LineBasicMaterial({ color: 0xF77F00 }));
+        
+        scene.add(vWaveLine);
+        scene.add(iWaveLine);
+        scene.add(pWaveLine);
+
+        // --- Helper for CSS Labels ---
+        function updateLabelPos(element, pos3D) {
+            const vec = pos3D.clone();
+            vec.project(camera);
+            const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (vec.y * -0.5 + 0.5) * window.innerHeight;
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            const delta = clock.getDelta();
+            time += delta;
+
+            // 1. Physics Calculations
+            const omega = 2 * Math.PI * f;
+            const v = Vm * Math.sin(omega * time);
+            const i = v / R;
+            const p = v * i;
+
+            // 2. Update UI Values
+            valV.innerText = v.toFixed(2).padStart(5, ' ');
+            valI.innerText = i.toFixed(2).padStart(5, ' ');
+            valP.innerText = p.toFixed(2).padStart(5, ' ');
+            
+            const Vrms = Vm / Math.SQRT2;
+            const Irms = (Vm / R) / Math.SQRT2;
+            const Pavg = Vrms * Irms;
+            
+            valVrms.innerText = Vrms.toFixed(2);
+            valIrms.innerText = Irms.toFixed(2);
+            valPavg.innerText = Pavg.toFixed(2);
+
+            // 3. Update Circuit Visuals
+            // AC Source Pulsing
+            const intensity = Math.abs(v) / 10.0; // Normalized against max possible Vm
+            if (v >= 0) {
+                sourceMat.color.setHex(0xFF3366);
+                sourceMat.emissive.setHex(0xFF3366);
+            } else {
+                sourceMat.color.setHex(0x4361EE);
+                sourceMat.emissive.setHex(0x4361EE);
+            }
+            sourceMat.emissiveIntensity = 0.2 + intensity * 0.8;
+            const scale = 1.0 + intensity * 0.3;
+            sourceMesh.scale.setScalar(scale);
+
+            // Electrons Motion
+            // Speed proportional to current. 
+            const speedFactor = 0.08; 
+            for(let j=0; j<numElectrons; j++) {
+                let u = electrons[j].userData.u;
+                // Positive current -> counter-clockwise (increasing u)
+                u += i * speedFactor * delta;
+                // Wrap around [0, 1]
+                u = u - Math.floor(u);
+                electrons[j].userData.u = u;
+                
+                const pos = wirePath.getPointAt(u);
+                pos.add(circuitCenter); // Offset by circuit center
+                electrons[j].position.copy(pos);
+            }
+
+            // 4. Update Phasors
+            const angle = omega * time;
+            const dir = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0);
+            
+            // Scale factors for visuals
+            const vScale = 0.25;
+            const iScale = 0.25;
+            
+            vArrow.setDirection(dir);
+            vArrow.setLength(Math.max(0.1, Vm * vScale));
+            
+            iArrow.setDirection(dir);
+            iArrow.setLength(Math.max(0.1, (Vm/R) * iScale));
+
+            // Projection Lines
+            const vTip = new THREE.Vector3(phasorCenter.x + dir.x * Vm * vScale, phasorCenter.y + dir.y * Vm * vScale, 0);
+            const vAxisPt = new THREE.Vector3(phasorCenter.x, vTip.y, 0);
+            vProjLine.geometry.setFromPoints([vTip, vAxisPt]);
+            vProjLine.computeLineDistances();
+
+            const iTip = new THREE.Vector3(phasorCenter.x + dir.x * (Vm/R) * iScale, phasorCenter.y + dir.y * (Vm/R) * iScale, 0);
+            const iAxisPt = new THREE.Vector3(phasorCenter.x, iTip.y, 0);
+            iProjLine.geometry.setFromPoints([iTip, iAxisPt]);
+            iProjLine.computeLineDistances();
+
+            // 5. Update Waveforms
+            vHist.unshift(v); vHist.pop();
+            iHist.unshift(i); iHist.pop();
+            pHist.unshift(p); pHist.pop();
+
+            const pScale = 0.05; // Scale down power to fit screen
+
+            for(let j=0; j<numPts; j++) {
+                vPts[j*3 + 1] = vHist[j] * vScale;
+                iPts[j*3 + 1] = iHist[j] * iScale;
+                pPts[j*3 + 1] = pHist[j] * pScale;
+            }
+
+            vWaveGeo.attributes.position.needsUpdate = true;
+            iWaveGeo.attributes.position.needsUpdate = true;
+            pWaveGeo.attributes.position.needsUpdate = true;
+
+            // 6. Update CSS Labels
+            updateLabelPos(labelPhasor, new THREE.Vector3(phasorCenter.x, 3.5, 0));
+            updateLabelPos(labelResistor, new THREE.Vector3(circuitCenter.x + w + 0.8, 0, 0));
+            updateLabelPos(labelSource, new THREE.Vector3(circuitCenter.x, -h - 1.0, 0));
+            updateLabelPos(labelWave, new THREE.Vector3(waveStart + waveLen/2, 3.5, 0));
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        animate();
+    </script>
+</body>
+</html>

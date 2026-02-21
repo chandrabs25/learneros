@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elasticity Modulus & Wave Propagation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 75%;
+            height: 100%;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 30px 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: #111;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-size: 0.85rem;
+            font-family: monospace;
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #0f172a;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 5px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        /* Specific slider colors */
+        #youngs::-webkit-slider-thumb { background: #4361EE; box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4); }
+        #density::-webkit-slider-thumb { background: #F77F00; box-shadow: 0 2px 5px rgba(247, 127, 0, 0.4); }
+        #amplitude::-webkit-slider-thumb { background: #FF3366; box-shadow: 0 2px 5px rgba(255, 51, 102, 0.4); }
+        #frequency::-webkit-slider-thumb { background: #7209B7; box-shadow: 0 2px 5px rgba(114, 9, 183, 0.4); }
+
+        /* Checkbox */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .checkbox-container input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        /* Floating Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            border-radius: 16px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #formula-card h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.1rem;
+            color: #111;
+        }
+
+        .formula-line {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            margin: 8px 0;
+            color: #2b2b2b;
+            display: flex;
+            align-items: center;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #4361EE;
+        }
+
+        /* 3D Tracking Labels */
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 75%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .tracking-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #333;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+
+        .label-source { border: 2px solid #FF3366; color: #FF3366; }
+        .label-direction { border: 2px solid #06D6A0; color: #06D6A0; }
+        
+        /* Legend */
+        .legend {
+            margin-top: 20px;
+            font-size: 0.8rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .color-box {
+            width: 16px; height: 16px; border-radius: 4px; margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    
+    <div id="labels-container">
+        <div id="label-source" class="tracking-label label-source">Wave Source</div>
+        <div id="label-direction" class="tracking-label label-direction">Energy Transfer &rarr;</div>
+    </div>
+
+    <div id="formula-card">
+        <h2>Elastic Wave Dynamics</h2>
+        <div class="formula-line">
+            <span>v = &radic;(Y / &rho;) = &nbsp;</span>
+            <span id="live-speed" class="highlight">5091 m/s</span>
+        </div>
+        <div class="formula-line">
+            <span>&Delta;x = A&middot;sin(kx - &omega;t)</span>
+        </div>
+        <div class="formula-line">
+            <span>v<sub>p</sub> = -A&omega;&middot;cos(kx - &omega;t)</span>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Elasticity Modulus</h1>
+        <p class="subtitle">Interactive visualization of longitudinal wave propagation in a solid medium.</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Young's Modulus (Y)</span>
+                <span class="control-value" id="val-youngs">70 GPa</span>
+            </div>
+            <input type="range" id="youngs" min="1" max="200" step="1" value="70">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Material Density (&rho;)</span>
+                <span class="control-value" id="val-density">2700 kg/m&sup3;</span>
+            </div>
+            <input type="range" id="density" min="500" max="20000" step="100" value="2700">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Wave Amplitude (A)</span>
+                <span class="control-value" id="val-amplitude">0.4 m</span>
+            </div>
+            <input type="range" id="amplitude" min="0.1" max="1.0" step="0.1" value="0.4">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Source Frequency (f)</span>
+                <span class="control-value" id="val-frequency">2.0 Hz</span>
+            </div>
+            <input type="range" id="frequency" min="0.5" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <label class="checkbox-container">
+            <input type="checkbox" id="toggle-ghost" checked>
+            Show "Bulk" Equilibrium (Ghosting)
+        </label>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background:#4361EE;"></div> Equilibrium Bond</div>
+            <div class="legend-item"><div class="color-box" style="background:#FF3366;"></div> Compression Zone</div>
+            <div class="legend-item"><div class="color-box" style="background:#7209B7;"></div> Rarefaction Zone</div>
+            <div class="legend-item"><div class="color-box" style="background:#06D6A0;"></div> Particle Velocity (v<sub>p</sub>)</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // --- DOM Elements ---
+        const container = document.getElementById('canvas-container');
+        const labelSource = document.getElementById('label-source');
+        const labelDirection = document.getElementById('label-direction');
+        
+        const inputYoungs = document.getElementById('youngs');
+        const inputDensity = document.getElementById('density');
+        const inputAmplitude = document.getElementById('amplitude');
+        const inputFrequency = document.getElementById('frequency');
+        const toggleGhost = document.getElementById('toggle-ghost');
+
+        const valYoungs = document.getElementById('val-youngs');
+        const valDensity = document.getElementById('val-density');
+        const valAmplitude = document.getElementById('val-amplitude');
+        const valFrequency = document.getElementById('val-frequency');
+        const liveSpeed = document.getElementById('live-speed');
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, (window.innerWidth * 0.75) / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 8, 30);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth * 0.75, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.minDistance = 10;
+        controls.maxDistance = 60;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.left = -20;
+        dirLight.shadow.camera.right = 20;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        scene.add(dirLight);
+
+        // --- Environment ---
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({ 
+            color: 0xe2e8f0, 
+            roughness: 0.8, 
+            metalness: 0.1 
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -5;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // --- Lattice Parameters ---
+        const nx = 15;
+        const ny = 3;
+        const nz = 3;
+        const spacing = 2.0;
+        const numSpheres = nx * ny * nz;
+        
+        // --- Colors ---
+        const colorBase = new THREE.Color(0x4361EE); // Blue
+        const colorComp = new THREE.Color(0xFF3366); // Red
+        const colorRare = new THREE.Color(0x7209B7); // Purple
+        const colorVel  = 0x06D6A0;                  // Green
+
+        // --- Build Lattice Data ---
+        const basePositions = [];
+        const getIdx = (i, j, k) => i * (ny * nz) + j * nz + k;
+
+        for (let i = 0; i < nx; i++) {
+            for (let j = 0; j < ny; j++) {
+                for (let k = 0; k < nz; k++) {
+                    const x = (i - (nx - 1) / 2) * spacing;
+                    const y = (j - (ny - 1) / 2) * spacing;
+                    const z = (k - (nz - 1) / 2) * spacing;
+                    basePositions.push(new THREE.Vector3(x, y, z));
+                }
+            }
+        }
+
+        // --- Instanced Meshes for Spheres ---
+        const sphereGeo = new THREE.SphereGeometry(0.35, 32, 32);
+        const sphereMat = new THREE.MeshStandardMaterial({ 
+            color: colorBase,
+            roughness: 0.3,
+            metalness: 0.2
+        });
+        const instancedSpheres = new THREE.InstancedMesh(sphereGeo, sphereMat, numSpheres);
+        instancedSpheres.castShadow = true;
+        instancedSpheres.receiveShadow = true;
+        scene.add(instancedSpheres);
+
+        // Ghost Spheres (Bulk Air representation)
+        const ghostMat = new THREE.MeshBasicMaterial({ 
+            color: 0x94a3b8, 
+            transparent: true, 
+            opacity: 0.2 
+        });
+        const ghostSpheres = new THREE.InstancedMesh(sphereGeo, ghostMat, numSpheres);
+        scene.add(ghostSpheres);
+
+        // Initialize positions
+        const dummy = new THREE.Object3D();
+        for (let i = 0; i < numSpheres; i++) {
+            dummy.position.copy(basePositions[i]);
+            dummy.updateMatrix();
+            instancedSpheres.setMatrixAt(i, dummy.matrix);
+            ghostSpheres.setMatrixAt(i, dummy.matrix);
+        }
+        instancedSpheres.instanceMatrix.needsUpdate = true;
+        ghostSpheres.instanceMatrix.needsUpdate = true;
+
+        // --- Build Springs (Lines) ---
+        const bonds = [];
+        for (let i = 0; i < nx; i++) {
+            for (let j = 0; j < ny; j++) {
+                for (let k = 0; k < nz; k++) {
+                    const current = getIdx(i, j, k);
+                    if (i < nx - 1) bonds.push({ a: current, b: getIdx(i + 1, j, k), eq: spacing });
+                    if (j < ny - 1) bonds.push({ a: current, b: getIdx(i, j + 1, k), eq: spacing });
+                    if (k < nz - 1) bonds.push({ a: current, b: getIdx(i, j, k + 1), eq: spacing });
+                }
+            }
+        }
+
+        const lineGeo = new THREE.BufferGeometry();
+        const linePositions = new Float32Array(bonds.length * 6);
+        const lineColors = new Float32Array(bonds.length * 6);
+        
+        lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+        lineGeo.setAttribute('color', new THREE.BufferAttribute(lineColors, 3));
+        
+        const lineMat = new THREE.LineBasicMaterial({ 
+            vertexColors: true, 
+            transparent: true, 
+            opacity: 0.7,
+            linewidth: 2 // Note: WebGL limits this to 1 on most platforms, but included for completeness
+        });
+        const lines = new THREE.LineSegments(lineGeo, lineMat);
+        scene.add(lines);
+
+        // --- Visual Indicators ---
+        // Tracer Velocity Arrow
+        const tracerIdx = getIdx(Math.floor(nx / 2), Math.floor(ny / 2), Math.floor(nz / 2));
+        const arrowHelper = new THREE.ArrowHelper(
+            new THREE.Vector3(1, 0, 0), 
+            basePositions[tracerIdx], 
+            1, 
+            colorVel, 
+            0.6, 
+            0.4
+        );
+        scene.add(arrowHelper);
+
+        // Wave Front Plane
+        const waveFrontGeo = new THREE.PlaneGeometry(8, 8);
+        const waveFrontMat = new THREE.MeshBasicMaterial({ 
+            color: 0x00b4d8, 
+            transparent: true, 
+            opacity: 0.15, 
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const waveFront = new THREE.Mesh(waveFrontGeo, waveFrontMat);
+        waveFront.rotation.y = Math.PI / 2;
+        scene.add(waveFront);
+
+        // --- Physics & Animation Loop ---
+        const clock = new THREE.Clock();
+        const currentPositions = new Array(numSpheres).fill(null).map(() => new THREE.Vector3());
+        const tempColor = new THREE.Color();
+
+        // 3D Points for labels
+        const sourcePoint3D = new THREE.Vector3(basePositions[0].x, 4, 0);
+        const dirPoint3D = new THREE.Vector3(0, 5, 0);
+
+        function updateLabels() {
+            const width = window.innerWidth * 0.75;
+            const height = window.innerHeight;
+
+            // Update Source Label
+            const sp = sourcePoint3D.clone();
+            sp.project(camera);
+            if(sp.z < 1) {
+                labelSource.style.display = 'block';
+                labelSource.style.left = `${(sp.x * 0.5 + 0.5) * width}px`;
+                labelSource.style.top = `${(sp.y * -0.5 + 0.5) * height}px`;
+            } else {
+                labelSource.style.display = 'none';
+            }
+
+            // Update Direction Label
+            const dp = dirPoint3D.clone();
+            dp.project(camera);
+            if(dp.z < 1) {
+                labelDirection.style.display = 'block';
+                labelDirection.style.left = `${(dp.x * 0.5 + 0.5) * width}px`;
+                labelDirection.style.top = `${(dp.y * -0.5 + 0.5) * height}px`;
+            } else {
+                labelDirection.style.display = 'none';
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = clock.getElapsedTime();
+
+            // 1. Read UI Parameters
+            const Y = parseFloat(inputYoungs.value) * 1e9; // Pascals
+            const rho = parseFloat(inputDensity.value);    // kg/m^3
+            const A = parseFloat(inputAmplitude.value);    // meters (scaled)
+            const f = parseFloat(inputFrequency.value);    // Hz
+
+            // Update UI Text
+            valYoungs.innerText = `${inputYoungs.value} GPa`;
+            valDensity.innerText = `${inputDensity.value} kg/m³`;
+            valAmplitude.innerText = `${A.toFixed(1)} m`;
+            valFrequency.innerText = `${f.toFixed(1)} Hz`;
+            
+            ghostSpheres.visible = toggleGhost.checked;
+
+            // 2. Physics Calculations
+            const v = Math.sqrt(Y / rho); // Real wave speed
+            liveSpeed.innerText = `${v.toFixed(0)} m/s`;
+
+            const w = 2 * Math.PI * f; // Angular frequency
+            
+            // Spatial Scaling Factor:
+            // Real wave speed is ~5000 m/s. To visualize this on a 30-unit grid,
+            // we scale the wave number k so that we see 1-2 full wavelengths.
+            const spatialScale = 150; 
+            const k = (w / v) * spatialScale;
+
+            // 3. Update Spheres (Longitudinal Displacement)
+            for (let i = 0; i < numSpheres; i++) {
+                const base = basePositions[i];
+                // Wave Equation: Δx = A * sin(k*x0 - w*t)
+                const dx = A * Math.sin(k * base.x - w * time);
+                
+                currentPositions[i].set(base.x + dx, base.y, base.z);
+                
+                dummy.position.copy(currentPositions[i]);
+                dummy.updateMatrix();
+                instancedSpheres.setMatrixAt(i, dummy.matrix);
+            }
+            instancedSpheres.instanceMatrix.needsUpdate = true;
+
+            // 4. Update Springs (Color based on strain)
+            const posAttr = lineGeo.attributes.position.array;
+            const colAttr = lineGeo.attributes.color.array;
+
+            for (let i = 0; i < bonds.length; i++) {
+                const bond = bonds[i];
+                const pA = currentPositions[bond.a];
+                const pB = currentPositions[bond.b];
+                
+                const dist = pA.distanceTo(pB);
+                const ratio = dist / bond.eq;
+
+                // Color Logic
+                if (ratio < 1.0) {
+                    // Compression -> Red
+                    const t = Math.min(1.0, (1.0 - ratio) / 0.25); // Sensitivity factor
+                    tempColor.lerpColors(colorBase, colorComp, t);
+                } else {
+                    // Rarefaction -> Purple
+                    const t = Math.min(1.0, (ratio - 1.0) / 0.25);
+                    tempColor.lerpColors(colorBase, colorRare, t);
+                }
+
+                // Update Positions
+                posAttr[i*6+0] = pA.x; posAttr[i*6+1] = pA.y; posAttr[i*6+2] = pA.z;
+                posAttr[i*6+3] = pB.x; posAttr[i*6+4] = pB.y; posAttr[i*6+5] = pB.z;
+
+                // Update Colors
+                colAttr[i*6+0] = tempColor.r; colAttr[i*6+1] = tempColor.g; colAttr[i*6+2] = tempColor.b;
+                colAttr[i*6+3] = tempColor.r; colAttr[i*6+4] = tempColor.g; colAttr[i*6+5] = tempColor.b;
+            }
+            lineGeo.attributes.position.needsUpdate = true;
+            lineGeo.attributes.color.needsUpdate = true;
+
+            // 5. Update Tracer Velocity Vector
+            const tracerBase = basePositions[tracerIdx];
+            // Particle Velocity: vp = d(Δx)/dt = -A * w * cos(k*x0 - w*t)
+            const vp = -A * w * Math.cos(k * tracerBase.x - w * time);
+            
+            arrowHelper.position.copy(currentPositions[tracerIdx]);
+            const dir = vp > 0 ? 1 : -1;
+            arrowHelper.setDirection(new THREE.Vector3(dir, 0, 0));
+            // Scale length visually
+            const arrowLen = Math.max(0.01, Math.abs(vp) * 0.15);
+            arrowHelper.setLength(arrowLen, arrowLen * 0.3, arrowLen * 0.2);
+
+            // 6. Update Wave Front Indicator
+            const gridLen = (nx - 1) * spacing; // 28
+            const startX = -gridLen / 2;        // -14
+            const v_visual = w / k;             // Visual phase velocity
+            
+            // Wrap around the grid
+            const frontX = startX + ((v_visual * time) % gridLen);
+            waveFront.position.x = frontX;
+
+            // 7. Update Overlays & Render
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth * 0.75;
+            const height = window.innerHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // Start Animation
+        animate();
+    </script>
+</body>
+</html>

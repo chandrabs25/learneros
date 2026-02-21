@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excess Pressure in Drops and Bubbles</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --text-main: #1a1a1a;
+            --color-pressure: #FF3366;
+            --color-tension: #7209B7;
+            --color-drop: #4361EE;
+            --color-soap: #4CC9F0;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Glassmorphic Sidebar */
+        #sidebar {
+            width: 320px;
+            height: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            padding: 24px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--color-drop);
+            font-weight: 500;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--color-drop);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .toggle-container input {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--color-tension);
+        }
+
+        /* Floating Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 10;
+            min-width: 280px;
+        }
+
+        .formula-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            margin: 8px 0;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .math-symbol {
+            font-style: italic;
+        }
+
+        .highlight-p { color: var(--color-pressure); font-weight: 500; }
+        .highlight-t { color: var(--color-tension); font-weight: 500; }
+
+        .fraction {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 0.9em;
+        }
+        .fraction > span { display: block; padding: 0.1em; }
+        .fraction span.fdn { border-top: 1px solid #000; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #sidebar { width: 100%; height: auto; max-height: 40vh; }
+            #formula-card { top: auto; bottom: 24px; left: 24px; right: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Physics Calculations</div>
+            
+            <div class="math-line">
+                <span>Formula:</span>
+                <span>
+                    <span class="highlight-p">&Delta;P</span> = 
+                    <div class="fraction">
+                        <span><span id="n-val">2</span><span class="highlight-t">T</span></span>
+                        <span class="fdn"><span class="math-symbol">R</span></span>
+                    </div>
+                </span>
+            </div>
+            
+            <div class="math-line">
+                <span>Excess Pressure (<span class="highlight-p">&Delta;P</span>):</span>
+                <span id="calc-dp" class="highlight-p">0 Pa</span>
+            </div>
+            
+            <div class="math-line">
+                <span>Internal Pres. (<span class="math-symbol">P<sub>in</sub></span>):</span>
+                <span id="calc-pin">0 Pa</span>
+            </div>
+
+            <div id="force-balance-section" style="display: none; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                <div style="font-size: 0.85rem; margin-bottom: 5px; font-weight: 600;">Hemisphere Force Balance</div>
+                <div class="math-line" style="font-size: 0.85rem;">
+                    <span>Outward (<span class="highlight-p">F<sub>p</sub></span>):</span>
+                    <span id="calc-fp" class="highlight-p">0 &mu;N</span>
+                </div>
+                <div class="math-line" style="font-size: 0.85rem;">
+                    <span>Inward (<span class="highlight-t">F<sub>t</sub></span>):</span>
+                    <span id="calc-ft" class="highlight-t">0 &mu;N</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar">
+        <h2>Simulation Controls</h2>
+
+        <div class="control-group">
+            <label for="obj-type">Object Type</label>
+            <select id="obj-type">
+                <option value="drop">Liquid Drop (1 Surface)</option>
+                <option value="soap">Soap Bubble (2 Surfaces)</option>
+                <option value="air">Air Bubble in Liquid (1 Surface)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span>Radius (<span class="math-symbol">R</span>)</span>
+                <span class="val-display"><span id="val-r">2.5</span> mm</span>
+            </label>
+            <input type="range" id="slider-r" min="1.0" max="5.0" step="0.1" value="2.5">
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span>Surface Tension (<span class="highlight-t">T</span>)</span>
+                <span class="val-display"><span id="val-t">0.072</span> N/m</span>
+            </label>
+            <input type="range" id="slider-t" min="0.02" max="0.10" step="0.005" value="0.072">
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span>Ambient Pres. (<span class="math-symbol">P<sub>out</sub></span>)</span>
+                <span class="val-display"><span id="val-pout">1.0</span> atm</span>
+            </label>
+            <input type="range" id="slider-pout" min="0.5" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label class="toggle-container">
+                <input type="checkbox" id="toggle-cross">
+                <span>Show Cross-Section View</span>
+            </label>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script type="module">
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(8, 5, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.localClippingEnabled = false;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-5, -5, -5);
+        scene.add(backLight);
+
+        // --- Physics State & Constants ---
+        const state = {
+            type: 'drop', // 'drop', 'soap', 'air'
+            R: 2.5,       // mm
+            T: 0.072,     // N/m
+            Pout: 1.0,    // atm
+            crossSection: false
+        };
+
+        const P_ATM_PA = 101325;
+        let calculated = { dP: 0, Pin: 0, Fp: 0, Ft: 0, n: 2 };
+
+        // --- Objects ---
+        const clipPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
+        
+        // Materials
+        const matDrop = new THREE.MeshPhysicalMaterial({
+            color: 0x4361EE,
+            transparent: true,
+            opacity: 0.6,
+            roughness: 0.1,
+            transmission: 0.5,
+            thickness: 0.5,
+            clippingPlanes: [clipPlane],
+            side: THREE.DoubleSide
+        });
+
+        const matSoap = new THREE.MeshPhysicalMaterial({
+            color: 0x4CC9F0,
+            transparent: true,
+            opacity: 0.3,
+            roughness: 0.0,
+            metalness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1,
+            clippingPlanes: [clipPlane],
+            side: THREE.DoubleSide
+        });
+
+        const matAir = new THREE.MeshPhysicalMaterial({
+            color: 0xCAF0F8,
+            transparent: true,
+            opacity: 0.2,
+            roughness: 0.1,
+            clippingPlanes: [clipPlane],
+            side: THREE.DoubleSide
+        });
+
+        const matLiquidEnv = new THREE.MeshBasicMaterial({
+            color: 0x90e0ef,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.BackSide,
+            clippingPlanes: [clipPlane]
+        });
+
+        // Geometries
+        const sphereGeo = new THREE.SphereGeometry(1, 64, 64);
+        const mainSphere = new THREE.Mesh(sphereGeo, matDrop);
+        scene.add(mainSphere);
+
+        const envSphere = new THREE.Mesh(new THREE.SphereGeometry(10, 32, 32), matLiquidEnv);
+        envSphere.visible = false;
+        scene.add(envSphere);
+
+        // Groups for vectors
+        const pressureArrowsGroup = new THREE.Group();
+        const tensionArrowsGroup = new THREE.Group();
+        scene.add(pressureArrowsGroup);
+        scene.add(tensionArrowsGroup);
+
+        // Particles
+        const particleCount = 500;
+        const particlesGeo = new THREE.BufferGeometry();
+        const particlePositions = new Float32Array(particleCount * 3);
+        const particleVelocities = [];
+
+        for(let i=0; i<particleCount; i++) {
+            resetParticle(i);
+            particleVelocities.push(new THREE.Vector3(
+                (Math.random() - 0.5),
+                (Math.random() - 0.5),
+                (Math.random() - 0.5)
+            ).normalize());
+        }
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        const particleMat = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.05,
+            transparent: true,
+            opacity: 0.8,
+            clippingPlanes: [clipPlane]
+        });
+        const particleSystem = new THREE.Points(particlesGeo, particleMat);
+        scene.add(particleSystem);
+
+        function resetParticle(index) {
+            const r = Math.random() * state.R * 0.9;
+            const theta = Math.random() * 2 * Math.PI;
+            const phi = Math.acos(2 * Math.random() - 1);
+            
+            let x = r * Math.sin(phi) * Math.cos(theta);
+            // If cross section, force particles to negative X side
+            if(state.crossSection && x > 0) x = -x;
+
+            particlePositions[index*3] = x;
+            particlePositions[index*3+1] = r * Math.sin(phi) * Math.sin(theta);
+            particlePositions[index*3+2] = r * Math.cos(phi);
+        }
+
+        // --- Logic & Updates ---
+
+        function updatePhysics() {
+            calculated.n = (state.type === 'soap') ? 4 : 2;
+            const R_m = state.R * 1e-3;
+            
+            calculated.dP = (calculated.n * state.T) / R_m;
+            calculated.Pin = (state.Pout * P_ATM_PA) + calculated.dP;
+            
+            calculated.Fp = calculated.dP * Math.PI * Math.pow(R_m, 2);
+            calculated.Ft = state.T * 2 * Math.PI * R_m * (calculated.n / 2);
+
+            updateUI();
+            updateVisuals();
+        }
+
+        function updateUI() {
+            document.getElementById('n-val').innerText = calculated.n;
+            document.getElementById('calc-dp').innerText = calculated.dP.toFixed(1) + " Pa";
+            document.getElementById('calc-pin').innerText = calculated.Pin.toFixed(0) + " Pa";
+            
+            const forceSection = document.getElementById('force-balance-section');
+            if(state.crossSection) {
+                forceSection.style.display = 'block';
+                // Convert to microNewtons for readability
+                document.getElementById('calc-fp').innerText = (calculated.Fp * 1e6).toFixed(2) + " μN";
+                document.getElementById('calc-ft').innerText = (calculated.Ft * 1e6).toFixed(2) + " μN";
+            } else {
+                forceSection.style.display = 'none';
+            }
+        }
+
+        function getFibonacciSpherePoints(samples, radius) {
+            const points = [];
+            const phi = Math.PI * (3. - Math.sqrt(5.));
+            for (let i = 0; i < samples; i++) {
+                const y = 1 - (i / (samples - 1)) * 2;
+                const r = Math.sqrt(1 - y * y);
+                const theta = phi * i;
+                const x = Math.cos(theta) * r;
+                const z = Math.sin(theta) * r;
+                points.push(new THREE.Vector3(x * radius, y * radius, z * radius));
+            }
+            return points;
+        }
+
+        function updateVisuals() {
+            // Update Sphere Scale
+            mainSphere.scale.set(state.R, state.R, state.R);
+
+            // Update Material
+            if (state.type === 'drop') mainSphere.material = matDrop;
+            else if (state.type === 'soap') mainSphere.material = matSoap;
+            else if (state.type === 'air') mainSphere.material = matAir;
+
+            envSphere.visible = (state.type === 'air');
+
+            // Clipping
+            renderer.localClippingEnabled = state.crossSection;
+
+            // Rebuild Arrows
+            while(pressureArrowsGroup.children.length > 0){ 
+                pressureArrowsGroup.remove(pressureArrowsGroup.children[0]); 
+            }
+            while(tensionArrowsGroup.children.length > 0){ 
+                tensionArrowsGroup.remove(tensionArrowsGroup.children[0]); 
+            }
+
+            // Pressure Arrows (Red)
+            // Visual length mapping: dP ranges roughly 8 to 400 Pa.
+            const arrowLength = 0.5 + (calculated.dP / 400) * 1.5; 
+            const points = getFibonacciSpherePoints(100, state.R);
+            const colorP = 0xFF3366;
+
+            points.forEach(p => {
+                // If cross section, only show arrows on the unclipped side (x < 0)
+                if (state.crossSection && p.x > 0.1) return;
+
+                const dir = p.clone().normalize();
+                // Start slightly inside to point outwards to the surface
+                const origin = p.clone().sub(dir.clone().multiplyScalar(arrowLength));
+                
+                const arrow = new THREE.ArrowHelper(dir, origin, arrowLength, colorP, 0.2, 0.1);
+                pressureArrowsGroup.add(arrow);
+            });
+
+            // Surface Tension Arrows (Purple) - Only in cross section
+            if (state.crossSection) {
+                const numTensionArrows = 24;
+                const colorT = 0x7209B7;
+                // Thickness based on T (0.02 to 0.10)
+                const headW = 0.1 + (state.T - 0.02) * 2; 
+                const headL = headW * 1.5;
+
+                for(let i=0; i<numTensionArrows; i++) {
+                    const angle = (i / numTensionArrows) * Math.PI * 2;
+                    const y = Math.cos(angle) * state.R;
+                    const z = Math.sin(angle) * state.R;
+                    
+                    const origin = new THREE.Vector3(0, y, z);
+                    // Tension pulls the hemisphere closed (towards +x if we are looking at -x hemisphere)
+                    // Wait, if we keep x < 0, the tension from the missing right half pulls the left half towards +x.
+                    const dir = new THREE.Vector3(1, 0, 0); 
+                    
+                    const arrow = new THREE.ArrowHelper(dir, origin, 0.8, colorT, headL, headW);
+                    tensionArrowsGroup.add(arrow);
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('obj-type').addEventListener('change', (e) => {
+            state.type = e.target.value;
+            updatePhysics();
+        });
+
+        document.getElementById('slider-r').addEventListener('input', (e) => {
+            state.R = parseFloat(e.target.value);
+            document.getElementById('val-r').innerText = state.R.toFixed(1);
+            updatePhysics();
+        });
+
+        document.getElementById('slider-t').addEventListener('input', (e) => {
+            state.T = parseFloat(e.target.value);
+            document.getElementById('val-t').innerText = state.T.toFixed(3);
+            updatePhysics();
+        });
+
+        document.getElementById('slider-pout').addEventListener('input', (e) => {
+            state.Pout = parseFloat(e.target.value);
+            document.getElementById('val-pout').innerText = state.Pout.toFixed(1);
+            updatePhysics();
+        });
+
+        document.getElementById('toggle-cross').addEventListener('change', (e) => {
+            state.crossSection = e.target.checked;
+            
+            // Adjust camera to see cross section better
+            if(state.crossSection) {
+                gsapCameraMove(-6, 2, 6);
+            } else {
+                gsapCameraMove(8, 5, 8);
+            }
+            
+            updatePhysics();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Simple camera animation helper
+        function gsapCameraMove(x, y, z) {
+            const start = camera.position.clone();
+            const end = new THREE.Vector3(x, y, z);
+            let progress = 0;
+            const animateCam = () => {
+                progress += 0.05;
+                if(progress <= 1) {
+                    camera.position.lerpVectors(start, end, progress);
+                    requestAnimationFrame(animateCam);
+                }
+            };
+            animateCam();
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = clock.getDelta();
+            controls.update();
+
+            // Animate Particles
+            // Speed based on Pin. Base speed + scaling.
+            const speedFactor = 2.0 + (calculated.dP / 100); 
+            const positions = particleSystem.geometry.attributes.position.array;
+
+            for(let i=0; i<particleCount; i++) {
+                let x = positions[i*3];
+                let y = positions[i*3+1];
+                let z = positions[i*3+2];
+                
+                const vel = particleVelocities[i];
+                
+                x += vel.x * speedFactor * dt;
+                y += vel.y * speedFactor * dt;
+                z += vel.z * speedFactor * dt;
+
+                // Boundary check
+                const distSq = x*x + y*y + z*z;
+                if(distSq > state.R * state.R) {
+                    // Reflect velocity vector
+                    const normal = new THREE.Vector3(x, y, z).normalize();
+                    vel.reflect(normal);
+                    // Push back inside
+                    const push = normal.multiplyScalar(state.R * 0.99);
+                    x = push.x; y = push.y; z = push.z;
+                }
+
+                // Cross section boundary check (plane x=0)
+                if(state.crossSection && x > 0) {
+                    vel.x *= -1;
+                    x = -0.01;
+                }
+
+                positions[i*3] = x;
+                positions[i*3+1] = y;
+                positions[i*3+2] = z;
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

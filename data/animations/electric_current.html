@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electric Current & Biot-Savart Lab</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+
+        /* Glassmorphic Control Panel */
+        #control-panel {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+        }
+
+        #control-panel h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #1e293b;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #475569;
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        .checkbox-group input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: #7209B7;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        #formula-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            color: #1e293b;
+        }
+
+        .formula {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: #334155;
+            background: #f8fafc;
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .val-highlight {
+            font-weight: bold;
+            color: #4361EE;
+        }
+
+        /* 3D Labels */
+        .label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+            z-index: 5;
+        }
+
+        #label-p { color: #FF3366; }
+        #label-dl { color: #F77F00; }
+        #label-e { color: #06D6A0; }
+        #label-b { color: #7209B7; }
+
+        /* Legend */
+        #legend {
+            position: absolute;
+            left: 20px;
+            bottom: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .legend-item { display: flex; align-items: center; margin-bottom: 4px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <h3>Live Physics Data</h3>
+        <div class="formula">R = &rho;L/A = <span id="out-R" class="val-highlight">0.00</span> &Omega;</div>
+        <div class="formula">I = V/R = <span id="out-I" class="val-highlight">0.00</span> A</div>
+        <div class="formula">v<sub>d</sub> &propto; I/A = <span id="out-vd" class="val-highlight">0.00</span> mm/s</div>
+        <div class="formula">|B| = &mu;<sub>0</sub>I/2&pi;r = <span id="out-B" class="val-highlight">0.00</span> &mu;T</div>
+        <div class="formula">|dB| &propto; I/r&sup2; = <span id="out-dB" class="val-highlight">0.00</span> &mu;T</div>
+    </div>
+
+    <div id="control-panel">
+        <h2>Parameters</h2>
+        
+        <div class="control-group">
+            <label>Voltage (V) <span id="val-V">10.0 V</span></label>
+            <input type="range" id="slider-V" min="0" max="20" step="0.1" value="10">
+        </div>
+        
+        <div class="control-group">
+            <label>Resistivity (&rho;) <span id="val-rho">0.5 &Omega;&middot;m</span></label>
+            <input type="range" id="slider-rho" min="0.1" max="2.0" step="0.1" value="0.5">
+        </div>
+        
+        <div class="control-group">
+            <label>Wire Radius (a) <span id="val-a">0.5 mm</span></label>
+            <input type="range" id="slider-a" min="0.2" max="1.5" step="0.1" value="0.5">
+        </div>
+        
+        <div class="control-group">
+            <label>Test Point Dist (r) <span id="val-r">2.0 cm</span></label>
+            <input type="range" id="slider-r" min="1.0" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="checkbox-group">
+            <input type="checkbox" id="toggle-dB" checked>
+            <label for="toggle-dB">Show dB Vector (Biot-Savart)</label>
+        </div>
+    </div>
+
+    <div id="legend">
+        <div class="legend-item"><div class="legend-color" style="background:#4361EE;"></div>Electrons (e⁻)</div>
+        <div class="legend-item"><div class="legend-color" style="background:#06D6A0;"></div>Electric Field (E)</div>
+        <div class="legend-item"><div class="legend-color" style="background:#7209B7;"></div>Magnetic Field (B)</div>
+        <div class="legend-item"><div class="legend-color" style="background:#F77F00;"></div>Wire Element (dl)</div>
+        <div class="legend-item"><div class="legend-color" style="background:#FF3366;"></div>Test Point (P)</div>
+    </div>
+
+    <!-- 3D Labels -->
+    <div id="label-p" class="label">Point P</div>
+    <div id="label-dl" class="label">dl</div>
+    <div id="label-e" class="label">E</div>
+    <div id="label-b" class="label">B</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(8, 6, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(40, 40, 0xD1D5DB, 0xD1D5DB);
+        gridHelper.position.y = -4;
+        scene.add(gridHelper);
+
+        // --- Constants & Variables ---
+        const L = 20; // Length of wire
+        let V = 10.0;
+        let rho = 0.5;
+        let a = 0.5;
+        let r_test = 2.0;
+        let show_dB = true;
+
+        // Colors
+        const COLOR_WIRE = 0xE2E8F0;
+        const COLOR_ELECTRON = 0x4361EE;
+        const COLOR_EFIELD = 0x06D6A0;
+        const COLOR_BFIELD = 0x7209B7;
+        const COLOR_DL = 0xF77F00;
+        const COLOR_P = 0xFF3366;
+
+        // --- Objects ---
+
+        // 1. The Wire
+        const wireGeo = new THREE.CylinderGeometry(1, 1, L, 32);
+        wireGeo.rotateX(Math.PI / 2); // Align with Z-axis
+        const wireMat = new THREE.MeshPhysicalMaterial({ 
+            color: COLOR_WIRE, 
+            transparent: true, 
+            opacity: 0.3,
+            roughness: 0.2,
+            transmission: 0.9,
+            thickness: 0.5
+        });
+        const wire = new THREE.Mesh(wireGeo, wireMat);
+        scene.add(wire);
+
+        // 2. Charge Carriers (Electrons)
+        const numElectrons = 250;
+        const eGeo = new THREE.SphereGeometry(0.06, 16, 16);
+        const eMat = new THREE.MeshBasicMaterial({ color: COLOR_ELECTRON });
+        const electrons = new THREE.InstancedMesh(eGeo, eMat, numElectrons);
+        
+        const dummy = new THREE.Object3D();
+        const eData = []; // Store normalized radial pos, angle, and z
+        for (let i = 0; i < numElectrons; i++) {
+            eData.push({
+                rFrac: Math.sqrt(Math.random()), // uniform distribution in circle
+                theta: Math.random() * 2 * Math.PI,
+                z: (Math.random() - 0.5) * L
+            });
+        }
+        scene.add(electrons);
+
+        // 3. Biot-Savart Element (dl)
+        const dlGeo = new THREE.CylinderGeometry(1.05, 1.05, 1, 32);
+        dlGeo.rotateX(Math.PI / 2);
+        const dlMat = new THREE.MeshBasicMaterial({ color: COLOR_DL });
+        const dlMesh = new THREE.Mesh(dlGeo, dlMat);
+        scene.add(dlMesh);
+
+        // 4. Test Point (P)
+        const pGeo = new THREE.SphereGeometry(0.15, 32, 32);
+        const pMat = new THREE.MeshBasicMaterial({ color: COLOR_P });
+        const pMesh = new THREE.Mesh(pGeo, pMat);
+        scene.add(pMesh);
+
+        // 5. Vectors (Arrows)
+        // E-Field Vector (Points +Z)
+        const eArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 2.5, 0), 4, COLOR_EFIELD, 0.8, 0.4);
+        scene.add(eArrow);
+
+        // dB Vector (Points +Y due to dl x r)
+        const dbArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0, 0), 2, COLOR_BFIELD, 0.5, 0.3);
+        scene.add(dbArrow);
+
+        // 6. Magnetic Field Rings (Ampere's Law visualization)
+        const bRings = new THREE.Group();
+        scene.add(bRings);
+        
+        // Create 3 rings along the wire
+        const ringZPositions = [-6, 0, 6];
+        const ringMeshes = [];
+        const ringArrows = [];
+
+        ringZPositions.forEach(zPos => {
+            // The ring itself
+            const ringGeo = new THREE.TorusGeometry(1, 0.03, 16, 64);
+            const ringMat = new THREE.MeshBasicMaterial({ color: COLOR_BFIELD, transparent: true, opacity: 0.6 });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2; // Align with XY plane (perpendicular to Z)
+            ring.position.z = zPos;
+            bRings.add(ring);
+            ringMeshes.push(ring);
+
+            // Arrows on the ring to show direction (CCW looking down -Z)
+            // If I is +Z, B at +X points +Y.
+            const angles = [0, Math.PI/2, Math.PI, 3*Math.PI/2];
+            angles.forEach(angle => {
+                const dir = new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0);
+                const pos = new THREE.Vector3(Math.cos(angle), Math.sin(angle), zPos);
+                const arrow = new THREE.ArrowHelper(dir, pos, 0.6, COLOR_BFIELD, 0.2, 0.15);
+                bRings.add(arrow);
+                ringArrows.push({ arrow: arrow, angle: angle, z: zPos });
+            });
+        });
+
+        // --- DOM Elements ---
+        const uiV = document.getElementById('slider-V');
+        const uiRho = document.getElementById('slider-rho');
+        const uiA = document.getElementById('slider-a');
+        const uiR = document.getElementById('slider-r');
+        const uiToggleDB = document.getElementById('toggle-dB');
+
+        const valV = document.getElementById('val-V');
+        const valRho = document.getElementById('val-rho');
+        const valA = document.getElementById('val-a');
+        const valR = document.getElementById('val-r');
+
+        const outR = document.getElementById('out-R');
+        const outI = document.getElementById('out-I');
+        const outVd = document.getElementById('out-vd');
+        const outB = document.getElementById('out-B');
+        const outDB = document.getElementById('out-dB');
+
+        const labelP = document.getElementById('label-p');
+        const labelDl = document.getElementById('label-dl');
+        const labelE = document.getElementById('label-e');
+        const labelB = document.getElementById('label-b');
+
+        // --- Event Listeners ---
+        uiV.addEventListener('input', (e) => { V = parseFloat(e.target.value); valV.textContent = V.toFixed(1) + ' V'; });
+        uiRho.addEventListener('input', (e) => { rho = parseFloat(e.target.value); valRho.innerHTML = rho.toFixed(1) + ' &Omega;&middot;m'; });
+        uiA.addEventListener('input', (e) => { a = parseFloat(e.target.value); valA.textContent = a.toFixed(1) + ' mm'; });
+        uiR.addEventListener('input', (e) => { r_test = parseFloat(e.target.value); valR.textContent = r_test.toFixed(1) + ' cm'; });
+        uiToggleDB.addEventListener('change', (e) => { show_dB = e.target.checked; dbArrow.visible = show_dB; });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Utility: Project 3D to 2D for Labels ---
+        function updateLabel(element, position3D, offset = {x:0, y:0}) {
+            const vector = position3D.clone();
+            vector.project(camera);
+            
+            // Check if behind camera
+            if (vector.z > 1) {
+                element.style.display = 'none';
+                return;
+            }
+            
+            element.style.display = 'block';
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth + offset.x;
+            const y = (vector.y * -0.5 + 0.5) * window.innerHeight + offset.y;
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+
+            // 1. Physics Calculations
+            const Area = Math.PI * a * a;
+            const Resistance = rho * (L / Area);
+            const Current = V / Resistance;
+            
+            // Drift velocity: v_d = I / (n*e*A). We scale it for visualization.
+            // Electrons move in -Z direction (opposite to conventional current +Z)
+            const vd_visual = (Current / Area) * 2.0; 
+
+            // Magnetic Field (Ampere's Law) B = mu0 * I / (2 * pi * r)
+            // Scaled for UI display
+            const B_mag = (Current / r_test) * 50; 
+            
+            // Biot-Savart dB at point P from element dl at origin
+            // |dB| = (mu0/4pi) * I * dl * sin(theta) / r^2
+            // Since dl is along Z, and r is along X, theta = 90 deg, sin(90) = 1
+            const dB_mag = (Current / (r_test * r_test)) * 10;
+
+            // Update UI Formula Card
+            outR.textContent = Resistance.toFixed(2);
+            outI.textContent = Current.toFixed(2);
+            outVd.textContent = vd_visual.toFixed(2);
+            outB.textContent = B_mag.toFixed(2);
+            outDB.textContent = dB_mag.toFixed(2);
+
+            // 2. Update Geometries & Positions
+            
+            // Wire & dl Element scaling
+            wire.scale.set(a, 1, a);
+            dlMesh.scale.set(a, 1, a);
+
+            // Test Point P
+            pMesh.position.set(r_test, 0, 0);
+
+            // dB Vector
+            if (show_dB) {
+                dbArrow.position.copy(pMesh.position);
+                // Direction is +Y (Right hand rule: dl(+Z) x r(+X) = +Y)
+                const arrowLen = Math.max(0.1, dB_mag * 0.2); // Prevent 0 length error
+                dbArrow.setLength(arrowLen, arrowLen * 0.3, arrowLen * 0.2);
+                dbArrow.visible = Current > 0.01;
+            }
+
+            // Magnetic Field Rings
+            const ringOpacity = Math.min(0.8, Math.max(0.1, Current * 0.1));
+            ringMeshes.forEach(ring => {
+                ring.scale.set(r_test, r_test, 1);
+                ring.material.opacity = ringOpacity;
+                ring.visible = Current > 0.01;
+            });
+
+            ringArrows.forEach(item => {
+                // Update position based on new r_test
+                const pos = new THREE.Vector3(r_test * Math.cos(item.angle), r_test * Math.sin(item.angle), item.z);
+                item.arrow.position.copy(pos);
+                item.arrow.visible = Current > 0.01;
+            });
+
+            // 3. Animate Electrons
+            for (let i = 0; i < numElectrons; i++) {
+                // Move opposite to E-field (-Z)
+                eData[i].z -= vd_visual * dt;
+                
+                // Wrap around periodic boundary
+                if (eData[i].z < -L / 2) {
+                    eData[i].z += L;
+                } else if (eData[i].z > L / 2) {
+                    eData[i].z -= L; // Just in case vd is negative
+                }
+
+                // Calculate actual radius based on current wire radius 'a'
+                const actual_r = eData[i].rFrac * a * 0.95; // 0.95 keeps them slightly inside the surface
+
+                dummy.position.set(
+                    actual_r * Math.cos(eData[i].theta),
+                    actual_r * Math.sin(eData[i].theta),
+                    eData[i].z
+                );
+                dummy.updateMatrix();
+                electrons.setMatrixAt(i, dummy.matrix);
+            }
+            electrons.instanceMatrix.needsUpdate = true;
+
+            // 4. Update Labels
+            updateLabel(labelP, pMesh.position, {x: 15, y: -15});
+            updateLabel(labelDl, dlMesh.position, {x: -20, y: 20});
+            
+            // E label near the arrow tip
+            const eTip = new THREE.Vector3(0, 2.5, 2);
+            updateLabel(labelE, eTip, {x: 10, y: -10});
+            
+            // B label near the middle ring
+            const bPos = new THREE.Vector3(0, r_test, 0);
+            updateLabel(labelB, bPos, {x: 0, y: -20});
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Start animation
+        animate();
+
+    </script>
+</body>
+</html>

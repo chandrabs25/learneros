@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Wave Interference Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        /* Glassmorphic Sidebar */
+        #sidebar {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+            color: #111;
+            font-weight: 600;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #7209B7;
+            background: rgba(114, 9, 183, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #FF3366;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(255, 51, 102, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Floating Physics Card */
+        #physics-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .math-row {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .math-label {
+            font-weight: 700;
+            color: #4361EE;
+            width: 40px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+        }
+        .badge.max { background-color: #FF3366; }
+        .badge.min { background-color: #4361EE; }
+        .badge.mid { background-color: #888; }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: white;
+            background: #7209B7;
+            padding: 2px 8px;
+            border-radius: 10px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: opacity 0.2s;
+        }
+
+        #label-p {
+            background: #F77F00;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="canvas-container">
+        <div id="physics-card">
+            <div style="font-weight: 600; margin-bottom: 10px; font-size: 0.9rem; color: #555;">Probe Point Data</div>
+            <div class="math-row"><span class="math-label">ΔL</span> = <span id="val-dl">0.00</span> sim units</div>
+            <div class="math-row"><span class="math-label">Δφ</span> = <span id="val-dphi">0.00</span> rad</div>
+            <div class="math-row" style="margin-top: 12px;">
+                <span id="interference-type" class="badge max">Constructive</span>
+            </div>
+        </div>
+        <div id="label-s1" class="scene-label">S1</div>
+        <div id="label-s2" class="scene-label">S2</div>
+        <div id="label-p" class="scene-label">P</div>
+    </div>
+
+    <div id="sidebar">
+        <h1>Wave Interference</h1>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Wavelength (λ)</span>
+                <span class="value-display" id="disp-lambda">0.50 nm</span>
+            </div>
+            <input type="range" id="lambda" min="0.2" max="1.0" step="0.05" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Slit Separation (d)</span>
+                <span class="value-display" id="disp-d">2.0 mm</span>
+            </div>
+            <input type="range" id="d" min="1.0" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Screen Distance (D)</span>
+                <span class="value-display" id="disp-D">10.0 cm</span>
+            </div>
+            <input type="range" id="D" min="5.0" max="15.0" step="0.5" value="10.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Wave Speed (v)</span>
+                <span class="value-display" id="disp-speed">2.0 m/s</span>
+            </div>
+            <input type="range" id="speed" min="0.0" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <div style="height: 1px; background: rgba(0,0,0,0.1); margin: 10px 0;"></div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #F77F00;">Probe Position (Y)</span>
+                <span class="value-display" id="disp-pY" style="color: #F77F00; background: rgba(247, 127, 0, 0.1);">0.0 cm</span>
+            </div>
+            <input type="range" id="pY" min="-10.0" max="10.0" step="0.1" value="0.0">
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    // --- State ---
+    const params = {
+        lambda: 0.5,
+        d: 2.0,
+        D: 10.0,
+        speed: 2.0,
+        pY: 0.0 // Maps to Z axis in Three.js
+    };
+
+    // --- Three.js Setup ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color('#f0f4f8');
+    scene.fog = new THREE.FogExp2('#f0f4f8', 0.02);
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(-8, 12, 15);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+    controls.target.set(5, 0, 0);
+
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    dirLight.position.set(5, 10, 5);
+    scene.add(dirLight);
+
+    // Grid
+    const gridHelper = new THREE.GridHelper(40, 40, 0xcccccc, 0xe0e0e0);
+    gridHelper.position.y = -0.5;
+    scene.add(gridHelper);
+
+    // --- Objects ---
+
+    // Sources (S1, S2)
+    const sourceGeo = new THREE.SphereGeometry(0.2, 32, 32);
+    const sourceMat = new THREE.MeshStandardMaterial({ color: 0x7209B7, roughness: 0.2, metalness: 0.1 });
+    const s1 = new THREE.Mesh(sourceGeo, sourceMat);
+    const s2 = new THREE.Mesh(sourceGeo, sourceMat);
+    scene.add(s1);
+    scene.add(s2);
+
+    // Wave Plane (Custom Shader)
+    const waveGeo = new THREE.PlaneGeometry(1, 20, 250, 200);
+    waveGeo.rotateX(-Math.PI / 2); // Lay flat on XZ plane
+
+    const waveVertexShader = `
+        uniform float uTime;
+        uniform float uLambda;
+        uniform float uD;
+        uniform float uSpeed;
+        varying float vDisplacement;
+
+        void main() {
+            vec4 worldPos = modelMatrix * vec4(position, 1.0);
+            
+            // Distances to sources at (0, 0, d/2) and (0, 0, -d/2)
+            float r1 = distance(worldPos.xz, vec2(0.0, uD / 2.0));
+            float r2 = distance(worldPos.xz, vec2(0.0, -uD / 2.0));
+            
+            float k = 2.0 * 3.14159265 / uLambda;
+            float w = k * uSpeed;
+            
+            // Inverse square root decay for 2D waves
+            float a1 = 0.4 / sqrt(r1 + 0.5);
+            float a2 = 0.4 / sqrt(r2 + 0.5);
+            
+            // Outgoing waves: sin(kr - wt)
+            float y = a1 * sin(k * r1 - w * uTime) + a2 * sin(k * r2 - w * uTime);
+            
+            vDisplacement = y;
+            
+            vec3 newPos = position;
+            newPos.y += y;
+            
+            gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(newPos, 1.0);
+        }
+    `;
+
+    const waveFragmentShader = `
+        varying float vDisplacement;
+
+        void main() {
+            // Normalize displacement for color mapping
+            float val = vDisplacement * 2.5; 
+            
+            vec3 colorWhite = vec3(1.0, 1.0, 1.0);
+            vec3 colorRed = vec3(1.0, 0.2, 0.4);   // #FF3366
+            vec3 colorBlue = vec3(0.26, 0.38, 0.93); // #4361EE
+            
+            vec3 finalColor = colorWhite;
+            float alpha = 0.85;
+
+            if (val > 0.0) {
+                finalColor = mix(colorWhite, colorRed, min(val, 1.0));
+            } else {
+                finalColor = mix(colorWhite, colorBlue, min(-val, 1.0));
+            }
+            
+            // Fade out edges slightly
+            gl_FragColor = vec4(finalColor, alpha);
+        }
+    `;
+
+    const waveMat = new THREE.ShaderMaterial({
+        vertexShader: waveVertexShader,
+        fragmentShader: waveFragmentShader,
+        uniforms: {
+            uTime: { value: 0 },
+            uLambda: { value: params.lambda },
+            uD: { value: params.d },
+            uSpeed: { value: params.speed }
+        },
+        transparent: true,
+        side: THREE.DoubleSide
+    });
+
+    const waveMesh = new THREE.Mesh(waveGeo, waveMat);
+    scene.add(waveMesh);
+
+    // Detection Screen
+    const screenCanvas = document.createElement('canvas');
+    screenCanvas.width = 1024;
+    screenCanvas.height = 2;
+    const screenCtx = screenCanvas.getContext('2d');
+    const screenTexture = new THREE.CanvasTexture(screenCanvas);
+    
+    const screenGeo = new THREE.PlaneGeometry(20, 10);
+    const screenMat = new THREE.MeshBasicMaterial({ map: screenTexture, side: THREE.DoubleSide });
+    const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+    screenMesh.rotation.y = -Math.PI / 2; // Face -X
+    scene.add(screenMesh);
+
+    // Screen Base Line
+    const baseLineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-5,0), new THREE.Vector3(0,5,0)]);
+    const baseLineMat = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.2 });
+    const baseLine = new THREE.Line(baseLineGeo, baseLineMat);
+    screenMesh.add(baseLine);
+
+    // Probe Point and Lines
+    const probeGeo = new THREE.SphereGeometry(0.15, 16, 16);
+    const probeMat = new THREE.MeshBasicMaterial({ color: 0xF77F00 });
+    const probeMesh = new THREE.Mesh(probeGeo, probeMat);
+    scene.add(probeMesh);
+
+    const lineMat = new THREE.LineBasicMaterial({ color: 0xF77F00, linewidth: 2 });
+    const line1Geo = new THREE.BufferGeometry();
+    const line2Geo = new THREE.BufferGeometry();
+    const line1 = new THREE.Line(line1Geo, lineMat);
+    const line2 = new THREE.Line(line2Geo, lineMat);
+    scene.add(line1);
+    scene.add(line2);
+
+    // --- Logic & Updates ---
+
+    function updateScreenTexture() {
+        const w = screenCanvas.width;
+        const imgData = screenCtx.getImageData(0, 0, w, 1);
+        const data = imgData.data;
+        
+        for(let i = 0; i < w; i++) {
+            // Map pixel to Z range [-10, 10]
+            const z = (i / w) * 20.0 - 10.0; 
+            
+            // Exact path difference
+            const r1 = Math.sqrt(params.D**2 + (z - params.d/2)**2);
+            const r2 = Math.sqrt(params.D**2 + (z + params.d/2)**2);
+            const deltaL = Math.abs(r1 - r2);
+            
+            // Phase difference
+            const phase = (Math.PI / params.lambda) * deltaL; 
+            
+            // Intensity I = I0 * cos^2(phi/2)
+            const intensity = Math.pow(Math.cos(phase), 2);
+            
+            // Map to Bright Green #06D6A0 (6, 214, 160)
+            data[i*4] = 6 * intensity;
+            data[i*4+1] = 214 * intensity;
+            data[i*4+2] = 160 * intensity;
+            data[i*4+3] = 255;
+        }
+        
+        // Copy to second row
+        screenCtx.putImageData(imgData, 0, 0);
+        screenCtx.putImageData(imgData, 0, 1);
+        screenTexture.needsUpdate = true;
+    }
+
+    function updateGeometry() {
+        // Update Sources
+        s1.position.set(0, 0, params.d / 2);
+        s2.position.set(0, 0, -params.d / 2);
+
+        // Update Wave Plane
+        waveMesh.scale.x = params.D;
+        waveMesh.position.x = params.D / 2;
+        
+        // Update Shader Uniforms
+        waveMat.uniforms.uLambda.value = params.lambda;
+        waveMat.uniforms.uD.value = params.d;
+        waveMat.uniforms.uSpeed.value = params.speed;
+
+        // Update Screen
+        screenMesh.position.set(params.D, 0, 0);
+        updateScreenTexture();
+
+        // Update Probe
+        probeMesh.position.set(params.D, 0, params.pY);
+        
+        line1Geo.setFromPoints([s1.position, probeMesh.position]);
+        line2Geo.setFromPoints([s2.position, probeMesh.position]);
+
+        // Update Physics Calculations
+        const r1 = Math.sqrt(params.D**2 + (params.pY - params.d/2)**2);
+        const r2 = Math.sqrt(params.D**2 + (params.pY + params.d/2)**2);
+        const deltaL = Math.abs(r1 - r2);
+        const deltaPhi = (2 * Math.PI / params.lambda) * deltaL;
+
+        document.getElementById('val-dl').innerText = deltaL.toFixed(3);
+        document.getElementById('val-dphi').innerText = deltaPhi.toFixed(2);
+
+        const badge = document.getElementById('interference-type');
+        // Determine type based on cos^2
+        const intensity = Math.pow(Math.cos(deltaPhi / 2), 2);
+        if (intensity > 0.8) {
+            badge.innerText = "Constructive (Max)";
+            badge.className = "badge max";
+        } else if (intensity < 0.2) {
+            badge.innerText = "Destructive (Min)";
+            badge.className = "badge min";
+        } else {
+            badge.innerText = "Intermediate";
+            badge.className = "badge mid";
+        }
+    }
+
+    // --- UI Listeners ---
+    const inputs = ['lambda', 'd', 'D', 'speed', 'pY'];
+    const units = { lambda: 'nm', d: 'mm', D: 'cm', speed: 'm/s', pY: 'cm' };
+
+    inputs.forEach(id => {
+        const el = document.getElementById(id);
+        const disp = document.getElementById(`disp-${id}`);
+        el.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            params[id] = val;
+            disp.innerText = `${val.toFixed(id==='lambda'?2:1)} ${units[id]}`;
+            updateGeometry();
+        });
+    });
+
+    // --- HTML Labels Update ---
+    const labelS1 = document.getElementById('label-s1');
+    const labelS2 = document.getElementById('label-s2');
+    const labelP = document.getElementById('label-p');
+    const tempV = new THREE.Vector3();
+
+    function updateLabels() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+
+        const updateLabel = (mesh, el, offsetY = 0) => {
+            tempV.copy(mesh.position);
+            tempV.y += offsetY;
+            tempV.project(camera);
+            
+            // Check if behind camera
+            if (tempV.z > 1) {
+                el.style.opacity = 0;
+                return;
+            }
+            
+            const x = (tempV.x * 0.5 + 0.5) * width;
+            const y = (tempV.y * -0.5 + 0.5) * height;
+            
+            el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+            el.style.opacity = 1;
+        };
+
+        updateLabel(s1, labelS1, 0.5);
+        updateLabel(s2, labelS2, -0.5);
+        updateLabel(probeMesh, labelP, 0.5);
+    }
+
+    // --- Animation Loop ---
+    const clock = new THREE.Clock();
+
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        const elapsedTime = clock.getElapsedTime();
+        waveMat.uniforms.uTime.value = elapsedTime;
+        
+        controls.update();
+        updateLabels();
+        renderer.render(scene, camera);
+    }
+
+    // --- Resize Handler ---
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    // Initialize
+    updateGeometry();
+    animate();
+
+</script>
+</body>
+</html>

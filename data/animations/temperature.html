@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microscopic Basis of Temperature and Specific Heat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --text-main: #1A1A1A;
+            --text-accent: #4361EE;
+            --red-accent: #FF3366;
+            --orange-accent: #F77F00;
+            --green-accent: #06D6A0;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 30px 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0;
+            line-height: 1.3;
+        }
+
+        h2 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin: 0 0 10px 0;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--text-accent);
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+            margin: 10px 0;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--text-accent);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #power::-webkit-slider-thumb { background: var(--orange-accent); }
+        #init-temp::-webkit-slider-thumb { background: var(--red-accent); }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+        }
+
+        button {
+            background: var(--text-accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+
+        button:hover {
+            background: #324fc7;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Floating Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            pointer-events: none;
+            z-index: 5;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .math-symbol {
+            color: var(--text-main);
+            font-weight: 700;
+        }
+
+        .math-value {
+            color: var(--text-accent);
+            font-weight: 700;
+        }
+
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 12px 0;
+        }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            color: #555;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60vh; }
+            #ui-panel { width: 100%; height: 40vh; border-left: none; border-top: 1px solid rgba(255,255,255,0.6); }
+            #formula-card { top: 10px; left: 10px; padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Live Thermodynamics</div>
+            
+            <div class="math-line">
+                <span class="math-symbol">T (Kelvin)</span>
+                <span class="math-value"><span id="val-T">300.0</span> K</span>
+            </div>
+            <div class="math-line" style="font-size: 0.9rem; color: #666;">
+                <span class="math-symbol">t (Celsius)</span>
+                <span class="math-value" style="color: #666;"><span id="val-Tc">26.9</span> °C</span>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="math-line" style="font-size: 0.95rem;">
+                <span class="math-symbol">ΔQ = P · Δt</span>
+            </div>
+            <div class="math-line" style="font-size: 0.95rem;">
+                <span class="math-symbol">ΔT = ΔQ / (m·c)</span>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <div class="math-line" style="font-size: 0.95rem;" title="Internal Energy">
+                <span class="math-symbol">U ≈ 3/2 NkT</span>
+            </div>
+            <div class="math-line">
+                <span class="math-symbol">U =</span>
+                <span class="math-value"><span id="val-U">627,900</span> J</span>
+            </div>
+
+            <div class="divider"></div>
+            <div class="legend">
+                <div class="legend-color" style="background: var(--green-accent);"></div>
+                <span>Velocity Vectors (v_rms ∝ √T)</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Kinetic Theory & Specific Heat</h1>
+        
+        <div class="control-group">
+            <h2>Substance Properties</h2>
+            <label for="substance">Material 
+                <span class="val-display" id="c-val">c = 4186 J/kg·K</span>
+            </label>
+            <select id="substance">
+                <option value="4186">Water (c = 4186)</option>
+                <option value="900">Aluminum (c = 900)</option>
+                <option value="385">Copper (c = 385)</option>
+                <option value="130">Lead (c = 130)</option>
+            </select>
+
+            <div style="margin-top: 15px;"></div>
+            
+            <label for="mass">Mass (m) <span class="val-display" id="mass-val">0.5 kg</span></label>
+            <input type="range" id="mass" min="0.1" max="2.0" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <h2>Energy Input</h2>
+            <label for="power">Heat Input Rate (P) <span class="val-display" id="power-val" style="color: var(--orange-accent);">0 W</span></label>
+            <input type="range" id="power" min="0" max="500" step="10" value="0">
+        </div>
+
+        <div class="control-group">
+            <h2>Simulation Control</h2>
+            <label for="init-temp">Initial Temp (T_i) <span class="val-display" id="temp-val" style="color: var(--red-accent);">300 K</span></label>
+            <input type="range" id="init-temp" min="200" max="500" step="5" value="300">
+            
+            <button id="reset-btn" style="width: 100%; margin-top: 15px;">Reset Simulation</button>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Setup Scene, Camera, Renderer ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(12, 8, 22);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        // Match the CSS background
+        renderer.setClearColor(0xf0f4f8, 1);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Allow slight viewing from below
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe0eaff, 0.4);
+        fillLight.position.set(-10, 0, -10);
+        scene.add(fillLight);
+
+        // --- Objects ---
+
+        // 1. Chamber (Glass Cube)
+        const chamberSize = 10;
+        const chamberGeo = new THREE.BoxGeometry(chamberSize, chamberSize, chamberSize);
+        const chamberMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.9, // glass-like
+            opacity: 0.2,
+            transparent: true,
+            side: THREE.BackSide
+        });
+        const chamber = new THREE.Mesh(chamberGeo, chamberMat);
+        scene.add(chamber);
+
+        // Wireframe for chamber edges
+        const edgesGeo = new THREE.EdgesGeometry(chamberGeo);
+        const edgesMat = new THREE.LineBasicMaterial({ color: 0xbdc3c7, linewidth: 2 });
+        const chamberEdges = new THREE.LineSegments(edgesGeo, edgesMat);
+        scene.add(chamberEdges);
+
+        // 2. Heat Plate (Bottom)
+        const plateGeo = new THREE.PlaneGeometry(chamberSize - 0.1, chamberSize - 0.1);
+        const plateMat = new THREE.MeshBasicMaterial({ 
+            color: 0xF77F00, 
+            transparent: true, 
+            opacity: 0, 
+            side: THREE.DoubleSide 
+        });
+        const plate = new THREE.Mesh(plateGeo, plateMat);
+        plate.rotation.x = -Math.PI / 2;
+        plate.position.y = -chamberSize / 2 + 0.05;
+        scene.add(plate);
+
+        // 3. Thermometer
+        const thermoGroup = new THREE.Group();
+        thermoGroup.position.set(7, 0, 0);
+        
+        // Thermometer Glass Tube
+        const tubeGeo = new THREE.CylinderGeometry(0.4, 0.4, 12, 16);
+        const tubeMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transmission: 0.9,
+            opacity: 1,
+            transparent: true,
+            roughness: 0.1
+        });
+        const tube = new THREE.Mesh(tubeGeo, tubeMat);
+        
+        // Thermometer Bulb (Bottom)
+        const bulbGeo = new THREE.SphereGeometry(0.8, 32, 32);
+        const bulbMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transmission: 0.9,
+            opacity: 1,
+            transparent: true,
+            roughness: 0.1
+        });
+        const bulb = new THREE.Mesh(bulbGeo, bulbMat);
+        bulb.position.y = -6;
+
+        // Thermometer Liquid (Red)
+        const liquidGeo = new THREE.CylinderGeometry(0.2, 0.2, 1, 16);
+        liquidGeo.translate(0, 0.5, 0); // Pivot at bottom
+        const liquidMat = new THREE.MeshBasicMaterial({ color: 0xFF3366 });
+        const liquid = new THREE.Mesh(liquidGeo, liquidMat);
+        liquid.position.y = -5.8; // Start just above bulb
+
+        const liquidBulbGeo = new THREE.SphereGeometry(0.6, 32, 32);
+        const liquidBulb = new THREE.Mesh(liquidBulbGeo, liquidMat);
+        liquidBulb.position.y = -6;
+
+        // Thermometer Markings
+        const markMat = new THREE.MeshBasicMaterial({ color: 0x1A1A1A });
+        for(let i=0; i<=8; i++) {
+            const markGeo = new THREE.BoxGeometry(0.5, 0.05, 0.05);
+            const mark = new THREE.Mesh(markGeo, markMat);
+            mark.position.set(0.4, -5 + i * 1.25, 0);
+            thermoGroup.add(mark);
+        }
+
+        thermoGroup.add(tube);
+        thermoGroup.add(bulb);
+        thermoGroup.add(liquid);
+        thermoGroup.add(liquidBulb);
+        scene.add(thermoGroup);
+
+        // 4. Particles (InstancedMesh)
+        const maxParticles = 200;
+        const sphereGeo = new THREE.SphereGeometry(0.25, 16, 16);
+        const sphereMat = new THREE.MeshPhongMaterial({ 
+            color: 0xffffff,
+            shininess: 100
+        });
+        const instancedMesh = new THREE.InstancedMesh(sphereGeo, sphereMat, maxParticles);
+        instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        scene.add(instancedMesh);
+
+        // 5. Velocity Vectors (Arrows)
+        const numArrows = 8;
+        const arrows = [];
+        for(let i=0; i<numArrows; i++) {
+            const arrow = new THREE.ArrowHelper(
+                new THREE.Vector3(1,0,0), 
+                new THREE.Vector3(0,0,0), 
+                1, 
+                0x06D6A0, 
+                0.3, 
+                0.2
+            );
+            scene.add(arrow);
+            arrows.push(arrow);
+        }
+
+        // --- Physics State & Variables ---
+        let T = 300; // Current Temperature (K)
+        let mass = 0.5; // Mass (kg)
+        let c = 4186; // Specific Heat (J/kg*K)
+        let P = 0; // Power (W)
+        
+        let particlesData = [];
+        const dummy = new THREE.Object3D();
+        const colorBlue = new THREE.Color(0x4361EE);
+        const colorRed = new THREE.Color(0xFF3366);
+        const tempColor = new THREE.Color();
+
+        function initParticles() {
+            const count = Math.floor(mass * 100);
+            instancedMesh.count = count;
+            particlesData = [];
+            
+            const bound = (chamberSize / 2) - 0.3;
+
+            for(let i=0; i<count; i++) {
+                particlesData.push({
+                    pos: new THREE.Vector3(
+                        (Math.random() - 0.5) * bound * 2,
+                        (Math.random() - 0.5) * bound * 2,
+                        (Math.random() - 0.5) * bound * 2
+                    ),
+                    dir: new THREE.Vector3(
+                        Math.random() - 0.5,
+                        Math.random() - 0.5,
+                        Math.random() - 0.5
+                    ).normalize()
+                });
+            }
+
+            // Hide unused arrows
+            arrows.forEach((arrow, index) => {
+                arrow.visible = index < count;
+            });
+        }
+
+        // Initialize
+        initParticles();
+
+        // --- UI Event Listeners ---
+        document.getElementById('substance').addEventListener('change', (e) => {
+            c = parseFloat(e.target.value);
+            document.getElementById('c-val').innerText = `c = ${c} J/kg·K`;
+        });
+
+        document.getElementById('mass').addEventListener('input', (e) => {
+            mass = parseFloat(e.target.value);
+            document.getElementById('mass-val').innerText = mass.toFixed(1) + ' kg';
+            initParticles();
+        });
+
+        document.getElementById('power').addEventListener('input', (e) => {
+            P = parseFloat(e.target.value);
+            document.getElementById('power-val').innerText = P + ' W';
+        });
+
+        document.getElementById('init-temp').addEventListener('input', (e) => {
+            document.getElementById('temp-val').innerText = e.target.value + ' K';
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            T = parseFloat(document.getElementById('init-temp').value);
+            initParticles();
+        });
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        let lastTime = performance.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const now = performance.now();
+            // Cap dt to prevent huge jumps if tab is inactive
+            const dt = Math.min((now - lastTime) / 1000, 0.05); 
+            lastTime = now;
+
+            // 1. Thermodynamics Update
+            if (P > 0) {
+                const dQ = P * dt * 100; // Multiplied by 100 for visual pacing
+                const dT = dQ / (mass * c);
+                T += dT;
+                // Cap max temp for visual sanity
+                if (T > 1000) T = 1000; 
+            }
+
+            // 2. Visual Speed Calculation (v_rms proportional to sqrt(T))
+            // Base speed multiplier adjusted for visual comfort
+            const v_visual = 0.4 * Math.sqrt(T);
+
+            // 3. Update Heat Plate Glow
+            if (P > 0) {
+                plate.material.opacity = 0.4 + 0.3 * Math.sin(now * 0.01);
+            } else {
+                plate.material.opacity = 0;
+            }
+
+            // 4. Update Thermometer
+            // Map T (200 - 1000) to scale (0.1 - 11.5)
+            const tFactor = Math.max(0, Math.min(1, (T - 200) / 800));
+            const tScale = 0.1 + tFactor * 11.4;
+            liquid.scale.y = tScale;
+
+            // 5. Update Particle Color based on Temperature
+            tempColor.lerpColors(colorBlue, colorRed, tFactor);
+
+            // 6. Update Particles (Kinematics & Collisions)
+            const bound = (chamberSize / 2) - 0.25; // Chamber half-size minus particle radius
+
+            for(let i=0; i<instancedMesh.count; i++) {
+                const p = particlesData[i];
+                
+                // Move particle
+                p.pos.addScaledVector(p.dir, v_visual * dt);
+
+                // Elastic Collisions with walls
+                if (p.pos.x > bound) { p.pos.x = bound; p.dir.x *= -1; }
+                else if (p.pos.x < -bound) { p.pos.x = -bound; p.dir.x *= -1; }
+                
+                if (p.pos.y > bound) { p.pos.y = bound; p.dir.y *= -1; }
+                else if (p.pos.y < -bound) { p.pos.y = -bound; p.dir.y *= -1; }
+                
+                if (p.pos.z > bound) { p.pos.z = bound; p.dir.z *= -1; }
+                else if (p.pos.z < -bound) { p.pos.z = -bound; p.dir.z *= -1; }
+
+                // Update InstancedMesh matrix
+                dummy.position.copy(p.pos);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+                instancedMesh.setColorAt(i, tempColor);
+
+                // Update Velocity Vectors (Arrows) for a subset
+                if (i < numArrows) {
+                    arrows[i].position.copy(p.pos);
+                    arrows[i].setDirection(p.dir);
+                    // Arrow length proportional to speed
+                    arrows[i].setLength(Math.max(0.5, v_visual * 0.15), 0.3, 0.2);
+                }
+            }
+
+            instancedMesh.instanceMatrix.needsUpdate = true;
+            if (instancedMesh.instanceColor) instancedMesh.instanceColor.needsUpdate = true;
+
+            // 7. Update UI Values
+            document.getElementById('val-T').innerText = T.toFixed(1);
+            document.getElementById('val-Tc').innerText = (T - 273.15).toFixed(1);
+            
+            // Internal Energy U = m * c * T
+            const U = mass * c * T;
+            document.getElementById('val-U').innerText = U.toLocaleString(undefined, {maximumFractionDigits: 0});
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Start Loop
+        animate();
+
+    </script>
+</body>
+</html>

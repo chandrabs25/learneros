@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P-N Junction Dynamics Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --p-color: #FF3366;
+            --n-color: #4361EE;
+            --p-ion: #B71C1C;
+            --n-ion: #0D47A1;
+            --e-field: #F77F00;
+            --text-main: #2d3748;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.4);
+        }
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        #app-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* UI Panel */
+        #ui-panel {
+            width: 25%;
+            min-width: 320px;
+            height: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--glass-border);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
+            padding: 2rem 1.5rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0;
+            background: linear-gradient(90deg, var(--p-color), var(--n-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: #718096;
+            margin: 0 0 1rem 0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--n-color);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--n-color);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Canvas Container */
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        /* Formula Card Overlay */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+        }
+
+        .formula-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin: 0.5rem 0;
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+        }
+
+        .formula-label {
+            color: #4a5568;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+        }
+
+        .formula-value {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* 3D Labels */
+        .region-label {
+            position: absolute;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+            pointer-events: none;
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.8);
+            transform: translate(-50%, -50%);
+            opacity: 0.8;
+        }
+
+        #label-p {
+            color: var(--p-color);
+        }
+
+        #label-n {
+            color: var(--n-color);
+        }
+
+        /* Legend */
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            #app-container {
+                flex-direction: column;
+            }
+
+            #ui-panel {
+                width: 100%;
+                height: 40%;
+                border-right: none;
+                border-bottom: 1px solid var(--glass-border);
+            }
+
+            #canvas-container {
+                height: 60%;
+            }
+
+            #formula-card {
+                top: 10px;
+                left: 10px;
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="app-container">
+        <div id="ui-panel">
+            <div>
+                <h1>P-N Junction</h1>
+                <p class="subtitle">Interactive Semiconductor Physics</p>
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Bias Voltage (V_ext)</span>
+                    <span class="value-display" id="val-voltage">0.0 V</span>
+                </div>
+                <input type="range" id="slider-voltage" min="-5.0" max="2.0" step="0.1" value="0.0">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #a0aec0;">
+                    <span>Reverse (-5V)</span>
+                    <span>Forward (+2V)</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Doping (N_a = N_d)</span>
+                    <span class="value-display" id="val-doping">1.0e16 cm⁻³</span>
+                </div>
+                <input type="range" id="slider-doping" min="15" max="18" step="0.1" value="16">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Temperature</span>
+                    <span class="value-display" id="val-temp">300 K</span>
+                </div>
+                <input type="range" id="slider-temp" min="200" max="500" step="10" value="300">
+            </div>
+
+            <div class="control-group" style="flex-direction: row; align-items: center;">
+                <label class="toggle-group">
+                    <input type="checkbox" id="toggle-efield" checked
+                        style="width: 18px; height: 18px; accent-color: var(--e-field);">
+                    Show Electric Field (E)
+                </label>
+            </div>
+        </div>
+
+        <div id="canvas-container">
+            <div id="formula-card">
+                <div class="formula-line">
+                    <span class="formula-label">Built-in Potential (V_bi):</span>
+                    <span class="formula-value" id="disp-vbi">0.00 V</span>
+                </div>
+                <div class="formula-line">
+                    <span class="formula-label">Net Potential (V_bi - V_ext):</span>
+                    <span class="formula-value" id="disp-vnet">0.00 V</span>
+                </div>
+                <div class="formula-line"
+                    style="border-top: 1px solid rgba(0,0,0,0.1); padding-top: 0.5rem; margin-top: 0.5rem;">
+                    <span class="formula-label">Depletion Width (W):</span>
+                    <span class="formula-value" style="color: var(--e-field);" id="disp-w">0.00 nm</span>
+                </div>
+            </div>
+
+            <div id="label-p" class="region-label">P-TYPE</div>
+            <div id="label-n" class="region-label">N-TYPE</div>
+
+            <div id="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--p-color);"></div> Holes (Mobile)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--n-color);"></div> Electrons (Mobile)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--p-ion);"></div> Acceptor Ions (-)
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: var(--n-ion);"></div> Donor Ions (+)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Constants & State ---
+        const q = 1.602e-19;       // Elementary charge (C)
+        const kB = 1.381e-23;      // Boltzmann constant (J/K)
+        const eps_0 = 8.854e-14;   // Vacuum permittivity (F/cm)
+        const eps_r = 11.7;        // Relative permittivity of Silicon
+        const eps_s = eps_0 * eps_r;
+        const ni = 1e10;           // Intrinsic carrier concentration for Si at 300K (cm^-3)
+
+        let state = {
+            V_ext: 0.0,
+            N_doping: 1e16,
+            Temp: 300,
+            showE: true,
+            // Calculated
+            V_bi: 0,
+            V_net: 0,
+            W_real: 0,      // in cm
+            W_visual: 0,    // scaled for 3D scene
+            E_max: 0
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 8, 28);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Don't allow going too far below
+        controls.minDistance = 10;
+        controls.maxDistance = 50;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-10, 0, -10);
+        scene.add(fillLight);
+
+        // --- Scene Geometry Constants ---
+        const slabWidth = 20; // Total width (-10 to 10)
+        const slabHeight = 6;
+        const slabDepth = 6;
+        const visualScaleFactor = 1.5e5; // Maps real cm to 3D units
+
+        // --- 1. The Semiconductor Crystal (Bulk) ---
+        const slabGeo = new THREE.BoxGeometry(slabWidth / 2, slabHeight, slabDepth);
+
+        // P-Region (Left)
+        const pMat = new THREE.MeshPhysicalMaterial({
+            color: 0xFFEBEE, transparent: true, opacity: 0.3,
+            roughness: 0.1, transmission: 0.9
+        });
+        const pSlab = new THREE.Mesh(slabGeo, pMat);
+        pSlab.position.x = -slabWidth / 4;
+        scene.add(pSlab);
+
+        // N-Region (Right)
+        const nMat = new THREE.MeshPhysicalMaterial({
+            color: 0xE3F2FD, transparent: true, opacity: 0.3,
+            roughness: 0.1, transmission: 0.9
+        });
+        const nSlab = new THREE.Mesh(slabGeo, nMat);
+        nSlab.position.x = slabWidth / 4;
+        scene.add(nSlab);
+
+        // Junction Plane
+        const junctionGeo = new THREE.PlaneGeometry(slabDepth, slabHeight);
+        const junctionMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+        const junctionPlane = new THREE.Mesh(junctionGeo, junctionMat);
+        junctionPlane.rotation.y = Math.PI / 2;
+        scene.add(junctionPlane);
+
+        // --- Helper: Create Texture for Ions ---
+        function createIonTexture(sign, bgColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            ctx.fillStyle = bgColor;
+            ctx.beginPath();
+            ctx.arc(64, 64, 60, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 80px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(sign, 64, 68); // Slight y-offset for visual center
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            return tex;
+        }
+
+        // --- 2. Fixed Ions (Space Charge) ---
+        const ionRadius = 0.3;
+        const ionGeo = new THREE.SphereGeometry(ionRadius, 16, 16);
+
+        const negIonTex = createIonTexture('-', '#B71C1C'); // P-side (Acceptors)
+        const posIonTex = createIonTexture('+', '#0D47A1'); // N-side (Donors)
+
+        const negIonMat = new THREE.MeshStandardMaterial({ map: negIonTex, roughness: 0.4 });
+        const posIonMat = new THREE.MeshStandardMaterial({ map: posIonTex, roughness: 0.4 });
+
+        // Grid generation for ions
+        const ionsPerSide = 150;
+        const negIonsMesh = new THREE.InstancedMesh(ionGeo, negIonMat, ionsPerSide);
+        const posIonsMesh = new THREE.InstancedMesh(ionGeo, posIonMat, ionsPerSide);
+        scene.add(negIonsMesh);
+        scene.add(posIonsMesh);
+
+        const dummy = new THREE.Object3D();
+        const ionPositions = { neg: [], pos: [] };
+
+        // Populate ion grids
+        let idx = 0;
+        for (let x = -0.5; x >= -5; x -= 0.8) {
+            for (let y = -slabHeight / 2 + 0.5; y <= slabHeight / 2 - 0.5; y += 1.2) {
+                for (let z = -slabDepth / 2 + 0.5; z <= slabDepth / 2 - 0.5; z += 1.2) {
+                    if (idx < ionsPerSide) {
+                        ionPositions.neg.push(new THREE.Vector3(x, y + (Math.random() - 0.5) * 0.2, z + (Math.random() - 0.5) * 0.2));
+                        idx++;
+                    }
+                }
+            }
+        }
+        idx = 0;
+        for (let x = 0.5; x <= 5; x += 0.8) {
+            for (let y = -slabHeight / 2 + 0.5; y <= slabHeight / 2 - 0.5; y += 1.2) {
+                for (let z = -slabDepth / 2 + 0.5; z <= slabDepth / 2 - 0.5; z += 1.2) {
+                    if (idx < ionsPerSide) {
+                        ionPositions.pos.push(new THREE.Vector3(x, y + (Math.random() - 0.5) * 0.2, z + (Math.random() - 0.5) * 0.2));
+                        idx++;
+                    }
+                }
+            }
+        }
+
+        // --- 3. Mobile Charge Carriers ---
+        const carrierRadius = 0.12;
+        const carrierGeo = new THREE.SphereGeometry(carrierRadius, 8, 8);
+        const holeMat = new THREE.MeshBasicMaterial({ color: 0xFF3366 });
+        const electronMat = new THREE.MeshBasicMaterial({ color: 0x4361EE });
+
+        const numCarriers = 800;
+        const holesMesh = new THREE.InstancedMesh(carrierGeo, holeMat, numCarriers);
+        const electronsMesh = new THREE.InstancedMesh(carrierGeo, electronMat, numCarriers);
+        scene.add(holesMesh);
+        scene.add(electronsMesh);
+
+        const carrierData = {
+            holes: new Float32Array(numCarriers * 3),
+            electrons: new Float32Array(numCarriers * 3)
+        };
+
+        // Initialize random positions
+        for (let i = 0; i < numCarriers; i++) {
+            // Holes (P-side)
+            carrierData.holes[i * 3] = -10 + Math.random() * 9.5; // x
+            carrierData.holes[i * 3 + 1] = (Math.random() - 0.5) * (slabHeight - 0.5); // y
+            carrierData.holes[i * 3 + 2] = (Math.random() - 0.5) * (slabDepth - 0.5); // z
+
+            // Electrons (N-side)
+            carrierData.electrons[i * 3] = 10 - Math.random() * 9.5; // x
+            carrierData.electrons[i * 3 + 1] = (Math.random() - 0.5) * (slabHeight - 0.5); // y
+            carrierData.electrons[i * 3 + 2] = (Math.random() - 0.5) * (slabDepth - 0.5); // z
+        }
+
+        // --- 4. Electric Field Vectors ---
+        const eFieldGroup = new THREE.Group();
+        const numArrows = 9;
+        const arrows = [];
+        for (let i = 0; i < numArrows; i++) {
+            const dir = new THREE.Vector3(-1, 0, 0); // N to P
+            const origin = new THREE.Vector3(0, 0, 0);
+            const hex = 0xF77F00;
+            const arrowHelper = new THREE.ArrowHelper(dir, origin, 1, hex, 0.4, 0.3);
+
+            // Distribute in YZ plane
+            const row = Math.floor(i / 3) - 1;
+            const col = (i % 3) - 1;
+            arrowHelper.position.y = row * 1.5;
+            arrowHelper.position.z = col * 1.5;
+
+            arrows.push(arrowHelper);
+            eFieldGroup.add(arrowHelper);
+        }
+        scene.add(eFieldGroup);
+
+        // --- 5. Potential Barrier Graph ---
+        const graphMat = new THREE.LineBasicMaterial({ color: 0x2d3748, linewidth: 3 });
+        const graphGeo = new THREE.BufferGeometry();
+        const graphPoints = new Float32Array(101 * 3);
+        graphGeo.setAttribute('position', new THREE.BufferAttribute(graphPoints, 3));
+        const graphLine = new THREE.Line(graphGeo, graphMat);
+        graphLine.position.y = slabHeight / 2 + 1.5; // Float above
+        scene.add(graphLine);
+
+        // Grid lines for graph
+        const gridHelper = new THREE.GridHelper(20, 20, 0x000000, 0x000000);
+        gridHelper.position.y = slabHeight / 2 + 1.5;
+        gridHelper.material.opacity = 0.1;
+        gridHelper.material.transparent = true;
+        scene.add(gridHelper);
+
+        // --- Physics Update Logic ---
+        function updatePhysics() {
+            // 1. Thermal Voltage
+            const VT = (kB * state.Temp) / q;
+
+            // 2. Built-in Potential: Vbi = 2 * VT * ln(N / ni)
+            state.V_bi = 2 * VT * Math.log(state.N_doping / ni);
+
+            // 3. Net Potential
+            state.V_net = state.V_bi - state.V_ext;
+            if (state.V_net < 0.05) state.V_net = 0.05; // Prevent collapse
+
+            // 4. Depletion Width (Real in cm)
+            // W = sqrt( (2*eps_s/q) * V_net * (2/N) ) assuming Na=Nd=N
+            state.W_real = Math.sqrt((2 * eps_s / q) * state.V_net * (2 / state.N_doping));
+
+            // 5. Visual Depletion Width
+            state.W_visual = state.W_real * visualScaleFactor;
+            // Clamp visual width for aesthetics
+            if (state.W_visual > 8) state.W_visual = 8;
+            if (state.W_visual < 0.2) state.W_visual = 0.2;
+
+            // 6. Max E-Field (proportional for visual)
+            state.E_max = state.V_net / state.W_visual;
+        }
+
+        function updateUI() {
+            document.getElementById('disp-vbi').innerText = state.V_bi.toFixed(3) + ' V';
+            document.getElementById('disp-vnet').innerText = state.V_net.toFixed(3) + ' V';
+            // Convert W_real (cm) to nm (1 cm = 1e7 nm)
+            document.getElementById('disp-w').innerText = (state.W_real * 1e7).toFixed(1) + ' nm';
+        }
+
+        function updateVisuals() {
+            const halfW = state.W_visual / 2;
+
+            // Update Fixed Ions Visibility
+            for (let i = 0; i < ionsPerSide; i++) {
+                // Negative Ions (P-side)
+                let pNeg = ionPositions.neg[i];
+                dummy.position.copy(pNeg);
+                // Visible if inside depletion region
+                let scaleNeg = (pNeg.x > -halfW) ? 1 : 0;
+                dummy.scale.set(scaleNeg, scaleNeg, scaleNeg);
+                dummy.updateMatrix();
+                negIonsMesh.setMatrixAt(i, dummy.matrix);
+
+                // Positive Ions (N-side)
+                let pPos = ionPositions.pos[i];
+                dummy.position.copy(pPos);
+                let scalePos = (pPos.x < halfW) ? 1 : 0;
+                dummy.scale.set(scalePos, scalePos, scalePos);
+                dummy.updateMatrix();
+                posIonsMesh.setMatrixAt(i, dummy.matrix);
+            }
+            negIonsMesh.instanceMatrix.needsUpdate = true;
+            posIonsMesh.instanceMatrix.needsUpdate = true;
+
+            // Update E-Field Arrows
+            eFieldGroup.visible = state.showE;
+            if (state.showE) {
+                arrows.forEach(arrow => {
+                    arrow.position.x = halfW; // Start at N-side edge
+                    // Length is W_visual, scale head proportionally
+                    arrow.setLength(state.W_visual, Math.min(0.4, state.W_visual * 0.3), 0.3);
+                });
+            }
+
+            // Update Potential Graph
+            const positions = graphLine.geometry.attributes.position.array;
+            for (let i = 0; i <= 100; i++) {
+                let x = -10 + (i / 100) * 20;
+                let y = 0;
+
+                if (x < -halfW) {
+                    y = 0; // P-side bulk
+                } else if (x > halfW) {
+                    y = state.V_net; // N-side bulk
+                } else {
+                    // Parabolic approximation inside depletion region
+                    // Normalized x from 0 to 1 inside W
+                    let xn = (x + halfW) / state.W_visual;
+                    if (xn < 0.5) {
+                        y = 2 * state.V_net * xn * xn;
+                    } else {
+                        y = state.V_net * (1 - 2 * (1 - xn) * (1 - xn));
+                    }
+                }
+
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y * 2; // Scale Y visually
+                positions[i * 3 + 2] = 0;
+            }
+            graphLine.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = clock.getDelta();
+            const halfW = state.W_visual / 2;
+
+            // Thermal jitter speed
+            const jitter = Math.sqrt(state.Temp) * 0.005;
+
+            // Drift velocity based on external bias (Forward bias pushes towards junction)
+            // Only significant if V_ext > 0.4 roughly
+            let drift = 0;
+            let crossProb = 0;
+            if (state.V_ext > 0) {
+                drift = state.V_ext * 0.05;
+                // Exponential probability of crossing barrier
+                crossProb = Math.exp((state.V_ext - state.V_bi) / ((kB * state.Temp) / q)) * 0.1;
+                if (crossProb > 0.5) crossProb = 0.5;
+            } else if (state.V_ext < 0) {
+                // Reverse bias pulls away
+                drift = state.V_ext * 0.02;
+            }
+
+            // Update Mobile Carriers
+            for (let i = 0; i < numCarriers; i++) {
+                // --- HOLES ---
+                let hx = carrierData.holes[i * 3];
+                let hy = carrierData.holes[i * 3 + 1];
+                let hz = carrierData.holes[i * 3 + 2];
+
+                // Brownian motion + Drift
+                hx += (Math.random() - 0.5) * jitter + drift;
+                hy += (Math.random() - 0.5) * jitter;
+                hz += (Math.random() - 0.5) * jitter;
+
+                // Boundaries Y, Z
+                if (Math.abs(hy) > slabHeight / 2 - 0.2) hy *= 0.9;
+                if (Math.abs(hz) > slabDepth / 2 - 0.2) hz *= 0.9;
+
+                // X Boundaries & Crossing Logic
+                if (hx < -10) hx = -10;
+
+                if (hx > -halfW) {
+                    if (state.V_ext > 0.1 && Math.random() < crossProb) {
+                        // Crossed! Recombine (teleport back to start to maintain steady state)
+                        hx = -10;
+                    } else {
+                        // Bounce back from depletion edge
+                        hx = -halfW - Math.random() * 0.1;
+                    }
+                }
+
+                carrierData.holes[i * 3] = hx;
+                carrierData.holes[i * 3 + 1] = hy;
+                carrierData.holes[i * 3 + 2] = hz;
+
+                dummy.position.set(hx, hy, hz);
+                dummy.updateMatrix();
+                holesMesh.setMatrixAt(i, dummy.matrix);
+
+                // --- ELECTRONS ---
+                let ex = carrierData.electrons[i * 3];
+                let ey = carrierData.electrons[i * 3 + 1];
+                let ez = carrierData.electrons[i * 3 + 2];
+
+                // Brownian motion + Drift (opposite direction)
+                ex += (Math.random() - 0.5) * jitter - drift;
+                ey += (Math.random() - 0.5) * jitter;
+                ez += (Math.random() - 0.5) * jitter;
+
+                // Boundaries Y, Z
+                if (Math.abs(ey) > slabHeight / 2 - 0.2) ey *= 0.9;
+                if (Math.abs(ez) > slabDepth / 2 - 0.2) ez *= 0.9;
+
+                // X Boundaries & Crossing Logic
+                if (ex > 10) ex = 10;
+
+                if (ex < halfW) {
+                    if (state.V_ext > 0.1 && Math.random() < crossProb) {
+                        // Crossed! Recombine
+                        ex = 10;
+                    } else {
+                        // Bounce back
+                        ex = halfW + Math.random() * 0.1;
+                    }
+                }
+
+                carrierData.electrons[i * 3] = ex;
+                carrierData.electrons[i * 3 + 1] = ey;
+                carrierData.electrons[i * 3 + 2] = ez;
+
+                dummy.position.set(ex, ey, ez);
+                dummy.updateMatrix();
+                electronsMesh.setMatrixAt(i, dummy.matrix);
+            }
+
+            holesMesh.instanceMatrix.needsUpdate = true;
+            electronsMesh.instanceMatrix.needsUpdate = true;
+
+            // Update 3D HTML Labels position
+            updateLabels();
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function updateLabels() {
+            const pLabel = document.getElementById('label-p');
+            const nLabel = document.getElementById('label-n');
+
+            // Project 3D coordinate to 2D screen
+            const pPos = new THREE.Vector3(-slabWidth / 4, slabHeight / 2 + 0.5, 0);
+            const nPos = new THREE.Vector3(slabWidth / 4, slabHeight / 2 + 0.5, 0);
+
+            pPos.project(camera);
+            nPos.project(camera);
+
+            const xP = (pPos.x * .5 + .5) * container.clientWidth;
+            const yP = (pPos.y * -.5 + .5) * container.clientHeight;
+
+            const xN = (nPos.x * .5 + .5) * container.clientWidth;
+            const yN = (nPos.y * -.5 + .5) * container.clientHeight;
+
+            pLabel.style.left = `${xP}px`;
+            pLabel.style.top = `${yP}px`;
+
+            nLabel.style.left = `${xN}px`;
+            nLabel.style.top = `${yN}px`;
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('slider-voltage').addEventListener('input', (e) => {
+            state.V_ext = parseFloat(e.target.value);
+            document.getElementById('val-voltage').innerText = state.V_ext.toFixed(1) + ' V';
+            updatePhysics();
+            updateUI();
+            updateVisuals();
+        });
+
+        document.getElementById('slider-doping').addEventListener('input', (e) => {
+            const exp = parseFloat(e.target.value);
+            state.N_doping = Math.pow(10, exp);
+            document.getElementById('val-doping').innerText = `1.0e${exp.toFixed(1)} cm⁻³`;
+            updatePhysics();
+            updateUI();
+            updateVisuals();
+        });
+
+        document.getElementById('slider-temp').addEventListener('input', (e) => {
+            state.Temp = parseInt(e.target.value);
+            document.getElementById('val-temp').innerText = state.Temp + ' K';
+            updatePhysics();
+            updateUI();
+            updateVisuals();
+        });
+
+        document.getElementById('toggle-efield').addEventListener('change', (e) => {
+            state.showE = e.target.checked;
+            updateVisuals();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Initialization ---
+        updatePhysics();
+        updateUI();
+        updateVisuals();
+        animate();
+
+    </script>
+</body>
+
+</html>

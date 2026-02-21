@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strong Nuclear Force Interaction Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --proton-color: #FF3366;
+            --neutron-color: #4361EE;
+            --coulomb-color: #F77F00;
+            --strong-color: #7209B7;
+            --net-color: #06D6A0;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphism Base */
+        .glass-panel {
+            position: absolute;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            z-index: 10;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* UI Panel (Right) */
+        #ui-panel {
+            right: 20px;
+            top: 20px;
+            bottom: 20px;
+            width: 25%;
+            min-width: 300px;
+            max-width: 350px;
+            overflow-y: auto;
+        }
+
+        /* Formula Card (Top Left) */
+        #formula-card {
+            left: 20px;
+            top: 20px;
+            width: 320px;
+        }
+
+        /* Graph Card (Top Right, next to UI) */
+        #graph-card {
+            right: calc(25% + 40px);
+            top: 20px;
+            width: 300px;
+            padding: 15px;
+        }
+
+        h2 {
+            margin: 0 0 5px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a202c;
+        }
+
+        h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 5px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toggle-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            background: rgba(255,255,255,0.5);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn.active.proton { background: var(--proton-color); color: white; border-color: var(--proton-color); }
+        .toggle-btn.active.neutron { background: var(--neutron-color); color: white; border-color: var(--neutron-color); }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .mono-val {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--strong-color);
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--strong-color);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.1);
+            border-radius: 2px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .checkbox-group input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--net-color);
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 5px;
+        }
+
+        .math-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(255,255,255,0.6);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .math-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        .math-row:last-child { margin-bottom: 0; }
+
+        canvas#potential-graph {
+            width: 100%;
+            height: 150px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        /* 3D Scene Labels */
+        .scene-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            padding: 4px 8px;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(4px);
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 5;
+            transition: opacity 0.1s;
+        }
+
+        .label-proton { color: var(--proton-color); border: 1px solid var(--proton-color); }
+        .label-neutron { color: var(--neutron-color); border: 1px solid var(--neutron-color); }
+
+        @media (max-width: 1000px) {
+            #graph-card { right: 20px; top: auto; bottom: 20px; width: 320px; }
+            #ui-panel { width: 320px; bottom: 240px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- 3D Labels -->
+    <div id="label-n1" class="scene-label label-proton">Proton</div>
+    <div id="label-n2" class="scene-label label-proton">Proton</div>
+
+    <!-- Formula & Live Data Card -->
+    <div id="formula-card" class="glass-panel">
+        <h2>Forces Overview</h2>
+        <div class="math-display">
+            <div class="math-row">
+                <span>F<sub>net</sub> = F<sub>strong</sub> + F<sub>coulomb</sub></span>
+            </div>
+            <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin: 8px 0;">
+            <div class="math-row">
+                <span style="color: var(--strong-color)">F<sub>strong</sub>:</span>
+                <span id="val-fs">0.00 N</span>
+            </div>
+            <div class="math-row">
+                <span style="color: var(--coulomb-color)">F<sub>coulomb</sub>:</span>
+                <span id="val-fc">0.00 N</span>
+            </div>
+            <div class="math-row" style="font-weight: bold; margin-top: 5px;">
+                <span style="color: var(--net-color)">F<sub>net</sub>:</span>
+                <span id="val-fnet">0.00 N</span>
+            </div>
+            <div class="math-row" style="margin-top: 5px; font-size: 0.75rem; color: #666;">
+                <span id="force-status">Status: Repulsive</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Potential Graph Card -->
+    <div id="graph-card" class="glass-panel">
+        <h3 style="margin-bottom: 5px;">Potential Well V(r)</h3>
+        <canvas id="potential-graph" width="540" height="300"></canvas>
+    </div>
+
+    <!-- Main UI Controls -->
+    <div id="ui-panel" class="glass-panel">
+        <h2>Control Panel</h2>
+
+        <div class="control-group">
+            <h3>Nucleon 1 (Fixed)</h3>
+            <div class="toggle-row">
+                <div class="toggle-btn active proton" onclick="setParticle(1, 1)">Proton</div>
+                <div class="toggle-btn neutron" onclick="setParticle(1, 0)">Neutron</div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h3>Nucleon 2 (Movable)</h3>
+            <div class="toggle-row">
+                <div class="toggle-btn active proton" onclick="setParticle(2, 1)">Proton</div>
+                <div class="toggle-btn neutron" onclick="setParticle(2, 0)">Neutron</div>
+            </div>
+        </div>
+
+        <div class="control-group" style="margin-top: 10px;">
+            <div class="slider-header">
+                <span>Separation (r)</span>
+                <span class="mono-val" id="dist-val">1.50 fm</span>
+            </div>
+            <input type="range" id="dist-slider" min="0.2" max="5.0" step="0.01" value="1.5">
+        </div>
+
+        <div class="control-group" style="margin-top: 10px;">
+            <h3>Simulation Mode</h3>
+            <label class="checkbox-group">
+                <input type="checkbox" id="mode-oscillate">
+                <span>Oscillate (Physics Engine)</span>
+            </label>
+        </div>
+
+        <div class="control-group" style="margin-top: 10px;">
+            <h3>Force Vectors</h3>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-fs" checked>
+                <span><i class="legend-color" style="background: var(--strong-color)"></i> Strong Force (F<sub>s</sub>)</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-fc" checked>
+                <span><i class="legend-color" style="background: var(--coulomb-color)"></i> Coulomb Force (F<sub>c</sub>)</span>
+            </label>
+            <label class="checkbox-group">
+                <input type="checkbox" id="show-fnet" checked>
+                <span><i class="legend-color" style="background: var(--net-color)"></i> Net Force (F<sub>net</sub>)</span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- PHYSICS CONSTANTS & STATE ---
+        const STATE = {
+            p1: 1, // 1 = Proton, 0 = Neutron
+            p2: 1,
+            r: 1.5,
+            oscillate: false,
+            showFs: true,
+            showFc: true,
+            showFnet: true,
+            velocity: 0
+        };
+
+        // Physics parameters tuned for visualization
+        const PHYS = {
+            ke: 12,          // Coulomb constant
+            C: 2500,         // Strong force strength multiplier
+            sigma: 0.8,      // Equilibrium distance parameter
+            decay: 0.8,      // Exponential decay factor for strong force
+            mass: 80         // Artificial mass for oscillation damping
+        };
+
+        // Calculate Strong Force (Positive = Repulsive, Negative = Attractive)
+        function calcFs(r) {
+            if (r < 0.1) r = 0.1;
+            // Modified Lennard-Jones with exponential decay to ensure short range
+            let term13 = Math.pow(PHYS.sigma / r, 13);
+            let term7 = Math.pow(PHYS.sigma / r, 7);
+            return PHYS.C * (term13 - term7) * Math.exp(-(r - PHYS.sigma) / PHYS.decay);
+        }
+
+        // Calculate Coulomb Force (Positive = Repulsive)
+        function calcFc(r, q1, q2) {
+            if (r < 0.1) r = 0.1;
+            return PHYS.ke * (q1 * q2) / (r * r);
+        }
+
+        // --- THREE.JS SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.05);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 3, 6);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 15;
+        controls.minDistance = 2;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-5, -5, -7);
+        scene.add(backLight);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(20, 20, 0xd1d9e6, 0xd1d9e6);
+        gridHelper.position.y = -1;
+        scene.add(gridHelper);
+
+        // --- MATERIALS & GEOMETRIES ---
+        const sphereGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        
+        const matProton = new THREE.MeshPhongMaterial({ 
+            color: 0xFF3366, 
+            emissive: 0xFF3366, 
+            emissiveIntensity: 0.15,
+            shininess: 50
+        });
+        
+        const matNeutron = new THREE.MeshPhongMaterial({ 
+            color: 0x4361EE, 
+            emissive: 0x4361EE,
+            emissiveIntensity: 0.05,
+            shininess: 30
+        });
+
+        // Plus sign geometry for proton
+        const plusMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const plusGeo1 = new THREE.BoxGeometry(0.3, 0.08, 0.08);
+        const plusGeo2 = new THREE.BoxGeometry(0.08, 0.3, 0.08);
+
+        function createNucleon(isProton) {
+            const group = new THREE.Group();
+            const mesh = new THREE.Mesh(sphereGeo, isProton ? matProton : matNeutron);
+            group.add(mesh);
+
+            if (isProton) {
+                const plus = new THREE.Group();
+                plus.add(new THREE.Mesh(plusGeo1, plusMat));
+                plus.add(new THREE.Mesh(plusGeo2, plusMat));
+                plus.position.z = 0.38; // Push to surface
+                group.add(plus);
+                
+                // Add a subtle point light
+                const pLight = new THREE.PointLight(0xFF3366, 0.5, 2);
+                group.add(pLight);
+            }
+            return group;
+        }
+
+        let n1Group = createNucleon(true);
+        let n2Group = createNucleon(true);
+        scene.add(n1Group);
+        scene.add(n2Group);
+
+        // --- FORCE VECTORS (ARROWS) ---
+        const arrowGroup = new THREE.Group();
+        scene.add(arrowGroup);
+
+        function createArrow(color, yOffset) {
+            const dir = new THREE.Vector3(1, 0, 0);
+            const origin = new THREE.Vector3(0, 0, 0);
+            const arrow = new THREE.ArrowHelper(dir, origin, 1, color, 0.2, 0.15);
+            arrow.position.y = yOffset;
+            arrowGroup.add(arrow);
+            return arrow;
+        }
+
+        // Arrows for N1 (Fixed at origin)
+        const a1_Fs = createArrow(0x7209B7, 0.5);
+        const a1_Fc = createArrow(0xF77F00, 0.0);
+        const a1_Fnet = createArrow(0x06D6A0, -0.5);
+        // Make net force arrow thicker visually by scaling
+        a1_Fnet.line.scale.set(2,2,2);
+        a1_Fnet.cone.scale.set(1.5,1.5,1.5);
+
+        // Arrows for N2 (Movable)
+        const a2_Fs = createArrow(0x7209B7, 0.5);
+        const a2_Fc = createArrow(0xF77F00, 0.0);
+        const a2_Fnet = createArrow(0x06D6A0, -0.5);
+        a2_Fnet.line.scale.set(2,2,2);
+        a2_Fnet.cone.scale.set(1.5,1.5,1.5);
+
+        // --- GRAPHING LOGIC ---
+        const canvas = document.getElementById('potential-graph');
+        const ctx = canvas.getContext('2d');
+        let potentialData = [];
+
+        function calculatePotentialWell() {
+            potentialData = [];
+            const dr = 0.02;
+            let currentV = 0;
+            
+            // Integrate backwards from r=5.0 to r=0.2
+            // V(r) = Integral of F(r) dr. If F is repulsive (+), V increases as r decreases.
+            for (let r = 5.0; r >= 0.2; r -= dr) {
+                let fs = calcFs(r);
+                let fc = calcFc(r, STATE.p1, STATE.p2);
+                let fnet = fs + fc;
+                currentV += fnet * dr;
+                potentialData.push({ r: r, v: currentV });
+            }
+            potentialData.reverse(); // Sort from 0.2 to 5.0
+        }
+
+        function drawGraph() {
+            const width = canvas.width;
+            const height = canvas.height;
+            ctx.clearRect(0, 0, width, height);
+
+            if (potentialData.length === 0) return;
+
+            // Find min/max for scaling
+            let vMin = 0;
+            let vMax = 20; // Cap max to avoid squashing the well due to repulsive core
+            
+            for (let i = 0; i < potentialData.length; i++) {
+                if (potentialData[i].v < vMin) vMin = potentialData[i].v;
+            }
+            vMin -= 10; // Padding
+
+            const mapX = (r) => ((r - 0.2) / 4.8) * width;
+            const mapY = (v) => {
+                let clampedV = Math.max(vMin, Math.min(vMax, v));
+                return height - ((clampedV - vMin) / (vMax - vMin)) * height;
+            };
+
+            // Draw Zero Line
+            ctx.beginPath();
+            ctx.moveTo(0, mapY(0));
+            ctx.lineTo(width, mapY(0));
+            ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw Curve
+            ctx.beginPath();
+            ctx.moveTo(mapX(potentialData[0].r), mapY(potentialData[0].v));
+            for (let i = 1; i < potentialData.length; i++) {
+                ctx.lineTo(mapX(potentialData[i].r), mapY(potentialData[i].v));
+            }
+            ctx.strokeStyle = '#7209B7';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Draw Current Position Dot
+            let currentV = 0;
+            // Interpolate to find V at current r
+            for (let i = 0; i < potentialData.length - 1; i++) {
+                if (STATE.r >= potentialData[i].r && STATE.r <= potentialData[i+1].r) {
+                    let t = (STATE.r - potentialData[i].r) / (potentialData[i+1].r - potentialData[i].r);
+                    currentV = potentialData[i].v + t * (potentialData[i+1].v - potentialData[i].v);
+                    break;
+                }
+            }
+
+            const dotX = mapX(STATE.r);
+            const dotY = mapY(currentV);
+
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#06D6A0';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw connecting line to x-axis
+            ctx.beginPath();
+            ctx.moveTo(dotX, dotY);
+            ctx.lineTo(dotX, mapY(0));
+            ctx.strokeStyle = 'rgba(6, 214, 160, 0.5)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        // --- UPDATE LOGIC ---
+        function updateVectorsAndUI() {
+            const r = STATE.r;
+            const fs = calcFs(r);
+            const fc = calcFc(r, STATE.p1, STATE.p2);
+            const fnet = fs + fc;
+
+            // Positioning
+            n1Group.position.set(0, 0, 0);
+            n2Group.position.set(r, 0, 0);
+
+            // Arrow Scaling Function (Logarithmic-ish to keep visible but bounded)
+            const scaleForce = (f) => Math.min(Math.log10(Math.abs(f) + 1) * 0.8, 4.0);
+
+            // Update N2 Arrows (Force ON N2)
+            // Fs: Positive = Repulsive (+x), Negative = Attractive (-x)
+            a2_Fs.setDirection(new THREE.Vector3(Math.sign(fs) || 1, 0, 0));
+            a2_Fs.setLength(scaleForce(fs));
+            a2_Fs.position.set(r, 0.5, 0);
+            a2_Fs.visible = STATE.showFs && Math.abs(fs) > 0.01;
+
+            // Fc: Always Repulsive (+x)
+            a2_Fc.setDirection(new THREE.Vector3(1, 0, 0));
+            a2_Fc.setLength(scaleForce(fc));
+            a2_Fc.position.set(r, 0.0, 0);
+            a2_Fc.visible = STATE.showFc && Math.abs(fc) > 0.01;
+
+            // Fnet
+            a2_Fnet.setDirection(new THREE.Vector3(Math.sign(fnet) || 1, 0, 0));
+            a2_Fnet.setLength(scaleForce(fnet));
+            a2_Fnet.position.set(r, -0.5, 0);
+            a2_Fnet.visible = STATE.showFnet && Math.abs(fnet) > 0.01;
+
+            // Update N1 Arrows (Force ON N1 is opposite)
+            a1_Fs.setDirection(new THREE.Vector3(-Math.sign(fs) || -1, 0, 0));
+            a1_Fs.setLength(scaleForce(fs));
+            a1_Fs.visible = STATE.showFs && Math.abs(fs) > 0.01;
+
+            a1_Fc.setDirection(new THREE.Vector3(-1, 0, 0));
+            a1_Fc.setLength(scaleForce(fc));
+            a1_Fc.visible = STATE.showFc && Math.abs(fc) > 0.01;
+
+            a1_Fnet.setDirection(new THREE.Vector3(-Math.sign(fnet) || -1, 0, 0));
+            a1_Fnet.setLength(scaleForce(fnet));
+            a1_Fnet.visible = STATE.showFnet && Math.abs(fnet) > 0.01;
+
+            // Update UI Text
+            document.getElementById('dist-val').innerText = r.toFixed(2) + ' fm';
+            document.getElementById('dist-slider').value = r;
+
+            document.getElementById('val-fs').innerText = Math.abs(fs).toFixed(1) + ' N';
+            document.getElementById('val-fc').innerText = Math.abs(fc).toFixed(1) + ' N';
+            document.getElementById('val-fnet').innerText = Math.abs(fnet).toFixed(1) + ' N';
+
+            const statusEl = document.getElementById('force-status');
+            if (Math.abs(fnet) < 0.5) {
+                statusEl.innerText = "Status: Equilibrium";
+                statusEl.style.color = "#06D6A0";
+            } else if (fnet < 0) {
+                statusEl.innerText = "Status: Attractive";
+                statusEl.style.color = "#7209B7";
+            } else {
+                statusEl.innerText = "Status: Repulsive";
+                statusEl.style.color = "#F77F00";
+            }
+
+            drawGraph();
+        }
+
+        function updateLabels() {
+            const updateLabelPos = (mesh, elementId) => {
+                const vector = new THREE.Vector3();
+                mesh.getWorldPosition(vector);
+                vector.y += 0.8; // Offset above
+                vector.project(camera);
+
+                const x = (vector.x *  .5 + .5) * window.innerWidth;
+                const y = (vector.y * -.5 + .5) * window.innerHeight;
+
+                const el = document.getElementById(elementId);
+                if (vector.z < 1) {
+                    el.style.left = `${x}px`;
+                    el.style.top = `${y}px`;
+                    el.style.opacity = 1;
+                } else {
+                    el.style.opacity = 0;
+                }
+            };
+
+            updateLabelPos(n1Group, 'label-n1');
+            updateLabelPos(n2Group, 'label-n2');
+        }
+
+        // --- INTERACTION HANDLERS ---
+        window.setParticle = function(num, type) {
+            if (num === 1) STATE.p1 = type;
+            if (num === 2) STATE.p2 = type;
+
+            // Update UI Buttons
+            const btns = document.querySelectorAll(`#ui-panel .control-group:nth-child(${num}) .toggle-btn`);
+            btns.forEach(b => b.classList.remove('active'));
+            btns[type === 1 ? 0 : 1].classList.add('active');
+
+            // Rebuild Meshes
+            scene.remove(num === 1 ? n1Group : n2Group);
+            const newGroup = createNucleon(type === 1);
+            if (num === 1) n1Group = newGroup; else n2Group = newGroup;
+            scene.add(newGroup);
+
+            // Update Labels
+            const label = document.getElementById(`label-n${num}`);
+            label.innerText = type === 1 ? 'Proton' : 'Neutron';
+            label.className = `scene-label ${type === 1 ? 'label-proton' : 'label-neutron'}`;
+
+            calculatePotentialWell();
+            updateVectorsAndUI();
+        };
+
+        document.getElementById('dist-slider').addEventListener('input', (e) => {
+            STATE.r = parseFloat(e.target.value);
+            STATE.oscillate = false;
+            document.getElementById('mode-oscillate').checked = false;
+            STATE.velocity = 0;
+            updateVectorsAndUI();
+        });
+
+        document.getElementById('mode-oscillate').addEventListener('change', (e) => {
+            STATE.oscillate = e.target.checked;
+            if (!STATE.oscillate) STATE.velocity = 0;
+        });
+
+        ['fs', 'fc', 'fnet'].forEach(type => {
+            document.getElementById(`show-${type}`).addEventListener('change', (e) => {
+                STATE[`show${type.charAt(0).toUpperCase() + type.slice(1)}`] = e.target.checked;
+                updateVectorsAndUI();
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            drawGraph();
+        });
+
+        // --- ANIMATION LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.05); // Cap dt to avoid physics explosions
+
+            if (STATE.oscillate) {
+                // Physics Integration (F = ma)
+                const fs = calcFs(STATE.r);
+                const fc = calcFc(STATE.r, STATE.p1, STATE.p2);
+                const fnet = fs + fc;
+                
+                const acceleration = fnet / PHYS.mass;
+                STATE.velocity += acceleration * dt;
+                STATE.velocity *= 0.96; // Damping
+                
+                STATE.r += STATE.velocity * dt;
+
+                // Bounds
+                if (STATE.r < 0.2) { STATE.r = 0.2; STATE.velocity *= -0.5; }
+                if (STATE.r > 5.0) { STATE.r = 5.0; STATE.velocity *= -0.5; }
+
+                updateVectorsAndUI();
+            }
+
+            // Slowly rotate proton plus signs to look dynamic
+            if (STATE.p1 === 1) n1Group.children[1].rotation.z += 0.5 * dt;
+            if (STATE.p2 === 1) n2Group.children[1].rotation.z += 0.5 * dt;
+
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        calculatePotentialWell();
+        updateVectorsAndUI();
+        animate();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single-Slit Diffraction Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2D3436;
+            --text-muted: #636e72;
+            --accent: #4361EE; /* Will be updated dynamically */
+            --graph-color: #F77F00;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            position: absolute;
+            z-index: 10;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #info-panel {
+            top: 24px;
+            left: 24px;
+            width: 320px;
+        }
+
+        #controls-panel {
+            top: 24px;
+            right: 24px;
+            width: 320px;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        h2 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 4px;
+        }
+
+        .formula-box {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            border-left: 4px solid var(--accent);
+            margin-bottom: 8px;
+            transition: border-color 0.3s;
+        }
+
+        .formula-box span {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .live-data {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            padding: 4px 0;
+            border-bottom: 1px dashed rgba(0,0,0,0.1);
+        }
+
+        .live-data:last-child {
+            border-bottom: none;
+        }
+
+        .live-data strong {
+            color: var(--accent);
+            transition: color 0.3s;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent);
+            background: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            transition: color 0.3s;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.1);
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--accent);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0,0,0,0.2);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="info-panel" class="glass-panel">
+        <h1>Single-Slit Diffraction</h1>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+            Wave nature of light demonstrated via Fraunhofer diffraction.
+        </p>
+        
+        <h2>Physics Formulas</h2>
+        <div class="formula-box">
+            <span>I(θ) = I₀ [ sin(β) / β ]²</span>
+            <span>β = (π·a·sinθ) / λ</span>
+            <span style="color: var(--text-muted); font-size: 0.75rem;">where sinθ ≈ y/D</span>
+        </div>
+
+        <h2>Live Measurements</h2>
+        <div class="live-data">
+            <span>Wavelength (λ):</span>
+            <strong id="val-lambda-live">550 nm</strong>
+        </div>
+        <div class="live-data">
+            <span>Slit Width (a):</span>
+            <strong id="val-a-live">10.0 μm</strong>
+        </div>
+        <div class="live-data">
+            <span>Central Max Width:</span>
+            <strong id="val-width-live">110.0 mm</strong>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-color" style="background: var(--graph-color);"></div>
+            <span>Intensity Graph I(y)</span>
+        </div>
+    </div>
+
+    <div id="controls-panel" class="glass-panel">
+        <h2>Parameters</h2>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="lambda">Wavelength (λ)</label>
+                <span class="control-value" id="val-lambda">550 nm</span>
+            </div>
+            <input type="range" id="lambda" min="400" max="700" step="1" value="550">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="slit-width">Slit Width (a)</label>
+                <span class="control-value" id="val-a">10.0 μm</span>
+            </div>
+            <input type="range" id="slit-width" min="2" max="20" step="0.1" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="distance">Screen Distance (D)</label>
+                <span class="control-value" id="val-D">1.0 m</span>
+            </div>
+            <input type="range" id="distance" min="0.5" max="2.0" step="0.05" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="intensity">Source Intensity (I₀)</label>
+                <span class="control-value" id="val-I0">1.0 a.u.</span>
+            </div>
+            <input type="range" id="intensity" min="0.5" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="toggle-container">
+            <span class="toggle-label">Show Photons (Particles)</span>
+            <label class="switch">
+                <input type="checkbox" id="photon-toggle">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics & State ---
+        const params = {
+            lambda: 550, // nm
+            a: 10,       // um
+            D: 1.0,      // m
+            I0: 1.0,     // a.u.
+            photons: false
+        };
+
+        // Visual Scale: 1 Three.js unit = 1 cm = 0.01 m
+        const VISUAL_SCALE = 0.01; 
+        const SCREEN_HEIGHT = 60; // 60 cm visual height
+
+        // --- DOM Elements ---
+        const rootStyle = document.documentElement.style;
+        const elLambda = document.getElementById('lambda');
+        const elA = document.getElementById('slit-width');
+        const elD = document.getElementById('distance');
+        const elI0 = document.getElementById('intensity');
+        const elPhoton = document.getElementById('photon-toggle');
+
+        const valLambda = document.getElementById('val-lambda');
+        const valA = document.getElementById('val-a');
+        const valD = document.getElementById('val-D');
+        const valI0 = document.getElementById('val-I0');
+        
+        const liveLambda = document.getElementById('val-lambda-live');
+        const liveA = document.getElementById('val-a-live');
+        const liveWidth = document.getElementById('val-width-live');
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.FogExp2('#f0f4f8', 0.005);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // Position camera to see the whole setup
+        camera.position.set(-80, 40, 120);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below floor
+        controls.minDistance = 20;
+        controls.maxDistance = 300;
+        controls.target.set(50, 0, 0); // Look at center of screen area
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(-50, 100, 50);
+        scene.add(dirLight);
+
+        // --- Helper Functions ---
+        function wavelengthToRGB(wl) {
+            let R, G, B;
+            if (wl >= 380 && wl < 440) { R = -(wl - 440) / (440 - 380); G = 0.0; B = 1.0; }
+            else if (wl >= 440 && wl < 490) { R = 0.0; G = (wl - 440) / (490 - 440); B = 1.0; }
+            else if (wl >= 490 && wl < 510) { R = 0.0; G = 1.0; B = -(wl - 510) / (510 - 490); }
+            else if (wl >= 510 && wl < 580) { R = (wl - 510) / (580 - 510); G = 1.0; B = 0.0; }
+            else if (wl >= 580 && wl < 645) { R = 1.0; G = -(wl - 645) / (645 - 580); B = 0.0; }
+            else if (wl >= 645 && wl <= 780) { R = 1.0; G = 0.0; B = 0.0; }
+            else { R = 0.0; G = 0.0; B = 0.0; }
+
+            let factor;
+            if (wl >= 380 && wl < 420) factor = 0.3 + 0.7 * (wl - 380) / (420 - 380);
+            else if (wl >= 420 && wl < 701) factor = 1.0;
+            else if (wl >= 701 && wl <= 780) factor = 0.3 + 0.7 * (780 - wl) / (780 - 700);
+            else factor = 0.0;
+
+            // Boost saturation and brightness for visual appeal
+            const color = new THREE.Color(R * factor, G * factor, B * factor);
+            const hsl = {};
+            color.getHSL(hsl);
+            color.setHSL(hsl.h, 1.0, Math.max(0.5, hsl.l));
+            return color;
+        }
+
+        function updateThemeColor(color) {
+            const hex = '#' + color.getHexString();
+            rootStyle.setProperty('--accent', hex);
+        }
+
+        // --- Scene Objects ---
+
+        // 1. Grid / Floor
+        const gridHelper = new THREE.GridHelper(200, 40, 0x000000, 0x000000);
+        gridHelper.material.opacity = 0.05;
+        gridHelper.material.transparent = true;
+        gridHelper.position.y = -SCREEN_HEIGHT/2;
+        scene.add(gridHelper);
+
+        // 2. Incident Waves (Z < 0)
+        // Note: We map Z-axis as propagation direction. Slit at Z=0.
+        const waveGroup = new THREE.Group();
+        const numPlanes = 8;
+        const wavePlanes = [];
+        const waveGeo = new THREE.PlaneGeometry(40, SCREEN_HEIGHT);
+        const waveMat = new THREE.MeshBasicMaterial({
+            color: 0x4361EE,
+            transparent: true,
+            opacity: 0.15,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        for(let i=0; i<numPlanes; i++) {
+            const plane = new THREE.Mesh(waveGeo, waveMat);
+            plane.position.z = -10 - i * 10;
+            waveGroup.add(plane);
+            wavePlanes.push(plane);
+        }
+        scene.add(waveGroup);
+
+        // 3. The Barrier (Slit)
+        const barrierMat = new THREE.MeshStandardMaterial({
+            color: 0x2D3436,
+            metalness: 0.8,
+            roughness: 0.2
+        });
+        const barrierGeo = new THREE.BoxGeometry(40, SCREEN_HEIGHT, 2);
+        
+        const barrierTop = new THREE.Mesh(barrierGeo, barrierMat);
+        const barrierBottom = new THREE.Mesh(barrierGeo, barrierMat);
+        scene.add(barrierTop);
+        scene.add(barrierBottom);
+
+        // 4. Huygens Wavelets
+        const waveletGroup = new THREE.Group();
+        const numWavelets = 5;
+        const wavelets = [];
+        // Create semi-circular arcs
+        const curve = new THREE.EllipseCurve(0, 0, 1, 1, -Math.PI/2, Math.PI/2, false, 0);
+        const points = curve.getPoints(50);
+        const arcGeo = new THREE.BufferGeometry().setFromPoints(points);
+        const arcMat = new THREE.LineBasicMaterial({ color: 0x7209B7, transparent: true, linewidth: 2 });
+
+        for(let i=0; i<numWavelets; i++) {
+            const arc = new THREE.Line(arcGeo, arcMat.clone());
+            arc.rotation.y = Math.PI / 2; // Face the screen
+            waveletGroup.add(arc);
+            wavelets.push({ mesh: arc, phase: i / numWavelets });
+        }
+        scene.add(waveletGroup);
+
+        // 5. Observation Screen (Shader)
+        const screenGeo = new THREE.PlaneGeometry(40, SCREEN_HEIGHT, 1, 64);
+        
+        const screenShader = {
+            uniforms: {
+                u_lambda: { value: 550e-9 },
+                u_a: { value: 10e-6 },
+                u_D: { value: 1.0 },
+                u_I0: { value: 1.0 },
+                u_color: { value: new THREE.Color(0x4361EE) }
+            },
+            vertexShader: `
+                varying vec2 vUv;
+                varying vec3 vPos;
+                void main() {
+                    vUv = uv;
+                    vPos = position;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float u_lambda;
+                uniform float u_a;
+                uniform float u_D;
+                uniform float u_I0;
+                uniform vec3 u_color;
+                
+                varying vec2 vUv;
+                varying vec3 vPos;
+
+                void main() {
+                    // vPos.y is in visual units (cm). Convert to meters.
+                    float y_m = vPos.y * 0.01;
+                    
+                    // sin(theta) = y / sqrt(y^2 + D^2)
+                    float sinTheta = y_m / sqrt(y_m * y_m + u_D * u_D);
+                    
+                    // beta = (pi * a * sin(theta)) / lambda
+                    float beta = (3.14159265359 * u_a * sinTheta) / u_lambda;
+                    
+                    float intensity = u_I0;
+                    if (abs(beta) > 1e-5) {
+                        float sinc = sin(beta) / beta;
+                        intensity = u_I0 * sinc * sinc;
+                    }
+                    
+                    // Gamma correction and scaling for visual pop
+                    intensity = pow(intensity, 1.0 / 1.8);
+                    
+                    gl_FragColor = vec4(u_color * intensity, 1.0);
+                }
+            `
+        };
+
+        const screenMat = new THREE.ShaderMaterial({
+            uniforms: screenShader.uniforms,
+            vertexShader: screenShader.vertexShader,
+            fragmentShader: screenShader.fragmentShader,
+            side: THREE.DoubleSide
+        });
+
+        const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+        scene.add(screenMesh);
+
+        // 6. Photon Canvas Screen
+        const canvasSize = 1024;
+        const photonCanvas = document.createElement('canvas');
+        photonCanvas.width = 256; // narrower width for the strip
+        photonCanvas.height = canvasSize;
+        const ctx = photonCanvas.getContext('2d');
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, photonCanvas.width, photonCanvas.height);
+
+        const photonTex = new THREE.CanvasTexture(photonCanvas);
+        const photonMat = new THREE.MeshBasicMaterial({ map: photonTex, side: THREE.DoubleSide });
+        const photonScreenMesh = new THREE.Mesh(screenGeo, photonMat);
+        photonScreenMesh.visible = false;
+        scene.add(photonScreenMesh);
+
+        // 7. Intensity Graph (3D Line)
+        const graphPoints = 200;
+        const graphGeo = new THREE.BufferGeometry();
+        const graphPositions = new Float32Array(graphPoints * 3);
+        graphGeo.setAttribute('position', new THREE.BufferAttribute(graphPositions, 3));
+        const graphMat = new THREE.LineBasicMaterial({ color: 0xF77F00, linewidth: 2 });
+        const graphMesh = new THREE.Line(graphGeo, graphMat);
+        scene.add(graphMesh);
+
+        // Flying Photons (Particles)
+        const particleGeo = new THREE.BufferGeometry();
+        const maxParticles = 500;
+        const particlePositions = new Float32Array(maxParticles * 3);
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+        const particleMat = new THREE.PointsMaterial({
+            size: 0.5,
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+        const particleSystem = new THREE.Points(particleGeo, particleMat);
+        particleSystem.visible = false;
+        scene.add(particleSystem);
+
+        let activeParticles = [];
+
+        // --- Update Logic ---
+
+        function updatePhysics() {
+            // Update values from sliders
+            params.lambda = parseFloat(elLambda.value);
+            params.a = parseFloat(elA.value);
+            params.D = parseFloat(elD.value);
+            params.I0 = parseFloat(elI0.value);
+            params.photons = elPhoton.checked;
+
+            // Update DOM text
+            valLambda.innerText = `${params.lambda} nm`;
+            valA.innerText = `${params.a.toFixed(1)} μm`;
+            valD.innerText = `${params.D.toFixed(2)} m`;
+            valI0.innerText = `${params.I0.toFixed(1)} a.u.`;
+            
+            liveLambda.innerText = `${params.lambda} nm`;
+            liveA.innerText = `${params.a.toFixed(1)} μm`;
+
+            // Calculate Central Max Width: W = 2 * lambda * D / a
+            const lambda_m = params.lambda * 1e-9;
+            const a_m = params.a * 1e-6;
+            const width_m = (2 * lambda_m * params.D) / a_m;
+            const width_mm = width_m * 1000;
+            liveWidth.innerText = `${width_mm.toFixed(1)} mm`;
+
+            // Update Colors
+            const lightColor = wavelengthToRGB(params.lambda);
+            updateThemeColor(lightColor);
+            waveMat.color.copy(lightColor);
+            screenMat.uniforms.u_color.value.copy(lightColor);
+            
+            // Update Barrier Geometry (Visual gap)
+            // Map 2-20um to a visible gap of 0.5 to 5 units
+            const visualGap = (params.a / 20) * 4 + 0.5; 
+            barrierTop.position.y = visualGap / 2 + SCREEN_HEIGHT / 2;
+            barrierBottom.position.y = -visualGap / 2 - SCREEN_HEIGHT / 2;
+
+            // Update Screen Position
+            const screenZ = params.D * 100; // 1m = 100 units
+            screenMesh.position.z = screenZ;
+            photonScreenMesh.position.z = screenZ;
+            
+            // Update Shader Uniforms
+            screenMat.uniforms.u_lambda.value = lambda_m;
+            screenMat.uniforms.u_a.value = a_m;
+            screenMat.uniforms.u_D.value = params.D;
+            screenMat.uniforms.u_I0.value = params.I0;
+
+            // Update Graph Geometry
+            const positions = graphMesh.geometry.attributes.position.array;
+            for(let i=0; i<graphPoints; i++) {
+                // y ranges from -SCREEN_HEIGHT/2 to SCREEN_HEIGHT/2
+                const y_visual = (i / (graphPoints - 1)) * SCREEN_HEIGHT - SCREEN_HEIGHT/2;
+                const y_m = y_visual * VISUAL_SCALE;
+                
+                const sinTheta = y_m / Math.sqrt(y_m * y_m + params.D * params.D);
+                const beta = (Math.PI * a_m * sinTheta) / lambda_m;
+                
+                let I = params.I0;
+                if (Math.abs(beta) > 1e-7) {
+                    const sinc = Math.sin(beta) / beta;
+                    I = params.I0 * sinc * sinc;
+                }
+
+                // Graph X is intensity, Y is vertical, Z is screen depth
+                positions[i*3] = I * 15; // Scale intensity for visual X axis
+                positions[i*3+1] = y_visual;
+                positions[i*3+2] = screenZ + 0.5; // Slightly in front of screen
+            }
+            graphMesh.geometry.attributes.position.needsUpdate = true;
+
+            // Toggle Modes
+            if (params.photons) {
+                screenMesh.visible = false;
+                photonScreenMesh.visible = true;
+                particleSystem.visible = true;
+                graphMesh.visible = true;
+                // Dim the graph slightly in photon mode
+                graphMat.opacity = 0.5;
+                graphMat.transparent = true;
+            } else {
+                screenMesh.visible = true;
+                photonScreenMesh.visible = false;
+                particleSystem.visible = false;
+                graphMesh.visible = true;
+                graphMat.opacity = 1.0;
+            }
+        }
+
+        // Clear canvas when parameters change significantly
+        function clearCanvas() {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, photonCanvas.width, photonCanvas.height);
+            photonTex.needsUpdate = true;
+            activeParticles = [];
+        }
+
+        [elLambda, elA, elD].forEach(el => {
+            el.addEventListener('input', () => {
+                updatePhysics();
+                if(params.photons) clearCanvas();
+            });
+        });
+        
+        elI0.addEventListener('input', updatePhysics);
+        elPhoton.addEventListener('change', () => {
+            clearCanvas();
+            updatePhysics();
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = clock.getElapsedTime();
+            const delta = clock.getDelta();
+
+            // Animate Incident Waves
+            const waveSpeed = 20;
+            wavePlanes.forEach((plane, i) => {
+                plane.position.z += waveSpeed * 0.016; // approx delta
+                if (plane.position.z > 0) {
+                    plane.position.z -= numPlanes * 10;
+                }
+            });
+
+            // Animate Huygens Wavelets
+            const screenZ = params.D * 100;
+            wavelets.forEach(w => {
+                w.phase += 0.01;
+                if(w.phase > 1.0) w.phase = 0;
+                
+                // Scale radius from 0 to screenZ
+                const radius = w.phase * screenZ;
+                w.mesh.scale.setScalar(radius);
+                
+                // Fade out as they get larger
+                w.mesh.material.opacity = (1.0 - w.phase) * 0.8;
+                w.mesh.material.color.copy(wavelengthToRGB(params.lambda));
+            });
+
+            // Photon Mode Logic
+            if (params.photons) {
+                const lambda_m = params.lambda * 1e-9;
+                const a_m = params.a * 1e-6;
+                const D_m = params.D;
+                const color = wavelengthToRGB(params.lambda);
+                const colorStr = `rgba(${color.r*255}, ${color.g*255}, ${color.b*255}, 0.3)`;
+
+                // 1. Generate new photons (Rejection Sampling)
+                const photonsPerFrame = Math.floor(params.I0 * 10);
+                
+                for(let i=0; i<photonsPerFrame; i++) {
+                    let y_visual, I_target;
+                    let attempts = 0;
+                    do {
+                        y_visual = (Math.random() - 0.5) * SCREEN_HEIGHT;
+                        let y_m = y_visual * VISUAL_SCALE;
+                        let sinTheta = y_m / Math.sqrt(y_m*y_m + D_m*D_m);
+                        let beta = (Math.PI * a_m * sinTheta) / lambda_m;
+                        
+                        I_target = params.I0;
+                        if(Math.abs(beta) > 1e-5) {
+                            let sinc = Math.sin(beta)/beta;
+                            I_target = params.I0 * sinc * sinc;
+                        }
+                        attempts++;
+                    } while (Math.random() * params.I0 > I_target && attempts < 50);
+
+                    // Add to flying particles
+                    if (activeParticles.length < maxParticles) {
+                        activeParticles.push({
+                            x: (Math.random() - 0.5) * 2, // slight spread in slit
+                            y: (Math.random() - 0.5) * (params.a/20)*4, // start within visual gap
+                            z: 0,
+                            targetY: y_visual,
+                            speed: 50 + Math.random() * 20
+                        });
+                    }
+                }
+
+                // 2. Update flying particles and draw to canvas on impact
+                const positions = particleSystem.geometry.attributes.position.array;
+                let pIdx = 0;
+                
+                for (let i = activeParticles.length - 1; i >= 0; i--) {
+                    let p = activeParticles[i];
+                    p.z += p.speed * 0.016;
+                    
+                    // Interpolate Y position
+                    let t = p.z / screenZ;
+                    p.y = p.y * (1-t) + p.targetY * t;
+
+                    if (p.z >= screenZ) {
+                        // Hit screen! Draw to canvas
+                        let canvasY = (1.0 - (p.targetY / SCREEN_HEIGHT + 0.5)) * canvasSize;
+                        ctx.fillStyle = colorStr;
+                        // Draw a small horizontal dash
+                        ctx.fillRect(photonCanvas.width/2 - 10, canvasY, 20, 2);
+                        photonTex.needsUpdate = true;
+                        
+                        // Remove particle
+                        activeParticles.splice(i, 1);
+                    } else {
+                        // Update buffer
+                        positions[pIdx*3] = p.x;
+                        positions[pIdx*3+1] = p.y;
+                        positions[pIdx*3+2] = p.z;
+                        pIdx++;
+                    }
+                }
+                
+                // Hide unused particles
+                for(let i=pIdx; i<maxParticles; i++) {
+                    positions[i*3] = 0;
+                    positions[i*3+1] = 0;
+                    positions[i*3+2] = -1000;
+                }
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+                particleSystem.material.color.copy(color);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

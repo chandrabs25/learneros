@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circular Motion & SHM Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --color-blue: #4361EE;
+            --color-green: #06D6A0;
+            --color-orange: #F77F00;
+            --font-ui: 'Inter', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: var(--font-ui);
+            color: var(--text-main);
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Glassmorphic Panel */
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--panel-border);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0 0 1rem 0;
+        }
+
+        /* Controls */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--color-blue);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--color-blue);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 1.2rem;
+            height: 1.2rem;
+            accent-color: var(--color-blue);
+            cursor: pointer;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 1.5rem;
+            border-radius: 16px;
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        .formula-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+        }
+
+        .formula-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .math-label {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+            font-size: 1.1rem;
+            width: 100px;
+        }
+
+        .math-sub {
+            font-size: 0.7em;
+            font-style: normal;
+        }
+
+        .math-value {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            margin-left: auto;
+        }
+
+        .color-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .legend {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            #canvas-container {
+                width: 100%;
+                height: 60%;
+            }
+            #ui-panel {
+                width: 100%;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid var(--panel-border);
+            }
+            #formula-card {
+                top: 1rem;
+                left: 1rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-row">
+                <span class="color-dot" style="background: var(--color-green)"></span>
+                <span class="math-label">v = &omega;r</span>
+                <span class="math-value" id="calc-v">0.00 m/s</span>
+            </div>
+            <div class="formula-row">
+                <span class="color-dot" style="background: var(--color-orange)"></span>
+                <span class="math-label">a<sub class="math-sub">c</sub> = &omega;&sup2;r</span>
+                <span class="math-value" id="calc-a">0.00 m/s&sup2;</span>
+            </div>
+            <div class="formula-row">
+                <span class="color-dot" style="background: var(--color-blue)"></span>
+                <span class="math-label">F<sub class="math-sub">c</sub> = ma<sub class="math-sub">c</sub></span>
+                <span class="math-value" id="calc-f">0.00 N</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <div>
+            <h1>Circular Motion</h1>
+            <p class="subtitle">Interactive Physics Visualization</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="radius">Radius (r)</label>
+                <span class="value-display" id="val-radius">3.0 m</span>
+            </div>
+            <input type="range" id="radius" min="1.0" max="5.0" step="0.1" value="3.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="omega">Angular Velocity (&omega;)</label>
+                <span class="value-display" id="val-omega">1.5 rad/s</span>
+            </div>
+            <input type="range" id="omega" min="0.0" max="5.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="mass">Mass (m)</label>
+                <span class="value-display" id="val-mass">1.0 kg</span>
+            </div>
+            <input type="range" id="mass" min="0.5" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label class="toggle-group">
+                <input type="checkbox" id="show-vectors" checked>
+                Show Velocity & Acceleration Vectors
+            </label>
+        </div>
+
+        <div class="control-group">
+            <label class="toggle-group">
+                <input type="checkbox" id="show-shm">
+                Show SHM Projections (X/Y Axes)
+            </label>
+        </div>
+
+        <div class="legend">
+            <div><span class="color-dot" style="background: var(--color-blue)"></span> Position Vector (r)</div>
+            <div><span class="color-dot" style="background: var(--color-green)"></span> Velocity Vector (v)</div>
+            <div><span class="color-dot" style="background: var(--color-orange)"></span> Acceleration Vector (a<sub>c</sub>)</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Parameters ---
+        const params = {
+            radius: 3.0,
+            omega: 1.5,
+            mass: 1.0,
+            showVectors: true,
+            showSHM: false
+        };
+
+        // --- DOM Elements ---
+        const elRadius = document.getElementById('radius');
+        const elOmega = document.getElementById('omega');
+        const elMass = document.getElementById('mass');
+        const elShowVectors = document.getElementById('show-vectors');
+        const elShowSHM = document.getElementById('show-shm');
+
+        const valRadius = document.getElementById('val-radius');
+        const valOmega = document.getElementById('val-omega');
+        const valMass = document.getElementById('val-mass');
+
+        const calcV = document.getElementById('calc-v');
+        const calcA = document.getElementById('calc-a');
+        const calcF = document.getElementById('calc-f');
+
+        // --- Event Listeners ---
+        elRadius.addEventListener('input', (e) => {
+            params.radius = parseFloat(e.target.value);
+            valRadius.innerText = params.radius.toFixed(1) + ' m';
+            updatePathGeometry();
+        });
+        elOmega.addEventListener('input', (e) => {
+            params.omega = parseFloat(e.target.value);
+            valOmega.innerText = params.omega.toFixed(1) + ' rad/s';
+        });
+        elMass.addEventListener('input', (e) => {
+            params.mass = parseFloat(e.target.value);
+            valMass.innerText = params.mass.toFixed(1) + ' kg';
+        });
+        elShowVectors.addEventListener('change', (e) => {
+            params.showVectors = e.target.checked;
+            velArrow.visible = params.showVectors;
+            accArrow.visible = params.showVectors;
+        });
+        elShowSHM.addEventListener('change', (e) => {
+            params.showSHM = e.target.checked;
+            ghostX.visible = params.showSHM;
+            ghostY.visible = params.showSHM;
+            lineX.visible = params.showSHM;
+            lineY.visible = params.showSHM;
+        });
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        // Position camera to see the XY plane clearly, with some 3D perspective
+        camera.position.set(4, 4, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Environment ---
+        // Grid on XZ plane
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xe2e8f0);
+        scene.add(gridHelper);
+
+        // Axes Helper (subtle)
+        const axesHelper = new THREE.AxesHelper(6);
+        // Dim the axes colors slightly
+        const colors = axesHelper.geometry.attributes.color;
+        for (let i = 0; i < colors.count; i++) {
+            colors.setXYZ(i, colors.getX(i)*0.5, colors.getY(i)*0.5, colors.getZ(i)*0.5);
+        }
+        scene.add(axesHelper);
+
+        // --- Objects ---
+        const originMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const originGeo = new THREE.SphereGeometry(0.1, 16, 16);
+        const originSphere = new THREE.Mesh(originGeo, originMat);
+        scene.add(originSphere);
+
+        // Main Particle
+        const particleGeo = new THREE.SphereGeometry(0.25, 32, 32);
+        const particleMat = new THREE.MeshPhongMaterial({ 
+            color: 0x4361EE, 
+            emissive: 0x112266,
+            shininess: 100 
+        });
+        const particle = new THREE.Mesh(particleGeo, particleMat);
+        scene.add(particle);
+
+        // Path (Dashed Circle)
+        let pathGeo = new THREE.BufferGeometry();
+        const pathMat = new THREE.LineDashedMaterial({ 
+            color: 0xa0aec0, 
+            dashSize: 0.2, 
+            gapSize: 0.1 
+        });
+        const pathLine = new THREE.Line(pathGeo, pathMat);
+        scene.add(pathLine);
+
+        function updatePathGeometry() {
+            const points = [];
+            const segments = 64;
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                points.push(new THREE.Vector3(params.radius * Math.cos(theta), params.radius * Math.sin(theta), 0));
+            }
+            pathGeo.setFromPoints(points);
+            pathLine.computeLineDistances(); // Required for dashed lines
+        }
+        updatePathGeometry();
+
+        // --- Vectors (ArrowHelpers) ---
+        const posColor = 0x4361EE; // Blue
+        const velColor = 0x06D6A0; // Green
+        const accColor = 0xF77F00; // Orange
+
+        const posArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), params.radius, posColor, 0.4, 0.2);
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, velColor, 0.4, 0.2);
+        const accArrow = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0,0,0), 1, accColor, 0.4, 0.2);
+        
+        scene.add(posArrow);
+        scene.add(velArrow);
+        scene.add(accArrow);
+
+        // --- SHM Projections ---
+        const ghostGeo = new THREE.SphereGeometry(0.2, 16, 16);
+        const ghostMat = new THREE.MeshPhongMaterial({ 
+            color: 0x4361EE, 
+            transparent: true, 
+            opacity: 0.4 
+        });
+        
+        const ghostX = new THREE.Mesh(ghostGeo, ghostMat);
+        const ghostY = new THREE.Mesh(ghostGeo, ghostMat);
+        ghostX.visible = false;
+        ghostY.visible = false;
+        scene.add(ghostX);
+        scene.add(ghostY);
+
+        // Projection Lines
+        const projLineMat = new THREE.LineDashedMaterial({ color: 0x4361EE, dashSize: 0.1, gapSize: 0.1, transparent: true, opacity: 0.5 });
+        
+        const geoX = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+        const lineX = new THREE.Line(geoX, projLineMat);
+        lineX.visible = false;
+        scene.add(lineX);
+
+        const geoY = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+        const lineY = new THREE.Line(geoY, projLineMat);
+        lineY.visible = false;
+        scene.add(lineY);
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let totalTime = 0;
+
+        // Scaling factors for vector visualization so they fit on screen
+        const VEL_SCALE = 0.5;
+        const ACC_SCALE = 0.15;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = clock.getDelta();
+            totalTime += dt;
+
+            // Physics Calculations
+            const r = params.radius;
+            const w = params.omega;
+            const m = params.mass;
+            
+            // 1. Angular Displacement
+            const theta = w * totalTime;
+
+            // 2. Position
+            const x = r * Math.cos(theta);
+            const y = r * Math.sin(theta);
+            const pos = new THREE.Vector3(x, y, 0);
+            particle.position.copy(pos);
+
+            // 3. Velocity
+            const vx = -r * w * Math.sin(theta);
+            const vy = r * w * Math.cos(theta);
+            const vMag = r * w;
+            const vDir = new THREE.Vector3(vx, vy, 0).normalize();
+
+            // 4. Centripetal Acceleration
+            const ax = -r * w * w * Math.cos(theta);
+            const ay = -r * w * w * Math.sin(theta);
+            const aMag = r * w * w;
+            const aDir = new THREE.Vector3(ax, ay, 0).normalize();
+
+            // 5. Force
+            const fMag = m * aMag;
+
+            // Update Vectors
+            // Position Vector
+            posArrow.setDirection(pos.clone().normalize());
+            posArrow.setLength(r, 0.4, 0.2);
+
+            // Velocity Vector (Originates at particle)
+            if (params.showVectors && vMag > 0) {
+                velArrow.position.copy(pos);
+                velArrow.setDirection(vDir);
+                // Scale length for visual clarity, but maintain proportionality
+                const vLen = Math.max(vMag * VEL_SCALE, 0.1); 
+                velArrow.setLength(vLen, Math.min(vLen*0.3, 0.4), Math.min(vLen*0.2, 0.2));
+            } else if (vMag === 0) {
+                velArrow.setLength(0.001, 0, 0); // Hide if 0
+            }
+
+            // Acceleration Vector (Originates at particle, points to center)
+            if (params.showVectors && aMag > 0) {
+                accArrow.position.copy(pos);
+                accArrow.setDirection(aDir);
+                // Scale length for visual clarity (proportional to w^2)
+                const aLen = Math.max(aMag * ACC_SCALE, 0.1);
+                accArrow.setLength(aLen, Math.min(aLen*0.3, 0.4), Math.min(aLen*0.2, 0.2));
+            } else if (aMag === 0) {
+                accArrow.setLength(0.001, 0, 0);
+            }
+
+            // Update SHM Projections
+            if (params.showSHM) {
+                ghostX.position.set(x, 0, 0);
+                ghostY.position.set(0, y, 0);
+
+                const positionsX = lineX.geometry.attributes.position.array;
+                positionsX[0] = x; positionsX[1] = y; positionsX[2] = 0;
+                positionsX[3] = x; positionsX[4] = 0; positionsX[5] = 0;
+                lineX.geometry.attributes.position.needsUpdate = true;
+                lineX.computeLineDistances();
+
+                const positionsY = lineY.geometry.attributes.position.array;
+                positionsY[0] = x; positionsY[1] = y; positionsY[2] = 0;
+                positionsY[3] = 0; positionsY[4] = y; positionsY[5] = 0;
+                lineY.geometry.attributes.position.needsUpdate = true;
+                lineY.computeLineDistances();
+            }
+
+            // Update UI Formula Card
+            calcV.innerText = vMag.toFixed(2) + ' m/s';
+            calcA.innerText = aMag.toFixed(2) + ' m/s²';
+            calcF.innerText = fMag.toFixed(2) + ' N';
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Window Resize Handling ---
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // Start Animation
+        animate();
+    </script>
+</body>
+</html>

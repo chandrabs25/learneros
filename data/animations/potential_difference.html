@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resistor Cube Potential Difference Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 320px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            padding: 30px 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #FF3366;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(255, 51, 102, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        input[type=checkbox] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4361EE;
+            cursor: pointer;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            left: 30px;
+            top: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            padding: 20px 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        #formula-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+            color: #0f172a;
+        }
+
+        .formula-line {
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+        }
+
+        .formula-line:last-child {
+            margin-bottom: 0;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            color: #4361EE;
+            background: #f8fafc;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* 3D Node Labels */
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .node-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            padding: 4px 8px;
+            border-radius: 6px;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .legend {
+            margin-top: auto;
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .legend-title {
+            font-size: 0.8rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+        }
+
+        .color-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        .gradient-box {
+            width: 100%;
+            height: 12px;
+            background: linear-gradient(to right, #4361EE, #FF3366);
+            border-radius: 6px;
+            margin-top: 5px;
+        }
+        .gradient-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        @media (max-width: 768px) {
+            #ui-panel { width: 100%; height: auto; bottom: 0; top: auto; border-left: none; border-top: 1px solid rgba(255,255,255,0.5); max-height: 40vh; }
+            #formula-card { top: 10px; left: 10px; padding: 15px; min-width: 200px; }
+            .math { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="labels-container">
+        <!-- Labels injected via JS -->
+    </div>
+
+    <div id="formula-card">
+        <h3>Circuit Analysis</h3>
+        <div class="formula-line">
+            <strong>Equivalent Resistance:</strong>
+            <span class="math">R<sub>eq</sub> = <sup>5</sup>&frasl;<sub>6</sub> R = <span id="val-req">8.33</span> &Omega;</span>
+        </div>
+        <div class="formula-line">
+            <strong>Total Current (Ohm's Law):</strong>
+            <span class="math">I<sub>total</sub> = V<sub>in</sub> / R<sub>eq</sub> = <span id="val-itot">1.44</span> A</span>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h2>Parameters</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Source Voltage (V<sub>in</sub>)</span>
+                <span class="value-display" id="lbl-v">12 V</span>
+            </div>
+            <input type="range" id="slider-v" min="0" max="30" step="1" value="12">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Resistance (R)</span>
+                <span class="value-display" id="lbl-r">10 &Omega;</span>
+            </div>
+            <input type="range" id="slider-r" min="1" max="20" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Particle Density</span>
+                <span class="value-display" id="lbl-d">5</span>
+            </div>
+            <input type="range" id="slider-d" min="1" max="10" step="1" value="5">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="check-planes">
+            Show Equipotential Planes
+        </label>
+
+        <div class="legend">
+            <div class="legend-title">Visual Guide</div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #06D6A0;"></div>
+                <span>Current Flow (Speed &propto; I)</span>
+            </div>
+            <div style="margin-top: 15px;">
+                <span style="font-size: 0.85rem;">Electric Potential (V)</span>
+                <div class="gradient-box"></div>
+                <div class="gradient-labels">
+                    <span>0V (Sink)</span>
+                    <span>V<sub>in</sub> (Source)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        let V_in = 12;
+        let R = 10;
+        let particleDensity = 5;
+        let showPlanes = false;
+        let physicsState = { Req: 0, Itot: 0, v_nodes: [] };
+
+        // --- Colors ---
+        const COLOR_SOURCE = new THREE.Color(0xFF3366); // Red
+        const COLOR_SINK = new THREE.Color(0x4361EE);   // Blue
+        const COLOR_CURRENT = 0x06D6A0;                 // Green
+        const COLOR_RESISTOR = 0xe2e8f0;                // Light Grey
+        const COLOR_WIRE = 0x94a3b8;                    // Darker Grey
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        // Position camera to look at the cube, slightly offset to account for UI panel
+        camera.position.set(5, 4, 6);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        // Shift target slightly left to center the cube in the visible area (excluding UI)
+        controls.target.set(-0.5, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe2e8f0, 0.4);
+        fillLight.position.set(-5, -2, -5);
+        scene.add(fillLight);
+
+        // --- Geometry Data Structure ---
+        // Cube vertices from (-1,-1,-1) to (1,1,1)
+        const nodePositions = [
+            new THREE.Vector3(-1, -1, -1), // 0: Sink (0V)
+            new THREE.Vector3( 1, -1, -1), // 1: Tier 2
+            new THREE.Vector3(-1,  1, -1), // 2: Tier 2
+            new THREE.Vector3( 1,  1, -1), // 3: Tier 1
+            new THREE.Vector3(-1, -1,  1), // 4: Tier 2
+            new THREE.Vector3( 1, -1,  1), // 5: Tier 1
+            new THREE.Vector3(-1,  1,  1), // 6: Tier 1
+            new THREE.Vector3( 1,  1,  1)  // 7: Source (Vin)
+        ];
+
+        // Edges defined with conventional current direction (Source -> Sink)
+        // Fraction represents the portion of total current flowing through this branch
+        const edgeDefs = [
+            // Source to Tier 1 (I/3)
+            { start: 7, end: 3, fraction: 1/3, type: 'resistor' },
+            { start: 7, end: 5, fraction: 1/3, type: 'resistor' },
+            { start: 7, end: 6, fraction: 1/3, type: 'resistor' },
+            // Tier 1 to Tier 2 (I/6)
+            { start: 3, end: 1, fraction: 1/6, type: 'resistor' },
+            { start: 3, end: 2, fraction: 1/6, type: 'resistor' },
+            { start: 5, end: 1, fraction: 1/6, type: 'resistor' },
+            { start: 5, end: 4, fraction: 1/6, type: 'resistor' },
+            { start: 6, end: 2, fraction: 1/6, type: 'resistor' },
+            { start: 6, end: 4, fraction: 1/6, type: 'resistor' },
+            // Tier 2 to Sink (I/3)
+            { start: 1, end: 0, fraction: 1/3, type: 'resistor' },
+            { start: 2, end: 0, fraction: 1/3, type: 'resistor' },
+            { start: 4, end: 0, fraction: 1/3, type: 'resistor' }
+        ];
+
+        // Add external lead wires
+        const leadInStart = new THREE.Vector3(2.5, 2.5, 2.5);
+        const leadOutEnd = new THREE.Vector3(-2.5, -2.5, -2.5);
+        
+        const allEdges = [];
+        
+        // Lead In
+        allEdges.push({
+            startVec: leadInStart, endVec: nodePositions[7],
+            fraction: 1, type: 'wire'
+        });
+        
+        // Cube Edges
+        edgeDefs.forEach(def => {
+            allEdges.push({
+                startVec: nodePositions[def.start],
+                endVec: nodePositions[def.end],
+                fraction: def.fraction,
+                type: def.type
+            });
+        });
+
+        // Lead Out
+        allEdges.push({
+            startVec: nodePositions[0], endVec: leadOutEnd,
+            fraction: 1, type: 'wire'
+        });
+
+        // --- Build 3D Objects ---
+        const nodeMeshes = [];
+        const labelsContainer = document.getElementById('labels-container');
+        const htmlLabels = [];
+
+        // Materials
+        const nodeMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff, roughness: 0.2, metalness: 0.1, clearcoat: 1.0
+        });
+        const resistorMaterial = new THREE.MeshPhysicalMaterial({
+            color: COLOR_RESISTOR, roughness: 0.6, metalness: 0.4
+        });
+        const wireMaterial = new THREE.MeshPhysicalMaterial({
+            color: COLOR_WIRE, roughness: 0.4, metalness: 0.8
+        });
+
+        // Create Nodes & HTML Labels
+        const sphereGeo = new THREE.SphereGeometry(0.18, 32, 32);
+        nodePositions.forEach((pos, index) => {
+            const mesh = new THREE.Mesh(sphereGeo, nodeMaterial.clone());
+            mesh.position.copy(pos);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            nodeMeshes.push(mesh);
+
+            // HTML Label
+            const label = document.createElement('div');
+            label.className = 'node-label';
+            label.innerText = '0.0V';
+            labelsContainer.appendChild(label);
+            htmlLabels.push({ element: label, pos: pos });
+        });
+
+        // Create Edges (Cylinders)
+        allEdges.forEach(edge => {
+            const distance = edge.startVec.distanceTo(edge.endVec);
+            const cylinderGeo = new THREE.CylinderGeometry(0.04, 0.04, distance, 16);
+            // Shift geometry so origin is at the base, making positioning easier
+            cylinderGeo.translate(0, distance / 2, 0);
+            cylinderGeo.rotateX(Math.PI / 2);
+
+            const mat = edge.type === 'resistor' ? resistorMaterial : wireMaterial;
+            const mesh = new THREE.Mesh(cylinderGeo, mat);
+            
+            mesh.position.copy(edge.startVec);
+            mesh.lookAt(edge.endVec);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+        });
+
+        // Equipotential Planes
+        const planeGeo = new THREE.PlaneGeometry(5, 5);
+        const planeMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transmission: 0.8,
+            opacity: 1,
+            transparent: true,
+            roughness: 0.1,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        const plane1 = new THREE.Mesh(planeGeo, planeMat);
+        // Center of Tier 1 nodes: (1/3, 1/3, 1/3)
+        plane1.position.set(1/3, 1/3, 1/3);
+        plane1.lookAt(new THREE.Vector3(1, 1, 1));
+        plane1.visible = false;
+        scene.add(plane1);
+
+        const plane2 = new THREE.Mesh(planeGeo, planeMat);
+        // Center of Tier 2 nodes: (-1/3, -1/3, -1/3)
+        plane2.position.set(-1/3, -1/3, -1/3);
+        plane2.lookAt(new THREE.Vector3(1, 1, 1));
+        plane2.visible = false;
+        scene.add(plane2);
+
+        // --- Particle System (Current Flow) ---
+        let particles = [];
+        let instancedMesh;
+        const particleGeo = new THREE.SphereGeometry(0.06, 16, 16);
+        const particleMat = new THREE.MeshBasicMaterial({ color: COLOR_CURRENT });
+
+        function initParticles() {
+            if (instancedMesh) scene.remove(instancedMesh);
+            
+            particles = [];
+            let count = 0;
+            
+            // Distribute particles based on density
+            allEdges.forEach((edge, edgeIndex) => {
+                // Number of particles per edge is constant to satisfy visual Kirchhoff
+                // Speed will vary based on current fraction
+                const numParticles = particleDensity; 
+                for (let i = 0; i < numParticles; i++) {
+                    particles.push({
+                        edgeIndex: edgeIndex,
+                        progress: i / numParticles,
+                        instanceId: count++
+                    });
+                }
+            });
+
+            instancedMesh = new THREE.InstancedMesh(particleGeo, particleMat, count);
+            scene.add(instancedMesh);
+        }
+
+        // --- Physics Calculations ---
+        function updatePhysics() {
+            // Calculate Equivalent Resistance
+            physicsState.Req = (5 / 6) * R;
+            
+            // Calculate Total Current
+            physicsState.Itot = V_in / physicsState.Req;
+
+            // Calculate Node Potentials
+            const v = [];
+            v[7] = V_in; // Source
+            v[3] = v[5] = v[6] = V_in - (physicsState.Itot / 3) * R; // Tier 1
+            v[1] = v[2] = v[4] = v[3] - (physicsState.Itot / 6) * R; // Tier 2
+            v[0] = 0; // Sink
+            
+            physicsState.v_nodes = v;
+
+            // Update UI Text
+            document.getElementById('val-req').innerText = physicsState.Req.toFixed(2);
+            document.getElementById('val-itot').innerText = physicsState.Itot.toFixed(2);
+
+            // Update Node Colors & Labels
+            for (let i = 0; i < 8; i++) {
+                const voltage = v[i];
+                const ratio = V_in > 0 ? voltage / V_in : 0;
+                
+                // Interpolate color
+                nodeMeshes[i].material.color.lerpColors(COLOR_SINK, COLOR_SOURCE, ratio);
+                
+                // Update Label
+                htmlLabels[i].element.innerText = voltage.toFixed(1) + "V";
+                htmlLabels[i].element.style.color = nodeMeshes[i].material.color.getStyle();
+            }
+        }
+
+        // --- 2D Label Projection ---
+        function updateLabels() {
+            const tempV = new THREE.Vector3();
+            htmlLabels.forEach(lbl => {
+                tempV.copy(lbl.pos);
+                tempV.project(camera);
+
+                // Check if behind camera
+                if (tempV.z > 1) {
+                    lbl.element.style.display = 'none';
+                    return;
+                }
+
+                const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (tempV.y * -0.5 + 0.5) * window.innerHeight;
+
+                lbl.element.style.display = 'block';
+                // Offset label slightly above the node
+                lbl.element.style.transform = `translate(-50%, -150%)`;
+                lbl.element.style.left = `${x}px`;
+                lbl.element.style.top = `${y}px`;
+            });
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        const dummy = new THREE.Object3D();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            controls.update();
+
+            // Animate Particles
+            if (instancedMesh && V_in > 0) {
+                // Base speed factor, inversely proportional to R, directly to V
+                const baseSpeed = 0.8; 
+                const speedMultiplier = (V_in / R) * baseSpeed;
+
+                particles.forEach(p => {
+                    const edge = allEdges[p.edgeIndex];
+                    
+                    // Speed is proportional to the current fraction in this branch
+                    // This visually satisfies Kirchhoff's Junction Rule
+                    p.progress += speedMultiplier * edge.fraction * delta;
+                    
+                    if (p.progress > 1) p.progress -= 1;
+
+                    // Calculate position
+                    const pos = new THREE.Vector3().lerpVectors(edge.startVec, edge.endVec, p.progress);
+                    dummy.position.copy(pos);
+                    dummy.updateMatrix();
+                    instancedMesh.setMatrixAt(p.instanceId, dummy.matrix);
+                });
+                instancedMesh.instanceMatrix.needsUpdate = true;
+            }
+
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('slider-v').addEventListener('input', (e) => {
+            V_in = parseFloat(e.target.value);
+            document.getElementById('lbl-v').innerText = V_in + " V";
+            updatePhysics();
+        });
+
+        document.getElementById('slider-r').addEventListener('input', (e) => {
+            R = parseFloat(e.target.value);
+            document.getElementById('lbl-r').innerHTML = R + " &Omega;";
+            updatePhysics();
+        });
+
+        document.getElementById('slider-d').addEventListener('input', (e) => {
+            particleDensity = parseInt(e.target.value);
+            document.getElementById('lbl-d').innerText = particleDensity;
+            initParticles();
+        });
+
+        document.getElementById('check-planes').addEventListener('change', (e) => {
+            showPlanes = e.target.checked;
+            plane1.visible = showPlanes;
+            plane2.visible = showPlanes;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Initialization ---
+        initParticles();
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

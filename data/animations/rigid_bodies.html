@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rigid vs Deformable Bodies: Physics of Elasticity</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #control-panel {
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 30px 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+
+        p.desc {
+            font-size: 0.9rem;
+            color: #555;
+            margin: 0 0 15px 0;
+            line-height: 1.5;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            font-weight: 700;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d9e6;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Specific slider colors */
+        #force::-webkit-slider-thumb { background: #06D6A0; }
+        #force::-moz-range-thumb { background: #06D6A0; }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            padding: 10px 5px;
+        }
+
+        .toggle-container input {
+            width: 20px;
+            height: 20px;
+            accent-color: #4361EE;
+            cursor: pointer;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+            min-width: 250px;
+        }
+
+        .formula-row {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .formula-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            font-weight: 700;
+            font-size: 1.05rem;
+            display: block;
+            margin-top: 4px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+
+        .status-rigid { background: #e0e0e0; color: #555; }
+        .status-deform { background: #e3f2fd; color: #1976d2; }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.85rem;
+            background: rgba(255,255,255,0.5);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .legend-item:last-child { margin-bottom: 0; }
+        .color-box { width: 14px; height: 14px; border-radius: 3px; }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #control-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.5); padding: 15px; }
+            #formula-card { top: 10px; left: 10px; padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div id="status-display" class="status-badge status-deform">Deformable Body</div>
+            <div class="formula-row">
+                Stress (&sigma;) = F / A
+                <span class="math" id="math-stress">0 Pa</span>
+            </div>
+            <div class="formula-row">
+                Longitudinal Strain (&epsilon;<sub>z</sub>) = &sigma; / Y
+                <span class="math" id="math-strain">0.00e+0</span>
+            </div>
+            <div class="formula-row" style="font-size: 0.8rem; color: #666; margin-top: 10px;">
+                *Visual deformation is scaled up for visibility.
+            </div>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <div>
+            <h1>Physics of Elasticity</h1>
+            <p class="desc">Observe how applied force creates stress, resulting in strain (deformation) based on the material's properties.</p>
+        </div>
+
+        <label class="toggle-container">
+            <input type="checkbox" id="isRigid">
+            Ideal Rigid Body (Infinite Stiffness)
+        </label>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Applied Force (F)</span>
+                <span class="value-display" id="val-force">0 N</span>
+            </div>
+            <input type="range" id="force" min="-500" max="500" step="10" value="0">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #666;">
+                <span>Compression (-)</span>
+                <span>Tension (+)</span>
+            </div>
+        </div>
+
+        <div class="control-group" id="group-youngs">
+            <div class="control-header">
+                <span>Young's Modulus (Y)</span>
+                <span class="value-display" id="val-youngs">70 GPa</span>
+            </div>
+            <input type="range" id="youngs" min="10" max="200" step="10" value="70">
+            <div style="font-size: 0.75rem; color: #666; text-align: right;">(Stiffness)</div>
+        </div>
+
+        <div class="control-group" id="group-poisson">
+            <div class="control-header">
+                <span>Poisson's Ratio (&nu;)</span>
+                <span class="value-display" id="val-poisson">0.30</span>
+            </div>
+            <input type="range" id="poisson" min="0" max="0.5" step="0.05" value="0.3">
+            <div style="font-size: 0.75rem; color: #666; text-align: right;">(Lateral Contraction)</div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Applied Force (F<sub>ext</sub>)</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Restoring Force (F<sub>res</sub>)</div>
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Bonds in Tension</div>
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> Bonds in Compression</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- DOM Elements ---
+        const elForce = document.getElementById('force');
+        const elYoungs = document.getElementById('youngs');
+        const elPoisson = document.getElementById('poisson');
+        const elIsRigid = document.getElementById('isRigid');
+        
+        const valForce = document.getElementById('val-force');
+        const valYoungs = document.getElementById('val-youngs');
+        const valPoisson = document.getElementById('val-poisson');
+        
+        const mathStress = document.getElementById('math-stress');
+        const mathStrain = document.getElementById('math-strain');
+        const statusDisplay = document.getElementById('status-display');
+        const groupYoungs = document.getElementById('group-youngs');
+        const groupPoisson = document.getElementById('group-poisson');
+
+        // --- Physics Variables ---
+        let F_N = 0;
+        let Y_GPa = 70;
+        let poisson = 0.3;
+        let isRigid = false;
+        const A = 1.0; // Cross-sectional area (1m x 1m)
+        const L0 = 1.0; // Initial length
+        
+        // Visual scaling factor to make microscopic strain visible
+        // Max physical strain = 500 / (10e9) = 5e-8. We want max visual strain ~ 0.25 (25%)
+        const VISUAL_SCALE = 5e6; 
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(2.5, 2, 3.5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 2;
+        controls.maxDistance = 10;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(5, 10, 7);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe0eaff, 0.4);
+        fillLight.position.set(-5, 3, -5);
+        scene.add(fillLight);
+
+        // --- Ground Plane ---
+        const groundGeo = new THREE.PlaneGeometry(10, 10);
+        const groundMat = new THREE.MeshStandardMaterial({ 
+            color: 0xd1d9e6, 
+            roughness: 0.8,
+            metalness: 0.1
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -1.2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        const gridHelper = new THREE.GridHelper(10, 20, 0xffffff, 0xffffff);
+        gridHelper.position.y = -1.19;
+        gridHelper.material.opacity = 0.5;
+        gridHelper.material.transparent = true;
+        scene.add(gridHelper);
+
+        // --- Lattice Generation ---
+        const gridSize = 5;
+        const spacing = L0 / (gridSize - 1);
+        const nodes = [];
+        const bonds = [];
+
+        const atomGeo = new THREE.SphereGeometry(0.04, 32, 32);
+        const atomMat = new THREE.MeshPhongMaterial({ 
+            color: 0x4361EE, 
+            shininess: 100,
+            specular: 0x888888
+        });
+
+        const bondGeo = new THREE.CylinderGeometry(0.012, 0.012, 1, 16);
+        // We need individual materials for bonds to change colors independently
+        const baseBondMat = new THREE.MeshPhongMaterial({ color: 0xBDC3C7 });
+
+        // Helper to get 1D index from 3D grid coordinates
+        const getIdx = (x, y, z) => x + y * gridSize + z * gridSize * gridSize;
+
+        // Create Nodes
+        for (let z = 0; z < gridSize; z++) {
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const mesh = new THREE.Mesh(atomGeo, atomMat);
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    
+                    // Center the lattice at 0,0,0
+                    const baseX = (x * spacing) - (L0 / 2);
+                    const baseY = (y * spacing) - (L0 / 2);
+                    const baseZ = (z * spacing) - (L0 / 2);
+                    
+                    mesh.position.set(baseX, baseY, baseZ);
+                    scene.add(mesh);
+                    
+                    nodes.push({
+                        mesh: mesh,
+                        basePos: new THREE.Vector3(baseX, baseY, baseZ)
+                    });
+                }
+            }
+        }
+
+        // Create Bonds
+        for (let z = 0; z < gridSize; z++) {
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const currentIdx = getIdx(x, y, z);
+                    
+                    // Bond in X direction
+                    if (x < gridSize - 1) {
+                        createBond(currentIdx, getIdx(x + 1, y, z));
+                    }
+                    // Bond in Y direction (Longitudinal)
+                    if (y < gridSize - 1) {
+                        createBond(currentIdx, getIdx(x, y + 1, z));
+                    }
+                    // Bond in Z direction
+                    if (z < gridSize - 1) {
+                        createBond(currentIdx, getIdx(x, y, z + 1));
+                    }
+                }
+            }
+        }
+
+        function createBond(idxA, idxB) {
+            const mat = baseBondMat.clone();
+            const mesh = new THREE.Mesh(bondGeo, mat);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            
+            const pA = nodes[idxA].basePos;
+            const pB = nodes[idxB].basePos;
+            const dist = pA.distanceTo(pB);
+            
+            bonds.push({
+                mesh: mesh,
+                nodeA: idxA,
+                nodeB: idxB,
+                baseLen: dist
+            });
+        }
+
+        // --- Force Vectors (Arrows) ---
+        const arrowColorExt = 0x06D6A0; // Green
+        const arrowColorRes = 0xF77F00; // Orange
+        
+        // Applied Force Arrows (Top and Bottom)
+        const topArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0.5,0), 0.1, arrowColorExt, 0.15, 0.1);
+        const bottomArrow = new THREE.ArrowHelper(new THREE.Vector3(0,-1,0), new THREE.Vector3(0,-0.5,0), 0.1, arrowColorExt, 0.15, 0.1);
+        scene.add(topArrow);
+        scene.add(bottomArrow);
+
+        // Restoring Force Arrows (Internal)
+        const resArrowTop = new THREE.ArrowHelper(new THREE.Vector3(0,-1,0), new THREE.Vector3(0,0.25,0), 0.3, arrowColorRes, 0.1, 0.08);
+        const resArrowBot = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,-0.25,0), 0.3, arrowColorRes, 0.1, 0.08);
+        scene.add(resArrowTop);
+        scene.add(resArrowBot);
+
+        // --- Event Listeners ---
+        function updateInputs() {
+            F_N = parseFloat(elForce.value);
+            Y_GPa = parseFloat(elYoungs.value);
+            poisson = parseFloat(elPoisson.value);
+            isRigid = elIsRigid.checked;
+
+            valForce.innerText = F_N + " N";
+            valYoungs.innerText = Y_GPa + " GPa";
+            valPoisson.innerText = poisson.toFixed(2);
+
+            if (isRigid) {
+                statusDisplay.innerText = "Ideal Rigid Body";
+                statusDisplay.className = "status-badge status-rigid";
+                groupYoungs.style.opacity = "0.4";
+                groupPoisson.style.opacity = "0.4";
+                elYoungs.disabled = true;
+                elPoisson.disabled = true;
+            } else {
+                statusDisplay.innerText = "Deformable Body";
+                statusDisplay.className = "status-badge status-deform";
+                groupYoungs.style.opacity = "1";
+                groupPoisson.style.opacity = "1";
+                elYoungs.disabled = false;
+                elPoisson.disabled = false;
+            }
+        }
+
+        elForce.addEventListener('input', updateInputs);
+        elYoungs.addEventListener('input', updateInputs);
+        elPoisson.addEventListener('input', updateInputs);
+        elIsRigid.addEventListener('change', updateInputs);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Initialize
+        updateInputs();
+
+        // --- Animation Loop ---
+        const upVector = new THREE.Vector3(0, 1, 0);
+        const colorNeutral = new THREE.Color(0xBDC3C7);
+        const colorTension = new THREE.Color(0xFF3366);
+        const colorCompression = new THREE.Color(0x7209B7);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            // 1. Physics Calculations
+            // Stress = F / A. (A is 1.0 m^2)
+            const sigma = F_N / A;
+            
+            // True physical strain (very small)
+            const Y_Pa = Y_GPa * 1e9;
+            const epsilon_true_y = sigma / Y_Pa; // Y is the longitudinal axis in our 3D setup
+            
+            // Visual strain (scaled up for demonstration)
+            let epsilon_vis_y = isRigid ? 0 : epsilon_true_y * VISUAL_SCALE;
+            
+            // Update UI Math
+            mathStress.innerText = sigma.toFixed(0) + " Pa";
+            mathStrain.innerText = isRigid ? "0" : epsilon_true_y.toExponential(2);
+
+            // 2. Update Lattice Nodes
+            for (let i = 0; i < nodes.length; i++) {
+                const node = nodes[i];
+                // Longitudinal deformation (Y axis)
+                const newY = node.basePos.y * (1 + epsilon_vis_y);
+                
+                // Lateral deformation (X and Z axes) via Poisson's ratio
+                // If stretched in Y (epsilon > 0), it must contract in X and Z
+                const lateral_strain = -poisson * epsilon_vis_y;
+                const newX = node.basePos.x * (1 + lateral_strain);
+                const newZ = node.basePos.z * (1 + lateral_strain);
+                
+                node.mesh.position.set(newX, newY, newZ);
+            }
+
+            // 3. Update Bonds
+            for (let i = 0; i < bonds.length; i++) {
+                const bond = bonds[i];
+                const pA = nodes[bond.nodeA].mesh.position;
+                const pB = nodes[bond.nodeB].mesh.position;
+                
+                // Position at midpoint
+                bond.mesh.position.copy(pA).add(pB).multiplyScalar(0.5);
+                
+                // Scale length
+                const currentDist = pA.distanceTo(pB);
+                bond.mesh.scale.y = currentDist;
+                
+                // Orient cylinder
+                const dir = new THREE.Vector3().subVectors(pB, pA).normalize();
+                bond.mesh.quaternion.setFromUnitVectors(upVector, dir);
+                
+                // Color based on strain
+                const bondStrain = (currentDist - bond.baseLen) / bond.baseLen;
+                const matColor = new THREE.Color(colorNeutral);
+                
+                if (bondStrain > 0.001) {
+                    // Tension -> Red
+                    const intensity = Math.min(bondStrain * 4, 1); // Scale intensity
+                    matColor.lerp(colorTension, intensity);
+                } else if (bondStrain < -0.001) {
+                    // Compression -> Purple
+                    const intensity = Math.min(Math.abs(bondStrain) * 4, 1);
+                    matColor.lerp(colorCompression, intensity);
+                }
+                bond.mesh.material.color = matColor;
+            }
+
+            // 4. Update Force Arrows
+            const absForce = Math.abs(F_N);
+            const arrowLen = 0.2 + (absForce / 500) * 0.8; // Scale length visually
+            const topFaceY = 0.5 * (1 + epsilon_vis_y);
+
+            if (F_N === 0) {
+                topArrow.visible = false;
+                bottomArrow.visible = false;
+                resArrowTop.visible = false;
+                resArrowBot.visible = false;
+            } else {
+                topArrow.visible = true;
+                bottomArrow.visible = true;
+                
+                if (F_N > 0) {
+                    // Tension: Arrows point outward
+                    topArrow.position.set(0, topFaceY, 0);
+                    topArrow.setDirection(new THREE.Vector3(0, 1, 0));
+                    topArrow.setLength(arrowLen, 0.15, 0.1);
+                    
+                    bottomArrow.position.set(0, -topFaceY, 0);
+                    bottomArrow.setDirection(new THREE.Vector3(0, -1, 0));
+                    bottomArrow.setLength(arrowLen, 0.15, 0.1);
+
+                    // Restoring force points inward
+                    if (!isRigid) {
+                        resArrowTop.visible = true;
+                        resArrowBot.visible = true;
+                        resArrowTop.position.set(0, topFaceY - 0.1, 0);
+                        resArrowTop.setDirection(new THREE.Vector3(0, -1, 0));
+                        resArrowBot.setLength(arrowLen * 0.5, 0.1, 0.08);
+                        
+                        resArrowBot.position.set(0, -topFaceY + 0.1, 0);
+                        resArrowBot.setDirection(new THREE.Vector3(0, 1, 0));
+                        resArrowBot.setLength(arrowLen * 0.5, 0.1, 0.08);
+                    } else {
+                        resArrowTop.visible = false;
+                        resArrowBot.visible = false;
+                    }
+
+                } else {
+                    // Compression: Arrows point inward
+                    topArrow.position.set(0, topFaceY + arrowLen, 0);
+                    topArrow.setDirection(new THREE.Vector3(0, -1, 0));
+                    topArrow.setLength(arrowLen, 0.15, 0.1);
+                    
+                    bottomArrow.position.set(0, -topFaceY - arrowLen, 0);
+                    bottomArrow.setDirection(new THREE.Vector3(0, 1, 0));
+                    bottomArrow.setLength(arrowLen, 0.15, 0.1);
+
+                    // Restoring force points outward
+                    if (!isRigid) {
+                        resArrowTop.visible = true;
+                        resArrowBot.visible = true;
+                        resArrowTop.position.set(0, topFaceY - 0.3, 0);
+                        resArrowTop.setDirection(new THREE.Vector3(0, 1, 0));
+                        resArrowTop.setLength(arrowLen * 0.5, 0.1, 0.08);
+                        
+                        resArrowBot.position.set(0, -topFaceY + 0.3, 0);
+                        resArrowBot.setDirection(new THREE.Vector3(0, -1, 0));
+                        resArrowBot.setLength(arrowLen * 0.5, 0.1, 0.08);
+                    } else {
+                        resArrowTop.visible = false;
+                        resArrowBot.visible = false;
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

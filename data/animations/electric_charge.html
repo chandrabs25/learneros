@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Electrostatic Playground</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #1a202c;
+        }
+
+        #ui-panel {
+            width: 25%;
+            min-width: 300px;
+            height: 100vh;
+            padding: 25px;
+            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.03);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            line-height: 1.3;
+            background: linear-gradient(90deg, #FF3366, #4361EE);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4a5568;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        #q1-slider::-webkit-slider-thumb { background: #FF3366; }
+        #q2-slider::-webkit-slider-thumb { background: #4361EE; }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        input[type=checkbox] {
+            width: 18px;
+            height: 18px;
+            accent-color: #7209B7;
+            cursor: pointer;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            height: 100vh;
+            position: relative;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 1);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            pointer-events: none;
+            color: #2d3748;
+        }
+
+        #formula-card strong {
+            font-family: 'Inter', sans-serif;
+            color: #1a202c;
+        }
+
+        #formula-card em {
+            display: block;
+            margin-top: 8px;
+            font-family: 'Inter', sans-serif;
+            font-style: italic;
+            color: #718096;
+            font-size: 0.8rem;
+        }
+
+        .label-3d {
+            position: absolute;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <h1>The Electrostatic Playground</h1>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Charge 1 (q₁)</span>
+                <span class="val-display" id="q1-val">5 μC</span>
+            </div>
+            <input type="range" id="q1-slider" min="-10" max="10" step="1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Charge 2 (q₂)</span>
+                <span class="val-display" id="q2-val">-5 μC</span>
+            </div>
+            <input type="range" id="q2-slider" min="-10" max="10" step="1" value="-5">
+        </div>
+
+        <div class="control-group">
+            <label class="checkbox-group">
+                <input type="checkbox" id="dipole-toggle">
+                Dipole Mode (q₂ = -q₁)
+            </label>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Separation (d)</span>
+                <span class="val-display" id="d-val">10.0 m</span>
+            </div>
+            <input type="range" id="d-slider" min="2" max="20" step="0.5" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Field Line Density</span>
+                <span class="val-display" id="density-val">16</span>
+            </div>
+            <input type="range" id="density-slider" min="0" max="32" step="4" value="16">
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <div id="formula-card"></div>
+        <div id="label-q1" class="label-3d">+q</div>
+        <div id="label-q2" class="label-3d">-q</div>
+    </div>
+
+    <script>
+        // --- State Variables ---
+        let state = {
+            q1: 5,
+            q2: -5,
+            d: 10,
+            density: 16,
+            isDipole: false,
+            needsUpdate: true
+        };
+
+        // --- Constants & Colors ---
+        const COLOR_POS = 0xFF3366;
+        const COLOR_NEG = 0x4361EE;
+        const COLOR_NEUTRAL = 0x9CA3AF;
+        const COLOR_FORCE = 0xF77F00;
+        const COLOR_DIPOLE = 0x7209B7;
+        const COLOR_LINE = 0xA0AABF;
+        const COLOR_GRID = 0xCBD5E0;
+        const K_E = 8.99e9;
+
+        // --- DOM Elements ---
+        const q1Slider = document.getElementById('q1-slider');
+        const q2Slider = document.getElementById('q2-slider');
+        const dSlider = document.getElementById('d-slider');
+        const densitySlider = document.getElementById('density-slider');
+        const dipoleToggle = document.getElementById('dipole-toggle');
+        
+        const q1Val = document.getElementById('q1-val');
+        const q2Val = document.getElementById('q2-val');
+        const dVal = document.getElementById('d-val');
+        const densityVal = document.getElementById('density-val');
+        
+        const container = document.getElementById('canvas-container');
+        const labelQ1 = document.getElementById('label-q1');
+        const labelQ2 = document.getElementById('label-q2');
+        const formulaCard = document.getElementById('formula-card');
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 12, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 100;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(40, 40, COLOR_GRID, COLOR_GRID);
+        gridHelper.position.y = -2;
+        gridHelper.material.opacity = 0.5;
+        gridHelper.material.transparent = true;
+        scene.add(gridHelper);
+
+        // --- Scene Objects ---
+        const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
+        
+        const mat1 = new THREE.MeshStandardMaterial({ color: COLOR_POS, roughness: 0.3, metalness: 0.1 });
+        const charge1Mesh = new THREE.Mesh(sphereGeo, mat1);
+        scene.add(charge1Mesh);
+
+        const mat2 = new THREE.MeshStandardMaterial({ color: COLOR_NEG, roughness: 0.3, metalness: 0.1 });
+        const charge2Mesh = new THREE.Mesh(sphereGeo, mat2);
+        scene.add(charge2Mesh);
+
+        // Glow Sprites
+        function createGlowTexture(colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            const colorStr = '#' + colorHex.toString(16).padStart(6, '0');
+            const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+            gradient.addColorStop(0, colorStr + '88');
+            gradient.addColorStop(0.4, colorStr + '44');
+            gradient.addColorStop(1, colorStr + '00');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 128, 128);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const glowMat1 = new THREE.SpriteMaterial({ map: createGlowTexture(COLOR_POS), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+        const glow1 = new THREE.Sprite(glowMat1);
+        scene.add(glow1);
+
+        const glowMat2 = new THREE.SpriteMaterial({ map: createGlowTexture(COLOR_NEG), transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+        const glow2 = new THREE.Sprite(glowMat2);
+        scene.add(glow2);
+
+        // Arrows
+        const force1Arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, COLOR_FORCE, 0.6, 0.4);
+        const force2Arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, COLOR_FORCE, 0.6, 0.4);
+        scene.add(force1Arrow);
+        scene.add(force2Arrow);
+
+        const dipoleArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, COLOR_DIPOLE, 0.8, 0.5);
+        scene.add(dipoleArrow);
+
+        let fieldLinesGroup = new THREE.Group();
+        scene.add(fieldLinesGroup);
+
+        const lineMaterial = new THREE.LineDashedMaterial({
+            color: COLOR_LINE,
+            linewidth: 1,
+            scale: 1,
+            dashSize: 0.4,
+            gapSize: 0.4,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        // --- Physics & Math Helpers ---
+        let pos1 = new THREE.Vector3();
+        let pos2 = new THREE.Vector3();
+        let radius1 = 1;
+        let radius2 = 1;
+
+        function getEField(x, y, z) {
+            let Ex = 0, Ey = 0, Ez = 0;
+            // Visual k constant = 1
+            
+            let dx1 = x - pos1.x, dy1 = y - pos1.y, dz1 = z - pos1.z;
+            let r1_sq = dx1*dx1 + dy1*dy1 + dz1*dz1;
+            if (r1_sq > 0.01 && state.q1 !== 0) {
+                let r1 = Math.sqrt(r1_sq);
+                let E1 = state.q1 / r1_sq;
+                Ex += E1 * (dx1/r1); Ey += E1 * (dy1/r1); Ez += E1 * (dz1/r1);
+            }
+
+            let dx2 = x - pos2.x, dy2 = y - pos2.y, dz2 = z - pos2.z;
+            let r2_sq = dx2*dx2 + dy2*dy2 + dz2*dz2;
+            if (r2_sq > 0.01 && state.q2 !== 0) {
+                let r2 = Math.sqrt(r2_sq);
+                let E2 = state.q2 / r2_sq;
+                Ex += E2 * (dx2/r2); Ey += E2 * (dy2/r2); Ez += E2 * (dz2/r2);
+            }
+
+            return new THREE.Vector3(Ex, Ey, Ez);
+        }
+
+        function getFibonacciSpherePoints(samples, radius, center) {
+            let points = [];
+            let phi = Math.PI * (3 - Math.sqrt(5));
+            for (let i = 0; i < samples; i++) {
+                let y = 1 - (i / (samples - 1)) * 2;
+                let r = Math.sqrt(1 - y * y);
+                let theta = phi * i;
+                let x = Math.cos(theta) * r;
+                let z = Math.sin(theta) * r;
+                points.push(new THREE.Vector3(x * radius + center.x, y * radius + center.y, z * radius + center.z));
+            }
+            return points;
+        }
+
+        function generateFieldLines() {
+            scene.remove(fieldLinesGroup);
+            fieldLinesGroup = new THREE.Group();
+
+            if (state.density === 0 || (state.q1 === 0 && state.q2 === 0)) {
+                scene.add(fieldLinesGroup);
+                return;
+            }
+
+            const step = 0.2;
+            const maxSteps = 300;
+
+            function traceLine(startP, sign, flowDir) {
+                let pts = [startP.clone()];
+                let curr = startP.clone();
+                
+                for(let i=0; i<maxSteps; i++) {
+                    let E = getEField(curr.x, curr.y, curr.z);
+                    if(E.lengthSq() < 1e-8) break;
+                    E.normalize();
+                    curr.addScaledVector(E, sign * step);
+                    pts.push(curr.clone());
+
+                    let d1 = curr.distanceTo(pos1);
+                    let d2 = curr.distanceTo(pos2);
+                    
+                    if (sign > 0) { // Forward trace
+                        if (state.q1 < 0 && d1 < radius1 * 0.9) break;
+                        if (state.q2 < 0 && d2 < radius2 * 0.9) break;
+                    } else { // Backward trace
+                        if (state.q1 > 0 && d1 < radius1 * 0.9) break;
+                        if (state.q2 > 0 && d2 < radius2 * 0.9) break;
+                    }
+                    if (curr.lengthSq() > 2500) break; // Out of bounds (radius 50)
+                }
+
+                if(pts.length > 2) {
+                    let geo = new THREE.BufferGeometry().setFromPoints(pts);
+                    let mat = lineMaterial.clone();
+                    let line = new THREE.Line(geo, mat);
+                    line.computeLineDistances();
+                    line.userData.flowDir = flowDir;
+                    fieldLinesGroup.add(line);
+                }
+            }
+
+            if (state.q1 !== 0) {
+                let numLines = Math.floor(state.density * Math.abs(state.q1));
+                let pts = getFibonacciSpherePoints(numLines, radius1 * 1.1, pos1);
+                let sign = state.q1 > 0 ? 1 : -1;
+                let flowDir = state.q1 > 0 ? 1 : -1;
+                pts.forEach(p => traceLine(p, sign, flowDir));
+            }
+
+            if (state.q2 !== 0) {
+                let numLines = Math.floor(state.density * Math.abs(state.q2));
+                let pts = getFibonacciSpherePoints(numLines, radius2 * 1.1, pos2);
+                let sign = state.q2 > 0 ? 1 : -1;
+                let flowDir = state.q2 > 0 ? 1 : -1;
+                pts.forEach(p => traceLine(p, sign, flowDir));
+            }
+
+            scene.add(fieldLinesGroup);
+        }
+
+        // --- Update Logic ---
+        function updateScene() {
+            if (!state.needsUpdate) return;
+
+            // Update Positions
+            pos1.set(-state.d / 2, 0, 0);
+            pos2.set(state.d / 2, 0, 0);
+            charge1Mesh.position.copy(pos1);
+            charge2Mesh.position.copy(pos2);
+            glow1.position.copy(pos1);
+            glow2.position.copy(pos2);
+
+            // Update Radii & Colors
+            radius1 = state.q1 === 0 ? 0.4 : 0.4 + 0.15 * Math.sqrt(Math.abs(state.q1));
+            radius2 = state.q2 === 0 ? 0.4 : 0.4 + 0.15 * Math.sqrt(Math.abs(state.q2));
+            
+            charge1Mesh.scale.setScalar(radius1);
+            charge2Mesh.scale.setScalar(radius2);
+            glow1.scale.setScalar(radius1 * 4);
+            glow2.scale.setScalar(radius2 * 4);
+
+            charge1Mesh.material.color.setHex(state.q1 > 0 ? COLOR_POS : (state.q1 < 0 ? COLOR_NEG : COLOR_NEUTRAL));
+            charge2Mesh.material.color.setHex(state.q2 > 0 ? COLOR_POS : (state.q2 < 0 ? COLOR_NEG : COLOR_NEUTRAL));
+            
+            glow1.material.map = createGlowTexture(state.q1 > 0 ? COLOR_POS : (state.q1 < 0 ? COLOR_NEG : COLOR_NEUTRAL));
+            glow2.material.map = createGlowTexture(state.q2 > 0 ? COLOR_POS : (state.q2 < 0 ? COLOR_NEG : COLOR_NEUTRAL));
+            glow1.visible = state.q1 !== 0;
+            glow2.visible = state.q2 !== 0;
+
+            // Update Forces
+            let F_visual = Math.abs(state.q1 * state.q2) / (state.d * state.d);
+            let arrowLen = F_visual * 15; // Scale factor for visibility
+
+            if (arrowLen > 0.1 && state.q1 !== 0 && state.q2 !== 0) {
+                force1Arrow.visible = true;
+                force2Arrow.visible = true;
+                let attract = (state.q1 * state.q2 < 0);
+                
+                force1Arrow.position.copy(pos1);
+                force1Arrow.setDirection(attract ? new THREE.Vector3(1,0,0) : new THREE.Vector3(-1,0,0));
+                force1Arrow.setLength(arrowLen, arrowLen*0.25, arrowLen*0.15);
+
+                force2Arrow.position.copy(pos2);
+                force2Arrow.setDirection(attract ? new THREE.Vector3(-1,0,0) : new THREE.Vector3(1,0,0));
+                force2Arrow.setLength(arrowLen, arrowLen*0.25, arrowLen*0.15);
+            } else {
+                force1Arrow.visible = false;
+                force2Arrow.visible = false;
+            }
+
+            // Update Dipole
+            if (state.isDipole && state.q1 !== 0) {
+                dipoleArrow.visible = true;
+                let startPos = state.q1 < 0 ? pos1 : pos2;
+                let endPos = state.q1 > 0 ? pos1 : pos2;
+                let dir = new THREE.Vector3().subVectors(endPos, startPos).normalize();
+                dipoleArrow.position.copy(startPos);
+                dipoleArrow.setDirection(dir);
+                dipoleArrow.setLength(state.d, 0.8, 0.4);
+            } else {
+                dipoleArrow.visible = false;
+            }
+
+            // Update Field Lines
+            generateFieldLines();
+
+            // Update Formula Card
+            let F_real = K_E * (Math.abs(state.q1 * 1e-6 * state.q2 * 1e-6) / (state.d * state.d));
+            let html = `<strong>Coulomb's Law:</strong><br>F = ${F_real.toExponential(2)} N<br><br>`;
+            
+            if (state.isDipole) {
+                let p_real = Math.abs(state.q1) * 1e-6 * state.d;
+                html += `<strong>Dipole Moment:</strong><br>|p| = ${p_real.toExponential(2)} C·m<br><br>`;
+            }
+
+            let msg = "";
+            if (state.q1 === 0 || state.q2 === 0) msg = "Neutral charge. No electrostatic force.";
+            else if (state.q1 * state.q2 < 0) msg = "Opposite charges attract.";
+            else msg = "Like charges repel.";
+            
+            html += `<em>${msg}</em>`;
+            formulaCard.innerHTML = html;
+
+            state.needsUpdate = false;
+        }
+
+        function updateLabels() {
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+
+            if (state.q1 !== 0) {
+                let p1 = pos1.clone().project(camera);
+                labelQ1.style.display = 'block';
+                labelQ1.style.left = (p1.x * 0.5 + 0.5) * w + 'px';
+                labelQ1.style.top = (-p1.y * 0.5 + 0.5) * h + 'px';
+                labelQ1.innerText = state.q1 > 0 ? `+${state.q1}μC` : `${state.q1}μC`;
+            } else {
+                labelQ1.style.display = 'none';
+            }
+
+            if (state.q2 !== 0) {
+                let p2 = pos2.clone().project(camera);
+                labelQ2.style.display = 'block';
+                labelQ2.style.left = (p2.x * 0.5 + 0.5) * w + 'px';
+                labelQ2.style.top = (-p2.y * 0.5 + 0.5) * h + 'px';
+                labelQ2.innerText = state.q2 > 0 ? `+${state.q2}μC` : `${state.q2}μC`;
+            } else {
+                labelQ2.style.display = 'none';
+            }
+        }
+
+        // --- Event Listeners ---
+        function handleInput() {
+            state.q1 = parseFloat(q1Slider.value);
+            state.isDipole = dipoleToggle.checked;
+            
+            if (state.isDipole) {
+                state.q2 = -state.q1;
+                q2Slider.value = state.q2;
+                q2Slider.disabled = true;
+                q2Slider.parentElement.style.opacity = 0.5;
+            } else {
+                state.q2 = parseFloat(q2Slider.value);
+                q2Slider.disabled = false;
+                q2Slider.parentElement.style.opacity = 1;
+            }
+
+            state.d = parseFloat(dSlider.value);
+            state.density = parseFloat(densitySlider.value);
+
+            q1Val.innerText = `${state.q1} μC`;
+            q2Val.innerText = `${state.q2} μC`;
+            dVal.innerText = `${state.d.toFixed(1)} m`;
+            densityVal.innerText = state.density;
+
+            state.needsUpdate = true;
+        }
+
+        q1Slider.addEventListener('input', handleInput);
+        q2Slider.addEventListener('input', handleInput);
+        dSlider.addEventListener('input', handleInput);
+        densitySlider.addEventListener('input', handleInput);
+        dipoleToggle.addEventListener('change', handleInput);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            let delta = clock.getDelta();
+
+            updateScene();
+            controls.update();
+            updateLabels();
+
+            // Animate field lines flow
+            if (fieldLinesGroup.children.length > 0) {
+                fieldLinesGroup.children.forEach(line => {
+                    if (line.material && line.userData.flowDir) {
+                        // flowDir: 1 moves dashes outward, -1 moves dashes inward
+                        line.material.dashOffset -= 1.5 * delta * line.userData.flowDir;
+                    }
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        handleInput();
+        animate();
+
+    </script>
+</body>
+</html>

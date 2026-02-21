@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centripetal Acceleration Interactive Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-main: #102a43;
+            --text-muted: #486581;
+            --color-v: #06D6A0;
+            --color-a: #F77F00;
+            --color-f: #FF3366;
+            --color-mass: #4361EE;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--color-mass);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d9e2ec;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--color-mass);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .toggles {
+            margin-top: 2rem;
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .toggle-label {
+            display: flex;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        /* Switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #bcccdc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked+.slider {
+            background-color: var(--color-mass);
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px var(--color-mass);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        #toggle-v:checked+.slider {
+            background-color: var(--color-v);
+        }
+
+        #toggle-a:checked+.slider {
+            background-color: var(--color-a);
+        }
+
+        #toggle-f:checked+.slider {
+            background-color: var(--color-f);
+        }
+
+        .formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            padding: 1.5rem;
+            z-index: 5;
+            min-width: 280px;
+        }
+
+        .formula-card h2 {
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .equation {
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .eq-label {
+            font-weight: 600;
+            width: 30px;
+        }
+
+        .eq-math {
+            font-family: 'Roboto Mono', monospace;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            flex-grow: 1;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .eq-math span.val {
+            font-weight: 700;
+        }
+
+        .vector-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.2s;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+
+            #canvas-container {
+                width: 100%;
+                height: 60%;
+            }
+
+            #ui-panel {
+                width: 100%;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.6);
+            }
+
+            .formula-card {
+                top: 10px;
+                left: 10px;
+                padding: 1rem;
+                min-width: 240px;
+            }
+
+            .equation {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="canvas-container">
+        <div class="formula-card">
+            <h2>Live Physics</h2>
+            <div class="equation" style="color: var(--color-a);">
+                <div class="eq-label">a<sub>c</sub></div>
+                <div class="eq-math">
+                    <span>v&sup2; / R</span>
+                    <span class="val" id="val-ac">0.00 m/s&sup2;</span>
+                </div>
+            </div>
+            <div class="equation" style="color: var(--color-f);">
+                <div class="eq-label">F<sub>c</sub></div>
+                <div class="eq-math">
+                    <span>m &middot; a<sub>c</sub></span>
+                    <span class="val" id="val-fc">0.00 N</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating Labels -->
+        <div id="label-v" class="vector-label" style="color: var(--color-v); border: 1px solid var(--color-v);">v</div>
+        <div id="label-a" class="vector-label" style="color: var(--color-a); border: 1px solid var(--color-a);">
+            a<sub>c</sub></div>
+        <div id="label-f" class="vector-label" style="color: var(--color-f); border: 1px solid var(--color-f);">
+            F<sub>c</sub></div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Centripetal Acceleration</h1>
+        <p class="subtitle">Interactive Physics Lab</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Linear Speed (v)</span>
+                <span class="control-value" id="disp-speed">5.0 m/s</span>
+            </div>
+            <input type="range" id="slider-speed" min="1.0" max="10.0" step="0.1" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Radius (R)</span>
+                <span class="control-value" id="disp-radius">5.0 m</span>
+            </div>
+            <input type="range" id="slider-radius" min="2.0" max="8.0" step="0.1" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Mass (m)</span>
+                <span class="control-value" id="disp-mass">1.0 kg</span>
+            </div>
+            <input type="range" id="slider-mass" min="0.5" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="toggles">
+            <div class="toggle-row">
+                <div class="toggle-label">
+                    <div class="color-dot" style="background: var(--color-v);"></div> Velocity Vector
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="toggle-v" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-label">
+                    <div class="color-dot" style="background: var(--color-a);"></div> Acceleration Vector
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="toggle-a" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="toggle-row">
+                <div class="toggle-label">
+                    <div class="color-dot" style="background: var(--color-f);"></div> Force Vector
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="toggle-f" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        let params = {
+            speed: 5.0,
+            radius: 5.0,
+            mass: 1.0,
+            showV: true,
+            showA: true,
+            showF: true
+        };
+
+        let angle = 0;
+        let lastTime = performance.now();
+
+        // --- DOM Elements ---
+        const container = document.getElementById('canvas-container');
+        const dispSpeed = document.getElementById('disp-speed');
+        const dispRadius = document.getElementById('disp-radius');
+        const dispMass = document.getElementById('disp-mass');
+        const valAc = document.getElementById('val-ac');
+        const valFc = document.getElementById('val-fc');
+
+        const labelV = document.getElementById('label-v');
+        const labelA = document.getElementById('label-a');
+        const labelF = document.getElementById('label-f');
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.Fog(0xf0f4f8, 15, 40);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 8, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.minDistance = 5;
+        controls.maxDistance = 25;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 15, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        scene.add(dirLight);
+
+        // --- Objects ---
+        // Ground Grid
+        const grid = new THREE.GridHelper(30, 30, 0xc0c8d0, 0xd9e2ec);
+        grid.position.y = -0.01;
+        scene.add(grid);
+
+        // Central Pivot
+        const pivotGeo = new THREE.CylinderGeometry(0.2, 0.25, 0.6, 32);
+        const pivotMat = new THREE.MeshStandardMaterial({ color: 0xadb5bd, metalness: 0.6, roughness: 0.2 });
+        const pivot = new THREE.Mesh(pivotGeo, pivotMat);
+        pivot.position.y = 0.3;
+        pivot.castShadow = true;
+        scene.add(pivot);
+
+        // Revolving Mass
+        const massGeo = new THREE.SphereGeometry(0.3, 32, 32);
+        const massMat = new THREE.MeshPhysicalMaterial({
+            color: 0x4361EE,
+            metalness: 0.1,
+            roughness: 0.2,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1
+        });
+        const massMesh = new THREE.Mesh(massGeo, massMat);
+        massMesh.castShadow = true;
+        scene.add(massMesh);
+
+        // Tether
+        const tetherMat = new THREE.LineBasicMaterial({ color: 0x8898aa, transparent: true, opacity: 0.6 });
+        const tetherGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0.3, 0), new THREE.Vector3(5, 0.3, 0)]);
+        const tether = new THREE.Line(tetherGeo, tetherMat);
+        scene.add(tether);
+
+        // Orbital Path
+        const pathGeo = new THREE.BufferGeometry();
+        const pathMat = new THREE.LineDashedMaterial({ color: 0xa0aec0, dashSize: 0.4, gapSize: 0.2, transparent: true, opacity: 0.5 });
+        const pathLine = new THREE.LineLoop(pathGeo, pathMat);
+        pathLine.position.y = 0.01;
+        scene.add(pathLine);
+
+        // Custom Thick Arrow Class
+        class ThickArrow {
+            constructor(color, thickness, scene) {
+                this.group = new THREE.Group();
+                this.color = color;
+                this.thickness = thickness;
+
+                const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.3, metalness: 0.1 });
+
+                this.shaft = new THREE.Mesh(new THREE.CylinderGeometry(thickness, thickness, 1, 16), mat);
+                this.shaft.geometry.translate(0, 0.5, 0);
+                this.shaft.castShadow = true;
+
+                this.head = new THREE.Mesh(new THREE.ConeGeometry(thickness * 2.5, thickness * 6, 16), mat);
+                this.head.geometry.translate(0, 0.5, 0);
+                this.head.castShadow = true;
+
+                this.group.add(this.shaft);
+                this.group.add(this.head);
+                scene.add(this.group);
+            }
+
+            update(origin, direction, length) {
+                if (length < 0.05) {
+                    this.group.visible = false;
+                    return;
+                }
+                this.group.visible = true;
+                this.group.position.copy(origin);
+
+                const up = new THREE.Vector3(0, 1, 0);
+                this.group.quaternion.setFromUnitVectors(up, direction);
+
+                const headLen = Math.min(this.thickness * 6, length * 0.4);
+                const shaftLen = Math.max(0, length - headLen);
+
+                this.shaft.scale.set(1, shaftLen, 1);
+                this.head.scale.set(1, headLen / (this.thickness * 6), 1);
+                this.head.position.set(0, shaftLen, 0);
+            }
+        }
+
+        const arrowV = new ThickArrow(0x06D6A0, 0.04, scene);
+        const arrowA = new ThickArrow(0xF77F00, 0.04, scene);
+        const arrowF = new ThickArrow(0xFF3366, 0.07, scene); // Thicker to envelop/overlay A
+
+        // --- UI Event Listeners ---
+        document.getElementById('slider-speed').addEventListener('input', (e) => {
+            params.speed = parseFloat(e.target.value);
+            dispSpeed.textContent = params.speed.toFixed(1) + ' m/s';
+        });
+        document.getElementById('slider-radius').addEventListener('input', (e) => {
+            params.radius = parseFloat(e.target.value);
+            dispRadius.textContent = params.radius.toFixed(1) + ' m';
+            updatePathGeometry();
+        });
+        document.getElementById('slider-mass').addEventListener('input', (e) => {
+            params.mass = parseFloat(e.target.value);
+            dispMass.textContent = params.mass.toFixed(1) + ' kg';
+            // Scale mass visually based on cube root for volume, plus base size
+            const scale = 0.5 + Math.pow(params.mass, 1 / 3) * 0.5;
+            massMesh.scale.set(scale, scale, scale);
+        });
+
+        document.getElementById('toggle-v').addEventListener('change', (e) => { params.showV = e.target.checked; });
+        document.getElementById('toggle-a').addEventListener('change', (e) => { params.showA = e.target.checked; });
+        document.getElementById('toggle-f').addEventListener('change', (e) => { params.showF = e.target.checked; });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        function updatePathGeometry() {
+            const points = [];
+            const segments = 64;
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                points.push(new THREE.Vector3(params.radius * Math.cos(theta), 0, params.radius * Math.sin(theta)));
+            }
+            pathGeo.setFromPoints(points);
+            pathLine.computeLineDistances();
+        }
+        updatePathGeometry();
+
+        // Helper to project 3D pos to 2D screen for labels
+        function updateLabel(label, pos3D, isVisible) {
+            if (!isVisible) {
+                label.style.opacity = 0;
+                return;
+            }
+            const vector = pos3D.clone();
+            vector.project(camera);
+
+            // Check if behind camera
+            if (vector.z > 1) {
+                label.style.opacity = 0;
+                return;
+            }
+
+            const x = (vector.x * 0.5 + 0.5) * container.clientWidth;
+            const y = (vector.y * -0.5 + 0.5) * container.clientHeight;
+
+            label.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+            label.style.opacity = 1;
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const currentTime = performance.now();
+            const dt = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            // Physics Calculations
+            // ω = v / r
+            const omega = params.speed / params.radius;
+            angle += omega * dt;
+
+            // Position
+            const x = params.radius * Math.cos(angle);
+            const z = params.radius * Math.sin(angle);
+            const massPos = new THREE.Vector3(x, 0.3, z);
+            massMesh.position.copy(massPos);
+
+            // Update Tether
+            const positions = tether.geometry.attributes.position.array;
+            positions[3] = x; positions[4] = 0.3; positions[5] = z;
+            tether.geometry.attributes.position.needsUpdate = true;
+
+            // Vectors Math
+            // Tangent direction (Velocity)
+            const dirV = new THREE.Vector3(-Math.sin(angle), 0, Math.cos(angle)).normalize();
+            // Radial direction (Acceleration/Force - pointing to center)
+            const dirRadial = new THREE.Vector3(-Math.cos(angle), 0, -Math.sin(angle)).normalize();
+
+            // Magnitudes
+            const ac = (params.speed * params.speed) / params.radius;
+            const fc = params.mass * ac;
+
+            // Update UI Formulas
+            valAc.innerHTML = ac.toFixed(2) + ' m/s&sup2;';
+            valFc.innerHTML = fc.toFixed(2) + ' N';
+
+            // Visual Scaling for Arrows
+            const scaleV = params.speed * 0.3;
+            const scaleA = ac * 0.08;
+            const scaleF = fc * 0.08;
+
+            // Update Arrows
+            if (params.showV) {
+                arrowV.update(massPos, dirV, scaleV);
+                updateLabel(labelV, massPos.clone().add(dirV.clone().multiplyScalar(scaleV + 0.3)), true);
+            } else {
+                arrowV.group.visible = false;
+                updateLabel(labelV, massPos, false);
+            }
+
+            if (params.showA) {
+                // Offset slightly up to avoid z-fighting with Force
+                const originA = massPos.clone().add(new THREE.Vector3(0, 0.02, 0));
+                arrowA.update(originA, dirRadial, scaleA);
+                updateLabel(labelA, originA.clone().add(dirRadial.clone().multiplyScalar(scaleA + 0.3)), true);
+            } else {
+                arrowA.group.visible = false;
+                updateLabel(labelA, massPos, false);
+            }
+
+            if (params.showF) {
+                // Offset slightly down
+                const originF = massPos.clone().add(new THREE.Vector3(0, -0.02, 0));
+                arrowF.update(originF, dirRadial, scaleF);
+                // Push label further out if both A and F are showing and F is longer
+                const labelOffset = (params.showA && scaleF > scaleA) ? scaleF + 0.6 : scaleF + 0.3;
+                updateLabel(labelF, originF.clone().add(dirRadial.clone().multiplyScalar(labelOffset)), true);
+            } else {
+                arrowF.group.visible = false;
+                updateLabel(labelF, massPos, false);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Start
+        animate();
+    </script>
+</body>
+
+</html>

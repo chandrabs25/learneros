@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Series LCR Resonance Visualization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            position: absolute;
+            z-index: 10;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Control Panel (Right) */
+        #control-panel {
+            top: 20px;
+            right: 20px;
+            width: 280px;
+            bottom: 20px;
+            overflow-y: auto;
+        }
+
+        #control-panel h2 {
+            margin: 0 0 20px 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #555;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid;
+        }
+
+        /* Slider Accents */
+        #slider_L::-webkit-slider-thumb { border-color: #B87333; }
+        #slider_C::-webkit-slider-thumb { border-color: #4361EE; }
+        #slider_R::-webkit-slider-thumb { border-color: #FF3366; }
+        #slider_f::-webkit-slider-thumb { border-color: #7209B7; }
+        #slider_V::-webkit-slider-thumb { border-color: #06D6A0; }
+
+        button {
+            background: #7209B7;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        button:hover { background: #5a0791; }
+        button:active { transform: scale(0.98); }
+
+        /* Formula Card (Top Left) */
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            width: 300px;
+        }
+
+        .math-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .math-label { font-weight: 600; }
+        .math-value { font-family: 'Roboto Mono', monospace; font-weight: 500; }
+
+        #resonance-status {
+            margin-top: 10px;
+            font-weight: 800;
+            text-align: center;
+            padding: 8px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .is-resonant {
+            background: #FFD700 !important;
+            color: #000 !important;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        /* Graph Panel (Bottom Left) */
+        #graph-panel {
+            bottom: 20px;
+            left: 20px;
+            width: 400px;
+            height: 250px;
+            padding: 15px;
+        }
+
+        #graph-panel h3 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        canvas#resonance-graph {
+            width: 100%;
+            height: calc(100% - 25px);
+            display: block;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        @media (max-width: 900px) {
+            #graph-panel { display: none; }
+            #formula-card { width: 250px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <div class="math-row">
+            <span class="math-label">Impedance (Z):</span>
+            <span class="math-value" id="val_Z">0.00 Ω</span>
+        </div>
+        <div class="math-row">
+            <span class="math-label">Resonant Freq (f₀):</span>
+            <span class="math-value" id="val_f0">0.00 Hz</span>
+        </div>
+        <div class="math-row">
+            <span class="math-label">Phase Angle (φ):</span>
+            <span class="math-value" id="val_phi">0.00°</span>
+        </div>
+        <div class="math-row">
+            <span class="math-label">Peak Current (I₀):</span>
+            <span class="math-value" id="val_I0">0.00 A</span>
+        </div>
+        <div id="resonance-status">CIRCUIT ACTIVE</div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="dot" style="background:#06D6A0"></div> Current (I)</div>
+            <div class="legend-item"><div class="dot" style="background:#FF3366"></div> V_Inductor</div>
+            <div class="legend-item"><div class="dot" style="background:#4361EE"></div> V_Capacitor</div>
+            <div class="legend-item"><div class="dot" style="background:#06D6A0"></div> V_Resistor</div>
+            <div class="legend-item"><div class="dot" style="background:#7209B7"></div> V_Net</div>
+        </div>
+    </div>
+
+    <div id="graph-panel" class="glass-panel">
+        <h3>Resonance Curve (I₀ vs f)</h3>
+        <canvas id="resonance-graph"></canvas>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <h2>LCR Parameters</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #B87333">Inductance (L)</span>
+                <span class="val-display" id="disp_L">100 mH</span>
+            </div>
+            <input type="range" id="slider_L" min="10" max="500" step="10" value="100">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #4361EE">Capacitance (C)</span>
+                <span class="val-display" id="disp_C">100 µF</span>
+            </div>
+            <input type="range" id="slider_C" min="10" max="500" step="10" value="100">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #FF3366">Resistance (R)</span>
+                <span class="val-display" id="disp_R">20 Ω</span>
+            </div>
+            <input type="range" id="slider_R" min="1" max="100" step="1" value="20">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #7209B7">Source Freq (f)</span>
+                <span class="val-display" id="disp_f">50 Hz</span>
+            </div>
+            <input type="range" id="slider_f" min="10" max="200" step="1" value="50">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #06D6A0">Source V_rms</span>
+                <span class="val-display" id="disp_V">10 V</span>
+            </div>
+            <input type="range" id="slider_V" min="1" max="50" step="1" value="10">
+        </div>
+
+        <button id="btn-snap">Snap to Resonance</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics State ---
+        const state = {
+            L: 100, // mH
+            C: 100, // uF
+            R: 20,  // Ohm
+            f: 50,  // Hz
+            Vrms: 10, // V
+            
+            // Derived
+            w: 0, XL: 0, XC: 0, Z: 0, I0: 0, phi: 0, f0: 0,
+            
+            // Animation time (scaled for visibility)
+            simTime: 0,
+            q: 0 // integrated charge
+        };
+
+        // --- UI Elements ---
+        const sliders = {
+            L: document.getElementById('slider_L'),
+            C: document.getElementById('slider_C'),
+            R: document.getElementById('slider_R'),
+            f: document.getElementById('slider_f'),
+            V: document.getElementById('slider_V')
+        };
+        const displays = {
+            L: document.getElementById('disp_L'),
+            C: document.getElementById('disp_C'),
+            R: document.getElementById('disp_R'),
+            f: document.getElementById('disp_f'),
+            V: document.getElementById('disp_V')
+        };
+        const mathDisplays = {
+            Z: document.getElementById('val_Z'),
+            f0: document.getElementById('val_f0'),
+            phi: document.getElementById('val_phi'),
+            I0: document.getElementById('val_I0')
+        };
+        const statusEl = document.getElementById('resonance-status');
+        const graphCanvas = document.getElementById('resonance-graph');
+        const graphCtx = graphCanvas.getContext('2d');
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.FogExp2('#f0f4f8', 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 15, 30);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(5, 0, 0);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // Grid
+        const grid = new THREE.GridHelper(50, 50, 0xd1d9e0, 0xd1d9e0);
+        grid.position.y = -3;
+        scene.add(grid);
+
+        // --- Circuit Geometry ---
+        const circuitGroup = new THREE.Group();
+        circuitGroup.position.set(-5, 0, 0);
+        scene.add(circuitGroup);
+
+        const wireMat = new THREE.MeshStandardMaterial({ color: '#ced4da', roughness: 0.4, metalness: 0.6 });
+        
+        // Rectangular path: width 16, depth 10. Centers: Top(0,0,-5), Bottom(0,0,5), Left(-8,0,0), Right(8,0,0)
+        const pathW = 16;
+        const pathD = 10;
+        
+        function createWire(x1, z1, x2, z2) {
+            const length = Math.hypot(x2-x1, z2-z1);
+            const geo = new THREE.CylinderGeometry(0.15, 0.15, length, 16);
+            const mesh = new THREE.Mesh(geo, wireMat);
+            mesh.position.set((x1+x2)/2, 0, (z1+z2)/2);
+            mesh.rotation.z = Math.PI/2;
+            if (z1 !== z2) mesh.rotation.y = Math.PI/2;
+            mesh.castShadow = true;
+            circuitGroup.add(mesh);
+        }
+
+        // Draw base wires (leaving gaps for components)
+        createWire(-pathW/2, -pathD/2, -3, -pathD/2); // Top left
+        createWire(3, -pathD/2, pathW/2, -pathD/2);   // Top right
+        createWire(pathW/2, -pathD/2, pathW/2, -1);   // Right top
+        createWire(pathW/2, 1, pathW/2, pathD/2);     // Right bottom
+        createWire(pathW/2, pathD/2, 3, pathD/2);     // Bottom right
+        createWire(-3, pathD/2, -pathW/2, pathD/2);   // Bottom left
+        createWire(-pathW/2, pathD/2, -pathW/2, 2);   // Left bottom
+        createWire(-pathW/2, -2, -pathW/2, -pathD/2); // Left top
+
+        // Components
+        let inductorMesh, capacitorGroup, resistorMesh;
+        const inductorMat = new THREE.MeshStandardMaterial({ color: '#B87333', roughness: 0.3, metalness: 0.8, emissive: '#B87333', emissiveIntensity: 0 });
+        const capacitorMat = new THREE.MeshStandardMaterial({ color: '#4361EE', roughness: 0.2, metalness: 0.5, transparent: true, opacity: 0.9 });
+        const resistorMat = new THREE.MeshStandardMaterial({ color: '#FF3366', roughness: 0.9, metalness: 0.1 });
+
+        // Inductor (Top edge)
+        function updateInductor() {
+            if (inductorMesh) circuitGroup.remove(inductorMesh);
+            const turns = Math.max(3, Math.floor(state.L / 20));
+            const radius = 0.8;
+            const length = 6;
+            
+            class HelixCurve extends THREE.Curve {
+                getPoint(t, optionalTarget = new THREE.Vector3()) {
+                    const x = (t - 0.5) * length;
+                    const y = Math.sin(t * Math.PI * 2 * turns) * radius;
+                    const z = Math.cos(t * Math.PI * 2 * turns) * radius;
+                    return optionalTarget.set(x, y, z);
+                }
+            }
+            const geo = new THREE.TubeGeometry(new HelixCurve(), turns * 20, 0.2, 8, false);
+            inductorMesh = new THREE.Mesh(geo, inductorMat);
+            inductorMesh.position.set(0, 0, -pathD/2);
+            inductorMesh.castShadow = true;
+            circuitGroup.add(inductorMesh);
+        }
+
+        // Capacitor (Right edge)
+        let eFieldLines;
+        function updateCapacitor() {
+            if (capacitorGroup) circuitGroup.remove(capacitorGroup);
+            capacitorGroup = new THREE.Group();
+            capacitorGroup.position.set(pathW/2, 0, 0);
+            
+            const areaScale = 0.5 + (state.C / 500) * 2;
+            const plateGeo = new THREE.BoxGeometry(2, 0.1, 2 * areaScale);
+            
+            const plate1 = new THREE.Mesh(plateGeo, capacitorMat);
+            plate1.position.z = -1;
+            plate1.rotation.x = Math.PI/2;
+            plate1.castShadow = true;
+            
+            const plate2 = new THREE.Mesh(plateGeo, capacitorMat);
+            plate2.position.z = 1;
+            plate2.rotation.x = Math.PI/2;
+            plate2.castShadow = true;
+            
+            capacitorGroup.add(plate1, plate2);
+
+            // E-field lines
+            const lineGeo = new THREE.BufferGeometry();
+            const points = [];
+            for(let i=0; i<10; i++) {
+                const x = (Math.random() - 0.5) * 1.5;
+                const y = (Math.random() - 0.5) * 1.5 * areaScale;
+                points.push(x, y, -0.9, x, y, 0.9);
+            }
+            lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+            const lineMat = new THREE.LineBasicMaterial({ color: '#4361EE', transparent: true, opacity: 0 });
+            eFieldLines = new THREE.LineSegments(lineGeo, lineMat);
+            eFieldLines.rotation.x = Math.PI/2;
+            capacitorGroup.add(eFieldLines);
+
+            circuitGroup.add(capacitorGroup);
+        }
+
+        // Resistor (Bottom edge)
+        function updateResistor() {
+            if (resistorMesh) circuitGroup.remove(resistorMesh);
+            const amplitude = 0.3 + (state.R / 100) * 0.8;
+            const length = 6;
+            const segments = 10;
+            
+            class ZigZagCurve extends THREE.Curve {
+                getPoint(t, optionalTarget = new THREE.Vector3()) {
+                    const x = (t - 0.5) * length;
+                    const segment = Math.floor(t * segments);
+                    const z = (segment % 2 === 0 ? 1 : -1) * amplitude * Math.sin(t * Math.PI * segments);
+                    return optionalTarget.set(x, 0, z);
+                }
+            }
+            const geo = new THREE.TubeGeometry(new ZigZagCurve(), 64, 0.2, 8, false);
+            resistorMesh = new THREE.Mesh(geo, resistorMat);
+            resistorMesh.position.set(0, 0, pathD/2);
+            resistorMesh.castShadow = true;
+            circuitGroup.add(resistorMesh);
+        }
+
+        // AC Source (Left edge)
+        const sourceGroup = new THREE.Group();
+        sourceGroup.position.set(-pathW/2, 0, 0);
+        const sourceBase = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.2, 32), new THREE.MeshStandardMaterial({color: '#ffffff', roughness: 0.1}));
+        sourceBase.rotation.x = Math.PI/2;
+        sourceGroup.add(sourceBase);
+        
+        // Sine wave on source
+        const sinePoints = [];
+        for(let i=0; i<=20; i++) {
+            const t = i/20;
+            sinePoints.push(new THREE.Vector3((t-0.5)*1.5, Math.sin(t*Math.PI*2)*0.5, 0.15));
+        }
+        const sineLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints(sinePoints), new THREE.LineBasicMaterial({color: '#000', linewidth: 2}));
+        sourceGroup.add(sineLine);
+        circuitGroup.add(sourceGroup);
+
+        // --- Charge Carriers (Electrons) ---
+        const numElectrons = 60;
+        const electronGeo = new THREE.SphereGeometry(0.15, 8, 8);
+        const electronMat = new THREE.MeshBasicMaterial({ color: '#06D6A0' });
+        const electrons = new THREE.InstancedMesh(electronGeo, electronMat, numElectrons);
+        circuitGroup.add(electrons);
+
+        const totalPerimeter = 2*pathW + 2*pathD;
+        function getPathPos(s) {
+            s = ((s % totalPerimeter) + totalPerimeter) % totalPerimeter;
+            if (s < pathW) return new THREE.Vector3(-pathW/2 + s, 0, -pathD/2); // Top
+            s -= pathW;
+            if (s < pathD) return new THREE.Vector3(pathW/2, 0, -pathD/2 + s); // Right
+            s -= pathD;
+            if (s < pathW) return new THREE.Vector3(pathW/2 - s, 0, pathD/2); // Bottom
+            s -= pathW;
+            return new THREE.Vector3(-pathW/2, 0, pathD/2 - s); // Left
+        }
+
+        // --- Heat Particles (Resistor) ---
+        const particleCount = 50;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePos = new Float32Array(particleCount * 3);
+        const particleVel = [];
+        const particleLife = new Float32Array(particleCount);
+        
+        for(let i=0; i<particleCount; i++) {
+            particlePos[i*3] = 0; particlePos[i*3+1] = 0; particlePos[i*3+2] = pathD/2;
+            particleVel.push(new THREE.Vector3());
+            particleLife[i] = 0;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+        const particleMat = new THREE.PointsMaterial({ color: '#FF3366', size: 0.3, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        circuitGroup.add(particles);
+
+        // --- Phasor Diagram ---
+        const phasorGroup = new THREE.Group();
+        phasorGroup.position.set(12, 0, 0);
+        scene.add(phasorGroup);
+
+        // Background circle for phasors
+        const pBg = new THREE.Mesh(new THREE.RingGeometry(4.8, 5, 64), new THREE.MeshBasicMaterial({color: '#d1d9e0', side: THREE.DoubleSide}));
+        pBg.rotation.x = Math.PI/2;
+        phasorGroup.add(pBg);
+
+        function createThickArrow(color) {
+            const group = new THREE.Group();
+            const cyl = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1, 8), new THREE.MeshBasicMaterial({color}));
+            cyl.position.y = 0.5;
+            const cone = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.6, 8), new THREE.MeshBasicMaterial({color}));
+            cone.position.y = 1;
+            group.add(cyl, cone);
+            // Rotate to point along Z axis initially
+            group.rotation.x = Math.PI/2;
+            
+            const wrapper = new THREE.Group();
+            wrapper.add(group);
+            return wrapper;
+        }
+
+        const arrI = createThickArrow('#06D6A0'); // Green
+        const arrVR = createThickArrow('#06D6A0'); // Green (overlaps I)
+        const arrVL = createThickArrow('#FF3366'); // Red
+        const arrVC = createThickArrow('#4361EE'); // Blue
+        const arrVnet = createThickArrow('#7209B7'); // Purple
+
+        // Make VR slightly thinner to see I
+        arrVR.children[0].children[0].scale.set(0.5, 1, 0.5);
+        arrVR.children[0].children[1].scale.set(0.5, 1, 0.5);
+
+        phasorGroup.add(arrI, arrVR, arrVL, arrVC, arrVnet);
+
+        // --- Physics Engine ---
+        function updatePhysics() {
+            // Read UI
+            state.L = parseFloat(sliders.L.value);
+            state.C = parseFloat(sliders.C.value);
+            state.R = parseFloat(sliders.R.value);
+            state.f = parseFloat(sliders.f.value);
+            state.Vrms = parseFloat(sliders.V.value);
+
+            // Update Displays
+            displays.L.innerText = state.L + ' mH';
+            displays.C.innerText = state.C + ' µF';
+            displays.R.innerText = state.R + ' Ω';
+            displays.f.innerText = state.f + ' Hz';
+            displays.V.innerText = state.Vrms + ' V';
+
+            // SI Conversions
+            const L_si = state.L * 1e-3;
+            const C_si = state.C * 1e-6;
+            const R = state.R;
+            const f = state.f;
+            const V0 = state.Vrms * Math.sqrt(2);
+
+            // Calculations
+            state.w = 2 * Math.PI * f;
+            state.XL = state.w * L_si;
+            state.XC = 1 / (state.w * C_si);
+            state.Z = Math.sqrt(R*R + Math.pow(state.XL - state.XC, 2));
+            state.I0 = V0 / state.Z;
+            state.phi = Math.atan2(state.XL - state.XC, R);
+            state.f0 = 1 / (2 * Math.PI * Math.sqrt(L_si * C_si));
+
+            // Update Math UI
+            mathDisplays.Z.innerText = state.Z.toFixed(2) + ' Ω';
+            mathDisplays.f0.innerText = state.f0.toFixed(1) + ' Hz';
+            mathDisplays.phi.innerText = (state.phi * 180 / Math.PI).toFixed(1) + '°';
+            mathDisplays.I0.innerText = state.I0.toFixed(2) + ' A';
+
+            // Resonance Check
+            if (Math.abs(state.f - state.f0) < 2) {
+                statusEl.innerText = "RESONANCE ACHIEVED";
+                statusEl.classList.add('is-resonant');
+            } else {
+                statusEl.innerText = state.f < state.f0 ? "CAPACITIVE (I leads V)" : "INDUCTIVE (I lags V)";
+                statusEl.classList.remove('is-resonant');
+            }
+        }
+
+        // --- Graph Drawing ---
+        function drawGraph() {
+            const width = graphCanvas.clientWidth;
+            const height = graphCanvas.clientHeight;
+            
+            // Handle high DPI displays
+            const dpr = window.devicePixelRatio || 1;
+            graphCanvas.width = width * dpr;
+            graphCanvas.height = height * dpr;
+            graphCtx.scale(dpr, dpr);
+
+            graphCtx.clearRect(0, 0, width, height);
+
+            const padding = 20;
+            const graphW = width - padding * 2;
+            const graphH = height - padding * 2;
+
+            // Axes
+            graphCtx.strokeStyle = '#ccc';
+            graphCtx.lineWidth = 1;
+            graphCtx.beginPath();
+            graphCtx.moveTo(padding, padding);
+            graphCtx.lineTo(padding, height - padding);
+            graphCtx.lineTo(width - padding, height - padding);
+            graphCtx.stroke();
+
+            // Calculate curve
+            const points = [];
+            let maxI = 0;
+            const L_si = state.L * 1e-3;
+            const C_si = state.C * 1e-6;
+            const V0 = state.Vrms * Math.sqrt(2);
+
+            for(let fx = 10; fx <= 200; fx += 2) {
+                const wx = 2 * Math.PI * fx;
+                const Zx = Math.sqrt(state.R*state.R + Math.pow(wx*L_si - 1/(wx*C_si), 2));
+                const Ix = V0 / Zx;
+                if (Ix > maxI) maxI = Ix;
+                points.push({f: fx, I: Ix});
+            }
+
+            // Draw Curve
+            if (maxI === 0) maxI = 1; // prevent div by zero
+            graphCtx.strokeStyle = '#7209B7';
+            graphCtx.lineWidth = 3;
+            graphCtx.beginPath();
+            points.forEach((p, i) => {
+                const x = padding + ((p.f - 10) / 190) * graphW;
+                const y = (height - padding) - (p.I / maxI) * graphH * 0.9;
+                if (i === 0) graphCtx.moveTo(x, y);
+                else graphCtx.lineTo(x, y);
+            });
+            graphCtx.stroke();
+
+            // Draw current point
+            const currentX = padding + ((state.f - 10) / 190) * graphW;
+            const currentY = (height - padding) - (state.I0 / maxI) * graphH * 0.9;
+            
+            graphCtx.fillStyle = '#06D6A0';
+            graphCtx.beginPath();
+            graphCtx.arc(currentX, currentY, 6, 0, Math.PI * 2);
+            graphCtx.fill();
+            graphCtx.strokeStyle = '#fff';
+            graphCtx.lineWidth = 2;
+            graphCtx.stroke();
+        }
+
+        // --- Event Listeners ---
+        sliders.L.addEventListener('input', () => { updatePhysics(); updateInductor(); drawGraph(); });
+        sliders.C.addEventListener('input', () => { updatePhysics(); updateCapacitor(); drawGraph(); });
+        sliders.R.addEventListener('input', () => { updatePhysics(); updateResistor(); drawGraph(); });
+        sliders.f.addEventListener('input', () => { updatePhysics(); drawGraph(); });
+        sliders.V.addEventListener('input', () => { updatePhysics(); drawGraph(); });
+
+        document.getElementById('btn-snap').addEventListener('click', () => {
+            let f0 = state.f0;
+            if (f0 < 10) f0 = 10;
+            if (f0 > 200) f0 = 200;
+            sliders.f.value = Math.round(f0);
+            updatePhysics();
+            drawGraph();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            drawGraph();
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = clock.getDelta();
+            
+            // Simulation speed scaling. 
+            // Real w is too fast (e.g., 314 rad/s). Scale it down visually.
+            const simSpeed = 0.05; 
+            state.simTime += dt * state.w * simSpeed;
+            
+            const wt = state.simTime;
+            
+            // Instantaneous values
+            // Reference: V_source = V0 * sin(wt)
+            // Current: i(t) = I0 * sin(wt - phi)
+            const i_t = state.I0 * Math.sin(wt - state.phi);
+            
+            // Integrate current for charge (q) to move electrons
+            // dq/dt = i -> q = - (I0/w) * cos(wt - phi). 
+            // We use a visual scaling factor for movement
+            state.q += i_t * dt * 10; 
+
+            // 1. Update Electrons
+            const dummy = new THREE.Object3D();
+            const spacing = totalPerimeter / numElectrons;
+            for(let i=0; i<numElectrons; i++) {
+                const s = i * spacing + state.q;
+                const pos = getPathPos(s);
+                dummy.position.copy(pos);
+                dummy.updateMatrix();
+                electrons.setMatrixAt(i, dummy.matrix);
+            }
+            electrons.instanceMatrix.needsUpdate = true;
+
+            // 2. Update Inductor Glow
+            // Energy proportional to i^2
+            if (inductorMesh) {
+                const glow = Math.pow(i_t / (state.Vrms*Math.sqrt(2)/state.R), 2); // normalized roughly
+                inductorMesh.material.emissiveIntensity = glow * 0.8;
+            }
+
+            // 3. Update Capacitor E-Field
+            // q is proportional to cos(wt - phi)
+            if (eFieldLines) {
+                const q_t = Math.cos(wt - state.phi);
+                eFieldLines.material.opacity = Math.abs(q_t) * 0.8;
+            }
+
+            // 4. Update Resistor Heat Particles
+            const heatPower = i_t * i_t * state.R;
+            const spawnRate = Math.min(2, heatPower * 0.05);
+            
+            const positions = particles.geometry.attributes.position.array;
+            for(let i=0; i<particleCount; i++) {
+                if (particleLife[i] <= 0 && Math.random() < spawnRate) {
+                    // Spawn
+                    particleLife[i] = 1.0;
+                    positions[i*3] = (Math.random()-0.5)*2;
+                    positions[i*3+1] = (Math.random()-0.5)*2;
+                    positions[i*3+2] = pathD/2 + (Math.random()-0.5)*6;
+                    particleVel[i].set((Math.random()-0.5)*2, Math.random()*2, (Math.random()-0.5)*2);
+                }
+                
+                if (particleLife[i] > 0) {
+                    particleLife[i] -= dt * 1.5;
+                    positions[i*3] += particleVel[i].x * dt;
+                    positions[i*3+1] += particleVel[i].y * dt;
+                    positions[i*3+2] += particleVel[i].z * dt;
+                    if (particleLife[i] <= 0) {
+                        positions[i*3] = 999; // hide
+                    }
+                }
+            }
+            particles.geometry.attributes.position.needsUpdate = true;
+
+            // 5. Update Phasors
+            // Set lengths based on amplitudes (scaled for visual fit)
+            const vScale = 0.15;
+            const iScale = 2.0;
+
+            const lenI = state.I0 * iScale;
+            const lenVR = state.I0 * state.R * vScale;
+            const lenVL = state.I0 * state.XL * vScale;
+            const lenVC = state.I0 * state.XC * vScale;
+            const lenVnet = state.Vrms * Math.sqrt(2) * vScale;
+
+            function updateArrow(arrow, length, angle) {
+                // Scale the cylinder and cone
+                const cyl = arrow.children[0].children[0];
+                const cone = arrow.children[0].children[1];
+                
+                const actualLen = Math.max(0.01, length);
+                cyl.scale.y = actualLen;
+                cyl.position.y = actualLen / 2;
+                cone.position.y = actualLen;
+                
+                // Rotate around Y axis (which is mapped to Z in our scene due to wrapper)
+                arrow.rotation.z = -angle; // Negative because standard math is CCW, Threejs Y is up
+            }
+
+            // Angles relative to V_source (which is at angle wt)
+            // I and VR are at wt - phi
+            // VL is at wt - phi + pi/2
+            // VC is at wt - phi - pi/2
+            
+            updateArrow(arrVnet, lenVnet, wt);
+            updateArrow(arrI, lenI, wt - state.phi);
+            updateArrow(arrVR, lenVR, wt - state.phi);
+            updateArrow(arrVL, lenVL, wt - state.phi + Math.PI/2);
+            updateArrow(arrVC, lenVC, wt - state.phi - Math.PI/2);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updateInductor();
+        updateCapacitor();
+        updateResistor();
+        updatePhysics();
+        drawGraph();
+        animate();
+
+    </script>
+</body>
+</html>

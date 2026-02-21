@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Light Polarisation & Malus's Law</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --accent-unpol: #4361EE;
+            --accent-pol: #FF3366;
+            --accent-trans: #06D6A0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.05);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.05);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #dce1e8;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--text-main);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Colored Thumbs */
+        #angle1::-webkit-slider-thumb { background: var(--accent-pol); }
+        #angle2::-webkit-slider-thumb { background: var(--accent-trans); }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 1.2rem;
+            border-radius: 12px;
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+        }
+        
+        .stats span {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 600;
+        }
+
+        .color-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.6); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Malus's Law</div>
+            <div class="math">I = I₀ cos²(Δθ)</div>
+            <div class="stats">
+                <div>Δθ = <span id="delta-val">45°</span></div>
+                <div>Transmission: <span id="intensity-val" style="color: var(--accent-trans)">50.0%</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <div>
+            <h1>Polarisation Lab</h1>
+            <p class="subtitle">Interactive 3D simulation of electromagnetic wave propagation through polarizing filters.</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="amplitude">Amplitude (E₀)</label>
+                <span class="value-display" id="amp-val">1.0 V/m</span>
+            </div>
+            <input type="range" id="amplitude" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="wavelength">Wavelength (λ)</label>
+                <span class="value-display" id="wave-val">1.5 nm</span>
+            </div>
+            <input type="range" id="wavelength" min="0.5" max="3.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group" style="border-left: 4px solid var(--accent-pol);">
+            <div class="control-header">
+                <label for="angle1">Polarizer 1 Angle (θ₁)</label>
+                <span class="value-display" id="ang1-val">0°</span>
+            </div>
+            <input type="range" id="angle1" min="0" max="360" step="1" value="0">
+        </div>
+
+        <div class="control-group" style="border-left: 4px solid var(--accent-trans);">
+            <div class="control-header">
+                <label for="angle2">Analyzer Angle (θ₂)</label>
+                <span class="value-display" id="ang2-val">45°</span>
+            </div>
+            <input type="range" id="angle2" min="0" max="360" step="1" value="45">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="speed">Wave Speed</label>
+                <span class="value-display" id="speed-val">1.0 c</span>
+            </div>
+            <input type="range" id="speed" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="legend">
+            <div><span class="color-dot" style="background: linear-gradient(90deg, #4361EE, #7209B7)"></span> Unpolarized Light</div>
+            <div><span class="color-dot" style="background: var(--accent-pol)"></span> Polarized Light (after P1)</div>
+            <div><span class="color-dot" style="background: var(--accent-trans)"></span> Transmitted Light (after P2)</div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            amplitude: 1.0,
+            wavelength: 1.5,
+            angle1: 0,
+            angle2: 45,
+            speed: 1.0
+        };
+
+        // --- UI Binding ---
+        const bindSlider = (id, stateKey, unit, suffix = '') => {
+            const slider = document.getElementById(id);
+            const display = document.getElementById(id === 'wavelength' ? 'wave-val' : 
+                                                    id === 'angle1' ? 'ang1-val' : 
+                                                    id === 'angle2' ? 'ang2-val' : 
+                                                    id === 'amplitude' ? 'amp-val' : 'speed-val');
+            slider.addEventListener('input', (e) => {
+                state[stateKey] = parseFloat(e.target.value);
+                display.innerText = `${state[stateKey].toFixed(id==='angle1'||id==='angle2'?0:1)}${unit}`;
+                updateFormulaCard();
+            });
+        };
+
+        bindSlider('amplitude', 'amplitude', ' V/m');
+        bindSlider('wavelength', 'wavelength', ' nm');
+        bindSlider('angle1', 'angle1', '°');
+        bindSlider('angle2', 'angle2', '°');
+        bindSlider('speed', 'speed', ' c');
+
+        function updateFormulaCard() {
+            let delta = Math.abs(state.angle2 - state.angle1) % 360;
+            if (delta > 180) delta = 360 - delta;
+            
+            const intensity = Math.pow(Math.cos(delta * Math.PI / 180), 2) * 100;
+            
+            document.getElementById('delta-val').innerText = `${delta}°`;
+            document.getElementById('intensity-val').innerText = `${intensity.toFixed(1)}%`;
+        }
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(18, 12, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Grid & Axis
+        const gridHelper = new THREE.GridHelper(40, 40, 0xcccccc, 0xe2e8f0);
+        gridHelper.position.y = -4;
+        scene.add(gridHelper);
+
+        const zAxisMat = new THREE.LineDashedMaterial({ color: 0x94a3b8, dashSize: 0.5, gapSize: 0.5 });
+        const zAxisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,-20), new THREE.Vector3(0,0,20)]);
+        const zAxis = new THREE.Line(zAxisGeo, zAxisMat);
+        zAxis.computeLineDistances();
+        scene.add(zAxis);
+
+        // --- Geometries & Materials ---
+        const POINTS_PER_WAVE = 250;
+        const Z_START = -15;
+        const Z_P1 = -5;
+        const Z_P2 = 5;
+        const Z_END = 15;
+
+        // Materials
+        const matUnpol1 = new THREE.LineBasicMaterial({ color: 0x4361EE, linewidth: 2 });
+        const matUnpol2 = new THREE.LineBasicMaterial({ color: 0x7209B7, linewidth: 2 });
+        const matPol = new THREE.LineBasicMaterial({ color: 0xFF3366, linewidth: 2 });
+        const matTrans = new THREE.LineBasicMaterial({ color: 0x06D6A0, linewidth: 2 });
+
+        // Helper to create wave geometry
+        function createWaveGeometry() {
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(POINTS_PER_WAVE * 3);
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            return geo;
+        }
+
+        // 1. Unpolarized Waves (8 lines)
+        const unpolGeometries = [];
+        for (let i = 0; i < 8; i++) {
+            const geo = createWaveGeometry();
+            unpolGeometries.push(geo);
+            const line = new THREE.Line(geo, i % 2 === 0 ? matUnpol1 : matUnpol2);
+            scene.add(line);
+        }
+
+        // 2. Polarized Wave
+        const polGeometry = createWaveGeometry();
+        const polLine = new THREE.Line(polGeometry, matPol);
+        scene.add(polLine);
+
+        // 3. Transmitted Wave
+        const transGeometry = createWaveGeometry();
+        const transLine = new THREE.Line(transGeometry, matTrans);
+        scene.add(transLine);
+
+        // --- Filters (Polarizer & Analyzer) ---
+        function createFilter(zPos, labelText) {
+            const group = new THREE.Group();
+            
+            // Glass Disc
+            const geom = new THREE.CylinderGeometry(3.5, 3.5, 0.2, 64);
+            geom.rotateX(Math.PI / 2);
+            const mat = new THREE.MeshPhysicalMaterial({ 
+                color: 0xffffff, 
+                transparent: true, 
+                opacity: 0.3, 
+                roughness: 0.1,
+                transmission: 0.9,
+                thickness: 0.5,
+                side: THREE.DoubleSide
+            });
+            const disc = new THREE.Mesh(geom, mat);
+            group.add(disc);
+
+            // Outer Ring
+            const ringGeom = new THREE.TorusGeometry(3.5, 0.1, 16, 64);
+            const ringMat = new THREE.MeshPhongMaterial({ color: 0xcbd5e1 });
+            const ring = new THREE.Mesh(ringGeom, ringMat);
+            group.add(ring);
+
+            // Transmission Axis Line
+            const lineGeom = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, -3.5, 0.1), 
+                new THREE.Vector3(0, 3.5, 0.1)
+            ]);
+            const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 3 });
+            const axisLine = new THREE.Line(lineGeom, lineMat);
+            group.add(axisLine);
+
+            group.position.z = zPos;
+            scene.add(group);
+            return group;
+        }
+
+        const filter1 = createFilter(Z_P1);
+        const filter2 = createFilter(Z_P2);
+
+        // --- Electric Field Vectors (Arrows) ---
+        const arrowPol = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, 0xFF3366, 0.4, 0.3);
+        scene.add(arrowPol);
+
+        const arrowTrans = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,10), 1, 0x06D6A0, 0.4, 0.3);
+        scene.add(arrowTrans);
+
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let time = 0;
+
+        function updateWaveData(geometry, zStart, zEnd, amplitude, angleRad, k, w, phaseOffset = 0) {
+            const positions = geometry.attributes.position.array;
+            for (let i = 0; i < POINTS_PER_WAVE; i++) {
+                const t = i / (POINTS_PER_WAVE - 1);
+                const z = zStart + t * (zEnd - zStart);
+                
+                // Wave Equation: E = A * sin(kz - wt + phi)
+                const E = amplitude * Math.sin(k * z - w * time + phaseOffset);
+                
+                // Vector components based on prompt specification:
+                // Ex = E0 * sin(theta), Ey = E0 * cos(theta)
+                // This means theta=0 is along the Y-axis.
+                positions[i * 3] = E * Math.sin(angleRad);     // X
+                positions[i * 3 + 1] = E * Math.cos(angleRad); // Y
+                positions[i * 3 + 2] = z;                      // Z
+            }
+            geometry.attributes.position.needsUpdate = true;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = clock.getDelta();
+            time += dt;
+
+            // Physics Parameters
+            const k = (2 * Math.PI) / state.wavelength;
+            const w = state.speed * k * 2; // Multiplied by 2 for better visual speed
+            
+            const theta1Rad = state.angle1 * Math.PI / 180;
+            const theta2Rad = state.angle2 * Math.PI / 180;
+
+            // 1. Update Unpolarized Waves
+            for (let i = 0; i < 8; i++) {
+                const angle = (i * 45) * Math.PI / 180;
+                const phase = i * (Math.PI / 4); // Spread phases to look chaotic
+                updateWaveData(unpolGeometries[i], Z_START, Z_P1, state.amplitude, angle, k, w, phase);
+            }
+
+            // 2. Update Polarized Wave (After P1)
+            updateWaveData(polGeometry, Z_P1, Z_P2, state.amplitude, theta1Rad, k, w, 0);
+
+            // 3. Update Transmitted Wave (After P2) - Malus's Law
+            const deltaTheta = theta2Rad - theta1Rad;
+            const eFinal = state.amplitude * Math.cos(deltaTheta);
+            updateWaveData(transGeometry, Z_P2, Z_END, eFinal, theta2Rad, k, w, 0);
+
+            // 4. Update Filter Rotations
+            // Since theta=0 is Y-axis, and standard rotation around Z from X to Y is positive,
+            // rotating by -theta aligns the Y-axis of the filter with the wave's angle.
+            filter1.rotation.z = -theta1Rad;
+            filter2.rotation.z = -theta2Rad;
+
+            // 5. Update Arrows (Instantaneous E-vectors)
+            // Arrow between P1 and P2 (z = 0)
+            let E_pol = state.amplitude * Math.sin(k * 0 - w * time);
+            let dirPol = new THREE.Vector3(Math.sin(theta1Rad), Math.cos(theta1Rad), 0);
+            if (E_pol < 0) {
+                dirPol.negate();
+                E_pol = -E_pol;
+            }
+            arrowPol.setDirection(dirPol);
+            arrowPol.setLength(Math.max(E_pol, 0.001)); // Prevent zero-length errors
+
+            // Arrow after P2 (z = 10)
+            let E_trans = eFinal * Math.sin(k * 10 - w * time);
+            let dirTrans = new THREE.Vector3(Math.sin(theta2Rad), Math.cos(theta2Rad), 0);
+            if (E_trans < 0) {
+                dirTrans.negate();
+                E_trans = -E_trans;
+            }
+            arrowTrans.setDirection(dirTrans);
+            
+            // Handle complete extinction case safely
+            if (Math.abs(eFinal) < 0.001) {
+                arrowTrans.visible = false;
+            } else {
+                arrowTrans.visible = true;
+                arrowTrans.setLength(Math.max(E_trans, 0.001));
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        updateFormulaCard();
+        animate();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photoelectric Effect Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #2d3748;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* UI Panel */
+        #ui-panel {
+            width: 300px;
+            min-width: 300px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #1a202c;
+            line-height: 1.2;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #4361EE, #7209B7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(209, 217, 230, 0.5);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #4361EE;
+            background: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e0;
+            background: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: #2d3748;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Canvas Container */
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Formula Card Overlay */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .formula-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+        }
+        .formula-row:last-child { margin-bottom: 0; }
+        
+        .math-var { font-style: italic; font-family: 'Inter', sans-serif; font-weight: 600; width: 50px; display: inline-block;}
+        .math-val { font-weight: 700; margin-left: 10px; width: 80px; text-align: right; }
+        .math-unit { color: #718096; margin-left: 5px; font-size: 0.8rem;}
+
+        .val-photon { color: #7209B7; }
+        .val-work { color: #DD6B20; }
+        .val-kmax-pos { color: #06D6A0; }
+        .val-kmax-neg { color: #E53E3E; }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+
+        /* Legend */
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+            color: #4a5568;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        .color-box {
+            width: 12px; height: 12px; border-radius: 3px; margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #ui-panel { width: 100%; height: auto; max-height: 40vh; border-right: none; border-bottom: 1px solid #d1d9e6; }
+            #canvas-container { height: 60vh; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <div>
+            <h1>Photoelectric Effect</h1>
+            <p style="font-size: 0.8rem; color: #718096;">Interactive Quantum Physics</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Light Frequency (f)</span>
+                <span class="control-value" id="val-freq">6.0</span>
+            </div>
+            <input type="range" id="slider-freq" min="4.0" max="12.0" step="0.1" value="6.0">
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #a0aec0; margin-top: 4px;">
+                <span>4.0 (Red)</span>
+                <span>×10¹⁴ Hz</span>
+                <span>12.0 (UV)</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Light Intensity</span>
+                <span class="control-value" id="val-intensity">3</span>
+            </div>
+            <input type="range" id="slider-intensity" min="0" max="10" step="1" value="3">
+            <div style="font-size: 0.7rem; color: #a0aec0; margin-top: 4px; text-align: center;">
+                Photons per second
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Metal Type</span>
+            </div>
+            <select id="select-metal">
+                <option value="2.1">Cesium (Cs) - 2.10 eV</option>
+                <option value="2.3">Potassium (K) - 2.30 eV</option>
+                <option value="2.75">Sodium (Na) - 2.75 eV</option>
+                <option value="4.08">Aluminum (Al) - 4.08 eV</option>
+                <option value="4.7">Copper (Cu) - 4.70 eV</option>
+                <option value="custom">Custom...</option>
+            </select>
+            
+            <div class="control-header" style="margin-top: 15px;">
+                <span class="control-label">Work Function (Φ₀)</span>
+                <span class="control-value" id="val-work">2.1</span>
+            </div>
+            <input type="range" id="slider-work" min="1.5" max="5.0" step="0.05" value="2.1">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: linear-gradient(45deg, #FF3366, #7209B7);"></div> Incident Photons</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Photoelectrons</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Metal Lattice Ions</div>
+            <div class="legend-item"><div class="color-box" style="background: rgba(0, 180, 216, 0.4); border: 1px solid #00b4d8;"></div> Energy Barrier (Φ₀)</div>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-row">
+                <span class="math-var">E<sub>ph</sub></span> = 
+                <span class="math-val val-photon" id="calc-eph">0.00</span>
+                <span class="math-unit">eV</span>
+            </div>
+            <div class="formula-row">
+                <span class="math-var">Φ₀</span> = 
+                <span class="math-val val-work" id="calc-work">0.00</span>
+                <span class="math-unit">eV</span>
+            </div>
+            <div style="height: 1px; background: #e2e8f0; margin: 5px 0;"></div>
+            <div class="formula-row">
+                <span class="math-var">K<sub>max</sub></span> = 
+                <span class="math-val val-kmax-pos" id="calc-kmax">0.00</span>
+                <span class="math-unit">eV</span>
+            </div>
+            <div id="status-msg" style="font-size: 0.75rem; font-weight: 600; text-align: right; margin-top: 5px; color: #06D6A0;">Emission Occurring</div>
+        </div>
+        
+        <div id="label-metal" class="scene-label">Metal Surface</div>
+        <div id="label-barrier" class="scene-label" style="color: #00b4d8; background: rgba(255,255,255,0.8);">Energy Barrier</div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Constants & State ---
+        const h_eVs = 4.135667696e-15; // Planck's constant in eV*s
+        const freqScale = 1e14;
+        
+        let state = {
+            freq: 6.0,
+            workFunc: 2.1,
+            intensity: 3,
+            Eph: 0,
+            Kmax: 0,
+            isEmitting: false
+        };
+
+        // --- DOM Elements ---
+        const ui = {
+            freqSlider: document.getElementById('slider-freq'),
+            freqVal: document.getElementById('val-freq'),
+            intensitySlider: document.getElementById('slider-intensity'),
+            intensityVal: document.getElementById('val-intensity'),
+            metalSelect: document.getElementById('select-metal'),
+            workSlider: document.getElementById('slider-work'),
+            workVal: document.getElementById('val-work'),
+            calcEph: document.getElementById('calc-eph'),
+            calcWork: document.getElementById('calc-work'),
+            calcKmax: document.getElementById('calc-kmax'),
+            statusMsg: document.getElementById('status-msg'),
+            labelMetal: document.getElementById('label-metal'),
+            labelBarrier: document.getElementById('label-barrier')
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.FogExp2('#f0f4f8', 0.02);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 5, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below ground
+        controls.minDistance = 5;
+        controls.maxDistance = 30;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe2e8f0, 0.4);
+        fillLight.position.set(-5, 3, -5);
+        scene.add(fillLight);
+
+        // --- Materials ---
+        const matMetalBase = new THREE.MeshPhysicalMaterial({
+            color: 0xBDC3C7,
+            metalness: 0.8,
+            roughness: 0.2,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide
+        });
+
+        const matIon = new THREE.MeshStandardMaterial({
+            color: 0x4361EE,
+            roughness: 0.3,
+            metalness: 0.1
+        });
+
+        const matElectron = new THREE.MeshStandardMaterial({
+            color: 0x06D6A0,
+            emissive: 0x06D6A0,
+            emissiveIntensity: 0.5,
+            roughness: 0.2
+        });
+
+        const matBarrier = new THREE.MeshPhysicalMaterial({
+            color: 0x00b4d8,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            blending: THREE.AdditiveBlending
+        });
+
+        // --- Geometries ---
+        const geoElectron = new THREE.SphereGeometry(0.12, 16, 16);
+        const geoPhotonCore = new THREE.SphereGeometry(0.15, 16, 16);
+
+        // --- Scene Objects ---
+        const metalGroup = new THREE.Group();
+        scene.add(metalGroup);
+
+        // 1. Metal Slab
+        const slabWidth = 12;
+        const slabDepth = 8;
+        const slabHeight = 2;
+        const slabY = -1; // Top surface is at y=0
+
+        const metalBox = new THREE.Mesh(new THREE.BoxGeometry(slabWidth, slabHeight, slabDepth), matMetalBase);
+        metalBox.position.y = slabY - slabHeight/2;
+        metalBox.receiveShadow = true;
+        metalGroup.add(metalBox);
+
+        // Wireframe for slab
+        const edges = new THREE.EdgesGeometry(metalBox.geometry);
+        const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 }));
+        metalBox.add(line);
+
+        // 2. Ions & Surface Electrons
+        const surfaceElectrons = [];
+        const ionSpacingX = slabWidth / 6;
+        const ionSpacingZ = slabDepth / 4;
+
+        for (let x = -2.5; x <= 2.5; x++) {
+            for (let z = -1.5; z <= 1.5; z++) {
+                for (let y = 0; y >= -1; y--) {
+                    // Ion
+                    const ion = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), matIon);
+                    ion.position.set(x * ionSpacingX, slabY + y * 0.8, z * ionSpacingZ);
+                    metalGroup.add(ion);
+
+                    // Surface Electron (only top layer)
+                    if (y === 0) {
+                        const electron = new THREE.Mesh(geoElectron, matElectron);
+                        // Offset slightly from ion
+                        electron.position.set(
+                            ion.position.x + (Math.random() - 0.5) * 0.5,
+                            0, // Surface level
+                            ion.position.z + (Math.random() - 0.5) * 0.5
+                        );
+                        electron.userData = {
+                            baseX: electron.position.x,
+                            baseZ: electron.position.z,
+                            phase: Math.random() * Math.PI * 2,
+                            speed: 0.05 + Math.random() * 0.05
+                        };
+                        metalGroup.add(electron);
+                        surfaceElectrons.push(electron);
+                    }
+                }
+            }
+        }
+
+        // 3. Energy Barrier
+        const barrierPlane = new THREE.Mesh(new THREE.PlaneGeometry(slabWidth, slabDepth), matBarrier);
+        barrierPlane.rotation.x = -Math.PI / 2;
+        scene.add(barrierPlane);
+
+        // Grid helper on barrier
+        const gridHelper = new THREE.GridHelper(slabWidth, 10, 0x00b4d8, 0x00b4d8);
+        gridHelper.material.opacity = 0.2;
+        gridHelper.material.transparent = true;
+        barrierPlane.add(gridHelper);
+
+        // --- Particle Systems ---
+        const photons = [];
+        const ejectedElectrons = [];
+
+        // Helper: Frequency to Color (4.0 to 12.0 -> Red to Violet)
+        function getPhotonColor(f) {
+            // Map 4.0 -> 0 (Red), 12.0 -> 270 (Violet)
+            let hue = Math.max(0, Math.min(270, ((f - 4.0) / (12.0 - 4.0)) * 270));
+            return new THREE.Color(`hsl(${hue}, 100%, 55%)`);
+        }
+
+        // Create Photon Wave Packet
+        function createPhoton() {
+            const group = new THREE.Group();
+            
+            const color = getPhotonColor(state.freq);
+            const mat = new THREE.MeshBasicMaterial({ color: color });
+            const core = new THREE.Mesh(geoPhotonCore, mat);
+            group.add(core);
+
+            // Sine wave trail
+            const points = [];
+            const trailLength = 2;
+            const segments = 30;
+            for (let i = 0; i <= segments; i++) {
+                let t = i / segments;
+                // Wavelength visual inversely proportional to frequency
+                let waves = state.freq / 2; 
+                points.push(new THREE.Vector3(
+                    Math.sin(t * Math.PI * 2 * waves) * 0.2,
+                    Math.cos(t * Math.PI * 2 * waves) * 0.2,
+                    t * trailLength
+                ));
+            }
+            const trailGeo = new THREE.BufferGeometry().setFromPoints(points);
+            const trailMat = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.7 });
+            const trail = new THREE.Line(trailGeo, trailMat);
+            group.add(trail);
+
+            // Positioning & Velocity
+            // Start high up, angled towards surface
+            const startX = -6 + (Math.random() - 0.5) * 4;
+            const startZ = (Math.random() - 0.5) * 4;
+            const startY = 8 + Math.random() * 2;
+            
+            group.position.set(startX, startY, startZ);
+
+            // Target on surface
+            const targetX = (Math.random() - 0.5) * (slabWidth - 2);
+            const targetZ = (Math.random() - 0.5) * (slabDepth - 2);
+            const target = new THREE.Vector3(targetX, 0, targetZ);
+
+            const velocity = new THREE.Vector3().subVectors(target, group.position).normalize().multiplyScalar(0.15);
+            
+            // Orient trail opposite to velocity
+            group.lookAt(group.position.clone().sub(velocity));
+
+            group.userData = { velocity: velocity, active: true };
+            scene.add(group);
+            photons.push(group);
+        }
+
+        // Create Ejected Electron
+        function ejectElectron(x, z) {
+            const group = new THREE.Group();
+            group.position.set(x, 0, z);
+
+            const electron = new THREE.Mesh(geoElectron, matElectron);
+            group.add(electron);
+
+            // Velocity calculation
+            // v_visual = C * sqrt(Kmax)
+            const v_mag = 0.15 * Math.sqrt(state.Kmax);
+            
+            // Random angle within a cone (0 to 45 deg from normal +Y)
+            const theta = Math.random() * Math.PI / 4;
+            const phi = Math.random() * Math.PI * 2;
+            
+            const vx = v_mag * Math.sin(theta) * Math.cos(phi);
+            const vy = v_mag * Math.cos(theta);
+            const vz = v_mag * Math.sin(theta) * Math.sin(phi);
+            
+            const velocity = new THREE.Vector3(vx, vy, vz);
+
+            // Velocity Vector Arrow
+            const arrowDir = velocity.clone().normalize();
+            const arrowLen = v_mag * 10; // Scale arrow length for visibility
+            const arrow = new THREE.ArrowHelper(arrowDir, new THREE.Vector3(0,0,0), arrowLen, 0x06D6A0, 0.2, 0.1);
+            group.add(arrow);
+
+            group.userData = { velocity: velocity, active: true };
+            scene.add(group);
+            ejectedElectrons.push(group);
+        }
+
+        // --- Physics & UI Update Logic ---
+        function updatePhysics() {
+            state.freq = parseFloat(ui.freqSlider.value);
+            state.workFunc = parseFloat(ui.workSlider.value);
+            state.intensity = parseInt(ui.intensitySlider.value);
+
+            // E = hf
+            state.Eph = h_eVs * (state.freq * freqScale);
+            
+            // Kmax = E - Phi
+            state.Kmax = state.Eph - state.workFunc;
+            state.isEmitting = state.Kmax > 0;
+
+            // Update UI Text
+            ui.freqVal.innerText = state.freq.toFixed(1);
+            ui.intensityVal.innerText = state.intensity;
+            ui.workVal.innerText = state.workFunc.toFixed(2);
+            
+            ui.calcEph.innerText = state.Eph.toFixed(2);
+            ui.calcWork.innerText = state.workFunc.toFixed(2);
+            
+            if (state.isEmitting) {
+                ui.calcKmax.innerText = state.Kmax.toFixed(2);
+                ui.calcKmax.className = 'math-val val-kmax-pos';
+                ui.statusMsg.innerText = "Emission Occurring";
+                ui.statusMsg.style.color = "#06D6A0";
+            } else {
+                ui.calcKmax.innerText = "0.00";
+                ui.calcKmax.className = 'math-val val-kmax-neg';
+                ui.statusMsg.innerText = "No Emission (E < Φ₀)";
+                ui.statusMsg.style.color = "#E53E3E";
+            }
+
+            // Update Barrier Visual
+            // Height maps to work function (1.5 to 5.0 -> 0.5 to 2.5)
+            const barrierHeight = (state.workFunc - 1.5) * 0.5 + 0.5;
+            barrierPlane.position.y = barrierHeight;
+            
+            // Color of slider thumb based on frequency
+            const color = getPhotonColor(state.freq);
+            ui.freqSlider.style.setProperty('--thumb-color', color.getStyle());
+        }
+
+        // Event Listeners
+        ui.freqSlider.addEventListener('input', updatePhysics);
+        ui.intensitySlider.addEventListener('input', updatePhysics);
+        ui.workSlider.addEventListener('input', () => {
+            ui.metalSelect.value = "custom";
+            updatePhysics();
+        });
+        
+        ui.metalSelect.addEventListener('change', (e) => {
+            if(e.target.value !== "custom") {
+                ui.workSlider.value = e.target.value;
+                updatePhysics();
+            }
+        });
+
+        // Initial update
+        updatePhysics();
+
+        // --- Label Positioning ---
+        function updateLabels() {
+            const canvasRect = container.getBoundingClientRect();
+            const w = canvasRect.width;
+            const h = canvasRect.height;
+
+            // Metal Label
+            const posMetal = new THREE.Vector3(0, slabY - 1, slabDepth/2 + 1);
+            posMetal.project(camera);
+            if(posMetal.z < 1) {
+                ui.labelMetal.style.display = 'block';
+                ui.labelMetal.style.left = `${(posMetal.x * 0.5 + 0.5) * w}px`;
+                ui.labelMetal.style.top = `${(-posMetal.y * 0.5 + 0.5) * h}px`;
+            } else {
+                ui.labelMetal.style.display = 'none';
+            }
+
+            // Barrier Label
+            const posBarrier = new THREE.Vector3(slabWidth/2 + 0.5, barrierPlane.position.y, 0);
+            posBarrier.project(camera);
+            if(posBarrier.z < 1) {
+                ui.labelBarrier.style.display = 'block';
+                ui.labelBarrier.style.left = `${(posBarrier.x * 0.5 + 0.5) * w}px`;
+                ui.labelBarrier.style.top = `${(-posBarrier.y * 0.5 + 0.5) * h}px`;
+            } else {
+                ui.labelBarrier.style.display = 'none';
+            }
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let photonSpawnTimer = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            controls.update();
+
+            // 1. Vibrate Surface Electrons
+            surfaceElectrons.forEach(el => {
+                // Vibrate more if intensity/freq is high, just for visual flair
+                const amp = 0.05 + (state.isEmitting ? 0.05 : 0);
+                el.position.x = el.userData.baseX + Math.sin(time * 10 * el.userData.speed + el.userData.phase) * amp;
+                el.position.z = el.userData.baseZ + Math.cos(time * 12 * el.userData.speed + el.userData.phase) * amp;
+            });
+
+            // 2. Spawn Photons
+            if (state.intensity > 0) {
+                // Intensity 1 -> 1 per sec, Intensity 10 -> 20 per sec
+                const spawnRate = state.intensity * 2; 
+                photonSpawnTimer += delta;
+                if (photonSpawnTimer > 1 / spawnRate) {
+                    createPhoton();
+                    photonSpawnTimer = 0;
+                }
+            }
+
+            // 3. Update Photons & Collision
+            for (let i = photons.length - 1; i >= 0; i--) {
+                const p = photons[i];
+                if (!p.userData.active) continue;
+
+                p.position.add(p.userData.velocity);
+
+                // Check collision with surface (y <= 0)
+                if (p.position.y <= 0) {
+                    p.userData.active = false;
+                    scene.remove(p);
+                    photons.splice(i, 1);
+
+                    // Physics Check: Eject electron?
+                    if (state.isEmitting) {
+                        ejectElectron(p.position.x, p.position.z);
+                    } else {
+                        // Visual cue for absorption/reflection without emission? 
+                        // Keep it simple: photon just disappears.
+                    }
+                }
+            }
+
+            // 4. Update Ejected Electrons
+            for (let i = ejectedElectrons.length - 1; i >= 0; i--) {
+                const e = ejectedElectrons[i];
+                if (!e.userData.active) continue;
+
+                e.position.add(e.userData.velocity);
+
+                // Remove if out of bounds
+                if (e.position.y > 15 || Math.abs(e.position.x) > 15 || Math.abs(e.position.z) > 15) {
+                    e.userData.active = false;
+                    scene.remove(e);
+                    ejectedElectrons.splice(i, 1);
+                }
+            }
+
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        animate();
+
+        // Inject dynamic CSS for slider thumb color
+        const style = document.createElement('style');
+        document.head.appendChild(style);
+        ui.freqSlider.addEventListener('input', () => {
+            const color = getPhotonColor(state.freq).getStyle();
+            style.innerHTML = `
+                #slider-freq::-webkit-slider-thumb { background: ${color} !important; box-shadow: 0 2px 5px ${color}88 !important; }
+            `;
+        });
+        // Trigger once
+        ui.freqSlider.dispatchEvent(new Event('input'));
+
+    </script>
+</body>
+</html>

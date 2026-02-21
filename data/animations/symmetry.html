@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Symmetry in Electromagnetism & Circuits</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --accent-red: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-green: #06D6A0;
+            --accent-orange: #F77F00;
+            --accent-purple: #7209B7;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Glassmorphic UI Panels */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 16px;
+        }
+
+        /* Sidebar Controls */
+        #sidebar {
+            width: 320px;
+            height: 100%;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            border-radius: 0;
+            border-left: 1px solid var(--glass-border);
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, var(--accent-purple), var(--accent-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        /* Mode Toggle */
+        .toggle-container {
+            display: flex;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 10px;
+        }
+
+        .toggle-btn {
+            flex: 1;
+            padding: 8px 0;
+            text-align: center;
+            border: none;
+            background: transparent;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 6px;
+            color: var(--text-muted);
+            transition: all 0.3s ease;
+        }
+
+        .toggle-btn.active {
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Control Groups */
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Specific slider colors */
+        #lambda::-webkit-slider-thumb { background: var(--accent-red); }
+        #gaussR::-webkit-slider-thumb, #gaussL::-webkit-slider-thumb { background: var(--accent-green); }
+        #resR::-webkit-slider-thumb, #volts::-webkit-slider-thumb { background: var(--accent-purple); }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            min-width: 280px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .math-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+
+        .formula-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+        }
+
+        .formula-line span.var { color: var(--accent-red); font-weight: bold; }
+        .formula-line span.val { color: var(--text-main); font-weight: bold; margin-left: auto;}
+        
+        .info-box {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.03);
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-orange);
+        }
+
+        /* 3D Labels */
+        .label3d {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.2s;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+
+        .hidden { display: none !important; }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <!-- Formula Overlay -->
+        <div id="formula-card" class="glass-panel">
+            <div id="math-mode-a">
+                <div class="math-title">Gauss's Law (Cylindrical)</div>
+                <div class="formula-line">E = <span class="var">|λ|</span> / (2π<span style="font-size:0.8em">ε₀</span><span style="color:var(--accent-green)">r</span>)</div>
+                <div class="formula-line">Φ<span style="font-size:0.6em">total</span> = Φ<span style="font-size:0.6em">curved</span> + Φ<span style="font-size:0.6em">caps</span></div>
+                <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin:10px 0;">
+                <div class="formula-line">|E| at surface: <span class="val" id="val-E">0.00</span> N/C</div>
+                <div class="formula-line">Φ<span style="font-size:0.6em">curved</span>: <span class="val" id="val-PhiC">0.00</span> V·m</div>
+                <div class="formula-line">Φ<span style="font-size:0.6em">caps</span>: <span class="val">0.00</span> V·m</div>
+                <div class="info-box">
+                    By symmetry, <b>E</b> is purely radial. It is parallel to <b>dA</b> on the curved surface, but perpendicular to <b>dA</b> on the end caps (flux = 0).
+                </div>
+            </div>
+
+            <div id="math-mode-b" class="hidden">
+                <div class="math-title">Resistor Network (Cubic)</div>
+                <div class="formula-line">R<span style="font-size:0.6em">eq</span> = (5/6)<span class="var">R</span></div>
+                <div class="formula-line">I<span style="font-size:0.6em">total</span> = <span style="color:var(--accent-orange)">V</span> / R<span style="font-size:0.6em">eq</span></div>
+                <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin:10px 0;">
+                <div class="formula-line">R<span style="font-size:0.6em">eq</span>: <span class="val" id="val-Req">0.00</span> Ω</div>
+                <div class="formula-line">I<span style="font-size:0.6em">total</span>: <span class="val" id="val-Itot">0.00</span> A</div>
+                <div class="info-box">
+                    By symmetry, current splits equally into 3 paths at the source (I/3), then splits again (I/6), and recombines at the sink (I/3).
+                </div>
+            </div>
+        </div>
+
+        <!-- 3D Labels -->
+        <div id="label-dA-curved" class="label3d hidden" style="background: var(--accent-orange);">dA (Curved)</div>
+        <div id="label-dA-cap" class="label3d hidden" style="background: var(--accent-orange);">dA (Cap)</div>
+        <div id="label-E-field" class="label3d hidden" style="background: var(--accent-red);">E Field</div>
+    </div>
+
+    <div id="sidebar" class="glass-panel">
+        <div>
+            <h1>Symmetry Explorer</h1>
+            <p class="subtitle">Interactive Physics Visualization</p>
+        </div>
+
+        <div class="toggle-container">
+            <button class="toggle-btn active" id="btn-mode-a" onclick="setMode('A')">Gauss's Law</button>
+            <button class="toggle-btn" id="btn-mode-b" onclick="setMode('B')">Resistor Cube</button>
+        </div>
+
+        <!-- Mode A Controls -->
+        <div id="controls-mode-a">
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Charge Density (λ)</span>
+                    <span class="val-display" id="disp-lambda">+5 μC/m</span>
+                </div>
+                <input type="range" id="lambda" min="-10" max="10" step="1" value="5">
+            </div>
+            
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Gaussian Radius (r)</span>
+                    <span class="val-display" id="disp-gaussR">1.5 m</span>
+                </div>
+                <input type="range" id="gaussR" min="0.5" max="3.0" step="0.1" value="1.5">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Gaussian Length (L)</span>
+                    <span class="val-display" id="disp-gaussL">2.0 m</span>
+                </div>
+                <input type="range" id="gaussL" min="1.0" max="5.0" step="0.2" value="2.0">
+            </div>
+        </div>
+
+        <!-- Mode B Controls -->
+        <div id="controls-mode-b" class="hidden">
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Resistance (R)</span>
+                    <span class="val-display" id="disp-resR">10 Ω</span>
+                </div>
+                <input type="range" id="resR" min="1" max="100" step="1" value="10">
+            </div>
+            
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Voltage (V)</span>
+                    <span class="val-display" id="disp-volts">10 V</span>
+                </div>
+                <input type="range" id="volts" min="1" max="20" step="1" value="10">
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            mode: 'A',
+            A: { lambda: 5, r: 1.5, L: 2.0 },
+            B: { R: 10, V: 10 }
+        };
+
+        // UI Elements
+        const ui = {
+            lambda: document.getElementById('lambda'),
+            gaussR: document.getElementById('gaussR'),
+            gaussL: document.getElementById('gaussL'),
+            resR: document.getElementById('resR'),
+            volts: document.getElementById('volts'),
+            dispLambda: document.getElementById('disp-lambda'),
+            dispGaussR: document.getElementById('disp-gaussR'),
+            dispGaussL: document.getElementById('disp-gaussL'),
+            dispResR: document.getElementById('disp-resR'),
+            dispVolts: document.getElementById('disp-volts'),
+            valE: document.getElementById('val-E'),
+            valPhiC: document.getElementById('val-PhiC'),
+            valReq: document.getElementById('val-Req'),
+            valItot: document.getElementById('val-Itot'),
+            labelDACurved: document.getElementById('label-dA-curved'),
+            labelDACap: document.getElementById('label-dA-cap'),
+            labelEField: document.getElementById('label-E-field')
+        };
+
+        // Colors
+        const colors = {
+            wirePos: 0xFF3366,
+            wireNeg: 0x4361EE,
+            gauss: 0x06D6A0,
+            eField: 0xFF3366,
+            eFieldNeg: 0x4361EE,
+            dA: 0xF77F00,
+            cube: 0x7209B7,
+            particle: 0xF77F00,
+            node: 0xFFFFFF
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(5, 4, 6);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Groups
+        const groupA = new THREE.Group();
+        const groupB = new THREE.Group();
+        scene.add(groupA);
+        scene.add(groupB);
+        groupB.visible = false;
+
+        // --- Mode A: Gauss's Law Objects ---
+        
+        // 1. Charged Wire
+        const wireGeo = new THREE.CylinderGeometry(0.03, 0.03, 20, 16);
+        const wireMat = new THREE.MeshBasicMaterial({ color: colors.wirePos });
+        const wire = new THREE.Mesh(wireGeo, wireMat);
+        groupA.add(wire);
+
+        // 2. Gaussian Surface (Curved + Caps)
+        const gaussGroup = new THREE.Group();
+        groupA.add(gaussGroup);
+
+        const gaussMat = new THREE.MeshPhysicalMaterial({
+            color: colors.gauss,
+            transparent: true,
+            opacity: 0.25,
+            side: THREE.DoubleSide,
+            roughness: 0.1,
+            transmission: 0.5,
+            thickness: 0.5
+        });
+        const gaussEdgeMat = new THREE.LineBasicMaterial({ color: colors.gauss, opacity: 0.8, transparent: true });
+
+        // Base geometries (radius 1, length 1)
+        const cylGeo = new THREE.CylinderGeometry(1, 1, 1, 32, 1, true);
+        const capGeo = new THREE.CircleGeometry(1, 32);
+
+        const curvedSurface = new THREE.Mesh(cylGeo, gaussMat);
+        const topCap = new THREE.Mesh(capGeo, gaussMat);
+        topCap.rotation.x = -Math.PI / 2;
+        const bottomCap = new THREE.Mesh(capGeo, gaussMat);
+        bottomCap.rotation.x = Math.PI / 2;
+
+        // Edges for better visibility
+        const edges = new THREE.EdgesGeometry(cylGeo);
+        const curvedEdges = new THREE.LineSegments(edges, gaussEdgeMat);
+        curvedSurface.add(curvedEdges);
+
+        gaussGroup.add(curvedSurface);
+        gaussGroup.add(topCap);
+        gaussGroup.add(bottomCap);
+
+        // 3. Area Vectors (dA)
+        const dAArrows = [];
+        function createDAArrow(dir, origin, color) {
+            const arrow = new THREE.ArrowHelper(dir, origin, 0.6, color, 0.15, 0.1);
+            gaussGroup.add(arrow);
+            dAArrows.push(arrow);
+            return arrow;
+        }
+        
+        // dA on curved surface (equator)
+        for(let i=0; i<4; i++) {
+            const angle = (i / 4) * Math.PI * 2;
+            const dir = new THREE.Vector3(Math.cos(angle), 0, Math.sin(angle));
+            createDAArrow(dir, dir.clone(), colors.dA); // Position will be scaled
+        }
+        // dA on caps
+        const topDA = createDAArrow(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, 0.5, 0), colors.dA);
+        const botDA = createDAArrow(new THREE.Vector3(0, -1, 0), new THREE.Vector3(0, -0.5, 0), colors.dA);
+
+        // 4. Electric Field Vectors
+        const eFieldGroup = new THREE.Group();
+        groupA.add(eFieldGroup);
+        const eArrows = [];
+        
+        // Create a grid of arrows
+        const radii = [0.5, 1.0, 1.5, 2.0, 2.5];
+        const heights = [-3, -1.5, 0, 1.5, 3];
+        const angles = 8;
+
+        radii.forEach(r => {
+            heights.forEach(y => {
+                for(let i=0; i<angles; i++) {
+                    const theta = (i / angles) * Math.PI * 2;
+                    const dir = new THREE.Vector3(Math.cos(theta), 0, Math.sin(theta));
+                    const origin = new THREE.Vector3(r * Math.cos(theta), y, r * Math.sin(theta));
+                    const arrow = new THREE.ArrowHelper(dir, origin, 1, colors.eField, 0.15, 0.1);
+                    // Store base data for updates
+                    arrow.userData = { r: r, baseDir: dir };
+                    eFieldGroup.add(arrow);
+                    eArrows.push(arrow);
+                }
+            });
+        });
+
+        // --- Mode B: Resistor Cube Objects ---
+        
+        // 1. Nodes and Edges
+        const cubeSize = 3;
+        const half = cubeSize / 2;
+        const nodes = [];
+        const edgesB = [];
+        
+        // 8 corners
+        for(let x of [-1, 1]) {
+            for(let y of [-1, 1]) {
+                for(let z of [-1, 1]) {
+                    nodes.push(new THREE.Vector3(x*half, y*half, z*half));
+                }
+            }
+        }
+
+        const nodeGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        const nodeMat = new THREE.MeshBasicMaterial({ color: colors.node });
+        nodes.forEach(pos => {
+            const mesh = new THREE.Mesh(nodeGeo, nodeMat);
+            mesh.position.copy(pos);
+            groupB.add(mesh);
+        });
+
+        // Source and Sink highlights
+        const sourcePos = new THREE.Vector3(-half, -half, -half);
+        const sinkPos = new THREE.Vector3(half, half, half);
+        
+        const resGeo = new THREE.CylinderGeometry(0.04, 0.04, cubeSize, 8);
+        const resMat = new THREE.MeshPhysicalMaterial({ color: colors.cube, metalness: 0.2, roughness: 0.5 });
+
+        // Helper to create edge
+        function createEdge(p1, p2) {
+            const edge = new THREE.Mesh(resGeo, resMat);
+            const dist = p1.distanceTo(p2);
+            edge.scale.y = dist / cubeSize;
+            edge.position.copy(p1).lerp(p2, 0.5);
+            edge.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), p2.clone().sub(p1).normalize());
+            groupB.add(edge);
+            return { p1, p2, dist };
+        }
+
+        // Define the 12 edges and their current fractions based on symmetry
+        // Source is (-,-,-), Sink is (+,+,+)
+        const paths = [];
+        
+        // Find adjacent nodes
+        for(let i=0; i<nodes.length; i++) {
+            for(let j=i+1; j<nodes.length; j++) {
+                let diffs = 0;
+                if(nodes[i].x !== nodes[j].x) diffs++;
+                if(nodes[i].y !== nodes[j].y) diffs++;
+                if(nodes[i].z !== nodes[j].z) diffs++;
+                
+                if(diffs === 1) { // They form an edge
+                    // Determine direction of current (towards sink)
+                    let start = nodes[i];
+                    let end = nodes[j];
+                    if (start.distanceTo(sinkPos) < end.distanceTo(sinkPos)) {
+                        let temp = start; start = end; end = temp;
+                    }
+                    
+                    createEdge(start, end);
+                    
+                    // Determine current fraction based on symmetry
+                    let fraction = 1/6; // middle edges
+                    if (start.equals(sourcePos) || end.equals(sinkPos)) {
+                        fraction = 1/3; // edges connected to source or sink
+                    }
+                    
+                    paths.push({ start, end, fraction });
+                }
+            }
+        }
+
+        // 2. Particle System for Current
+        const particleCount = 150;
+        const particleGeo = new THREE.SphereGeometry(0.06, 8, 8);
+        const particleMat = new THREE.MeshBasicMaterial({ color: colors.particle });
+        const particleMesh = new THREE.InstancedMesh(particleGeo, particleMat, particleCount);
+        groupB.add(particleMesh);
+
+        const dummy = new THREE.Object3D();
+        const particles = [];
+        for(let i=0; i<particleCount; i++) {
+            particles.push({
+                pathIdx: Math.floor(Math.random() * paths.length),
+                progress: Math.random(),
+                speedOffset: 0.8 + Math.random() * 0.4
+            });
+        }
+
+        // --- Update Logic ---
+
+        function updateModeA() {
+            const { lambda, r, L } = state.A;
+            
+            // Update UI text
+            ui.dispLambda.innerText = (lambda > 0 ? '+' : '') + lambda + ' μC/m';
+            ui.dispGaussR.innerText = r.toFixed(1) + ' m';
+            ui.dispGaussL.innerText = L.toFixed(1) + ' m';
+
+            // Update Wire Color
+            wire.material.color.setHex(lambda >= 0 ? colors.wirePos : colors.wireNeg);
+
+            // Update Gaussian Surface Scale
+            curvedSurface.scale.set(r, L, r);
+            topCap.scale.set(r, r, 1);
+            topCap.position.y = L / 2;
+            bottomCap.scale.set(r, r, 1);
+            bottomCap.position.y = -L / 2;
+
+            // Update dA Arrows
+            let dAIndex = 0;
+            for(let i=0; i<4; i++) {
+                const angle = (i / 4) * Math.PI * 2;
+                dAArrows[dAIndex].position.set(r * Math.cos(angle), 0, r * Math.sin(angle));
+                dAIndex++;
+            }
+            dAArrows[dAIndex].position.set(0, L/2, 0); // Top
+            dAIndex++;
+            dAArrows[dAIndex].position.set(0, -L/2, 0); // Bottom
+
+            // Physics Constants (Scaled for visualization)
+            const k = 2.0; // Visual scaling factor representing 1/(2πε₀)
+            
+            // Update E-Field Arrows
+            eArrows.forEach(arrow => {
+                const dist = arrow.userData.r;
+                // E = k * |λ| / r.  Add small offset to prevent infinite length at r=0
+                let magnitude = (k * Math.abs(lambda)) / (dist + 0.5); 
+                
+                // Clamp magnitude for visual sanity
+                magnitude = Math.max(0.1, Math.min(magnitude, 2.5));
+
+                if (lambda === 0) magnitude = 0.001; // Hide essentially
+
+                arrow.setLength(magnitude, 0.15 * Math.min(1, magnitude), 0.1 * Math.min(1, magnitude));
+                
+                // Direction
+                const dir = arrow.userData.baseDir.clone();
+                if (lambda < 0) dir.negate();
+                arrow.setDirection(dir);
+                
+                // Color
+                arrow.setColor(lambda >= 0 ? colors.eField : colors.eFieldNeg);
+            });
+
+            // Update Math Panel
+            const E_val = (Math.abs(lambda) / r).toFixed(2); // Simplified proportional value
+            const Phi_val = (lambda * L).toFixed(2);
+            ui.valE.innerText = E_val;
+            ui.valPhiC.innerText = Phi_val;
+
+            // Update 3D Labels
+            updateLabelsA(r, L);
+        }
+
+        function updateModeB() {
+            const { R, V } = state.B;
+            
+            ui.dispResR.innerText = R + ' Ω';
+            ui.dispVolts.innerText = V + ' V';
+
+            const Req = (5/6) * R;
+            const Itot = V / Req;
+
+            ui.valReq.innerText = Req.toFixed(2);
+            ui.valItot.innerText = Itot.toFixed(2);
+
+            // Particle speed is proportional to total current
+            state.B.baseSpeed = Itot * 0.002; 
+        }
+
+        function updateLabelsA(r, L) {
+            if(state.mode !== 'A') return;
+            
+            // Project 3D pos to 2D screen
+            const project = (vec) => {
+                const projected = vec.clone().project(camera);
+                const x = (projected.x * .5 + .5) * container.clientWidth;
+                const y = (projected.y * -.5 + .5) * container.clientHeight;
+                return {x, y, z: projected.z};
+            };
+
+            // dA Curved (pick one on the right)
+            const pCurved = project(new THREE.Vector3(r, 0, 0));
+            if(pCurved.z < 1) {
+                ui.labelDACurved.style.left = pCurved.x + 20 + 'px';
+                ui.labelDACurved.style.top = pCurved.y + 'px';
+                ui.labelDACurved.classList.remove('hidden');
+            } else {
+                ui.labelDACurved.classList.add('hidden');
+            }
+
+            // dA Cap (top)
+            const pCap = project(new THREE.Vector3(0, L/2, 0));
+            if(pCap.z < 1) {
+                ui.labelDACap.style.left = pCap.x + 20 + 'px';
+                ui.labelDACap.style.top = pCap.y - 20 + 'px';
+                ui.labelDACap.classList.remove('hidden');
+            } else {
+                ui.labelDACap.classList.add('hidden');
+            }
+
+            // E Field (pick one representative arrow)
+            const pE = project(new THREE.Vector3(1.5, 1.5, 0));
+            if(pE.z < 1 && state.A.lambda !== 0) {
+                ui.labelEField.style.left = pE.x + 'px';
+                ui.labelEField.style.top = pE.y - 20 + 'px';
+                ui.labelEField.classList.remove('hidden');
+            } else {
+                ui.labelEField.classList.add('hidden');
+            }
+        }
+
+        // --- Event Listeners ---
+
+        // Mode Switching
+        window.setMode = function(mode) {
+            state.mode = mode;
+            
+            document.getElementById('btn-mode-a').classList.toggle('active', mode === 'A');
+            document.getElementById('btn-mode-b').classList.toggle('active', mode === 'B');
+            
+            document.getElementById('controls-mode-a').classList.toggle('hidden', mode !== 'A');
+            document.getElementById('controls-mode-b').classList.toggle('hidden', mode !== 'B');
+            
+            document.getElementById('math-mode-a').classList.toggle('hidden', mode !== 'A');
+            document.getElementById('math-mode-b').classList.toggle('hidden', mode !== 'B');
+
+            groupA.visible = (mode === 'A');
+            groupB.visible = (mode === 'B');
+
+            if (mode === 'A') {
+                camera.position.set(5, 4, 6);
+                controls.target.set(0, 0, 0);
+                updateModeA();
+            } else {
+                camera.position.set(6, 5, 7);
+                controls.target.set(0, 0, 0);
+                ui.labelDACurved.classList.add('hidden');
+                ui.labelDACap.classList.add('hidden');
+                ui.labelEField.classList.add('hidden');
+                updateModeB();
+            }
+        };
+
+        // Sliders Mode A
+        ['lambda', 'gaussR', 'gaussL'].forEach(id => {
+            ui[id].addEventListener('input', (e) => {
+                state.A[id === 'gaussR' ? 'r' : id === 'gaussL' ? 'L' : 'lambda'] = parseFloat(e.target.value);
+                updateModeA();
+            });
+        });
+
+        // Sliders Mode B
+        ['resR', 'volts'].forEach(id => {
+            ui[id].addEventListener('input', (e) => {
+                state.B[id === 'resR' ? 'R' : 'V'] = parseFloat(e.target.value);
+                updateModeB();
+            });
+        });
+
+        // Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        
+        let lastTime = performance.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = performance.now();
+            const delta = time - lastTime;
+            lastTime = time;
+
+            controls.update();
+
+            if (state.mode === 'A') {
+                updateLabelsA(state.A.r, state.A.L);
+            }
+
+            if (state.mode === 'B') {
+                // Auto-rotate cube slightly if user isn't interacting
+                if (controls.state === -1) { // -1 means no interaction in OrbitControls
+                    groupB.rotation.y += 0.002;
+                    groupB.rotation.x += 0.001;
+                }
+
+                // Animate Particles
+                const baseSpeed = state.B.baseSpeed || 0.02;
+                
+                for(let i=0; i<particleCount; i++) {
+                    const p = particles[i];
+                    const path = paths[p.pathIdx];
+                    
+                    // Speed depends on current fraction in that branch
+                    // fraction is 1/3 or 1/6. Multiply by 3 to normalize (1.0 or 0.5)
+                    const branchMultiplier = path.fraction * 3; 
+                    
+                    p.progress += baseSpeed * p.speedOffset * branchMultiplier;
+
+                    if (p.progress >= 1) {
+                        p.progress = 0;
+                        // Pick a new path weighted by current (simplified: random is okay for visual density)
+                        p.pathIdx = Math.floor(Math.random() * paths.length);
+                    }
+
+                    // Interpolate position
+                    const currentPath = paths[p.pathIdx];
+                    const pos = currentPath.start.clone().lerp(currentPath.end, p.progress);
+                    
+                    dummy.position.copy(pos);
+                    dummy.updateMatrix();
+                    particleMesh.setMatrixAt(i, dummy.matrix);
+                }
+                particleMesh.instanceMatrix.needsUpdate = true;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updateModeA();
+        animate();
+
+    </script>
+</body>
+</html>

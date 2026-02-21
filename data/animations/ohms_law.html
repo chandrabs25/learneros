@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ohm's Law & Electron Dynamics 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        /* Glassmorphic UI Panel */
+        #controls-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            color: #111;
+            font-weight: 600;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #FF3366;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.8);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .formula-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .math-highlight { color: #FF3366; font-weight: bold; }
+        .math-blue { color: #4361EE; font-weight: bold; }
+        .math-green { color: #06D6A0; font-weight: bold; }
+        .math-orange { color: #F77F00; font-weight: bold; }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.85rem;
+            background: rgba(255,255,255,0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-title">Live Physics</div>
+        <div><span class="math-blue">V</span> = <span id="disp-v">0.00</span> V</div>
+        <div><span class="math-orange">I</span> = <span id="disp-i">0.00</span> A</div>
+        <div><span class="math-highlight">R</span> = <span id="disp-r">0.00</span> Ω</div>
+        <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin: 8px 0;">
+        <div style="font-size: 0.8rem; color: #555;">v<sub>d</sub> = μ·E = <span id="disp-vd" class="math-green">0.00</span></div>
+    </div>
+
+    <div id="controls-panel">
+        <h2>Circuit Parameters</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <label for="mode">Circuit Mode</label>
+            </div>
+            <select id="mode">
+                <option value="linear">Ohmic (Linear)</option>
+                <option value="non-linear">Non-Ohmic (Filament Bulb)</option>
+                <option value="diode">Diode (Semiconductor)</option>
+                <option value="ac">AC Source (Ohmic)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="voltage" id="voltage-label">Applied Voltage (V)</label>
+                <span class="value-display" id="val-voltage">5.0 V</span>
+            </div>
+            <input type="range" id="voltage" min="-10" max="10" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="resistance">Base Resistance (Ω)</label>
+                <span class="value-display" id="val-resistance">10 Ω</span>
+            </div>
+            <input type="range" id="resistance" min="1" max="20" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="temp">Temperature (K)</label>
+                <span class="value-display" id="val-temp">300 K</span>
+            </div>
+            <input type="range" id="temp" min="300" max="1000" step="10" value="300">
+        </div>
+    </div>
+
+    <div id="label-anode" class="scene-label">Anode (+)</div>
+    <div id="label-cathode" class="scene-label">Cathode (-)</div>
+    <div id="label-graph" class="scene-label">V-I Characteristic</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & Colors ---
+        const COLORS = {
+            bg: 0xf0f4f8,
+            electron: 0x4361EE, // Blue
+            ion: 0xFF3366,      // Red
+            field: 0x06D6A0,    // Green
+            current: 0xF77F00,  // Orange
+            conductor: 0x4361EE,
+            grid: 0xcccccc,
+            axis: 0x888888
+        };
+
+        const NUM_ELECTRONS = 150;
+        const CYLINDER_LEN = 20;
+        const CYLINDER_RAD = 3;
+        const CYLINDER_POS_X = -12;
+
+        // --- State Variables ---
+        let params = {
+            voltage: 5.0,
+            resistance: 10.0,
+            temp: 300,
+            mode: 'linear'
+        };
+        
+        let liveV = 0;
+        let liveI = 0;
+        let liveR = 0;
+        let time = 0;
+
+        // --- DOM Elements ---
+        const elVoltage = document.getElementById('voltage');
+        const elResistance = document.getElementById('resistance');
+        const elTemp = document.getElementById('temp');
+        const elMode = document.getElementById('mode');
+        
+        const valVoltage = document.getElementById('val-voltage');
+        const valResistance = document.getElementById('val-resistance');
+        const valTemp = document.getElementById('val-temp');
+        const labelVoltage = document.getElementById('voltage-label');
+
+        const dispV = document.getElementById('disp-v');
+        const dispI = document.getElementById('disp-i');
+        const dispR = document.getElementById('disp-r');
+        const dispVd = document.getElementById('disp-vd');
+
+        const labelAnode = document.getElementById('label-anode');
+        const labelCathode = document.getElementById('label-cathode');
+        const labelGraph = document.getElementById('label-graph');
+
+        // --- Event Listeners ---
+        elVoltage.addEventListener('input', (e) => { params.voltage = parseFloat(e.target.value); updateUI(); });
+        elResistance.addEventListener('input', (e) => { params.resistance = parseFloat(e.target.value); updateUI(); });
+        elTemp.addEventListener('input', (e) => { params.temp = parseFloat(e.target.value); updateUI(); });
+        elMode.addEventListener('change', (e) => { 
+            params.mode = e.target.value; 
+            if(params.mode === 'ac') {
+                elVoltage.min = 0;
+                if(params.voltage < 0) params.voltage = Math.abs(params.voltage);
+                elVoltage.value = params.voltage;
+                labelVoltage.innerText = "Amplitude (V)";
+            } else {
+                elVoltage.min = -10;
+                labelVoltage.innerText = "Applied Voltage (V)";
+            }
+            updateUI(); 
+        });
+
+        function updateUI() {
+            valVoltage.innerText = params.voltage.toFixed(1) + " V";
+            valResistance.innerText = params.resistance.toFixed(1) + " Ω";
+            valTemp.innerText = params.temp + " K";
+        }
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(COLORS.bg);
+        // Add subtle fog to blend background
+        scene.fog = new THREE.FogExp2(COLORS.bg, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 15, 40);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-10, -10, -10);
+        scene.add(backLight);
+
+        // --- 1. Microscopic Scene (Left) ---
+        
+        // Conductor Cylinder
+        const cylinderGeo = new THREE.CylinderGeometry(CYLINDER_RAD, CYLINDER_RAD, CYLINDER_LEN, 32);
+        cylinderGeo.rotateZ(Math.PI / 2);
+        const cylinderMat = new THREE.MeshPhongMaterial({
+            color: COLORS.conductor,
+            transparent: true,
+            opacity: 0.15,
+            shininess: 100,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const conductor = new THREE.Mesh(cylinderGeo, cylinderMat);
+        conductor.position.x = CYLINDER_POS_X;
+        scene.add(conductor);
+
+        // Lattice Ions
+        const ions = [];
+        const ionGeo = new THREE.SphereGeometry(0.4, 16, 16);
+        const ionMat = new THREE.MeshPhongMaterial({ color: COLORS.ion, shininess: 80 });
+        
+        const spacing = 2.5;
+        for(let x = -CYLINDER_LEN/2 + 1; x < CYLINDER_LEN/2; x += spacing) {
+            for(let y = -CYLINDER_RAD + 1; y < CYLINDER_RAD; y += spacing) {
+                for(let z = -CYLINDER_RAD + 1; z < CYLINDER_RAD; z += spacing) {
+                    if(y*y + z*z < (CYLINDER_RAD-0.5)*(CYLINDER_RAD-0.5)) {
+                        const ion = new THREE.Mesh(ionGeo, ionMat);
+                        const baseX = CYLINDER_POS_X + x;
+                        ion.position.set(baseX, y, z);
+                        ion.userData = { baseX, baseY: y, baseZ: z };
+                        scene.add(ion);
+                        ions.push(ion);
+                    }
+                }
+            }
+        }
+
+        // Conduction Electrons (InstancedMesh)
+        const electronGeo = new THREE.SphereGeometry(0.15, 8, 8);
+        const electronMat = new THREE.MeshPhongMaterial({ color: COLORS.electron, emissive: 0x111133 });
+        const electronMesh = new THREE.InstancedMesh(electronGeo, electronMat, NUM_ELECTRONS);
+        scene.add(electronMesh);
+
+        const dummy = new THREE.Object3D();
+        const electronData = [];
+
+        for(let i = 0; i < NUM_ELECTRONS; i++) {
+            // Random position inside cylinder
+            const x = CYLINDER_POS_X + (Math.random() - 0.5) * CYLINDER_LEN;
+            const r = Math.sqrt(Math.random()) * (CYLINDER_RAD - 0.2);
+            const theta = Math.random() * Math.PI * 2;
+            const y = r * Math.cos(theta);
+            const z = r * Math.sin(theta);
+            
+            // Random thermal velocity direction
+            const vx = (Math.random() - 0.5);
+            const vy = (Math.random() - 0.5);
+            const vz = (Math.random() - 0.5);
+            const v = new THREE.Vector3(vx, vy, vz).normalize();
+
+            electronData.push({
+                pos: new THREE.Vector3(x, y, z),
+                vel: v
+            });
+            
+            dummy.position.set(x, y, z);
+            dummy.updateMatrix();
+            electronMesh.setMatrixAt(i, dummy.matrix);
+        }
+
+        // Electric Field Arrow
+        const arrowDir = new THREE.Vector3(1, 0, 0);
+        const arrowOrigin = new THREE.Vector3(CYLINDER_POS_X - CYLINDER_LEN/2 - 2, 0, 0);
+        const eFieldArrow = new THREE.ArrowHelper(arrowDir, arrowOrigin, 0.1, COLORS.field, 1, 0.5);
+        scene.add(eFieldArrow);
+
+        // --- 2. Macroscopic Scene (Right) ---
+        const GRAPH_POS_X = 12;
+        const GRAPH_SIZE = 16;
+        
+        const graphGroup = new THREE.Group();
+        graphGroup.position.set(GRAPH_POS_X, 0, 0);
+        scene.add(graphGroup);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(GRAPH_SIZE, 16, COLORS.axis, COLORS.grid);
+        gridHelper.rotation.x = Math.PI / 2;
+        graphGroup.add(gridHelper);
+
+        // Axes Labels (using simple lines for arrows)
+        const axisMat = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 2 });
+        const axesPoints = [];
+        axesPoints.push(new THREE.Vector3(-GRAPH_SIZE/2, 0, 0), new THREE.Vector3(GRAPH_SIZE/2 + 1, 0, 0)); // V axis
+        axesPoints.push(new THREE.Vector3(0, -GRAPH_SIZE/2, 0), new THREE.Vector3(0, GRAPH_SIZE/2 + 1, 0)); // I axis
+        const axesGeo = new THREE.BufferGeometry().setFromPoints(axesPoints);
+        const axesLine = new THREE.LineSegments(axesGeo, axisMat);
+        graphGroup.add(axesLine);
+
+        // Plot Line
+        const plotMat = new THREE.LineBasicMaterial({ color: COLORS.electron, linewidth: 3 });
+        const plotGeo = new THREE.BufferGeometry();
+        const plotPoints = new Float32Array(101 * 3);
+        plotGeo.setAttribute('position', new THREE.BufferAttribute(plotPoints, 3));
+        const plotLine = new THREE.Line(plotGeo, plotMat);
+        graphGroup.add(plotLine);
+
+        // Current Indicator Sphere
+        const indicatorGeo = new THREE.SphereGeometry(0.4, 16, 16);
+        const indicatorMat = new THREE.MeshBasicMaterial({ color: COLORS.current });
+        const indicator = new THREE.Mesh(indicatorGeo, indicatorMat);
+        graphGroup.add(indicator);
+
+        // Glow for indicator
+        const glowGeo = new THREE.SphereGeometry(0.6, 16, 16);
+        const glowMat = new THREE.MeshBasicMaterial({ color: COLORS.current, transparent: true, opacity: 0.4 });
+        const glow = new THREE.Mesh(glowGeo, glowMat);
+        indicator.add(glow);
+
+        // --- Physics & Math Functions ---
+        
+        function calculateCurrent(v, r, t, mode) {
+            let i = 0;
+            let effR = r;
+
+            if (mode === 'linear' || mode === 'ac') {
+                i = v / r;
+            } 
+            else if (mode === 'non-linear') {
+                // R increases with Temperature and Voltage (heating effect)
+                // R_eff = R0 * (1 + alpha*(T-300)) + k*|V|
+                effR = r * (1 + 0.002 * (t - 300)) + 0.5 * Math.abs(v);
+                i = v / effR;
+            } 
+            else if (mode === 'diode') {
+                // Shockley diode equation approximation
+                const Is = 0.05; // Scale factor
+                const vt = 0.5;  // Thermal voltage scale
+                if (v < 0) {
+                    i = -Is; // Small leakage
+                } else {
+                    i = Is * (Math.exp(v / vt) - 1);
+                }
+                // Cap current for visual graph bounds
+                if (i > 10) i = 10 + (i-10)*0.1; 
+                effR = v !== 0 ? v / i : Infinity;
+            }
+
+            return { i, effR };
+        }
+
+        function updateGraphLine() {
+            const points = plotGeo.attributes.position.array;
+            let idx = 0;
+            // Map V from -10 to 10 onto graph coordinates (-8 to 8)
+            for (let v = -10; v <= 10; v += 0.2) {
+                const res = calculateCurrent(v, params.resistance, params.temp, params.mode);
+                
+                // Scale for graph: V_graph = v * 0.8, I_graph = i * 0.8
+                const x = v * 0.8;
+                let y = res.i * 0.8;
+                
+                // Clamp y to graph bounds visually
+                if(y > GRAPH_SIZE/2) y = GRAPH_SIZE/2;
+                if(y < -GRAPH_SIZE/2) y = -GRAPH_SIZE/2;
+
+                points[idx++] = x;
+                points[idx++] = y;
+                points[idx++] = 0;
+            }
+            plotGeo.attributes.position.needsUpdate = true;
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.1);
+            time += dt;
+
+            // 1. Determine Live Voltage based on mode
+            if (params.mode === 'ac') {
+                // V(t) = Vm * sin(wt)
+                liveV = params.voltage * Math.sin(time * 3);
+            } else {
+                // Smooth transition to target voltage
+                liveV += (params.voltage - liveV) * 10 * dt;
+            }
+
+            // 2. Calculate Live Current & Resistance
+            const calc = calculateCurrent(liveV, params.resistance, params.temp, params.mode);
+            liveI = calc.i;
+            liveR = calc.effR;
+
+            // Update UI Displays
+            dispV.innerText = liveV.toFixed(2);
+            dispI.innerText = liveI.toFixed(2);
+            dispR.innerText = Math.abs(liveR) > 999 ? "∞" : liveR.toFixed(2);
+
+            // 3. Update E-Field Arrow
+            // Length proportional to V, direction depends on sign
+            const arrowLen = Math.abs(liveV) * 0.8 + 0.1; // +0.1 so it never disappears completely
+            eFieldArrow.setLength(arrowLen, arrowLen * 0.2, arrowLen * 0.1);
+            if (liveV >= 0) {
+                eFieldArrow.setDirection(new THREE.Vector3(1, 0, 0));
+                eFieldArrow.position.set(CYLINDER_POS_X - CYLINDER_LEN/2 - 2, 0, 0);
+            } else {
+                eFieldArrow.setDirection(new THREE.Vector3(-1, 0, 0));
+                eFieldArrow.position.set(CYLINDER_POS_X + CYLINDER_LEN/2 + 2, 0, 0);
+            }
+
+            // 4. Update Lattice Vibration (Temperature effect)
+            const vibAmp = (params.temp - 300) * 0.0005;
+            ions.forEach(ion => {
+                ion.position.x = ion.userData.baseX + (Math.random() - 0.5) * vibAmp;
+                ion.position.y = ion.userData.baseY + (Math.random() - 0.5) * vibAmp;
+                ion.position.z = ion.userData.baseZ + (Math.random() - 0.5) * vibAmp;
+            });
+
+            // 5. Update Electrons
+            // Drift velocity: vd = mu * E. Electrons move opposite to E-field.
+            // Scale mobility based on resistance (higher R = lower mobility)
+            const mobility = 2.0 / params.resistance; 
+            const vd = -mobility * liveV; 
+            dispVd.innerText = Math.abs(vd).toFixed(2);
+
+            // Thermal velocity magnitude scales with sqrt(T)
+            const vth_mag = Math.sqrt(params.temp) * 0.2;
+
+            // Collision parameters
+            // Higher resistance -> effectively larger collision cross-section
+            const collisionDist = 0.5 + (params.resistance * 0.02);
+
+            for (let i = 0; i < NUM_ELECTRONS; i++) {
+                let e = electronData[i];
+                
+                // Total velocity = thermal + drift
+                const vx = e.vel.x * vth_mag + vd;
+                const vy = e.vel.y * vth_mag;
+                const vz = e.vel.z * vth_mag;
+
+                e.pos.x += vx * dt;
+                e.pos.y += vy * dt;
+                e.pos.z += vz * dt;
+
+                // Boundary conditions: Wrap around cylinder length
+                if (e.pos.x > CYLINDER_POS_X + CYLINDER_LEN/2) e.pos.x -= CYLINDER_LEN;
+                if (e.pos.x < CYLINDER_POS_X - CYLINDER_LEN/2) e.pos.x += CYLINDER_LEN;
+
+                // Boundary conditions: Bounce off cylinder walls
+                const r2 = e.pos.y*e.pos.y + e.pos.z*e.pos.z;
+                const maxR = CYLINDER_RAD - 0.2;
+                if (r2 > maxR*maxR) {
+                    // Simple reflection towards center
+                    const r = Math.sqrt(r2);
+                    const nx = 0;
+                    const ny = -e.pos.y / r;
+                    const nz = -e.pos.z / r;
+                    
+                    // Reflect velocity vector
+                    const dot = e.vel.y * ny + e.vel.z * nz;
+                    e.vel.y -= 2 * dot * ny;
+                    e.vel.z -= 2 * dot * nz;
+                    
+                    // Push back inside
+                    e.pos.y = ny * -maxR;
+                    e.pos.z = nz * -maxR;
+                }
+
+                // Collision Detection with Lattice
+                // Optimization: Only check ions roughly in the same X slice
+                for(let j=0; j<ions.length; j++) {
+                    const ion = ions[j];
+                    if(Math.abs(ion.position.x - e.pos.x) < collisionDist) {
+                        const dx = ion.position.x - e.pos.x;
+                        const dy = ion.position.y - e.pos.y;
+                        const dz = ion.position.z - e.pos.z;
+                        const distSq = dx*dx + dy*dy + dz*dz;
+                        
+                        if(distSq < collisionDist*collisionDist) {
+                            // Scatter: Randomize thermal velocity direction
+                            e.vel.set(
+                                Math.random() - 0.5,
+                                Math.random() - 0.5,
+                                Math.random() - 0.5
+                            ).normalize();
+                            
+                            // Small push away to prevent sticking
+                            e.pos.x -= dx * 0.1;
+                            e.pos.y -= dy * 0.1;
+                            e.pos.z -= dz * 0.1;
+                            break; // Only collide with one ion per frame
+                        }
+                    }
+                }
+
+                dummy.position.copy(e.pos);
+                dummy.updateMatrix();
+                electronMesh.setMatrixAt(i, dummy.matrix);
+            }
+            electronMesh.instanceMatrix.needsUpdate = true;
+
+            // 6. Update Graph
+            updateGraphLine();
+            
+            // Move indicator
+            let indX = liveV * 0.8;
+            let indY = liveI * 0.8;
+            // Clamp indicator visually
+            if(indY > GRAPH_SIZE/2) indY = GRAPH_SIZE/2;
+            if(indY < -GRAPH_SIZE/2) indY = -GRAPH_SIZE/2;
+            
+            indicator.position.set(indX, indY, 0);
+
+            // 7. Update 3D HTML Labels
+            updateLabels();
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function updateLabels() {
+            const tempV = new THREE.Vector3();
+            
+            // Anode / Cathode based on voltage polarity
+            const leftPos = new THREE.Vector3(CYLINDER_POS_X - CYLINDER_LEN/2, CYLINDER_RAD + 1, 0);
+            const rightPos = new THREE.Vector3(CYLINDER_POS_X + CYLINDER_LEN/2, CYLINDER_RAD + 1, 0);
+            
+            if (liveV >= 0) {
+                updateLabelPosition(labelAnode, leftPos);
+                updateLabelPosition(labelCathode, rightPos);
+            } else {
+                updateLabelPosition(labelCathode, leftPos);
+                updateLabelPosition(labelAnode, rightPos);
+            }
+
+            // Graph Label
+            const graphPos = new THREE.Vector3(GRAPH_POS_X, GRAPH_SIZE/2 + 2, 0);
+            updateLabelPosition(labelGraph, graphPos);
+        }
+
+        function updateLabelPosition(element, pos3D) {
+            const vector = pos3D.clone();
+            vector.project(camera);
+            
+            const x = (vector.x * .5 + .5) * window.innerWidth;
+            const y = (vector.y * -.5 + .5) * window.innerHeight;
+            
+            // Hide if behind camera
+            if (vector.z > 1) {
+                element.style.display = 'none';
+            } else {
+                element.style.display = 'block';
+                element.style.left = `${x}px`;
+                element.style.top = `${y}px`;
+            }
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        updateUI();
+        animate();
+
+    </script>
+</body>
+</html>

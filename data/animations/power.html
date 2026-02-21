@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instantaneous Power Laboratory</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --force-color: #FF3366;
+            --vel-color: #06D6A0;
+            --proj-color: #F77F00;
+            --work-color: #7209B7;
+            --neg-work-color: #EF233C;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 1);
+            --text-main: #2b3a4a;
+            --text-muted: #64748b;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Base */
+        .glass-panel {
+            position: absolute;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255,255,255,0.5);
+            z-index: 10;
+            padding: 20px;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            min-width: 300px;
+        }
+
+        #formula-card h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--work-color);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            margin: 8px 0;
+            font-weight: 700;
+        }
+
+        .math-text span.f { color: var(--force-color); }
+        .math-text span.v { color: var(--vel-color); }
+        .math-text span.theta { color: var(--proj-color); }
+        
+        .live-value {
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid var(--work-color);
+            transition: border-color 0.3s;
+        }
+
+        .live-value.negative {
+            border-left-color: var(--neg-work-color);
+        }
+
+        /* Control Panel */
+        #control-panel {
+            top: 20px;
+            right: 20px;
+            width: 280px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .control-header span:last-child {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--text-muted);
+        }
+
+        /* Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid;
+        }
+
+        #force-slider::-webkit-slider-thumb { border-color: var(--force-color); }
+        #angle-slider::-webkit-slider-thumb { border-color: var(--proj-color); }
+        #vel-slider::-webkit-slider-thumb { border-color: var(--vel-color); }
+
+        /* Button */
+        #toggle-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--work-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 15px rgba(114, 9, 183, 0.3);
+        }
+
+        #toggle-btn:hover { background: #5a0791; }
+        #toggle-btn:active { transform: scale(0.98); }
+        #toggle-btn.paused { background: var(--vel-color); box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3); }
+        #toggle-btn.paused:hover { background: #05b586; }
+
+        /* 3D Labels */
+        .vector-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 14px;
+            padding: 2px 6px;
+            background: rgba(255,255,255,0.8);
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #label-f { color: var(--force-color); border: 1px solid var(--force-color); }
+        #label-v { color: var(--vel-color); border: 1px solid var(--vel-color); }
+        #label-theta { color: var(--proj-color); border: 1px solid var(--proj-color); }
+
+        @media (max-width: 768px) {
+            #control-panel { width: calc(100% - 40px); top: auto; bottom: 20px; right: 20px; }
+            #formula-card { width: calc(100% - 40px); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- 3D Floating Labels -->
+    <div id="label-f" class="vector-label">F</div>
+    <div id="label-v" class="vector-label">v</div>
+    <div id="label-theta" class="vector-label">θ</div>
+
+    <!-- Formula Card -->
+    <div id="formula-card" class="glass-panel">
+        <h1>Instantaneous Power</h1>
+        <div class="math-text">P = <span class="f">F</span> · <span class="v">v</span> · cos(<span class="theta">θ</span>)</div>
+        <div class="math-text" style="font-size: 0.9rem; color: var(--text-muted);">W = ∫ P dt</div>
+        
+        <div id="live-calc" class="live-value">
+            <div class="math-text" style="font-size: 1.2rem;">P = <span id="val-p">0.0</span> W</div>
+            <div class="math-text" style="font-size: 0.9rem; margin-top: 5px;">Work: <span id="val-w">0.0</span> J</div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div id="control-panel" class="glass-panel">
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: var(--force-color);">Force (F)</span>
+                <span id="disp-force">50 N</span>
+            </div>
+            <input type="range" id="force-slider" min="0" max="100" step="1" value="50">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: var(--proj-color);">Angle (θ)</span>
+                <span id="disp-angle">0°</span>
+            </div>
+            <input type="range" id="angle-slider" min="0" max="180" step="1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: var(--vel-color);">Velocity (v)</span>
+                <span id="disp-vel">5.0 m/s</span>
+            </div>
+            <input type="range" id="vel-slider" min="0" max="20" step="0.5" value="5">
+        </div>
+
+        <button id="toggle-btn">Pause Simulation</button>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State & Parameters ---
+        const params = {
+            force: 50,
+            angle: 0,
+            velocity: 5,
+            isRunning: true,
+            totalWork: 0,
+            maxWork: 5000 // Capacity of the accumulator
+        };
+
+        // Scaling factors for visuals
+        const SCALE_F = 0.06;
+        const SCALE_V = 0.2;
+
+        // --- DOM Elements ---
+        const ui = {
+            forceSlider: document.getElementById('force-slider'),
+            angleSlider: document.getElementById('angle-slider'),
+            velSlider: document.getElementById('vel-slider'),
+            dispForce: document.getElementById('disp-force'),
+            dispAngle: document.getElementById('disp-angle'),
+            dispVel: document.getElementById('disp-vel'),
+            valP: document.getElementById('val-p'),
+            valW: document.getElementById('val-w'),
+            toggleBtn: document.getElementById('toggle-btn'),
+            liveCalc: document.getElementById('live-calc'),
+            labelF: document.getElementById('label-f'),
+            labelV: document.getElementById('label-v'),
+            labelTheta: document.getElementById('label-theta')
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.Fog(0xf0f4f8, 20, 60);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(8, 6, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.minDistance = 5;
+        controls.maxDistance = 30;
+        controls.target.set(0, 1, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 15, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 50;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -15;
+        scene.add(dirLight);
+
+        // --- Environment ---
+        // Infinite Grid illusion
+        const gridHelper = new THREE.GridHelper(100, 100, 0xd1d9e6, 0xe2e8f0);
+        gridHelper.position.y = -0.01; // Prevent z-fighting with shadow plane
+        scene.add(gridHelper);
+
+        const shadowPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(100, 100),
+            new THREE.ShadowMaterial({ opacity: 0.1 })
+        );
+        shadowPlane.rotation.x = -Math.PI / 2;
+        shadowPlane.receiveShadow = true;
+        scene.add(shadowPlane);
+
+        // --- Objects ---
+        const blockGroup = new THREE.Group();
+        scene.add(blockGroup);
+
+        // The Block (Glassy)
+        const blockGeom = new THREE.BoxGeometry(2, 2, 2);
+        const blockMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.2,
+            transmission: 0.8, // glass effect
+            ior: 1.5,
+            thickness: 1.0,
+            transparent: true,
+            opacity: 1
+        });
+        const block = new THREE.Mesh(blockGeom, blockMat);
+        block.position.y = 1;
+        block.castShadow = true;
+        block.receiveShadow = true;
+        blockGroup.add(block);
+
+        // Inner core to make it look cooler
+        const coreGeom = new THREE.BoxGeometry(1, 1, 1);
+        const coreMat = new THREE.MeshStandardMaterial({ color: 0x2b3a4a, wireframe: true });
+        const core = new THREE.Mesh(coreGeom, coreMat);
+        core.position.y = 1;
+        blockGroup.add(core);
+
+        // Vectors
+        const origin = new THREE.Vector3(0, 1, 0);
+        
+        // Force Vector (Red)
+        const forceColor = 0xFF3366;
+        const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), origin, 3, forceColor, 0.4, 0.3);
+        forceArrow.line.material.linewidth = 3;
+        blockGroup.add(forceArrow);
+
+        // Velocity Vector (Green)
+        const velColor = 0x06D6A0;
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), origin, 2, velColor, 0.4, 0.3);
+        // Offset slightly in Z to avoid z-fighting when angle is 0
+        velArrow.position.z = 0.1; 
+        blockGroup.add(velArrow);
+
+        // Projection Line (Orange Dashed)
+        const projColor = 0xF77F00;
+        const projGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(1,0,0)]);
+        const projMat = new THREE.LineDashedMaterial({ color: projColor, dashSize: 0.2, gapSize: 0.1, linewidth: 2 });
+        const projLine = new THREE.Line(projGeom, projMat);
+        projLine.position.copy(origin);
+        projLine.computeLineDistances();
+        blockGroup.add(projLine);
+
+        // Angle Arc
+        const arcGeom = new THREE.BufferGeometry();
+        const arcMat = new THREE.LineBasicMaterial({ color: projColor, transparent: true, opacity: 0.7 });
+        const arcLine = new THREE.Line(arcGeom, arcMat);
+        arcLine.position.copy(origin);
+        blockGroup.add(arcLine);
+
+        // Work Accumulator (Energy Tank)
+        const tankGroup = new THREE.Group();
+        tankGroup.position.set(0, 0, -2); // Behind the block
+        blockGroup.add(tankGroup);
+
+        // Tank Shell
+        const shellGeom = new THREE.CylinderGeometry(0.4, 0.4, 3, 16);
+        shellGeom.translate(0, 1.5, 0); // Base at 0
+        const shellMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff, transmission: 0.9, opacity: 1, transparent: true, roughness: 0.1
+        });
+        const shell = new THREE.Mesh(shellGeom, shellMat);
+        tankGroup.add(shell);
+
+        // Tank Base/Cap
+        const capMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8 });
+        const base = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.1, 16), capMat);
+        const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.1, 16), capMat);
+        cap.position.y = 3;
+        tankGroup.add(base);
+        tankGroup.add(cap);
+
+        // Tank Liquid
+        const liquidGeom = new THREE.CylinderGeometry(0.35, 0.35, 1, 16);
+        liquidGeom.translate(0, 0.5, 0); // Base at 0
+        const liquidMat = new THREE.MeshStandardMaterial({ color: 0x7209B7 });
+        const liquid = new THREE.Mesh(liquidGeom, liquidMat);
+        liquid.scale.y = 0.001; // Start empty
+        tankGroup.add(liquid);
+
+        // --- Particle System ---
+        const particleCount = 50;
+        const particles = [];
+        const partGeom = new THREE.SphereGeometry(0.08, 8, 8);
+        const partMat = new THREE.MeshBasicMaterial({ color: 0x7209B7, transparent: true, opacity: 0.8 });
+
+        for(let i=0; i<particleCount; i++) {
+            const p = new THREE.Mesh(partGeom, partMat);
+            p.visible = false;
+            scene.add(p);
+            particles.push({
+                mesh: p,
+                life: 0,
+                maxLife: Math.random() * 0.5 + 0.5,
+                velocity: new THREE.Vector3()
+            });
+        }
+
+        let particleIndex = 0;
+        function emitParticle(power) {
+            if(power <= 0) return;
+            
+            // Emit rate based on power
+            if(Math.random() > power / 1000) return;
+
+            const p = particles[particleIndex];
+            p.mesh.visible = true;
+            p.life = p.maxLife;
+            
+            // Start at leading edge of block
+            p.mesh.position.copy(blockGroup.position);
+            p.mesh.position.x += 1; // Front face
+            p.mesh.position.y += Math.random() * 2;
+            p.mesh.position.z += (Math.random() - 0.5) * 2;
+
+            // Move backwards relative to block
+            p.velocity.set(
+                -params.velocity * 0.5 - Math.random(),
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2
+            );
+
+            p.mesh.material.color.setHex(0x7209B7);
+
+            particleIndex = (particleIndex + 1) % particleCount;
+        }
+
+        function updateParticles(dt) {
+            particles.forEach(p => {
+                if(p.life > 0) {
+                    p.life -= dt;
+                    p.mesh.position.addScaledVector(p.velocity, dt);
+                    p.mesh.material.opacity = (p.life / p.maxLife) * 0.8;
+                    p.mesh.scale.setScalar(p.life / p.maxLife);
+                    if(p.life <= 0) p.mesh.visible = false;
+                }
+            });
+        }
+
+
+        // --- UI Interactions ---
+        function updateParams() {
+            params.force = parseFloat(ui.forceSlider.value);
+            params.angle = parseFloat(ui.angleSlider.value);
+            params.velocity = parseFloat(ui.velSlider.value);
+
+            ui.dispForce.innerText = `${params.force} N`;
+            ui.dispAngle.innerText = `${params.angle}°`;
+            ui.dispVel.innerText = `${params.velocity.toFixed(1)} m/s`;
+        }
+
+        ui.forceSlider.addEventListener('input', updateParams);
+        ui.angleSlider.addEventListener('input', updateParams);
+        ui.velSlider.addEventListener('input', updateParams);
+
+        ui.toggleBtn.addEventListener('click', () => {
+            params.isRunning = !params.isRunning;
+            if(params.isRunning) {
+                ui.toggleBtn.innerText = "Pause Simulation";
+                ui.toggleBtn.classList.remove('paused');
+            } else {
+                ui.toggleBtn.innerText = "Resume Simulation";
+                ui.toggleBtn.classList.add('paused');
+            }
+        });
+
+        // --- 2D Label Projection ---
+        function updateLabelPosition(element, worldPos) {
+            const vec = worldPos.clone();
+            vec.project(camera);
+            
+            // Check if behind camera
+            if (vec.z > 1) {
+                element.style.display = 'none';
+                return;
+            }
+
+            element.style.display = 'block';
+            const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (vec.y * -0.5 + 0.5) * window.innerHeight;
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.1); // Cap dt to prevent huge jumps
+
+            // 1. Physics Calculations
+            const thetaRad = params.angle * Math.PI / 180;
+            const cosTheta = Math.cos(thetaRad);
+            const sinTheta = Math.sin(thetaRad);
+            
+            // P = F * v * cos(theta)
+            const power = params.force * params.velocity * cosTheta;
+
+            if (params.isRunning) {
+                // Move Block
+                blockGroup.position.x += params.velocity * dt;
+                
+                // Loop block position for continuous visual
+                if (blockGroup.position.x > 15) {
+                    blockGroup.position.x = -15;
+                }
+
+                // Accumulate Work
+                params.totalWork += power * dt;
+                // Clamp total work between 0 and maxWork
+                params.totalWork = Math.max(0, Math.min(params.totalWork, params.maxWork));
+
+                // Particles
+                if (power > 0) emitParticle(power);
+            }
+
+            updateParticles(dt);
+
+            // 2. Update Visuals
+            
+            // Force Arrow
+            const fLength = params.force * SCALE_F;
+            if (fLength > 0) {
+                forceArrow.setLength(fLength, fLength * 0.2, fLength * 0.1);
+                forceArrow.setDirection(new THREE.Vector3(cosTheta, sinTheta, 0).normalize());
+                forceArrow.visible = true;
+            } else {
+                forceArrow.visible = false;
+            }
+
+            // Velocity Arrow
+            const vLength = params.velocity * SCALE_V;
+            if (vLength > 0) {
+                velArrow.setLength(vLength, vLength * 0.2, vLength * 0.1);
+                velArrow.visible = true;
+            } else {
+                velArrow.visible = false;
+            }
+
+            // Projection Line
+            const projX = params.force * cosTheta * SCALE_F;
+            if (Math.abs(projX) > 0.01) {
+                const positions = projLine.geometry.attributes.position.array;
+                positions[3] = projX; // Update X of second point
+                projLine.geometry.attributes.position.needsUpdate = true;
+                projLine.computeLineDistances();
+                projLine.visible = true;
+            } else {
+                projLine.visible = false;
+            }
+
+            // Angle Arc
+            if (params.angle > 0 && fLength > 0) {
+                const points = [];
+                const radius = Math.min(1, fLength * 0.5);
+                for (let i = 0; i <= params.angle; i += 5) {
+                    const rad = i * Math.PI / 180;
+                    points.push(new THREE.Vector3(Math.cos(rad) * radius, Math.sin(rad) * radius, 0));
+                }
+                arcLine.geometry.setFromPoints(points);
+                arcLine.visible = true;
+            } else {
+                arcLine.visible = false;
+            }
+
+            // Work Accumulator Visual
+            const fillRatio = params.totalWork / params.maxWork;
+            liquid.scale.y = Math.max(0.001, fillRatio * 3); // Max height is 3
+            
+            // Color logic based on Power sign
+            if (power < -0.1) {
+                liquidMat.color.setHex(0xEF233C); // Red for negative work (braking)
+                ui.liveCalc.classList.add('negative');
+                partMat.color.setHex(0xEF233C);
+            } else {
+                liquidMat.color.setHex(0x7209B7); // Purple for positive work
+                ui.liveCalc.classList.remove('negative');
+                partMat.color.setHex(0x7209B7);
+            }
+
+            // 3. Update UI Text
+            // Handle floating point precision issues for display
+            let displayPower = power;
+            if (Math.abs(power) < 0.001) displayPower = 0;
+
+            ui.valP.innerText = displayPower.toFixed(1);
+            ui.valW.innerText = params.totalWork.toFixed(0);
+
+            // 4. Update 3D Labels
+            const blockPos = blockGroup.position.clone();
+            
+            if (fLength > 0) {
+                const fTip = blockPos.clone().add(new THREE.Vector3(cosTheta * fLength, sinTheta * fLength + 1, 0));
+                updateLabelPosition(ui.labelF, fTip);
+            } else {
+                ui.labelF.style.display = 'none';
+            }
+
+            if (vLength > 0) {
+                const vTip = blockPos.clone().add(new THREE.Vector3(vLength, 1, 0.1));
+                updateLabelPosition(ui.labelV, vTip);
+            } else {
+                ui.labelV.style.display = 'none';
+            }
+
+            if (params.angle > 0 && fLength > 0) {
+                const arcMidRad = (params.angle / 2) * Math.PI / 180;
+                const r = Math.min(1, fLength * 0.5) + 0.3;
+                const thetaPos = blockPos.clone().add(new THREE.Vector3(Math.cos(arcMidRad) * r, Math.sin(arcMidRad) * r + 1, 0));
+                updateLabelPosition(ui.labelTheta, thetaPos);
+            } else {
+                ui.labelTheta.style.display = 'none';
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        updateParams();
+        animate();
+
+    </script>
+</body>
+</html>

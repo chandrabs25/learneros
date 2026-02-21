@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microscopic States of Matter & Kinetic Theory</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent-blue: #4361EE;
+            --accent-purple: #7209B7;
+            --accent-red: #FF3366;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            color: var(--text-main);
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        #app {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            width: 75%;
+            height: 100%;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            border-radius: 16px;
+            min-width: 280px;
+            z-index: 10;
+        }
+
+        #formula-card h2 {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: var(--accent-purple);
+            font-weight: 600;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .data-label {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .data-value {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* Sidebar Controls */
+        #sidebar {
+            width: 25%;
+            min-width: 320px;
+            height: 100%;
+            padding: 30px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            border-left: 1px solid var(--glass-border);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: background 0.3s;
+        }
+        input[type=range]#temp-slider::-webkit-slider-thumb { background: var(--accent-red); }
+        input[type=range]#size-slider::-webkit-slider-thumb { background: var(--accent-purple); }
+        
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.1);
+            border-radius: 3px;
+        }
+
+        /* Select Dropdown */
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.5);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Toggles */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        
+        .toggle-group input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-purple);
+        }
+
+        hr {
+            border: none;
+            height: 1px;
+            background: rgba(0,0,0,0.1);
+            margin: 10px 0;
+        }
+
+        .instructions {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            margin-top: auto;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <div id="canvas-container">
+            <div id="formula-card" class="glass">
+                <h2>Kinetic Theory Live Data</h2>
+                <div class="data-row">
+                    <span class="data-label">v<sub>rms</sub></span>
+                    <span class="data-value"><span id="out-vrms">0</span> m/s</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Mean Free Path (λ)</span>
+                    <span class="data-value"><span id="out-mfp">0</span> nm</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Pressure (P)</span>
+                    <span class="data-value"><span id="out-press">0</span> x10⁻²³ Pa</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="sidebar" class="glass">
+            <div class="control-group">
+                <label>State of Matter</label>
+                <select id="phase-select">
+                    <option value="Gas" selected>Gas</option>
+                    <option value="Liquid">Liquid</option>
+                    <option value="Solid">Solid</option>
+                </select>
+            </div>
+
+            <hr>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <label>Temperature (T)</label>
+                    <span class="val-display"><span id="val-temp">300</span> K</span>
+                </div>
+                <input type="range" id="temp-slider" min="10" max="1000" step="10" value="300">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <label>Particle Diameter (d)</label>
+                    <span class="val-display"><span id="val-size">0.20</span> m</span>
+                </div>
+                <input type="range" id="size-slider" min="0.1" max="0.8" step="0.05" value="0.2">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <label>Particle Count (N)</label>
+                    <span class="val-display"><span id="val-count">100</span></span>
+                </div>
+                <input type="range" id="count-slider" min="20" max="200" step="10" value="100">
+            </div>
+
+            <hr>
+
+            <label class="toggle-group">
+                <input type="checkbox" id="toggle-trace">
+                <span>Show Mean Free Path Trace</span>
+            </label>
+
+            <label class="toggle-group">
+                <input type="checkbox" id="toggle-vectors">
+                <span>Show Velocity Vectors</span>
+            </label>
+
+            <div class="instructions">
+                <strong>Interaction:</strong> Left-click to rotate, Right-click to pan, Scroll to zoom.<br><br>
+                Colors represent kinetic energy: Blue (Cold/Slow) → Purple → Red (Hot/Fast).
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const state = {
+            temp: 300,
+            phase: 'Gas', // 'Solid', 'Liquid', 'Gas'
+            diameter: 0.2,
+            particleCount: 100,
+            showTrace: false,
+            showVectors: false,
+            boxSize: 10,
+            transitioning: false
+        };
+
+        // Physics Constants
+        const k_B = 1.38e-23;
+        const mass = 6.64e-26; // Approx Argon mass for realistic v_rms
+        const visualSpeedScale = 0.015; // Scales real v_rms to visual units/sec
+        
+        // Colors
+        const colorCold = new THREE.Color('#4361EE');
+        const colorMed = new THREE.Color('#7209B7');
+        const colorHot = new THREE.Color('#FF3366');
+        const colorVector = 0x06D6A0;
+        const colorTrace = 0x7209B7;
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = null; // Transparent to show CSS gradient
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 2, 22);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-10, -10, -10);
+        scene.add(backLight);
+
+        // --- Container Box ---
+        const boxGeo = new THREE.BoxGeometry(state.boxSize, state.boxSize, state.boxSize);
+        const boxMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transmission: 0.8,
+            opacity: 1,
+            metalness: 0,
+            roughness: 0.1,
+            ior: 1.5,
+            thickness: 0.1,
+            transparent: true,
+            side: THREE.BackSide
+        });
+        const boxMesh = new THREE.Mesh(boxGeo, boxMat);
+        scene.add(boxMesh);
+
+        const edgesGeo = new THREE.EdgesGeometry(boxGeo);
+        const edgesMat = new THREE.LineBasicMaterial({ color: 0xced4da, linewidth: 2 });
+        const boxEdges = new THREE.LineSegments(edgesGeo, edgesMat);
+        scene.add(boxEdges);
+
+        // --- Particles ---
+        const sphereGeo = new THREE.SphereGeometry(1, 16, 16);
+        let particles = [];
+        const particleGroup = new THREE.Group();
+        scene.add(particleGroup);
+
+        // --- Trace Line ---
+        const maxTracePoints = 6; // Current pos + 5 previous collisions
+        let tracePoints = [];
+        const traceGeo = new THREE.BufferGeometry();
+        const traceMat = new THREE.LineBasicMaterial({ color: colorTrace, linewidth: 2 });
+        const traceLine = new THREE.Line(traceGeo, traceMat);
+        traceLine.visible = false;
+        scene.add(traceLine);
+
+        class Particle {
+            constructor(id) {
+                this.id = id;
+                this.mesh = new THREE.Mesh(
+                    sphereGeo, 
+                    new THREE.MeshPhongMaterial({ color: colorMed, shininess: 80 })
+                );
+                this.mesh.scale.setScalar(state.diameter / 2);
+                
+                this.velocity = new THREE.Vector3();
+                this.basePos = new THREE.Vector3(); // For solid state
+                this.targetPos = new THREE.Vector3(); // For transitions
+                this.phaseOffset = Math.random() * Math.PI * 2; // For solid vibration
+                
+                this.arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), this.mesh.position, 1, colorVector);
+                this.arrow.visible = false;
+                
+                particleGroup.add(this.mesh);
+                scene.add(this.arrow);
+
+                this.isTrace = (id === 0);
+            }
+
+            destroy() {
+                particleGroup.remove(this.mesh);
+                scene.remove(this.arrow);
+                this.mesh.geometry.dispose();
+                this.mesh.material.dispose();
+            }
+        }
+
+        // --- Initialization & Updates ---
+        function getVrms() {
+            return Math.sqrt((3 * k_B * state.temp) / mass);
+        }
+
+        function getVisualSpeed() {
+            return getVrms() * visualSpeedScale;
+        }
+
+        function randomizeVelocity(vec, speed) {
+            vec.set(
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2,
+                (Math.random() - 0.5) * 2
+            ).normalize().multiplyScalar(speed);
+        }
+
+        function updateParticleCount() {
+            const currentCount = particles.length;
+            if (state.particleCount > currentCount) {
+                for (let i = currentCount; i < state.particleCount; i++) {
+                    let p = new Particle(i);
+                    // Initial placement based on phase
+                    let r = state.boxSize / 2 - state.diameter / 2;
+                    if (state.phase === 'Gas') {
+                        p.mesh.position.set((Math.random()-0.5)*2*r, (Math.random()-0.5)*2*r, (Math.random()-0.5)*2*r);
+                    } else if (state.phase === 'Liquid') {
+                        p.mesh.position.set((Math.random()-0.5)*2*r, -r + Math.random()*(state.boxSize*0.3), (Math.random()-0.5)*2*r);
+                    }
+                    randomizeVelocity(p.velocity, getVisualSpeed());
+                    particles.push(p);
+                }
+            } else if (state.particleCount < currentCount) {
+                for (let i = currentCount - 1; i >= state.particleCount; i--) {
+                    particles[i].destroy();
+                }
+                particles.splice(state.particleCount);
+            }
+            
+            if (state.phase === 'Solid') calculateSolidGrid();
+        }
+
+        function updateParticleSize() {
+            particles.forEach(p => {
+                p.mesh.scale.setScalar(state.diameter / 2);
+            });
+            if (state.phase === 'Solid') calculateSolidGrid();
+        }
+
+        function calculateSolidGrid() {
+            state.transitioning = true;
+            const N = particles.length;
+            // Find grid dimensions
+            let side = Math.ceil(Math.pow(N, 1/3));
+            let spacing = state.diameter * 1.2;
+            let offset = (side - 1) * spacing / 2;
+
+            let idx = 0;
+            for(let x=0; x<side; x++) {
+                for(let y=0; y<side; y++) {
+                    for(let z=0; z<side; z++) {
+                        if (idx < N) {
+                            let p = particles[idx];
+                            p.targetPos.set(
+                                x * spacing - offset,
+                                y * spacing - offset - (state.boxSize/2 - offset - spacing), // settle at bottom
+                                z * spacing - offset
+                            );
+                            idx++;
+                        }
+                    }
+                }
+            }
+            
+            // Reset trace
+            tracePoints = [];
+            traceLine.geometry.setFromPoints([]);
+        }
+
+        function handlePhaseChange() {
+            if (state.phase === 'Solid') {
+                calculateSolidGrid();
+            } else if (state.phase === 'Liquid') {
+                state.transitioning = true;
+                let r = state.boxSize / 2 - state.diameter / 2;
+                particles.forEach(p => {
+                    // Target bottom 30%
+                    p.targetPos.copy(p.mesh.position);
+                    p.targetPos.y = -r + Math.random() * (state.boxSize * 0.3);
+                    randomizeVelocity(p.velocity, getVisualSpeed());
+                });
+            } else {
+                // Gas
+                state.transitioning = false;
+                particles.forEach(p => {
+                    randomizeVelocity(p.velocity, getVisualSpeed());
+                });
+            }
+            tracePoints = [];
+        }
+
+        function updateVelocitiesForTemp() {
+            if (state.phase !== 'Solid') {
+                const newSpeed = getVisualSpeed();
+                particles.forEach(p => {
+                    p.velocity.normalize().multiplyScalar(newSpeed);
+                });
+            }
+        }
+
+        // --- Physics Engine ---
+        function resolveCollision(p1, p2) {
+            let dx = p2.mesh.position.x - p1.mesh.position.x;
+            let dy = p2.mesh.position.y - p1.mesh.position.y;
+            let dz = p2.mesh.position.z - p1.mesh.position.z;
+            let distSq = dx*dx + dy*dy + dz*dz;
+            let minSq = state.diameter * state.diameter;
+
+            if (distSq < minSq && distSq > 0) {
+                let dist = Math.sqrt(distSq);
+                let nx = dx / dist, ny = dy / dist, nz = dz / dist;
+                
+                // Relative velocity
+                let vx = p1.velocity.x - p2.velocity.x;
+                let vy = p1.velocity.y - p2.velocity.y;
+                let vz = p1.velocity.z - p2.velocity.z;
+                
+                let velAlongNormal = vx*nx + vy*ny + vz*nz;
+                
+                // Only resolve if moving towards each other
+                if (velAlongNormal > 0) {
+                    // Equal mass elastic collision -> swap velocity components along normal
+                    p1.velocity.x -= velAlongNormal * nx;
+                    p1.velocity.y -= velAlongNormal * ny;
+                    p1.velocity.z -= velAlongNormal * nz;
+                    
+                    p2.velocity.x += velAlongNormal * nx;
+                    p2.velocity.y += velAlongNormal * ny;
+                    p2.velocity.z += velAlongNormal * nz;
+
+                    // Trace logic
+                    if (p1.isTrace) addTracePoint(p1.mesh.position);
+                    if (p2.isTrace) addTracePoint(p2.mesh.position);
+                }
+
+                // Positional correction to prevent sticking
+                let overlap = state.diameter - dist;
+                let correction = overlap / 2;
+                p1.mesh.position.x -= nx * correction;
+                p1.mesh.position.y -= ny * correction;
+                p1.mesh.position.z -= nz * correction;
+                
+                p2.mesh.position.x += nx * correction;
+                p2.mesh.position.y += ny * correction;
+                p2.mesh.position.z += nz * correction;
+            }
+        }
+
+        function addTracePoint(pos) {
+            if (!state.showTrace || state.phase === 'Solid') return;
+            tracePoints.push(pos.clone());
+            if (tracePoints.length > maxTracePoints) {
+                tracePoints.shift();
+            }
+        }
+
+        function updatePhysics(dt) {
+            const r = state.diameter / 2;
+            const halfBox = state.boxSize / 2;
+            const maxSpeed = Math.sqrt((3 * k_B * 1000) / mass) * visualSpeedScale;
+
+            if (state.transitioning) {
+                let allSettled = true;
+                particles.forEach(p => {
+                    p.mesh.position.lerp(p.targetPos, 0.05);
+                    if (p.mesh.position.distanceTo(p.targetPos) > 0.1) allSettled = false;
+                    else p.basePos.copy(p.targetPos);
+                });
+                if (allSettled) state.transitioning = false;
+                return; // Skip normal physics during transition
+            }
+
+            if (state.phase === 'Solid') {
+                // Oscillation
+                const amplitude = Math.sqrt(state.temp) * 0.005;
+                const freq = Math.sqrt(state.temp) * 0.5;
+                const time = performance.now() * 0.001;
+                
+                particles.forEach(p => {
+                    p.mesh.position.x = p.basePos.x + Math.sin(time * freq + p.phaseOffset) * amplitude;
+                    p.mesh.position.y = p.basePos.y + Math.cos(time * freq * 1.1 + p.phaseOffset) * amplitude;
+                    p.mesh.position.z = p.basePos.z + Math.sin(time * freq * 0.9 + p.phaseOffset) * amplitude;
+                    
+                    // Color based on temp directly
+                    let t = state.temp / 1000;
+                    if (t < 0.5) p.mesh.material.color.lerpColors(colorCold, colorMed, t * 2);
+                    else p.mesh.material.color.lerpColors(colorMed, colorHot, (t - 0.5) * 2);
+                    
+                    p.arrow.visible = false;
+                });
+                traceLine.visible = false;
+            } else {
+                // Liquid & Gas Kinematics
+                let boundsY = state.phase === 'Liquid' ? [-halfBox + r, -halfBox + (state.boxSize * 0.3) - r] : [-halfBox + r, halfBox - r];
+
+                for (let i = 0; i < particles.length; i++) {
+                    let p = particles[i];
+                    
+                    // Move
+                    p.mesh.position.addScaledVector(p.velocity, dt);
+
+                    // Wall Collisions
+                    if (p.mesh.position.x > halfBox - r) { p.mesh.position.x = halfBox - r; p.velocity.x *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
+                    if (p.mesh.position.x < -halfBox + r) { p.mesh.position.x = -halfBox + r; p.velocity.x *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
+                    
+                    if (p.mesh.position.y > boundsY[1]) { p.mesh.position.y = boundsY[1]; p.velocity.y *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
+                    if (p.mesh.position.y < boundsY[0]) { p.mesh.position.y = boundsY[0]; p.velocity.y *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
+                    
+                    if (p.mesh.position.z > halfBox - r) { p.mesh.position.z = halfBox - r; p.velocity.z *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
+                    if (p.mesh.position.z < -halfBox + r) { p.mesh.position.z = -halfBox + r; p.velocity.z *= -1; if(p.isTrace) addTracePoint(p.mesh.position); }
+
+                    // Particle Collisions (O(N^2) but N is small)
+                    for (let j = i + 1; j < particles.length; j++) {
+                        resolveCollision(p, particles[j]);
+                    }
+
+                    // Update Color based on instantaneous speed
+                    let speed = p.velocity.length();
+                    let t = Math.min(speed / maxSpeed, 1);
+                    if (t < 0.5) p.mesh.material.color.lerpColors(colorCold, colorMed, t * 2);
+                    else p.mesh.material.color.lerpColors(colorMed, colorHot, (t - 0.5) * 2);
+
+                    // Update Vectors
+                    if (state.showVectors) {
+                        p.arrow.visible = true;
+                        p.arrow.position.copy(p.mesh.position);
+                        if (speed > 0.1) {
+                            p.arrow.setDirection(p.velocity.clone().normalize());
+                            p.arrow.setLength(speed * 0.2 + 0.5, 0.2, 0.1);
+                        }
+                    } else {
+                        p.arrow.visible = false;
+                    }
+                }
+
+                // Update Trace Line
+                if (state.showTrace && tracePoints.length > 0) {
+                    traceLine.visible = true;
+                    let points = [...tracePoints, particles[0].mesh.position.clone()];
+                    traceLine.geometry.setFromPoints(points);
+                } else {
+                    traceLine.visible = false;
+                }
+            }
+        }
+
+        // --- UI Updates ---
+        const uiVrms = document.getElementById('out-vrms');
+        const uiMfp = document.getElementById('out-mfp');
+        const uiPress = document.getElementById('out-press');
+
+        function updateUIData() {
+            // v_rms
+            let vrms = getVrms();
+            uiVrms.innerText = vrms.toFixed(0);
+
+            // Mean Free Path: lambda = 1 / (sqrt(2) * pi * d^2 * (N/V))
+            // Assume V = 1000 m^3 for formula mapping based on d in meters
+            let V = 1000; 
+            let n_v = state.particleCount / V;
+            let mfp = 1 / (Math.SQRT2 * Math.PI * Math.pow(state.diameter, 2) * n_v);
+            // Scale for display (convert to nm roughly for readability)
+            uiMfp.innerText = (mfp * 1000).toFixed(2);
+
+            // Pressure: P = N * k_B * T / V
+            let P = (state.particleCount * k_B * state.temp) / V;
+            // Display as x10^-23 Pa
+            uiPress.innerText = (P * 1e23).toFixed(2);
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('temp-slider').addEventListener('input', (e) => {
+            state.temp = parseFloat(e.target.value);
+            document.getElementById('val-temp').innerText = state.temp;
+            updateVelocitiesForTemp();
+            updateUIData();
+        });
+
+        document.getElementById('size-slider').addEventListener('input', (e) => {
+            state.diameter = parseFloat(e.target.value);
+            document.getElementById('val-size').innerText = state.diameter.toFixed(2);
+            updateParticleSize();
+            updateUIData();
+        });
+
+        document.getElementById('count-slider').addEventListener('input', (e) => {
+            state.particleCount = parseInt(e.target.value);
+            document.getElementById('val-count').innerText = state.particleCount;
+            updateParticleCount();
+            updateUIData();
+        });
+
+        document.getElementById('phase-select').addEventListener('change', (e) => {
+            state.phase = e.target.value;
+            handlePhaseChange();
+        });
+
+        document.getElementById('toggle-trace').addEventListener('change', (e) => {
+            state.showTrace = e.target.checked;
+            if(!state.showTrace) traceLine.visible = false;
+        });
+
+        document.getElementById('toggle-vectors').addEventListener('change', (e) => {
+            state.showVectors = e.target.checked;
+            if(!state.showVectors) {
+                particles.forEach(p => p.arrow.visible = false);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Main Loop ---
+        let lastTime = performance.now();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            let currentTime = performance.now();
+            let dt = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            // Clamp dt to prevent physics explosions on lag
+            if (dt > 0.03) dt = 0.03;
+
+            updatePhysics(dt);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        updateParticleCount();
+        updateUIData();
+        animate();
+
+    </script>
+</body>
+</html>

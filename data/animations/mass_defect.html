@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mass Defect & Nuclear Binding Energy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --proton-color: #FF3366;
+            --neutron-color: #4361EE;
+            --energy-color: #F77F00;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 16px;
+            padding: 24px;
+            position: absolute;
+            z-index: 10;
+        }
+
+        /* Top Left Formula Card */
+        #formula-card {
+            top: 24px;
+            left: 24px;
+            width: 380px;
+            pointer-events: none;
+        }
+
+        #formula-card h1 {
+            margin: 0 0 12px 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .math-block {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .math-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .math-row:last-child { margin-bottom: 0; }
+        
+        .highlight-val { font-weight: 700; color: var(--proton-color); }
+        .highlight-energy { font-weight: 700; color: var(--energy-color); font-size: 1.1rem;}
+
+        /* Right Control Panel */
+        #control-panel {
+            top: 24px;
+            right: 24px;
+            width: 300px;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+        }
+
+        .slider-val {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--text-muted);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus { outline: none; }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid var(--text-main);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #z-slider::-webkit-slider-thumb { border-color: var(--proton-color); }
+        #n-slider::-webkit-slider-thumb { border-color: var(--neutron-color); }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-bind {
+            background: linear-gradient(135deg, #F77F00, #d62828);
+            color: white;
+            box-shadow: 0 4px 15px rgba(247, 127, 0, 0.3);
+        }
+
+        .btn-bind:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(247, 127, 0, 0.4); }
+        
+        .btn-break {
+            background: white;
+            color: var(--text-main);
+            border: 2px solid #e2e8f0;
+        }
+        .btn-break:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+        .legend {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .dot.p { background: var(--proton-color); }
+        .dot.n { background: var(--neutron-color); }
+
+        /* Loading Overlay */
+        #loading {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Initializing Physics Engine...</div>
+    
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h1>Mass Defect Analysis</h1>
+        
+        <div class="math-block">
+            <div class="math-row">
+                <span>Constituents (M<sub>free</sub>):</span>
+                <span id="val-mfree">0.000000 u</span>
+            </div>
+            <div class="math-row" style="font-size: 0.8em; color: var(--text-muted);">
+                <span>Z(1.007276) + N(1.008665)</span>
+            </div>
+        </div>
+
+        <div class="math-block">
+            <div class="math-row">
+                <span>Bound Nucleus (M<sub>bound</sub>):</span>
+                <span id="val-mbound">0.000000 u</span>
+            </div>
+        </div>
+
+        <div class="math-block" style="background: rgba(247, 127, 0, 0.1); border-color: rgba(247, 127, 0, 0.3);">
+            <div class="math-row">
+                <span>Mass Defect (Δm):</span>
+                <span id="val-dm" class="highlight-val">0.000000 u</span>
+            </div>
+            <div class="math-row" style="margin-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); padding-top: 8px;">
+                <span>Binding Energy (E<sub>b</sub>):</span>
+                <span id="val-eb" class="highlight-energy">0.00 MeV</span>
+            </div>
+            <div class="math-row" style="font-size: 0.75em; color: var(--text-muted);">
+                <span>E<sub>b</sub> = Δm × 931.5 MeV/u</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <div class="control-group">
+            <label>
+                <span>Protons (Z)</span>
+                <span id="z-val" class="slider-val">2</span>
+            </label>
+            <input type="range" id="z-slider" min="1" max="10" value="2" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span>Neutrons (N)</span>
+                <span id="n-val" class="slider-val">2</span>
+            </label>
+            <input type="range" id="n-slider" min="0" max="12" value="2" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span>Binding Strength (k)</span>
+                <span id="k-val" class="slider-val">1.00x</span>
+            </label>
+            <input type="range" id="k-slider" min="0.5" max="1.5" value="1.0" step="0.01">
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; line-height: 1.3;">
+                Artificially scales Δm to exaggerate the balance tilt.
+            </div>
+        </div>
+
+        <button id="btn-toggle" class="btn btn-bind">Bind Nucleus</button>
+
+        <div class="legend">
+            <div class="legend-item"><div class="dot p"></div> Proton</div>
+            <div class="legend-item"><div class="dot n"></div> Neutron</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Constants & Data ---
+        const MP = 1.007276; // Proton mass in u
+        const MN = 1.008665; // Neutron mass in u
+        const U_TO_MEV = 931.5;
+
+        // Approximate Binding Energy per nucleon (MeV) for A = 0 to 22
+        // Simplified empirical curve for visualization purposes
+        const BE_PER_NUCLEON = [
+            0, 0, 1.11, 2.83, 7.07, 5.33, 5.33, 5.60, 7.06, 6.46, 
+            6.48, 7.30, 7.68, 7.47, 7.46, 7.70, 7.98, 7.75, 7.77, 
+            7.87, 8.03, 7.97, 8.01
+        ];
+
+        // --- State Variables ---
+        let params = {
+            Z: 2,
+            N: 2,
+            k: 1.0,
+            isBound: false,
+            transitionProgress: 0 // 0 = unbound, 1 = bound
+        };
+
+        let mathData = {
+            mFree: 0,
+            mBound: 0,
+            deltaM: 0,
+            Eb: 0,
+            targetTilt: 0
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.FogExp2('#f0f4f8', 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 15, 40);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below ground
+        controls.minDistance = 10;
+        controls.maxDistance = 80;
+        controls.target.set(0, 5, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 15);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 50;
+        dirLight.shadow.camera.left = -20;
+        dirLight.shadow.camera.right = 20;
+        dirLight.shadow.camera.top = 20;
+        dirLight.shadow.camera.bottom = -20;
+        scene.add(dirLight);
+
+        const energyLight = new THREE.PointLight(0xF77F00, 0, 30);
+        scene.add(energyLight);
+
+        // --- Materials ---
+        const matProton = new THREE.MeshPhongMaterial({ 
+            color: 0xFF3366, shininess: 80, specular: 0xffffff 
+        });
+        const matNeutron = new THREE.MeshPhongMaterial({ 
+            color: 0x4361EE, shininess: 80, specular: 0xffffff 
+        });
+        const matGlass = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.2,
+            transmission: 0.8,
+            thickness: 0.5,
+            transparent: true,
+            opacity: 1,
+            side: THREE.DoubleSide
+        });
+        const matMetal = new THREE.MeshStandardMaterial({
+            color: 0xcbd5e1, metalness: 0.8, roughness: 0.3
+        });
+
+        // --- Balance Scale Construction ---
+        const scaleGroup = new THREE.Group();
+        scene.add(scaleGroup);
+
+        // Base
+        const baseGeo = new THREE.CylinderGeometry(3, 4, 1, 32);
+        const base = new THREE.Mesh(baseGeo, matGlass);
+        base.position.y = 0.5;
+        base.castShadow = true;
+        base.receiveShadow = true;
+        scaleGroup.add(base);
+
+        const fulcrumGeo = new THREE.ConeGeometry(1, 12, 16);
+        const fulcrum = new THREE.Mesh(fulcrumGeo, matMetal);
+        fulcrum.position.y = 6.5;
+        fulcrum.castShadow = true;
+        scaleGroup.add(fulcrum);
+
+        // Beam
+        const BEAM_LENGTH = 24;
+        const beamGroup = new THREE.Group();
+        beamGroup.position.y = 12;
+        scaleGroup.add(beamGroup);
+
+        const beamGeo = new THREE.BoxGeometry(BEAM_LENGTH, 0.5, 1);
+        const beam = new THREE.Mesh(beamGeo, matMetal);
+        beam.castShadow = true;
+        beamGroup.add(beam);
+
+        const pivotGeo = new THREE.CylinderGeometry(0.6, 0.6, 1.2, 16);
+        pivotGeo.rotateX(Math.PI/2);
+        const pivot = new THREE.Mesh(pivotGeo, matProton); // Accent color
+        beamGroup.add(pivot);
+
+        // Platforms
+        const panGeo = new THREE.CylinderGeometry(4, 4, 0.2, 32);
+        const leftPan = new THREE.Mesh(panGeo, matGlass);
+        const rightPan = new THREE.Mesh(panGeo, matGlass);
+        leftPan.castShadow = true; leftPan.receiveShadow = true;
+        rightPan.castShadow = true; rightPan.receiveShadow = true;
+        scaleGroup.add(leftPan);
+        scaleGroup.add(rightPan);
+
+        // Strings
+        const stringMat = new THREE.LineBasicMaterial({ color: 0x94a3b8 });
+        const leftStrings = new THREE.LineSegments(new THREE.BufferGeometry(), stringMat);
+        const rightStrings = new THREE.LineSegments(new THREE.BufferGeometry(), stringMat);
+        scaleGroup.add(leftStrings);
+        scaleGroup.add(rightStrings);
+
+        function updateStrings(pan, beamX, beamY) {
+            const pts = [];
+            const h = 8; // hanging distance
+            // 3 strings per pan
+            for(let i=0; i<3; i++) {
+                const angle = (i/3) * Math.PI * 2;
+                pts.push(beamX, beamY, 0);
+                pts.push(pan.position.x + Math.cos(angle)*3.8, pan.position.y, pan.position.z + Math.sin(angle)*3.8);
+            }
+            pan.userData.strings.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+        }
+        leftPan.userData.strings = leftStrings;
+        rightPan.userData.strings = rightStrings;
+
+        // --- Nucleon Management ---
+        const sphereGeo = new THREE.SphereGeometry(0.6, 32, 32);
+        let leftNucleons = [];
+        let rightNucleons = [];
+        const leftPanGroup = new THREE.Group();
+        const rightPanGroup = new THREE.Group();
+        leftPan.add(leftPanGroup);
+        rightPan.add(rightPanGroup);
+
+        function generatePositions(count, radius, isBound) {
+            const pos = [];
+            if (isBound) {
+                // Tight packing (Fibonacci sphere approximation for volume)
+                const phi = Math.PI * (3 - Math.sqrt(5));
+                for (let i = 0; i < count; i++) {
+                    const y = 1 - (i / (count - 1)) * 2; 
+                    const r = Math.sqrt(1 - y * y);
+                    const theta = phi * i;
+                    // Scale radius based on A^(1/3)
+                    const scale = 0.6 * Math.pow(count, 1/3);
+                    pos.push(new THREE.Vector3(
+                        Math.cos(theta) * r * scale,
+                        y * scale + 0.6, // offset above pan
+                        Math.sin(theta) * r * scale
+                    ));
+                }
+            } else {
+                // Spread out (random within cylinder)
+                for (let i = 0; i < count; i++) {
+                    const r = Math.sqrt(Math.random()) * (radius - 0.8);
+                    const theta = Math.random() * Math.PI * 2;
+                    pos.push(new THREE.Vector3(
+                        Math.cos(theta) * r,
+                        0.6, // rest on pan
+                        Math.sin(theta) * r
+                    ));
+                }
+            }
+            return pos;
+        }
+
+        function buildNucleons() {
+            // Clear old
+            leftNucleons.forEach(n => leftPanGroup.remove(n.mesh));
+            rightNucleons.forEach(n => rightPanGroup.remove(n.mesh));
+            leftNucleons = [];
+            rightNucleons = [];
+
+            const total = params.Z + params.N;
+            
+            // Generate types array (shuffle to mix p and n)
+            let types = [];
+            for(let i=0; i<params.Z; i++) types.push('p');
+            for(let i=0; i<params.N; i++) types.push('n');
+            types.sort(() => Math.random() - 0.5);
+
+            // Left Pan (Always Free)
+            const leftPos = generatePositions(total, 4, false);
+            
+            // Right Pan (Calculates both spread and bound positions)
+            const rightSpreadPos = generatePositions(total, 4, false);
+            const rightBoundPos = generatePositions(total, 4, true);
+
+            for(let i=0; i<total; i++) {
+                const isProton = types[i] === 'p';
+                const mat = isProton ? matProton : matNeutron;
+                
+                // Left
+                const lMesh = new THREE.Mesh(sphereGeo, mat);
+                lMesh.castShadow = true; lMesh.receiveShadow = true;
+                lMesh.position.copy(leftPos[i]);
+                leftPanGroup.add(lMesh);
+                leftNucleons.push({ mesh: lMesh, basePos: leftPos[i], phase: Math.random()*Math.PI*2 });
+
+                // Right
+                const rMesh = new THREE.Mesh(sphereGeo, mat);
+                rMesh.castShadow = true; rMesh.receiveShadow = true;
+                rMesh.position.copy(rightSpreadPos[i]);
+                rightPanGroup.add(rMesh);
+                rightNucleons.push({ 
+                    mesh: rMesh, 
+                    spreadPos: rightSpreadPos[i], 
+                    boundPos: rightBoundPos[i],
+                    phase: Math.random()*Math.PI*2,
+                    type: types[i]
+                });
+            }
+        }
+
+        // --- Energy Waves (Photons) ---
+        const photons = [];
+        function spawnEnergyBurst() {
+            const count = 12 + params.Z + params.N;
+            const origin = new THREE.Vector3();
+            rightPanGroup.getWorldPosition(origin);
+            origin.y += 1; // Center of cluster
+
+            energyLight.position.copy(origin);
+            energyLight.intensity = 2.0;
+
+            for(let i=0; i<count; i++) {
+                const dir = new THREE.Vector3(
+                    Math.random() - 0.5,
+                    Math.random() - 0.2, // bias upwards
+                    Math.random() - 0.5
+                ).normalize();
+
+                // Find orthogonal vectors for sine wave
+                const up = new THREE.Vector3(0,1,0);
+                const u = new THREE.Vector3().crossVectors(dir, up).normalize();
+                if(u.lengthSq() < 0.01) u.set(1,0,0);
+
+                const pts = [];
+                for(let j=0; j<40; j++) pts.push(0,0,0);
+                
+                const geo = new THREE.BufferGeometry();
+                geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+                
+                const mat = new THREE.LineBasicMaterial({ 
+                    color: 0xF77F00, 
+                    transparent: true, 
+                    opacity: 1,
+                    linewidth: 2
+                });
+                
+                const line = new THREE.Line(geo, mat);
+                scene.add(line);
+
+                photons.push({
+                    line: line,
+                    origin: origin.clone(),
+                    dir: dir,
+                    u: u,
+                    age: 0,
+                    lifespan: 1.5 + Math.random(),
+                    speed: 15 + Math.random()*10,
+                    freq: 10 + Math.random()*10,
+                    amp: 0.5 + Math.random()*0.5
+                });
+            }
+        }
+
+        function updatePhotons(dt) {
+            energyLight.intensity = Math.max(0, energyLight.intensity - dt * 2);
+
+            for(let i = photons.length - 1; i >= 0; i--) {
+                const p = photons[i];
+                p.age += dt;
+                
+                if(p.age > p.lifespan) {
+                    scene.remove(p.line);
+                    p.line.geometry.dispose();
+                    p.line.material.dispose();
+                    photons.splice(i, 1);
+                    continue;
+                }
+
+                const positions = p.line.geometry.attributes.position.array;
+                const headDist = p.age * p.speed;
+                const tailDist = Math.max(0, (p.age - 0.3) * p.speed); // Tail follows head
+
+                for(let j=0; j<40; j++) {
+                    const t = j / 39; // 0 to 1 along the line
+                    const dist = tailDist + t * (headDist - tailDist);
+                    
+                    // Sine wave displacement
+                    const wave = Math.sin(dist * p.freq - p.age * 20) * p.amp * Math.sin(t * Math.PI); // Taper ends
+                    
+                    const pos = p.origin.clone()
+                        .addScaledVector(p.dir, dist)
+                        .addScaledVector(p.u, wave);
+                    
+                    positions[j*3] = pos.x;
+                    positions[j*3+1] = pos.y;
+                    positions[j*3+2] = pos.z;
+                }
+                p.line.geometry.attributes.position.needsUpdate = true;
+                p.line.material.opacity = 1.0 - (p.age / p.lifespan);
+            }
+        }
+
+        // --- Math & Logic ---
+        function updateMath() {
+            const A = params.Z + params.N;
+            mathData.mFree = params.Z * MP + params.N * MN;
+            
+            let bePerNuc = 0;
+            if (A > 0 && A < BE_PER_NUCLEON.length) {
+                bePerNuc = BE_PER_NUCLEON[A];
+            } else if (A >= BE_PER_NUCLEON.length) {
+                bePerNuc = 8.0; // Cap for larger A
+            }
+
+            // Actual physics delta M
+            const trueDeltaM = (bePerNuc * A) / U_TO_MEV;
+            
+            // Scaled delta M for visualization based on 'k'
+            mathData.deltaM = trueDeltaM * params.k;
+            mathData.mBound = mathData.mFree - mathData.deltaM;
+            mathData.Eb = mathData.deltaM * U_TO_MEV;
+
+            // Calculate target tilt angle
+            // If unbound, mass is equal, tilt is 0.
+            // If bound, right side is lighter, left side drops (positive rotation around Z)
+            if (params.isBound) {
+                // Exaggerate angle for visual clarity. Max tilt ~25 degrees.
+                const massDiffRatio = mathData.deltaM / mathData.mFree;
+                mathData.targetTilt = Math.min(Math.PI / 6, massDiffRatio * 50); 
+            } else {
+                mathData.targetTilt = 0;
+            }
+
+            updateDOM();
+        }
+
+        function updateDOM() {
+            document.getElementById('val-mfree').innerText = mathData.mFree.toFixed(6) + ' u';
+            
+            // If unbound, show Mbound as equal to Mfree to emphasize the change happens on binding
+            const displayMbound = params.isBound ? mathData.mBound : mathData.mFree;
+            const displayDm = params.isBound ? mathData.deltaM : 0;
+            const displayEb = params.isBound ? mathData.Eb : 0;
+
+            document.getElementById('val-mbound').innerText = displayMbound.toFixed(6) + ' u';
+            document.getElementById('val-dm').innerText = displayDm.toFixed(6) + ' u';
+            document.getElementById('val-eb').innerText = displayEb.toFixed(2) + ' MeV';
+        }
+
+        // --- UI Event Listeners ---
+        document.getElementById('z-slider').addEventListener('input', (e) => {
+            params.Z = parseInt(e.target.value);
+            document.getElementById('z-val').innerText = params.Z;
+            params.isBound = false; // Reset state on change
+            updateBtnState();
+            buildNucleons();
+            updateMath();
+        });
+
+        document.getElementById('n-slider').addEventListener('input', (e) => {
+            params.N = parseInt(e.target.value);
+            document.getElementById('n-val').innerText = params.N;
+            params.isBound = false;
+            updateBtnState();
+            buildNucleons();
+            updateMath();
+        });
+
+        document.getElementById('k-slider').addEventListener('input', (e) => {
+            params.k = parseFloat(e.target.value);
+            document.getElementById('k-val').innerText = params.k.toFixed(2) + 'x';
+            updateMath();
+        });
+
+        const btnToggle = document.getElementById('btn-toggle');
+        btnToggle.addEventListener('click', () => {
+            if (params.Z + params.N === 0) return;
+            
+            params.isBound = !params.isBound;
+            updateBtnState();
+            updateMath();
+
+            if (params.isBound) {
+                spawnEnergyBurst();
+            }
+        });
+
+        function updateBtnState() {
+            if (params.isBound) {
+                btnToggle.innerText = "Break Nucleus";
+                btnToggle.className = "btn btn-break";
+            } else {
+                btnToggle.innerText = "Bind Nucleus";
+                btnToggle.className = "btn btn-bind";
+            }
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let currentTilt = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            controls.update();
+
+            // 1. Update Transition Progress
+            const targetProgress = params.isBound ? 1 : 0;
+            params.transitionProgress += (targetProgress - params.transitionProgress) * dt * 3;
+
+            // 2. Animate Beam Tilt
+            currentTilt += (mathData.targetTilt - currentTilt) * dt * 2;
+            beamGroup.rotation.z = currentTilt;
+
+            // 3. Update Pan Positions (hanging from beam ends)
+            const halfL = BEAM_LENGTH / 2;
+            const hangDist = 8;
+            
+            // Left end of beam
+            const lx = -halfL * Math.cos(currentTilt);
+            const ly = -halfL * Math.sin(currentTilt) + beamGroup.position.y;
+            leftPan.position.set(lx, ly - hangDist, 0);
+            updateStrings(leftPan, lx, ly);
+
+            // Right end of beam
+            const rx = halfL * Math.cos(currentTilt);
+            const ry = halfL * Math.sin(currentTilt) + beamGroup.position.y;
+            rightPan.position.set(rx, ry - hangDist, 0);
+            updateStrings(rightPan, rx, ry);
+
+            // 4. Animate Nucleons
+            // Left (Always free, Brownian jitter)
+            leftNucleons.forEach(n => {
+                const jitterX = Math.sin(time * 5 + n.phase) * 0.05;
+                const jitterZ = Math.cos(time * 4 + n.phase) * 0.05;
+                n.mesh.position.set(
+                    n.basePos.x + jitterX,
+                    n.basePos.y,
+                    n.basePos.z + jitterZ
+                );
+            });
+
+            // Right (Interpolate between spread and bound, add vibration)
+            const ease = t => t<.5 ? 2*t*t : -1+(4-2*t)*t; // EaseInOutQuad
+            const p = ease(params.transitionProgress);
+
+            rightNucleons.forEach(n => {
+                // Interpolate base position
+                const currentBase = new THREE.Vector3().lerpVectors(n.spreadPos, n.boundPos, p);
+                
+                // Add motion based on state
+                let offsetX = 0, offsetY = 0, offsetZ = 0;
+                
+                if (p < 0.5) {
+                    // Unbound jitter
+                    offsetX = Math.sin(time * 5 + n.phase) * 0.05 * (1-p*2);
+                    offsetZ = Math.cos(time * 4 + n.phase) * 0.05 * (1-p*2);
+                } else {
+                    // Bound collective vibration (harmonic oscillator)
+                    const vibAmp = 0.03 * p;
+                    offsetX = Math.sin(time * 15) * vibAmp * n.boundPos.x;
+                    offsetY = Math.cos(time * 15) * vibAmp * n.boundPos.y;
+                    offsetZ = Math.sin(time * 15) * vibAmp * n.boundPos.z;
+                }
+
+                n.mesh.position.set(
+                    currentBase.x + offsetX,
+                    currentBase.y + offsetY,
+                    currentBase.z + offsetZ
+                );
+            });
+
+            // 5. Update Photons
+            updatePhotons(dt);
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Initialization ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Remove loading screen
+        setTimeout(() => {
+            document.getElementById('loading').style.opacity = '0';
+            setTimeout(() => document.getElementById('loading').style.display = 'none', 500);
+            
+            buildNucleons();
+            updateMath();
+            animate();
+        }, 500);
+
+    </script>
+</body>
+</html>

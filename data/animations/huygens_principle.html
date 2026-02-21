@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huygens Principle Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent-blue: #4361EE;
+            --accent-green: #06D6A0;
+            --accent-red: #FF3366;
+            --border-color: rgba(255, 255, 255, 0.5);
+            --shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 75%;
+            height: 100%;
+        }
+
+        /* Glassmorphic Control Panel */
+        #ui-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0 0 5px 0;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0 0 20px 0;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        #n2-slider::-webkit-slider-thumb { background: var(--accent-red); }
+        #freq-slider::-webkit-slider-thumb { background: var(--accent-green); }
+
+        /* Checkbox */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-green);
+            cursor: pointer;
+        }
+
+        /* Formula Card Overlay */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .formula-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .math-sym { font-weight: 700; }
+        .highlight-blue { color: var(--accent-blue); font-weight: bold; }
+        .highlight-red { color: var(--accent-red); font-weight: bold; }
+        .highlight-orange { color: #F77F00; font-weight: bold; }
+
+        .tir-warning {
+            color: #F77F00;
+            font-weight: bold;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            display: none;
+        }
+
+        @media (max-width: 900px) {
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-panel { width: 100%; height: 40%; top: 60%; border-left: none; border-top: 1px solid var(--border-color); }
+            #formula-card { top: 10px; left: 10px; padding: 10px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-line"><span class="math-sym">Snell's Law:</span> n₁ sin(i) = n₂ sin(r)</div>
+        <div class="formula-line">
+            <span class="highlight-blue">i = <span id="val-i">30.0</span>°</span> 
+            <span class="math-sym">→</span> 
+            <span class="highlight-red" id="val-r-container">r = <span id="val-r">19.5</span>°</span>
+            <span class="highlight-orange" id="val-tir" style="display:none;">Total Internal Reflection</span>
+        </div>
+        <div class="formula-line">Speed Ratio (v₁/v₂) = <span id="val-ratio">0.67</span></div>
+        <div class="formula-line">Wavelength Ratio (λ₁/λ₂) = <span id="val-lambda-ratio">0.67</span></div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Huygens Principle</h1>
+        <p class="subtitle">Refraction & Reflection of Plane Waves</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Angle of Incidence (i)</span>
+                <span class="control-value" id="angle-val">30°</span>
+            </div>
+            <input type="range" id="angle-slider" min="0" max="80" step="1" value="30">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Medium 1 Index (n₁)</span>
+                <span class="control-value" id="n1-val">1.0</span>
+            </div>
+            <input type="range" id="n1-slider" min="1.0" max="2.5" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Medium 2 Index (n₂)</span>
+                <span class="control-value" id="n2-val">1.5</span>
+            </div>
+            <input type="range" id="n2-slider" min="1.0" max="2.5" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Wave Frequency</span>
+                <span class="control-value" id="freq-val">1.0 Hz</span>
+            </div>
+            <input type="range" id="freq-slider" min="0.5" max="3.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Animation Speed</span>
+                <span class="control-value" id="speed-val">1.0x</span>
+            </div>
+            <input type="range" id="speed-slider" min="0" max="2" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label class="checkbox-wrapper">
+                <input type="checkbox" id="wavelet-toggle" checked>
+                <span class="control-label">Show Secondary Wavelets</span>
+            </label>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics & State Variables ---
+        const state = {
+            angleI: 30, // degrees
+            n1: 1.0,
+            n2: 1.5,
+            freq: 1.0,
+            speed: 1.0,
+            showWavelets: true,
+            time: 0,
+            c: 10, // Base wave speed multiplier
+            isTIR: false,
+            angleR: 0 // degrees
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 15, 35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Allow slight viewing from below
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Environment (Media Backgrounds & Grid) ---
+        // Medium 1 (Upper)
+        const med1Geo = new THREE.PlaneGeometry(100, 50);
+        const med1Mat = new THREE.MeshBasicMaterial({ color: 0xEBF8FF, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+        const med1 = new THREE.Mesh(med1Geo, med1Mat);
+        med1.position.set(0, 25, -0.5);
+        scene.add(med1);
+
+        // Medium 2 (Lower)
+        const med2Geo = new THREE.PlaneGeometry(100, 50);
+        const med2Mat = new THREE.MeshBasicMaterial({ color: 0xF0FFF4, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+        const med2 = new THREE.Mesh(med2Geo, med2Mat);
+        med2.position.set(0, -25, -0.5);
+        scene.add(med2);
+
+        // Interface Grid
+        const gridHelper = new THREE.GridHelper(60, 60, 0xcbd5e0, 0xe2e8f0);
+        scene.add(gridHelper);
+
+        // Normal Line (Dashed Y-axis)
+        const normalGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -20, 0), new THREE.Vector3(0, 20, 0)]);
+        const normalMat = new THREE.LineDashedMaterial({ color: 0x4A5568, dashSize: 1, gapSize: 0.5, linewidth: 2 });
+        const normalLine = new THREE.Line(normalGeo, normalMat);
+        normalLine.computeLineDistances();
+        scene.add(normalLine);
+
+        // --- Wavefronts Setup ---
+        const MAX_LINES = 100;
+        const beamWidth = 25;
+
+        // Materials
+        const matIncident = new THREE.LineBasicMaterial({ color: 0x4361EE, linewidth: 2 });
+        const matRefracted = new THREE.LineBasicMaterial({ color: 0xFF3366, linewidth: 2 });
+        const matReflected = new THREE.LineBasicMaterial({ color: 0xF77F00, linewidth: 2 });
+
+        // Geometries
+        const geoIncident = new THREE.BufferGeometry();
+        geoIncident.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_LINES * 6), 3));
+        const linesIncident = new THREE.LineSegments(geoIncident, matIncident);
+        scene.add(linesIncident);
+
+        const geoRefracted = new THREE.BufferGeometry();
+        geoRefracted.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_LINES * 6), 3));
+        const linesRefracted = new THREE.LineSegments(geoRefracted, matRefracted);
+        scene.add(linesRefracted);
+
+        const geoReflected = new THREE.BufferGeometry();
+        geoReflected.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_LINES * 6), 3));
+        const linesReflected = new THREE.LineSegments(geoReflected, matReflected);
+        scene.add(linesReflected);
+
+        // --- Wavelets Setup ---
+        const waveletSources = [];
+        for (let x = -20; x <= 20; x += 0.5) {
+            waveletSources.push(x);
+        }
+        const MAX_WAVELETS = waveletSources.length * 15; // Max overlapping wavelets
+        
+        const sphereGeo = new THREE.SphereGeometry(1, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+        const waveletMat = new THREE.MeshBasicMaterial({ 
+            color: 0x06D6A0, 
+            wireframe: true, 
+            transparent: true, 
+            opacity: 0.15,
+            side: THREE.DoubleSide
+        });
+        const instancedWavelets = new THREE.InstancedMesh(sphereGeo, waveletMat, MAX_WAVELETS);
+        instancedWavelets.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        scene.add(instancedWavelets);
+        const dummy = new THREE.Object3D();
+
+        // --- Rays Setup ---
+        const dirInc = new THREE.Vector3(0, -1, 0);
+        const dirRef = new THREE.Vector3(0, -1, 0);
+        const dirRefl = new THREE.Vector3(0, 1, 0);
+        
+        const arrowInc = new THREE.ArrowHelper(dirInc, new THREE.Vector3(0,0,0), 12, 0xF77F00, 1.5, 1);
+        const arrowRef = new THREE.ArrowHelper(dirRef, new THREE.Vector3(0,0,0), 12, 0x7209B7, 1.5, 1);
+        const arrowRefl = new THREE.ArrowHelper(dirRefl, new THREE.Vector3(0,0,0), 12, 0xF77F00, 1.5, 1);
+        scene.add(arrowInc);
+        scene.add(arrowRef);
+        scene.add(arrowRefl);
+
+        // --- Helper Functions ---
+        function clipLineY(A, B, ySign) {
+            // ySign: 1 for y>0, -1 for y<0
+            const ay = A.y * ySign;
+            const by = B.y * ySign;
+            
+            if (ay >= 0 && by >= 0) return [A, B];
+            if (ay < 0 && by < 0) return null;
+            
+            // Intersection with y=0
+            const t = A.y / (A.y - B.y);
+            const I = new THREE.Vector3(A.x + t * (B.x - A.x), 0, 0);
+            
+            if (ay >= 0) return [A, I];
+            else return [I, B];
+        }
+
+        function updatePhysics() {
+            const radI = state.angleI * Math.PI / 180;
+            const sinI = Math.sin(radI);
+            const sinR = (state.n1 / state.n2) * sinI;
+            
+            if (sinR > 1.0) {
+                state.isTIR = true;
+                state.angleR = state.angleI; // Reflection angle
+            } else {
+                state.isTIR = false;
+                state.angleR = Math.asin(sinR) * 180 / Math.PI;
+            }
+
+            // Update UI Text
+            document.getElementById('val-i').innerText = state.angleI.toFixed(1);
+            if (state.isTIR) {
+                document.getElementById('val-r-container').style.display = 'none';
+                document.getElementById('val-tir').style.display = 'inline';
+            } else {
+                document.getElementById('val-r-container').style.display = 'inline';
+                document.getElementById('val-tir').style.display = 'none';
+                document.getElementById('val-r').innerText = state.angleR.toFixed(1);
+            }
+            
+            const vRatio = state.n1 / state.n2;
+            document.getElementById('val-ratio').innerText = vRatio.toFixed(2);
+            document.getElementById('val-lambda-ratio').innerText = vRatio.toFixed(2);
+        }
+
+        function updateGeometry() {
+            const v1 = state.c / state.n1;
+            const v2 = state.c / state.n2;
+            const f = state.freq;
+            const lambda1 = v1 / f;
+            const lambda2 = v2 / f;
+            const radI = state.angleI * Math.PI / 180;
+            const radR = state.angleR * Math.PI / 180;
+
+            const posInc = geoIncident.attributes.position.array;
+            const posRef = geoRefracted.attributes.position.array;
+            const posRefl = geoReflected.attributes.position.array;
+            
+            let idxInc = 0, idxRef = 0, idxRefl = 0;
+
+            // Determine range of wave phases (m) to draw
+            // Distance from origin = v*t + m*lambda
+            // We want to cover distances from roughly -30 to +30
+            const mMin = Math.floor((-30 - v1 * state.time) / lambda1);
+            const mMax = Math.ceil((30 - v1 * state.time) / lambda1);
+
+            // Incident Wavefronts
+            const n1_vec = new THREE.Vector3(Math.sin(radI), -Math.cos(radI), 0);
+            const u1_vec = new THREE.Vector3(Math.cos(radI), Math.sin(radI), 0);
+
+            // Refracted Wavefronts
+            const n2_vec = new THREE.Vector3(Math.sin(radR), -Math.cos(radR), 0);
+            const u2_vec = new THREE.Vector3(Math.cos(radR), Math.sin(radR), 0);
+
+            // Reflected Wavefronts
+            const n3_vec = new THREE.Vector3(Math.sin(radI), Math.cos(radI), 0);
+            const u3_vec = new THREE.Vector3(Math.cos(radI), -Math.sin(radI), 0);
+
+            for (let m = mMin; m <= mMax; m++) {
+                // Incident
+                const d1 = v1 * state.time + m * lambda1;
+                const P1 = n1_vec.clone().multiplyScalar(d1);
+                const A1 = P1.clone().add(u1_vec.clone().multiplyScalar(-beamWidth));
+                const B1 = P1.clone().add(u1_vec.clone().multiplyScalar(beamWidth));
+                const clipped1 = clipLineY(A1, B1, 1);
+                
+                if (clipped1 && idxInc < MAX_LINES * 6) {
+                    posInc[idxInc++] = clipped1[0].x; posInc[idxInc++] = clipped1[0].y; posInc[idxInc++] = 0;
+                    posInc[idxInc++] = clipped1[1].x; posInc[idxInc++] = clipped1[1].y; posInc[idxInc++] = 0;
+                }
+
+                if (!state.isTIR) {
+                    // Refracted
+                    const d2 = v2 * state.time + m * lambda2;
+                    const P2 = n2_vec.clone().multiplyScalar(d2);
+                    const A2 = P2.clone().add(u2_vec.clone().multiplyScalar(-beamWidth));
+                    const B2 = P2.clone().add(u2_vec.clone().multiplyScalar(beamWidth));
+                    const clipped2 = clipLineY(A2, B2, -1);
+                    
+                    if (clipped2 && idxRef < MAX_LINES * 6) {
+                        posRef[idxRef++] = clipped2[0].x; posRef[idxRef++] = clipped2[0].y; posRef[idxRef++] = 0;
+                        posRef[idxRef++] = clipped2[1].x; posRef[idxRef++] = clipped2[1].y; posRef[idxRef++] = 0;
+                    }
+                } else {
+                    // Reflected
+                    const d3 = v1 * state.time + m * lambda1; // uses lambda1 and v1
+                    const P3 = n3_vec.clone().multiplyScalar(d3);
+                    const A3 = P3.clone().add(u3_vec.clone().multiplyScalar(-beamWidth));
+                    const B3 = P3.clone().add(u3_vec.clone().multiplyScalar(beamWidth));
+                    const clipped3 = clipLineY(A3, B3, 1);
+                    
+                    if (clipped3 && idxRefl < MAX_LINES * 6) {
+                        posRefl[idxRefl++] = clipped3[0].x; posRefl[idxRefl++] = clipped3[0].y; posRefl[idxRefl++] = 0;
+                        posRefl[idxRefl++] = clipped3[1].x; posRefl[idxRefl++] = clipped3[1].y; posRefl[idxRefl++] = 0;
+                    }
+                }
+            }
+
+            geoIncident.setDrawRange(0, idxInc / 3);
+            geoIncident.attributes.position.needsUpdate = true;
+            
+            geoRefracted.setDrawRange(0, idxRef / 3);
+            geoRefracted.attributes.position.needsUpdate = true;
+
+            geoReflected.setDrawRange(0, idxRefl / 3);
+            geoReflected.attributes.position.needsUpdate = true;
+
+            // Update Rays
+            arrowInc.setDirection(n1_vec);
+            arrowInc.position.copy(n1_vec.clone().multiplyScalar(-12)); // Point to origin
+            
+            if (!state.isTIR) {
+                arrowRef.visible = true;
+                arrowRefl.visible = false;
+                arrowRef.setDirection(n2_vec);
+                arrowRef.position.set(0,0,0);
+            } else {
+                arrowRef.visible = false;
+                arrowRefl.visible = true;
+                arrowRefl.setDirection(n3_vec);
+                arrowRefl.position.set(0,0,0);
+            }
+
+            // Update Wavelets
+            let waveletCount = 0;
+            if (state.showWavelets) {
+                const maxAge = 2.0 / f; // How long wavelets live
+                
+                for (let i = 0; i < waveletSources.length; i++) {
+                    const xs = waveletSources[i];
+                    // Time when phase 0 hits xs: t_hit = xs * sin(i) / v1
+                    const t_hit_base = (xs * Math.sin(radI)) / v1;
+                    const T = state.time - t_hit_base;
+                    
+                    // We want m such that 0 < T + m/f < maxAge
+                    // -T*f < m < (maxAge - T)*f
+                    const mStart = Math.floor(-T * f) + 1;
+                    const mEnd = Math.ceil((maxAge - T) * f) - 1;
+
+                    for (let m = mStart; m <= mEnd; m++) {
+                        if (waveletCount >= MAX_WAVELETS) break;
+                        
+                        const age = T + m / f;
+                        if (age > 0 && age < maxAge) {
+                            const R = (state.isTIR ? v1 : v2) * age;
+                            
+                            dummy.position.set(xs, 0, 0);
+                            dummy.scale.set(R, R, R);
+                            // If refracting, point down. If TIR, point up.
+                            dummy.rotation.x = state.isTIR ? 0 : Math.PI;
+                            dummy.updateMatrix();
+                            instancedWavelets.setMatrixAt(waveletCount++, dummy.matrix);
+                        }
+                    }
+                }
+            }
+            instancedWavelets.count = waveletCount;
+            instancedWavelets.instanceMatrix.needsUpdate = true;
+        }
+
+        // --- Animation Loop ---
+        let lastTime = performance.now();
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const now = performance.now();
+            const dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            state.time += dt * state.speed;
+
+            controls.update();
+            updatePhysics();
+            updateGeometry();
+            
+            renderer.render(scene, camera);
+        }
+
+        // --- Event Listeners for UI ---
+        function bindSlider(id, stateKey, valId, formatFn) {
+            const slider = document.getElementById(id);
+            const valSpan = document.getElementById(valId);
+            slider.addEventListener('input', (e) => {
+                state[stateKey] = parseFloat(e.target.value);
+                valSpan.innerText = formatFn(state[stateKey]);
+            });
+        }
+
+        bindSlider('angle-slider', 'angleI', 'angle-val', v => v + '°');
+        bindSlider('n1-slider', 'n1', 'n1-val', v => v.toFixed(1));
+        bindSlider('n2-slider', 'n2', 'n2-val', v => v.toFixed(1));
+        bindSlider('freq-slider', 'freq', 'freq-val', v => v.toFixed(1) + ' Hz');
+        bindSlider('speed-slider', 'speed', 'speed-val', v => v.toFixed(1) + 'x');
+
+        document.getElementById('wavelet-toggle').addEventListener('change', (e) => {
+            state.showWavelets = e.target.checked;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

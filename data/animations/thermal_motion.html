@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thermal Motion: From Mean Free Path to Paramagnetism</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f0f4f8;
+            --hero: #FF3366;
+            --particle: #4361EE;
+            --path: #06D6A0;
+            --dipole: #7209B7;
+            --field: #F77F00;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.6);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid var(--glass-border);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            line-height: 1.4;
+            color: var(--text-main);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--particle);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--particle);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        button {
+            background: var(--particle);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #324ed4;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Floating Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 16px 20px;
+            border-radius: 12px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            margin: 6px 0;
+            color: var(--text-main);
+        }
+
+        .math-highlight {
+            color: var(--path);
+            font-weight: 700;
+        }
+
+        /* Tooltip */
+        #tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.8rem;
+            pointer-events: none;
+            display: none;
+            z-index: 20;
+            transform: translate(-50%, -100%);
+            margin-top: -10px;
+        }
+
+        /* Legend */
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="math-line">&lambda; = 1 / (&radic;2 &pi; d&sup2; n) = <span id="val-lambda" class="math-highlight">0.00</span> m</div>
+            <div class="math-line">v<sub>rms</sub> = &radic;(3k<sub>B</sub>T/m) = <span id="val-vrms" style="color: var(--particle)">0</span> m/s</div>
+            <div class="math-line" style="margin-top: 10px; font-size: 0.8rem; color: var(--text-muted);">Alignment &eta; = &mu;B / k<sub>B</sub>T</div>
+        </div>
+        <div id="tooltip">Velocity: 0 m/s</div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Thermal Motion & Paramagnetism</h1>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Temperature (T)</span>
+                <span class="value-display" id="disp-temp">300 K</span>
+            </div>
+            <input type="range" id="slider-temp" min="10" max="1000" step="10" value="300">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Particle Density (n)</span>
+                <span class="value-display" id="disp-density">100</span>
+            </div>
+            <input type="range" id="slider-density" min="20" max="200" step="10" value="100">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Particle Diameter (d)</span>
+                <span class="value-display" id="disp-diameter">0.5 m</span>
+            </div>
+            <input type="range" id="slider-diameter" min="0.2" max="1.0" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Magnetic Field (B)</span>
+                <span class="value-display" id="disp-mag" style="color: var(--field); background: rgba(247, 127, 0, 0.1);">0.0 T</span>
+            </div>
+            <input type="range" id="slider-mag" min="0" max="5" step="0.1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Time Scale</span>
+                <span class="value-display" id="disp-time">1.0x</span>
+            </div>
+            <input type="range" id="slider-time" min="0" max="2" step="0.1" value="1.0">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="check-bfield">
+            Show B-Field Vectors
+        </label>
+
+        <button id="btn-reset">Reset Simulation</button>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: var(--hero)"></div> Hero Particle</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--particle)"></div> Gas Particles</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--path)"></div> Mean Free Path Trace</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--dipole)"></div> Magnetic Dipoles (&mu;)</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--field)"></div> External B-Field</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Constants & Physics Parameters ---
+        const kB = 1.38e-23; // Boltzmann constant
+        const m = 1e-26;     // Particle mass
+        const mu_sim = 1.38e-21; // Simulated magnetic moment to make alignment visible (mu/kB = 100)
+        const BOX_SIZE = 20;
+        const VOLUME = BOX_SIZE * BOX_SIZE * BOX_SIZE;
+        const MAX_TRACE_SEGMENTS = 10;
+
+        const params = {
+            temp: 300,
+            density: 100,
+            diameter: 0.5,
+            magField: 0.0,
+            timeScale: 1.0,
+            showBField: false
+        };
+
+        let currentVrms = 0;
+        let currentVsim = 0;
+
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(25, 15, 30);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Objects ---
+        // 1. Gas Chamber (Wireframe Box)
+        const boxGeo = new THREE.BoxGeometry(BOX_SIZE, BOX_SIZE, BOX_SIZE);
+        const edgesGeo = new THREE.EdgesGeometry(boxGeo);
+        const boxMat = new THREE.LineBasicMaterial({ color: 0xd1d9e6, linewidth: 2 });
+        const boxWireframe = new THREE.LineSegments(edgesGeo, boxMat);
+        scene.add(boxWireframe);
+
+        // 2. B-Field Visuals
+        const bFieldGroup = new THREE.Group();
+        const arrowDir = new THREE.Vector3(0, 1, 0);
+        for (let x = -8; x <= 8; x += 8) {
+            for (let z = -8; z <= 8; z += 8) {
+                const arrow = new THREE.ArrowHelper(arrowDir, new THREE.Vector3(x, -10, z), 20, 0xF77F00, 1, 0.5);
+                bFieldGroup.add(arrow);
+            }
+        }
+        bFieldGroup.visible = false;
+        scene.add(bFieldGroup);
+
+        // 3. Particles & Dipoles
+        const particles = [];
+        const sphereGeo = new THREE.SphereGeometry(0.5, 32, 32); // Base diameter = 1.0
+        const particleMat = new THREE.MeshPhysicalMaterial({ 
+            color: 0x4361EE, transparent: true, opacity: 0.5, roughness: 0.2, transmission: 0.5 
+        });
+        const heroMat = new THREE.MeshPhysicalMaterial({ 
+            color: 0xFF3366, transparent: false, roughness: 0.2 
+        });
+        const dipoleMat = new THREE.MeshPhongMaterial({ color: 0x7209B7 });
+
+        function createDipole() {
+            const group = new THREE.Group();
+            const cylGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.6);
+            const cyl = new THREE.Mesh(cylGeo, dipoleMat);
+            cyl.position.y = 0.3;
+            const coneGeo = new THREE.ConeGeometry(0.12, 0.3);
+            const cone = new THREE.Mesh(coneGeo, dipoleMat);
+            cone.position.y = 0.75;
+            group.add(cyl);
+            group.add(cone);
+            group.position.y = -0.4; // Center rotation
+            
+            const pivot = new THREE.Group();
+            pivot.add(group);
+            return pivot;
+        }
+
+        class Particle {
+            constructor(isHero = false) {
+                this.isHero = isHero;
+                this.mesh = new THREE.Mesh(sphereGeo, isHero ? heroMat : particleMat);
+                this.mesh.scale.setScalar(params.diameter);
+                
+                this.dipole = createDipole();
+                // Scale dipole inversely to keep it visible inside the sphere
+                this.dipole.scale.setScalar(1.0 / params.diameter * 0.8);
+                this.mesh.add(this.dipole);
+                
+                this.velocity = new THREE.Vector3(
+                    Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5
+                ).normalize().multiplyScalar(currentVsim);
+                
+                this.randomWander = new THREE.Vector3(
+                    Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5
+                ).normalize();
+
+                scene.add(this.mesh);
+            }
+        }
+
+        // 4. Mean Free Path Trace
+        const tracePoints = [];
+        const traceGeo = new THREE.BufferGeometry();
+        const traceMat = new THREE.LineBasicMaterial({ color: 0x06D6A0, linewidth: 2 });
+        const traceLine = new THREE.Line(traceGeo, traceMat);
+        scene.add(traceLine);
+
+        // 5. Collision Flashes
+        const flashes = [];
+        const flashGeo = new THREE.RingGeometry(0.1, 0.3, 16);
+        const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 1, side: THREE.DoubleSide });
+
+        function createFlash(pos) {
+            const flash = new THREE.Mesh(flashGeo, flashMat.clone());
+            flash.position.copy(pos);
+            flash.lookAt(camera.position);
+            scene.add(flash);
+            flashes.push({ mesh: flash, life: 1.0 });
+        }
+
+        // --- Core Functions ---
+
+        function updatePhysicsParams() {
+            // v_rms = sqrt(3 * kB * T / m)
+            const oldVsim = currentVsim;
+            currentVrms = Math.sqrt((3 * kB * params.temp) / m);
+            currentVsim = currentVrms * 0.0002; // Scale to simulation units/frame
+
+            // Scale existing velocities to new temperature
+            if (oldVsim > 0) {
+                const scaleFactor = currentVsim / oldVsim;
+                particles.forEach(p => p.velocity.multiplyScalar(scaleFactor));
+            }
+
+            // Calculate Mean Free Path: lambda = Volume / (sqrt(2) * pi * d^2 * N)
+            const lambda = VOLUME / (Math.SQRT2 * Math.PI * Math.pow(params.diameter, 2) * params.density);
+            
+            // Update UI
+            document.getElementById('val-vrms').innerText = currentVrms.toFixed(0);
+            document.getElementById('val-lambda').innerText = lambda.toFixed(2);
+        }
+
+        function spawnParticles() {
+            // Remove excess
+            while (particles.length > params.density) {
+                const p = particles.pop();
+                if (p.isHero) {
+                    particles.unshift(p); // Keep hero
+                    continue;
+                }
+                scene.remove(p.mesh);
+                p.mesh.geometry.dispose();
+            }
+
+            // Add new
+            const halfBox = BOX_SIZE / 2 - params.diameter / 2;
+            while (particles.length < params.density) {
+                const isHero = particles.length === 0;
+                const p = new Particle(isHero);
+                
+                // Find non-overlapping position
+                let validPos = false;
+                let attempts = 0;
+                while (!validPos && attempts < 100) {
+                    p.mesh.position.set(
+                        (Math.random() - 0.5) * 2 * halfBox,
+                        (Math.random() - 0.5) * 2 * halfBox,
+                        (Math.random() - 0.5) * 2 * halfBox
+                    );
+                    validPos = true;
+                    for (let i = 0; i < particles.length; i++) {
+                        if (p.mesh.position.distanceToSquared(particles[i].mesh.position) < params.diameter * params.diameter) {
+                            validPos = false;
+                            break;
+                        }
+                    }
+                    attempts++;
+                }
+                particles.push(p);
+            }
+
+            // Update diameters
+            particles.forEach(p => {
+                p.mesh.scale.setScalar(params.diameter);
+                p.dipole.scale.setScalar(1.0 / params.diameter * 0.8);
+            });
+        }
+
+        function recordHeroCollision(pos) {
+            tracePoints.push(pos.clone());
+            if (tracePoints.length > MAX_TRACE_SEGMENTS) {
+                tracePoints.shift();
+            }
+        }
+
+        function updateTrace() {
+            if (particles.length === 0) return;
+            const hero = particles[0]; // Hero is always index 0
+            const points = [...tracePoints, hero.mesh.position.clone()];
+            if (points.length > 1) {
+                traceGeo.setFromPoints(points);
+            }
+        }
+
+        function resetSimulation() {
+            particles.forEach(p => {
+                scene.remove(p.mesh);
+                p.mesh.geometry.dispose();
+            });
+            particles.length = 0;
+            tracePoints.length = 0;
+            traceGeo.setFromPoints([]);
+            updatePhysicsParams();
+            spawnParticles();
+        }
+
+        // --- Physics Loop ---
+
+        const _dx = new THREE.Vector3();
+        const _dv = new THREE.Vector3();
+        const baseAxis = new THREE.Vector3(0, 1, 0);
+        const qBField = new THREE.Quaternion(); // Identity, B is +Y
+
+        function updatePhysics() {
+            if (params.timeScale === 0) return;
+
+            const dt = params.timeScale;
+            const halfBox = BOX_SIZE / 2 - params.diameter / 2;
+            const diamSq = params.diameter * params.diameter;
+
+            // Paramagnetic Alignment Factor: eta = (mu * B) / (kB * T)
+            // Using simulated mu to make the effect visible in 0-5T range
+            const eta = (mu_sim * params.magField) / (kB * params.temp);
+            const alignment = Math.tanh(eta);
+
+            // 1. Move and Wall Collisions
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.mesh.position.addScaledVector(p.velocity, dt);
+
+                // Wall collisions
+                ['x', 'y', 'z'].forEach(axis => {
+                    if (p.mesh.position[axis] > halfBox) {
+                        p.mesh.position[axis] = halfBox;
+                        p.velocity[axis] *= -1;
+                    } else if (p.mesh.position[axis] < -halfBox) {
+                        p.mesh.position[axis] = -halfBox;
+                        p.velocity[axis] *= -1;
+                    }
+                });
+
+                // Dipole Jitter and Alignment
+                // Random wander speed increases with Temperature
+                const jitterSpeed = 0.05 + (params.temp / 1000) * 0.2;
+                p.randomWander.add(
+                    new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).multiplyScalar(jitterSpeed)
+                ).normalize();
+
+                const qRandom = new THREE.Quaternion().setFromUnitVectors(baseAxis, p.randomWander);
+                p.dipole.quaternion.copy(qRandom).slerp(qBField, alignment);
+            }
+
+            // 2. Sphere-Sphere Collisions (O(N^2) optimized)
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const p1 = particles[i];
+                    const p2 = particles[j];
+                    
+                    _dx.subVectors(p1.mesh.position, p2.mesh.position);
+                    const distSq = _dx.lengthSq();
+
+                    if (distSq < diamSq) {
+                        const dist = Math.sqrt(distSq);
+                        const overlap = params.diameter - dist;
+                        
+                        // Separate
+                        _dx.normalize();
+                        const correction = _dx.clone().multiplyScalar(overlap / 2);
+                        p1.mesh.position.add(correction);
+                        p2.mesh.position.sub(correction);
+
+                        // Elastic Collision (Equal Mass)
+                        _dv.subVectors(p1.velocity, p2.velocity);
+                        const dot = _dv.dot(_dx);
+                        
+                        if (dot > 0) continue; // Already moving apart
+
+                        const impulse = _dx.clone().multiplyScalar(dot);
+                        p1.velocity.sub(impulse);
+                        p2.velocity.add(impulse);
+
+                        // Record trace and flash
+                        if (p1.isHero || p2.isHero) {
+                            recordHeroCollision(p1.isHero ? p1.mesh.position : p2.mesh.position);
+                        }
+                        
+                        const contactPoint = p1.mesh.position.clone().add(p2.mesh.position).multiplyScalar(0.5);
+                        createFlash(contactPoint);
+                    }
+                }
+            }
+
+            updateTrace();
+        }
+
+        // --- Interaction & UI ---
+
+        const tooltip = document.getElementById('tooltip');
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let isHovering = false;
+
+        window.addEventListener('mousemove', (e) => {
+            const canvasRect = container.getBoundingClientRect();
+            if (e.clientX < canvasRect.width) {
+                mouse.x = (e.clientX / canvasRect.width) * 2 - 1;
+                mouse.y = -(e.clientY / canvasRect.height) * 2 + 1;
+                tooltip.style.left = e.clientX + 15 + 'px';
+                tooltip.style.top = e.clientY + 15 + 'px';
+                isHovering = true;
+            } else {
+                isHovering = false;
+                tooltip.style.display = 'none';
+            }
+        });
+
+        function setupUI() {
+            const bindSlider = (id, paramKey, dispId, suffix = '', callback = null) => {
+                const slider = document.getElementById(id);
+                const disp = document.getElementById(dispId);
+                slider.addEventListener('input', (e) => {
+                    params[paramKey] = parseFloat(e.target.value);
+                    disp.innerText = params[paramKey] + suffix;
+                    if (callback) callback();
+                });
+            };
+
+            bindSlider('slider-temp', 'temp', 'disp-temp', ' K', updatePhysicsParams);
+            bindSlider('slider-density', 'density', 'disp-density', '', () => {
+                spawnParticles();
+                updatePhysicsParams();
+            });
+            bindSlider('slider-diameter', 'diameter', 'disp-diameter', ' m', () => {
+                spawnParticles();
+                updatePhysicsParams();
+            });
+            bindSlider('slider-mag', 'magField', 'disp-mag', ' T', () => {
+                bFieldGroup.children.forEach(arrow => {
+                    // Update opacity based on field strength
+                    arrow.line.material.opacity = 0.2 + (params.magField / 5) * 0.8;
+                    arrow.cone.material.opacity = 0.2 + (params.magField / 5) * 0.8;
+                });
+            });
+            bindSlider('slider-time', 'timeScale', 'disp-time', 'x');
+
+            document.getElementById('check-bfield').addEventListener('change', (e) => {
+                params.showBField = e.target.checked;
+                bFieldGroup.visible = params.showBField;
+            });
+
+            document.getElementById('btn-reset').addEventListener('click', resetSimulation);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            updatePhysics();
+
+            // Handle Flashes
+            for (let i = flashes.length - 1; i >= 0; i--) {
+                const f = flashes[i];
+                f.life -= 0.05 * (params.timeScale === 0 ? 1 : params.timeScale);
+                f.mesh.scale.addScalar(0.05);
+                f.mesh.material.opacity = f.life;
+                f.mesh.lookAt(camera.position);
+                if (f.life <= 0) {
+                    scene.remove(f.mesh);
+                    flashes.splice(i, 1);
+                }
+            }
+
+            // Handle Hover Tooltip
+            if (isHovering) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(particles.map(p => p.mesh));
+                if (intersects.length > 0) {
+                    const hitMesh = intersects[0].object;
+                    const p = particles.find(part => part.mesh === hitMesh);
+                    if (p) {
+                        const v_real = p.velocity.length() / 0.0002;
+                        tooltip.innerHTML = `Velocity: ${v_real.toFixed(0)} m/s`;
+                        tooltip.style.display = 'block';
+                    }
+                } else {
+                    tooltip.style.display = 'none';
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updatePhysicsParams();
+        spawnParticles();
+        setupUI();
+        animate();
+
+    </script>
+</body>
+</html>

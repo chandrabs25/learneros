@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculus in Physics: Differentiation & Integration</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f0f4f8, #e0e8f0);
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            z-index: 10;
+        }
+        #controls {
+            top: 20px;
+            right: 20px;
+            width: 280px;
+        }
+        #formulas {
+            top: 20px;
+            left: 20px;
+            width: 320px;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #111;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+            margin-bottom: 15px;
+        }
+        .slider-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 5px;
+        }
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+        #varDeltaT { accent-color: #7209B7; }
+        #varDeltaX { accent-color: #FF3366; }
+        #freq { accent-color: #4361EE; }
+        #simSpeed { accent-color: #06D6A0; }
+        
+        .math-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+            font-family: 'Times New Roman', serif;
+            font-size: 1.1rem;
+            line-height: 1.5;
+        }
+        .math-card span.label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #a0aec0;
+            display: block;
+            margin-bottom: 4px;
+        }
+        .val-inst { color: #06D6A0; font-weight: bold; }
+        .val-avg { color: #7209B7; font-weight: bold; }
+        .val-exact { color: #FF3366; font-weight: bold; }
+        .val-riemann { color: #FF8fa3; font-weight: bold; }
+
+        .label-3d {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 5;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: opacity 0.1s;
+        }
+        #lbl-particle { color: #4361EE; }
+        #lbl-force { color: #FF3366; }
+        #lbl-work { color: #FF3366; }
+        #lbl-postime { color: #4361EE; }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="formulas" class="panel">
+        <h2>Calculus in Physics</h2>
+        
+        <div class="math-card">
+            <span class="label">Differentiation (Kinematics)</span>
+            v = lim<sub>&Delta;t&rarr;0</sub> &Delta;x / &Delta;t<br>
+            v<sub>inst</sub> (Tangent) = <span id="val-v-inst" class="val-inst">0.000</span> m/s<br>
+            v<sub>avg</sub> (Secant) = <span id="val-v-avg" class="val-avg">0.000</span> m/s
+        </div>
+
+        <div class="math-card">
+            <span class="label">Integration (Work Done)</span>
+            W = &int; F(x) dx &approx; &sum; F(x) &Delta;x<br>
+            W<sub>exact</sub> (Area) = <span id="val-work-exact" class="val-exact">0.000</span> J<br>
+            W<sub>sum</sub> (Rectangles) = <span id="val-work-riemann" class="val-riemann">0.000</span> J
+        </div>
+    </div>
+
+    <div id="controls" class="panel">
+        <h2>Simulation Controls</h2>
+        
+        <div class="slider-group">
+            <label>Time Step (&Delta;t) <span id="lbl-dt">1.00 s</span></label>
+            <input type="range" id="varDeltaT" min="0.01" max="2.0" step="0.01" value="1.0">
+        </div>
+        
+        <div class="slider-group">
+            <label>Rectangle Width (&Delta;x) <span id="lbl-dx">0.50 m</span></label>
+            <input type="range" id="varDeltaX" min="0.05" max="1.0" step="0.05" value="0.5">
+        </div>
+        
+        <div class="slider-group">
+            <label>Function Complexity (&omega;) <span id="lbl-freq">1.0</span></label>
+            <input type="range" id="freq" min="0.5" max="3.0" step="0.1" value="1.0">
+        </div>
+        
+        <div class="slider-group">
+            <label>Playback Speed <span id="lbl-speed">1.0x</span></label>
+            <input type="range" id="simSpeed" min="0" max="2" step="0.1" value="1.0">
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <!-- 3D Labels -->
+    <div id="lbl-particle" class="label-3d">Particle x(t)</div>
+    <div id="lbl-force" class="label-3d">Force F(x)</div>
+    <div id="lbl-work" class="label-3d">Work Area</div>
+    <div id="lbl-postime" class="label-3d">Pos-Time Graph</div>
+
+    <script>
+        // --- State Variables ---
+        let time = 0;
+        let deltaT = 1.0;
+        let deltaX = 0.5;
+        let freq = 1.0;
+        let simSpeed = 1.0;
+
+        // --- DOM Elements ---
+        const elDeltaT = document.getElementById('varDeltaT');
+        const elDeltaX = document.getElementById('varDeltaX');
+        const elFreq = document.getElementById('freq');
+        const elSimSpeed = document.getElementById('simSpeed');
+        
+        const valVInst = document.getElementById('val-v-inst');
+        const valVAvg = document.getElementById('val-v-avg');
+        const valWorkExact = document.getElementById('val-work-exact');
+        const valWorkRiemann = document.getElementById('val-work-riemann');
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(14, 10, 18);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(5, 0, 4);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lights ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Materials ---
+        const matTrack = new THREE.MeshStandardMaterial({ color: 0xced4da, roughness: 0.4 });
+        const matParticle = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.2, metalness: 0.1 });
+        const matForceCurve = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.2 });
+        const matPosTimeCurve = new THREE.MeshStandardMaterial({ color: 0x4361EE, transparent: true, opacity: 0.5 });
+        const matRiemann = new THREE.MeshBasicMaterial({ color: 0xFF3366, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+        const matSecant = new THREE.LineDashedMaterial({ color: 0x7209B7, dashSize: 0.3, gapSize: 0.15, linewidth: 2 });
+        const matTangent = new THREE.LineBasicMaterial({ color: 0x06D6A0, linewidth: 2 });
+        const matAxis = new THREE.LineBasicMaterial({ color: 0xa0aec0 });
+
+        // --- Static Objects ---
+        // Grid
+        const gridHelper = new THREE.GridHelper(20, 20, 0xe2e8f0, 0xe2e8f0);
+        gridHelper.position.set(5, -0.05, 5);
+        scene.add(gridHelper);
+
+        // Track (X-Axis for motion)
+        const trackGeo = new THREE.CylinderGeometry(0.04, 0.04, 16, 16);
+        trackGeo.rotateZ(Math.PI / 2);
+        const track = new THREE.Mesh(trackGeo, matTrack);
+        track.position.set(5, 0, 0);
+        scene.add(track);
+
+        // Axes Lines
+        const createAxis = (p1, p2) => {
+            const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...p1), new THREE.Vector3(...p2)]);
+            scene.add(new THREE.Line(geo, matAxis));
+        };
+        createAxis([-2, 0, 0], [12, 0, 0]); // Main X Axis
+        createAxis([0, 0, -2], [0, 0, 15]); // Time Z Axis
+        createAxis([0, 0, -3], [10, 0, -3]); // Force X Axis
+        createAxis([0, 0, -3], [0, 4, -3]); // Force Y Axis
+
+        // --- Dynamic Objects ---
+        const particle = new THREE.Mesh(new THREE.SphereGeometry(0.25, 32, 32), matParticle);
+        scene.add(particle);
+
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0x06D6A0, 0.4, 0.25);
+        scene.add(velArrow);
+
+        // Graph Markers
+        const graphMarker1 = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), new THREE.MeshBasicMaterial({color: 0x06D6A0}));
+        scene.add(graphMarker1);
+        const graphMarker2 = new THREE.Mesh(new THREE.SphereGeometry(0.1, 16, 16), new THREE.MeshBasicMaterial({color: 0x7209B7}));
+        scene.add(graphMarker2);
+
+        // Lines
+        const secantLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), matSecant);
+        scene.add(secantLine);
+        
+        const tangentLine = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]), matTangent);
+        scene.add(tangentLine);
+
+        let forceCurveMesh, posTimeCurveMesh;
+        const rectanglesGroup = new THREE.Group();
+        scene.add(rectanglesGroup);
+
+        // --- Geometry Generation Functions ---
+        function updateForceGraph() {
+            if (forceCurveMesh) scene.remove(forceCurveMesh);
+            const pts = [];
+            for (let x = 0; x <= 10; x += 0.1) {
+                pts.push(new THREE.Vector3(x, Math.sin(freq * x) + 1.5, -3));
+            }
+            const curve = new THREE.CatmullRomCurve3(pts);
+            const geo = new THREE.TubeGeometry(curve, 100, 0.06, 8, false);
+            forceCurveMesh = new THREE.Mesh(geo, matForceCurve);
+            scene.add(forceCurveMesh);
+
+            // Update Rectangles
+            while (rectanglesGroup.children.length > 0) {
+                rectanglesGroup.remove(rectanglesGroup.children[0]);
+            }
+            
+            let area = 0;
+            for (let x = 0; x < 10; x += deltaX) {
+                let w = deltaX;
+                if (x + w > 10) w = 10 - x; // clamp at x=10
+                let h = Math.sin(freq * x) + 1.5; // Left-hand sum
+                area += h * w;
+                
+                const geoBox = new THREE.BoxGeometry(w * 0.92, h, 0.4);
+                const meshBox = new THREE.Mesh(geoBox, matRiemann);
+                meshBox.position.set(x + w / 2, h / 2, -3);
+                rectanglesGroup.add(meshBox);
+            }
+
+            // Update Work UI
+            const exactWork = (1 / freq) * (1 - Math.cos(10 * freq)) + 15;
+            valWorkExact.innerText = exactWork.toFixed(3);
+            valWorkRiemann.innerText = area.toFixed(3);
+        }
+
+        function updateKinematicsGraph() {
+            if (posTimeCurveMesh) scene.remove(posTimeCurveMesh);
+            const pts = [];
+            for (let t = 0; t <= 15; t += 0.1) {
+                let x = 2 * Math.sin(freq * t) + 0.5 * t;
+                pts.push(new THREE.Vector3(x, 0, t));
+            }
+            const curve = new THREE.CatmullRomCurve3(pts);
+            const geo = new THREE.TubeGeometry(curve, 150, 0.03, 8, false);
+            posTimeCurveMesh = new THREE.Mesh(geo, matPosTimeCurve);
+            scene.add(posTimeCurveMesh);
+        }
+
+        // --- Event Listeners ---
+        elDeltaT.addEventListener('input', (e) => {
+            deltaT = parseFloat(e.target.value);
+            document.getElementById('lbl-dt').innerText = deltaT.toFixed(2) + ' s';
+        });
+        elDeltaX.addEventListener('input', (e) => {
+            deltaX = parseFloat(e.target.value);
+            document.getElementById('lbl-dx').innerText = deltaX.toFixed(2) + ' m';
+            updateForceGraph();
+        });
+        elFreq.addEventListener('input', (e) => {
+            freq = parseFloat(e.target.value);
+            document.getElementById('lbl-freq').innerText = freq.toFixed(1);
+            updateForceGraph();
+            updateKinematicsGraph();
+        });
+        elSimSpeed.addEventListener('input', (e) => {
+            simSpeed = parseFloat(e.target.value);
+            document.getElementById('lbl-speed').innerText = simSpeed.toFixed(1) + 'x';
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Initialization ---
+        updateForceGraph();
+        updateKinematicsGraph();
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Time progression
+            time += 0.016 * simSpeed;
+            if (time > 15) time = 0;
+
+            // Kinematics Math
+            const x_t = 2 * Math.sin(freq * time) + 0.5 * time;
+            const v_t = 2 * freq * Math.cos(freq * time) + 0.5; // Instantaneous velocity (Derivative)
+            
+            const t_plus = time + deltaT;
+            const x_t_plus = 2 * Math.sin(freq * t_plus) + 0.5 * t_plus;
+            const v_avg = (x_t_plus - x_t) / deltaT; // Average velocity (Secant slope)
+
+            // Update Particle & Velocity Arrow
+            particle.position.set(x_t, 0, 0);
+            velArrow.position.set(x_t, 0, 0);
+            velArrow.setDirection(new THREE.Vector3(Math.sign(v_t) || 1, 0, 0));
+            velArrow.setLength(Math.abs(v_t), 0.3, 0.2);
+
+            // Update Graph Markers
+            const p1 = new THREE.Vector3(x_t, 0, time);
+            const p2 = new THREE.Vector3(x_t_plus, 0, t_plus);
+            graphMarker1.position.copy(p1);
+            graphMarker2.position.copy(p2);
+
+            // Update Secant Line (Purple, Dashed)
+            secantLine.geometry.setFromPoints([p1, p2]);
+            secantLine.computeLineDistances();
+
+            // Update Tangent Line (Green, Solid)
+            const tangentLen = 1.5;
+            const pTan1 = new THREE.Vector3(x_t - v_t * tangentLen, 0, time - tangentLen);
+            const pTan2 = new THREE.Vector3(x_t + v_t * tangentLen, 0, time + tangentLen);
+            tangentLine.geometry.setFromPoints([pTan1, pTan2]);
+
+            // Update UI
+            valVInst.innerText = v_t.toFixed(3);
+            valVAvg.innerText = v_avg.toFixed(3);
+
+            // Update 3D HTML Labels
+            updateLabelPosition('lbl-particle', new THREE.Vector3(x_t, 0.6, 0));
+            updateLabelPosition('lbl-force', new THREE.Vector3(5, Math.sin(freq * 5) + 1.5 + 0.6, -3));
+            updateLabelPosition('lbl-work', new THREE.Vector3(5, 0.5, -2.5));
+            updateLabelPosition('lbl-postime', new THREE.Vector3(2 * Math.sin(freq * 7.5) + 0.5 * 7.5, 0.5, 7.5));
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function updateLabelPosition(id, pos) {
+            const el = document.getElementById(id);
+            const tempV = pos.clone();
+            tempV.project(camera);
+            
+            if (tempV.z > 1) {
+                el.style.opacity = '0';
+            } else {
+                el.style.opacity = '1';
+                const x = (tempV.x * 0.5 + 0.5) * window.innerWidth;
+                const y = (tempV.y * -0.5 + 0.5) * window.innerHeight;
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+            }
+        }
+
+        animate();
+    </script>
+</body>
+</html>

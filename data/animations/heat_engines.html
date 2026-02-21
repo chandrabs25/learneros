@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carnot Heat Engine Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap');
+
+        :root {
+            --hot: #FF3366;
+            --cold: #4361EE;
+            --work: #06D6A0;
+            --bg: #f0f4f8;
+            --text: #2b2d42;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.9);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            user-select: none;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            position: absolute;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        /* Formula Card - Top Left */
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            width: 300px;
+        }
+
+        #formula-card h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .hot-text { color: var(--hot); }
+        .cold-text { color: var(--cold); }
+        .work-text { color: var(--work); }
+
+        /* Controls - Bottom Right */
+        #controls-panel {
+            bottom: 20px;
+            right: 20px;
+            width: 320px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            width: 100%;
+            appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            cursor: pointer;
+            margin-top: -6px;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.1);
+            border-radius: 2px;
+        }
+
+        #th-slider::-webkit-slider-thumb { border: 2px solid var(--hot); }
+        #th-slider::-webkit-slider-runnable-track { background: linear-gradient(90deg, rgba(0,0,0,0.1), var(--hot)); }
+        
+        #tl-slider::-webkit-slider-thumb { border: 2px solid var(--cold); }
+        #tl-slider::-webkit-slider-runnable-track { background: linear-gradient(90deg, var(--cold), rgba(0,0,0,0.1)); }
+
+        #speed-slider::-webkit-slider-thumb { border: 2px solid var(--text); }
+        #ratio-slider::-webkit-slider-thumb { border: 2px solid var(--text); }
+
+        /* PV Diagram - Top Right */
+        #pv-container {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            height: 240px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #pv-container h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        #pv-canvas {
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            background: rgba(255,255,255,0.85);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 5;
+            transition: opacity 0.2s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- 3D Labels -->
+    <div id="label-hot" class="scene-label hot-text">Hot Reservoir (T_H)</div>
+    <div id="label-cold" class="scene-label cold-text">Cold Reservoir (T_L)</div>
+    <div id="label-work" class="scene-label work-text">Work (W)</div>
+
+    <!-- Formula Card -->
+    <div id="formula-card" class="glass-panel">
+        <h2>Carnot Engine</h2>
+        <div class="math">
+            &eta; = 1 - (T<sub>L</sub> / T<sub>H</sub>)
+        </div>
+        <div class="stat-row">
+            <span>Efficiency (&eta;):</span>
+            <span id="val-eff" class="stat-value work-text">50.0%</span>
+        </div>
+        <div class="stat-row">
+            <span>Heat In (Q<sub>H</sub>):</span>
+            <span id="val-qh" class="stat-value hot-text">1000 J</span>
+        </div>
+        <div class="stat-row">
+            <span>Heat Out (Q<sub>L</sub>):</span>
+            <span id="val-ql" class="stat-value cold-text">500 J</span>
+        </div>
+        <div class="stat-row">
+            <span>Net Work (W):</span>
+            <span id="val-w" class="stat-value work-text">500 J</span>
+        </div>
+        <div class="stat-row" style="margin-top: 10px; font-size: 0.8rem; color: #666;">
+            <span>Phase:</span>
+            <span id="val-phase" class="stat-value" style="color: var(--text)">Isothermal Exp</span>
+        </div>
+    </div>
+
+    <!-- PV Diagram -->
+    <div id="pv-container" class="glass-panel">
+        <h3>P-V Diagram</h3>
+        <canvas id="pv-canvas" width="280" height="180"></canvas>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls-panel" class="glass-panel">
+        <div class="control-group">
+            <div class="control-header">
+                <span>Hot Temp (T<sub>H</sub>)</span>
+                <span id="lbl-th" class="stat-value hot-text">600 K</span>
+            </div>
+            <input type="range" id="th-slider" min="400" max="1000" step="10" value="600">
+        </div>
+        <div class="control-group">
+            <div class="control-header">
+                <span>Cold Temp (T<sub>L</sub>)</span>
+                <span id="lbl-tl" class="stat-value cold-text">300 K</span>
+            </div>
+            <input type="range" id="tl-slider" min="100" max="350" step="10" value="300">
+        </div>
+        <div class="control-group">
+            <div class="control-header">
+                <span>Compression Ratio (r)</span>
+                <span id="lbl-ratio" class="stat-value">4.0</span>
+            </div>
+            <input type="range" id="ratio-slider" min="2" max="8" step="0.5" value="4">
+        </div>
+        <div class="control-group">
+            <div class="control-header">
+                <span>Cycle Speed</span>
+                <span id="lbl-speed" class="stat-value">1.0x</span>
+            </div>
+            <input type="range" id="speed-slider" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        const state = {
+            TH: 600,
+            TL: 300,
+            r: 4,
+            speed: 1.0,
+            theta: 0, // Engine crank angle [0, 2PI]
+            phase: '',
+            V: 1,
+            P: 1,
+            T: 600,
+            QH: 0,
+            QL: 0,
+            W: 0,
+            // Cycle anchor points
+            V1: 1, V2: 1, V3: 1, V4: 1,
+            P1: 1, P2: 1, P3: 1, P4: 1,
+            theta2: 0, theta4: 0
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.Fog('#f0f4f8', 20, 50);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 18);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Prevent going too far below ground
+        controls.minDistance = 10;
+        controls.maxDistance = 30;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // --- Materials ---
+        const glassMatHot = new THREE.MeshPhysicalMaterial({
+            color: 0xFF3366, transmission: 0.8, opacity: 1, transparent: true, roughness: 0.1, ior: 1.5
+        });
+        const glassMatCold = new THREE.MeshPhysicalMaterial({
+            color: 0x4361EE, transmission: 0.8, opacity: 1, transparent: true, roughness: 0.1, ior: 1.5
+        });
+        const glassMatCyl = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff, transmission: 0.9, opacity: 1, transparent: true, roughness: 0.05, ior: 1.5, side: THREE.DoubleSide
+        });
+        const metalMat = new THREE.MeshStandardMaterial({
+            color: 0x8D99AE, roughness: 0.3, metalness: 0.8
+        });
+        const darkMetalMat = new THREE.MeshStandardMaterial({
+            color: 0x2b2d42, roughness: 0.5, metalness: 0.9
+        });
+
+        // --- Geometry & Meshes ---
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(50, 50),
+            new THREE.MeshStandardMaterial({ color: 0xe0e5ec, roughness: 0.8 })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -6;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // Grid
+        const grid = new THREE.GridHelper(50, 50, 0xc0c5cc, 0xd0d5dc);
+        grid.position.y = -5.99;
+        scene.add(grid);
+
+        // Reservoirs
+        const resGeo = new THREE.BoxGeometry(5, 2, 5);
+        const hotRes = new THREE.Mesh(resGeo, glassMatHot);
+        hotRes.position.set(0, 5, 0);
+        hotRes.castShadow = true;
+        scene.add(hotRes);
+
+        const coldRes = new THREE.Mesh(resGeo, glassMatCold);
+        coldRes.position.set(0, -4, 0);
+        coldRes.castShadow = true;
+        scene.add(coldRes);
+
+        // Cylinder
+        const cylRadius = 1.5;
+        const cylHeight = 4;
+        const cylinder = new THREE.Mesh(
+            new THREE.CylinderGeometry(cylRadius, cylRadius, cylHeight, 32, 1, true),
+            glassMatCyl
+        );
+        cylinder.position.set(0, 0.5, 0);
+        scene.add(cylinder);
+
+        // Caps for cylinder
+        const capGeo = new THREE.CylinderGeometry(cylRadius+0.1, cylRadius+0.1, 0.2, 32);
+        const topCap = new THREE.Mesh(capGeo, metalMat);
+        topCap.position.set(0, 2.6, 0);
+        scene.add(topCap);
+        const botCap = new THREE.Mesh(capGeo, metalMat);
+        botCap.position.set(0, -1.6, 0);
+        scene.add(botCap);
+
+        // Piston
+        const pistonGeo = new THREE.CylinderGeometry(cylRadius - 0.05, cylRadius - 0.05, 0.4, 32);
+        const piston = new THREE.Mesh(pistonGeo, metalMat);
+        scene.add(piston);
+
+        // Flywheel Mechanism (Scotch Yoke)
+        const flywheelGroup = new THREE.Group();
+        flywheelGroup.position.set(5, 0.5, 0);
+        scene.add(flywheelGroup);
+
+        const wheel = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.2, 16, 32), darkMetalMat);
+        flywheelGroup.add(wheel);
+        const spoke1 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 3), darkMetalMat);
+        flywheelGroup.add(spoke1);
+        const spoke2 = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 3), darkMetalMat);
+        spoke2.rotation.z = Math.PI / 2;
+        flywheelGroup.add(spoke2);
+
+        const crankPin = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.6), metalMat);
+        crankPin.rotation.x = Math.PI / 2;
+        flywheelGroup.add(crankPin);
+
+        // Connecting Rod
+        const rodGeo = new THREE.CylinderGeometry(0.1, 0.1, 1);
+        rodGeo.translate(0, 0.5, 0); // Pivot at base
+        rodGeo.rotateZ(Math.PI / 2); // Lay flat
+        const rod = new THREE.Mesh(rodGeo, metalMat);
+        scene.add(rod);
+
+        // --- Particles ---
+        function createParticles(count, color, bounds, size=0.1) {
+            const geo = new THREE.BufferGeometry();
+            const pos = new Float32Array(count * 3);
+            const vel = [];
+            for(let i=0; i<count; i++) {
+                pos[i*3] = bounds.x + (Math.random()-0.5)*bounds.w;
+                pos[i*3+1] = bounds.y + (Math.random()-0.5)*bounds.h;
+                pos[i*3+2] = bounds.z + (Math.random()-0.5)*bounds.d;
+                vel.push(new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5)).normalize());
+            }
+            geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+            const mat = new THREE.PointsMaterial({ color: color, size: size, transparent: true, opacity: 0.8 });
+            const points = new THREE.Points(geo, mat);
+            scene.add(points);
+            return { points, vel, bounds };
+        }
+
+        const hotParts = createParticles(100, 0xFF3366, {x:0, y:5, z:0, w:4.5, h:1.5, d:4.5});
+        const coldParts = createParticles(100, 0x4361EE, {x:0, y:-4, z:0, w:4.5, h:1.5, d:4.5});
+        
+        // Gas particles (dynamic color)
+        const gasCount = 150;
+        const gasGeo = new THREE.BufferGeometry();
+        const gasPos = new Float32Array(gasCount * 3);
+        const gasColors = new Float32Array(gasCount * 3);
+        const gasVel = [];
+        for(let i=0; i<gasCount; i++) {
+            gasPos[i*3] = (Math.random()-0.5)*2.5;
+            gasPos[i*3+1] = 0; // Set dynamically
+            gasPos[i*3+2] = (Math.random()-0.5)*2.5;
+            gasColors[i*3] = 1; gasColors[i*3+1] = 0; gasColors[i*3+2] = 0;
+            gasVel.push(new THREE.Vector3((Math.random()-0.5), (Math.random()-0.5), (Math.random()-0.5)).normalize());
+        }
+        gasGeo.setAttribute('position', new THREE.BufferAttribute(gasPos, 3));
+        gasGeo.setAttribute('color', new THREE.BufferAttribute(gasColors, 3));
+        const gasMat = new THREE.PointsMaterial({ size: 0.15, vertexColors: true, transparent: true, opacity: 0.9 });
+        const gasPoints = new THREE.Points(gasGeo, gasMat);
+        scene.add(gasPoints);
+
+        // --- Arrows ---
+        function createArrow(color, dir, length) {
+            const group = new THREE.Group();
+            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 16), new THREE.MeshBasicMaterial({color: color, transparent: true, opacity: 0.8}));
+            shaft.position.y = 0.5;
+            const head = new THREE.Mesh(new THREE.ConeGeometry(2, 1, 16), new THREE.MeshBasicMaterial({color: color, transparent: true, opacity: 0.8}));
+            head.position.y = 1.5;
+            group.add(shaft);
+            group.add(head);
+            
+            if(dir === 'down') group.rotation.x = Math.PI;
+            if(dir === 'right') group.rotation.z = -Math.PI/2;
+            
+            group.scale.set(0.2, length, 0.2);
+            scene.add(group);
+            return { group, shaft, head, baseScale: 0.2 };
+        }
+
+        const arrowQin = createArrow(0xFF3366, 'down', 2);
+        arrowQin.group.position.set(-2.5, 3.5, 0);
+        
+        const arrowQout = createArrow(0x4361EE, 'down', 2);
+        arrowQout.group.position.set(-2.5, -1.5, 0);
+
+        const arrowW = createArrow(0x06D6A0, 'right', 2);
+        arrowW.group.position.set(2, 0.5, 0);
+
+        // --- Physics & Math Logic ---
+        function updateThermodynamics() {
+            // Read UI
+            state.TH = parseFloat(document.getElementById('th-slider').value);
+            state.TL = parseFloat(document.getElementById('tl-slider').value);
+            state.r = parseFloat(document.getElementById('ratio-slider').value);
+            state.speed = parseFloat(document.getElementById('speed-slider').value);
+
+            // Calculate cycle anchors
+            // Using a visual gamma to ensure cycle closes neatly within slider bounds
+            const K = Math.pow(state.TH / state.TL, 0.25); 
+            state.V1 = 1;
+            state.V3 = state.r;
+            state.V4 = K;
+            state.V2 = state.r / K;
+
+            // Pressures (nRT = 1 for scaling)
+            state.P1 = state.TH / state.V1;
+            state.P2 = state.TH / state.V2;
+            state.P3 = state.TL / state.V3;
+            state.P4 = state.TL / state.V4;
+
+            // Angles for phase transitions based on Scotch Yoke volume mapping
+            // V(theta) = (r+1)/2 - (r-1)/2 * cos(theta)
+            const getTheta = (V) => {
+                let val = ((state.r + 1) - 2 * V) / (state.r - 1);
+                val = Math.max(-1, Math.min(1, val)); // Clamp for safety
+                return Math.acos(val);
+            };
+
+            state.theta2 = getTheta(state.V2);
+            state.theta4 = 2 * Math.PI - getTheta(state.V4);
+
+            // Energies
+            state.QH = state.TH * Math.log(state.V2 / state.V1);
+            state.QL = state.TL * Math.log(state.V3 / state.V4);
+            state.W = state.QH - state.QL;
+
+            // Update UI Text
+            const eff = (1 - state.TL / state.TH) * 100;
+            document.getElementById('val-eff').innerText = eff.toFixed(1) + '%';
+            document.getElementById('val-qh').innerText = state.QH.toFixed(0) + ' J';
+            document.getElementById('val-ql').innerText = state.QL.toFixed(0) + ' J';
+            document.getElementById('val-w').innerText = state.W.toFixed(0) + ' J';
+            
+            document.getElementById('lbl-th').innerText = state.TH + ' K';
+            document.getElementById('lbl-tl').innerText = state.TL + ' K';
+            document.getElementById('lbl-ratio').innerText = state.r.toFixed(1);
+            document.getElementById('lbl-speed').innerText = state.speed.toFixed(1) + 'x';
+
+            drawPVDiagram();
+        }
+
+        function updateCurrentState() {
+            // Advance time
+            state.theta += 0.02 * state.speed;
+            if (state.theta >= 2 * Math.PI) state.theta -= 2 * Math.PI;
+
+            // Calculate current Volume based on crank angle
+            state.V = (state.r + 1) / 2 - (state.r - 1) / 2 * Math.cos(state.theta);
+
+            // Determine Phase and calculate P, T
+            if (state.theta >= 0 && state.theta < state.theta2) {
+                state.phase = 'Isothermal Expansion';
+                state.T = state.TH;
+                state.P = state.T / state.V;
+            } else if (state.theta >= state.theta2 && state.theta < Math.PI) {
+                state.phase = 'Adiabatic Expansion';
+                // P * V^5 = const (using gamma_vis = 5)
+                state.P = state.P2 * Math.pow(state.V2 / state.V, 5);
+                state.T = state.P * state.V;
+            } else if (state.theta >= Math.PI && state.theta < state.theta4) {
+                state.phase = 'Isothermal Compression';
+                state.T = state.TL;
+                state.P = state.T / state.V;
+            } else {
+                state.phase = 'Adiabatic Compression';
+                state.P = state.P4 * Math.pow(state.V4 / state.V, 5);
+                state.T = state.P * state.V;
+            }
+
+            document.getElementById('val-phase').innerText = state.phase;
+        }
+
+        // --- PV Diagram Drawing ---
+        const canvas = document.getElementById('pv-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function mapPVtoCanvas(V, P) {
+            const pad = 30;
+            const w = canvas.width - pad * 2;
+            const h = canvas.height - pad * 2;
+            
+            // Fixed scales to prevent jumping
+            const maxV = 8.5; 
+            const maxP = 1050; 
+
+            const x = pad + (V / maxV) * w;
+            const y = canvas.height - pad - (P / maxP) * h;
+            return {x, y};
+        }
+
+        function drawPVDiagram() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Axes
+            ctx.strokeStyle = '#8D99AE';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(25, 10); ctx.lineTo(25, canvas.height - 25); ctx.lineTo(canvas.width - 10, canvas.height - 25);
+            ctx.stroke();
+            ctx.fillStyle = '#8D99AE';
+            ctx.font = '12px Inter';
+            ctx.fillText('P', 10, 20);
+            ctx.fillText('V', canvas.width - 20, canvas.height - 10);
+
+            // Draw Cycle Path
+            ctx.beginPath();
+            const steps = 100;
+            for(let i=0; i<=steps; i++) {
+                const th = (i / steps) * 2 * Math.PI;
+                const v = (state.r + 1) / 2 - (state.r - 1) / 2 * Math.cos(th);
+                let p;
+                if (th >= 0 && th < state.theta2) p = state.TH / v;
+                else if (th >= state.theta2 && th < Math.PI) p = state.P2 * Math.pow(state.V2 / v, 5);
+                else if (th >= Math.PI && th < state.theta4) p = state.TL / v;
+                else p = state.P4 * Math.pow(state.V4 / v, 5);
+
+                const pt = mapPVtoCanvas(v, p);
+                if(i===0) ctx.moveTo(pt.x, pt.y);
+                else ctx.lineTo(pt.x, pt.y);
+            }
+            ctx.strokeStyle = '#2b2d42';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Draw Current State Dot
+            const currentPt = mapPVtoCanvas(state.V, state.P);
+            ctx.beginPath();
+            ctx.arc(currentPt.x, currentPt.y, 6, 0, 2*Math.PI);
+            ctx.fillStyle = '#FFD166'; // Bright yellow
+            ctx.fill();
+            ctx.strokeStyle = '#2b2d42';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // --- Animation & Updates ---
+        function updateScene() {
+            // Piston Kinematics (Scotch Yoke mapping)
+            // V goes from 1 to r. Y goes from 1.5 to -1.5
+            const pistonY = 1.5 * Math.cos(state.theta) + 0.5; // +0.5 offset for cylinder center
+            piston.position.y = pistonY;
+
+            // Flywheel
+            flywheelGroup.rotation.z = -state.theta; // Negative for clockwise
+            
+            // Connecting Rod
+            const pinX = 1.5 * Math.sin(-state.theta);
+            const pinY = 1.5 * Math.cos(-state.theta);
+            
+            // Rod connects (0, pistonY) to flywheel pin (5 + pinX, 0.5 + pinY)
+            // Because of Scotch Yoke, pistonY is exactly 0.5 + pinY. Rod is always horizontal.
+            rod.position.set(0, pistonY, 0);
+            rod.scale.set(1, 5 + pinX, 1); // Stretch to reach pin
+
+            // Particles
+            const dt = 0.016 * state.speed;
+            
+            // Hot Res
+            const hPos = hotParts.points.geometry.attributes.position.array;
+            const hSpeed = (state.TH / 300) * 2;
+            for(let i=0; i<100; i++) {
+                hPos[i*3] += hotParts.vel[i].x * hSpeed * dt;
+                hPos[i*3+1] += hotParts.vel[i].y * hSpeed * dt;
+                hPos[i*3+2] += hotParts.vel[i].z * hSpeed * dt;
+                // Bounce
+                if(Math.abs(hPos[i*3]) > 2.2) hotParts.vel[i].x *= -1;
+                if(Math.abs(hPos[i*3+1] - 5) > 0.7) hotParts.vel[i].y *= -1;
+                if(Math.abs(hPos[i*3+2]) > 2.2) hotParts.vel[i].z *= -1;
+            }
+            hotParts.points.geometry.attributes.position.needsUpdate = true;
+
+            // Cold Res
+            const cPos = coldParts.points.geometry.attributes.position.array;
+            const cSpeed = (state.TL / 300) * 2;
+            for(let i=0; i<100; i++) {
+                cPos[i*3] += coldParts.vel[i].x * cSpeed * dt;
+                cPos[i*3+1] += coldParts.vel[i].y * cSpeed * dt;
+                cPos[i*3+2] += coldParts.vel[i].z * cSpeed * dt;
+                if(Math.abs(cPos[i*3]) > 2.2) coldParts.vel[i].x *= -1;
+                if(Math.abs(cPos[i*3+1] - (-4)) > 0.7) coldParts.vel[i].y *= -1;
+                if(Math.abs(cPos[i*3+2]) > 2.2) coldParts.vel[i].z *= -1;
+            }
+            coldParts.points.geometry.attributes.position.needsUpdate = true;
+
+            // Gas Particles
+            const gPos = gasPoints.geometry.attributes.position.array;
+            const gCol = gasPoints.geometry.attributes.color.array;
+            const gSpeed = (state.T / 300) * 3;
+            
+            const colorHot = new THREE.Color(0xFF3366);
+            const colorCold = new THREE.Color(0x4361EE);
+            const tRatio = (state.T - state.TL) / (state.TH - state.TL || 1);
+            const curColor = colorCold.clone().lerp(colorHot, tRatio);
+
+            const bottomY = -1.5;
+            const topY = pistonY - 0.2; // Just below piston
+
+            for(let i=0; i<gasCount; i++) {
+                gPos[i*3] += gasVel[i].x * gSpeed * dt;
+                gPos[i*3+1] += gasVel[i].y * gSpeed * dt;
+                gPos[i*3+2] += gasVel[i].z * gSpeed * dt;
+
+                // Cylinder bounds
+                const r2 = gPos[i*3]*gPos[i*3] + gPos[i*3+2]*gPos[i*3+2];
+                if(r2 > 1.8) {
+                    gasVel[i].x *= -1; gasVel[i].z *= -1;
+                    // Push back inside
+                    const len = Math.sqrt(r2);
+                    gPos[i*3] *= 1.3/len; gPos[i*3+2] *= 1.3/len;
+                }
+                if(gPos[i*3+1] < bottomY) { gPos[i*3+1] = bottomY; gasVel[i].y = Math.abs(gasVel[i].y); }
+                if(gPos[i*3+1] > topY) { gPos[i*3+1] = topY; gasVel[i].y = -Math.abs(gasVel[i].y); }
+
+                gCol[i*3] = curColor.r; gCol[i*3+1] = curColor.g; gCol[i*3+2] = curColor.b;
+            }
+            gasPoints.geometry.attributes.position.needsUpdate = true;
+            gasPoints.geometry.attributes.color.needsUpdate = true;
+
+            // Arrows (Energy Conservation Visualized)
+            const scaleFactor = 0.0004;
+            const wQin = 0.1 + state.QH * scaleFactor;
+            const wQout = 0.1 + state.QL * scaleFactor;
+            const wWork = 0.1 + state.W * scaleFactor;
+
+            arrowQin.group.scale.set(wQin, 1.5, wQin);
+            arrowQout.group.scale.set(wQout, 1.5, wQout);
+            arrowW.group.scale.set(wWork, 2, wWork);
+
+            // Arrow Opacity based on phase
+            const setArrowOpacity = (arrow, active) => {
+                const op = active ? 0.9 : 0.15;
+                arrow.shaft.material.opacity = op;
+                arrow.head.material.opacity = op;
+            };
+
+            setArrowOpacity(arrowQin, state.phase === 'Isothermal Expansion');
+            setArrowOpacity(arrowQout, state.phase === 'Isothermal Compression');
+            setArrowOpacity(arrowW, state.theta < Math.PI); // Active during expansion
+
+            // Update HTML Labels positions
+            updateLabelPosition('label-hot', new THREE.Vector3(0, 6.5, 0));
+            updateLabelPosition('label-cold', new THREE.Vector3(0, -5.5, 0));
+            updateLabelPosition('label-work', new THREE.Vector3(3.5, 2, 0));
+        }
+
+        function updateLabelPosition(id, pos) {
+            const vector = pos.clone();
+            vector.project(camera);
+            const elem = document.getElementById(id);
+            if(vector.z > 1) {
+                elem.style.opacity = 0;
+                return;
+            }
+            elem.style.opacity = 1;
+            const x = (vector.x * .5 + .5) * window.innerWidth;
+            const y = (vector.y * -.5 + .5) * window.innerHeight;
+            elem.style.left = `${x}px`;
+            elem.style.top = `${y}px`;
+        }
+
+        // --- Main Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateCurrentState();
+            updateScene();
+            renderer.render(scene, camera);
+        }
+
+        // --- Event Listeners ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.querySelectorAll('input[type=range]').forEach(el => {
+            el.addEventListener('input', updateThermodynamics);
+        });
+
+        // Init
+        updateThermodynamics();
+        animate();
+
+    </script>
+</body>
+</html>

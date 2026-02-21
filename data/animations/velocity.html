@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Velocity: From Microscopic Motion to Vector Components</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --panel-border: rgba(255, 255, 255, 0.4);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --color-focus: #06D6A0;
+            --color-vx: #FF3366;
+            --color-vy: #4361EE;
+            --color-vz: #F77F00;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--panel-border);
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            line-height: 1.2;
+        }
+
+        p.desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0 0 1rem 0;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--color-focus);
+            background: rgba(6, 214, 160, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--color-focus);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--color-focus);
+            cursor: pointer;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            min-width: 250px;
+        }
+
+        #formula-card .title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        #formula-card .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        #formula-card .values {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        #formula-card hr {
+            border: 0;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            margin: 0.5rem 0;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+            #canvas-container {
+                width: 100%;
+                height: 60%;
+            }
+            #ui-panel {
+                width: 100%;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid var(--panel-border);
+            }
+            #formula-card {
+                transform: scale(0.8);
+                transform-origin: top left;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="title">Kinetic Velocity Vector</div>
+            <div class="math">|v| = &radic;(v<sub>x</sub>&sup2; + v<sub>y</sub>&sup2; + v<sub>z</sub>&sup2;)</div>
+            <div class="values">
+                <span style="color: var(--color-vx)">v<sub>x</sub>: <span id="val-vx">0.00</span></span><br>
+                <span style="color: var(--color-vy)">v<sub>y</sub>: <span id="val-vy">0.00</span></span><br>
+                <span style="color: var(--color-vz)">v<sub>z</sub>: <span id="val-vz">0.00</span></span><br>
+                <hr>
+                <span style="color: var(--color-focus); font-weight: bold;">|v|: <span id="val-v">0.00</span> m/s</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <div>
+            <h1>Kinetic Gas Chamber</h1>
+            <p class="desc">Observe how temperature and mass affect molecular speed, and how 3D velocity is decomposed into orthogonal vector components.</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Temperature (T)</span>
+                <span class="val-display"><span id="lbl-temp">300</span> K</span>
+            </div>
+            <input type="range" id="var_T" min="10" max="1000" step="10" value="300">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Molecular Mass (m)</span>
+                <span class="val-display"><span id="lbl-mass">20</span> u</span>
+            </div>
+            <input type="range" id="var_m" min="4" max="40" step="1" value="20">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Time Scale</span>
+                <span class="val-display"><span id="lbl-time">1.0</span>x</span>
+            </div>
+            <input type="range" id="var_timeScale" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group" style="background: transparent; border: none; box-shadow: none; padding: 0.5rem 0;">
+            <label class="toggle-group">
+                <input type="checkbox" id="bool_showComponents" checked>
+                Show Velocity Components (v<sub>x</sub>, v<sub>y</sub>, v<sub>z</sub>)
+            </label>
+        </div>
+    </div>
+
+    <script>
+        // --- Configuration & Constants ---
+        const CONFIG = {
+            boxSize: 20,
+            particleCount: 100,
+            particleRadius: 0.3,
+            colors: {
+                bg: 0xf0f4f8,
+                chamberEdge: 0x94a3b8,
+                chamberFace: 0xffffff,
+                particleBg: 0xBDC3C7,
+                particleFocus: 0x06D6A0,
+                vx: 0xFF3366,
+                vy: 0x4361EE,
+                vz: 0xF77F00,
+                flash: 0xffffff
+            },
+            sim_kB: 1.422, // Tuned so T=300, m=20 gives v_rms ~ 8 units/sec
+            arrowScale: 0.4, // Visual length multiplier for velocity vectors
+            traceLength: 60
+        };
+
+        // --- State Variables ---
+        let state = {
+            T: 300,
+            m: 20,
+            timeScale: 1.0,
+            showComponents: true,
+            v_rms: 0
+        };
+
+        // Calculate theoretical Vrms
+        function calcVrms(T, m) {
+            return Math.sqrt((3 * CONFIG.sim_kB * T) / m);
+        }
+        state.v_rms = calcVrms(state.T, state.m);
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(CONFIG.colors.bg);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(25, 20, 35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Chamber Construction ---
+        const halfBox = CONFIG.boxSize / 2;
+        
+        // Wireframe
+        const boxGeo = new THREE.BoxGeometry(CONFIG.boxSize, CONFIG.boxSize, CONFIG.boxSize);
+        const edgesGeo = new THREE.EdgesGeometry(boxGeo);
+        const edgesMat = new THREE.LineBasicMaterial({ color: CONFIG.colors.chamberEdge, linewidth: 2 });
+        const chamberEdges = new THREE.LineSegments(edgesGeo, edgesMat);
+        scene.add(chamberEdges);
+
+        // Transparent Faces
+        const faceMat = new THREE.MeshPhysicalMaterial({
+            color: CONFIG.colors.chamberFace,
+            transparent: true,
+            opacity: 0.1,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const chamberFaces = new THREE.Mesh(boxGeo, faceMat);
+        scene.add(chamberFaces);
+
+        // Wall Flashes
+        const flashPlanes = {};
+        const planeGeo = new THREE.PlaneGeometry(CONFIG.boxSize, CONFIG.boxSize);
+        const flashMatTemplate = new THREE.MeshBasicMaterial({
+            color: CONFIG.colors.flash,
+            transparent: true,
+            opacity: 0,
+            side: THREE.DoubleSide,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const createFlashPlane = (name, pos, rot) => {
+            const mat = flashMatTemplate.clone();
+            const mesh = new THREE.Mesh(planeGeo, mat);
+            mesh.position.copy(pos);
+            mesh.rotation.set(rot.x, rot.y, rot.z);
+            scene.add(mesh);
+            flashPlanes[name] = mat;
+        };
+
+        const o = halfBox - 0.01;
+        const pi2 = Math.PI / 2;
+        createFlashPlane('px', new THREE.Vector3(o, 0, 0), new THREE.Vector3(0, pi2, 0));
+        createFlashPlane('nx', new THREE.Vector3(-o, 0, 0), new THREE.Vector3(0, pi2, 0));
+        createFlashPlane('py', new THREE.Vector3(0, o, 0), new THREE.Vector3(pi2, 0, 0));
+        createFlashPlane('ny', new THREE.Vector3(0, -o, 0), new THREE.Vector3(pi2, 0, 0));
+        createFlashPlane('pz', new THREE.Vector3(0, 0, o), new THREE.Vector3(0, 0, 0));
+        createFlashPlane('nz', new THREE.Vector3(0, 0, -o), new THREE.Vector3(0, 0, 0));
+
+        // --- Particles Setup ---
+        const particles = [];
+        const sphereGeo = new THREE.SphereGeometry(CONFIG.particleRadius, 16, 16);
+        
+        // Background Particles (InstancedMesh for performance)
+        const bgParticleMat = new THREE.MeshStandardMaterial({ 
+            color: CONFIG.colors.particleBg,
+            roughness: 0.4,
+            metalness: 0.1
+        });
+        const instancedBgParticles = new THREE.InstancedMesh(sphereGeo, bgParticleMat, CONFIG.particleCount - 1);
+        scene.add(instancedBgParticles);
+
+        // Focus Particle
+        const focusMat = new THREE.MeshStandardMaterial({
+            color: CONFIG.colors.particleFocus,
+            emissive: CONFIG.colors.particleFocus,
+            emissiveIntensity: 0.4,
+            roughness: 0.2
+        });
+        const focusMesh = new THREE.Mesh(sphereGeo, focusMat);
+        scene.add(focusMesh);
+
+        // Initialize Physics State
+        const limit = halfBox - CONFIG.particleRadius;
+        for (let i = 0; i < CONFIG.particleCount; i++) {
+            // Random position inside box
+            const pos = new THREE.Vector3(
+                (Math.random() - 0.5) * 2 * limit,
+                (Math.random() - 0.5) * 2 * limit,
+                (Math.random() - 0.5) * 2 * limit
+            );
+            
+            // Random direction
+            const vel = new THREE.Vector3(
+                Math.random() - 0.5,
+                Math.random() - 0.5,
+                Math.random() - 0.5
+            ).normalize();
+            
+            // Introduce slight speed variation around Vrms for realism
+            const speed = state.v_rms * (0.8 + 0.4 * Math.random());
+            vel.multiplyScalar(speed);
+
+            particles.push({ pos, vel });
+        }
+
+        // --- Custom Arrow Class ---
+        class CustomArrow {
+            constructor(color) {
+                this.group = new THREE.Group();
+                const mat = new THREE.MeshBasicMaterial({ color: color, depthTest: false });
+                
+                // Shaft
+                this.shaftGeo = new THREE.CylinderGeometry(0.06, 0.06, 1, 8);
+                this.shaftGeo.translate(0, 0.5, 0);
+                this.shaft = new THREE.Mesh(this.shaftGeo, mat);
+                this.shaft.renderOrder = 1;
+                
+                // Head
+                this.headGeo = new THREE.ConeGeometry(0.18, 0.36, 8);
+                this.headGeo.translate(0, 0.18, 0);
+                this.head = new THREE.Mesh(this.headGeo, mat);
+                this.head.renderOrder = 1;
+
+                this.group.add(this.shaft);
+                this.group.add(this.head);
+                scene.add(this.group);
+            }
+
+            update(origin, dir, length) {
+                if (length < 0.1) {
+                    this.group.visible = false;
+                    return;
+                }
+                this.group.visible = true;
+                this.group.position.copy(origin);
+                
+                const axis = new THREE.Vector3(0, 1, 0);
+                this.group.quaternion.setFromUnitVectors(axis, dir.clone().normalize());
+                
+                const shaftLength = Math.max(0.01, length - 0.36);
+                this.shaft.scale.set(1, shaftLength, 1);
+                this.head.position.set(0, shaftLength, 0);
+            }
+
+            setVisible(v) {
+                this.group.visible = v;
+            }
+        }
+
+        const arrowV = new CustomArrow(CONFIG.colors.particleFocus);
+        const arrowVx = new CustomArrow(CONFIG.colors.vx);
+        const arrowVy = new CustomArrow(CONFIG.colors.vy);
+        const arrowVz = new CustomArrow(CONFIG.colors.vz);
+
+        // --- Trace Setup ---
+        const tracePositions = new Float32Array(CONFIG.traceLength * 3);
+        const traceGeo = new THREE.BufferGeometry();
+        traceGeo.setAttribute('position', new THREE.BufferAttribute(tracePositions, 3));
+        const traceMat = new THREE.LineBasicMaterial({ 
+            color: CONFIG.colors.particleFocus, 
+            transparent: true, 
+            opacity: 0.4 
+        });
+        const traceLine = new THREE.Line(traceGeo, traceMat);
+        scene.add(traceLine);
+        let traceIndex = 0;
+
+        // --- UI Interactions ---
+        const domT = document.getElementById('var_T');
+        const domM = document.getElementById('var_m');
+        const domTime = document.getElementById('var_timeScale');
+        const domComp = document.getElementById('bool_showComponents');
+
+        const lblT = document.getElementById('lbl-temp');
+        const lblM = document.getElementById('lbl-mass');
+        const lblTime = document.getElementById('lbl-time');
+
+        const valVx = document.getElementById('val-vx');
+        const valVy = document.getElementById('val-vy');
+        const valVz = document.getElementById('val-vz');
+        const valV = document.getElementById('val-v');
+
+        function updatePhysicsParams() {
+            const oldVrms = state.v_rms;
+            state.T = parseFloat(domT.value);
+            state.m = parseFloat(domM.value);
+            state.timeScale = parseFloat(domTime.value);
+            state.showComponents = domComp.checked;
+
+            lblT.innerText = state.T;
+            lblM.innerText = state.m;
+            lblTime.innerText = state.timeScale.toFixed(1);
+
+            state.v_rms = calcVrms(state.T, state.m);
+            
+            // Scale existing velocities to match new thermodynamic state
+            const ratio = state.v_rms / oldVrms;
+            particles.forEach(p => p.vel.multiplyScalar(ratio));
+        }
+
+        domT.addEventListener('input', updatePhysicsParams);
+        domM.addEventListener('input', updatePhysicsParams);
+        domTime.addEventListener('input', updatePhysicsParams);
+        domComp.addEventListener('change', updatePhysicsParams);
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        const dummy = new THREE.Object3D();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.1); // Cap dt to prevent tunneling on lag
+            const step = dt * state.timeScale;
+
+            // Update Particles
+            let instancedIdx = 0;
+            for (let i = 0; i < CONFIG.particleCount; i++) {
+                const p = particles[i];
+                
+                // Move
+                p.pos.addScaledVector(p.vel, step);
+
+                // Elastic Collision Logic (Independence of Axes)
+                if (p.pos.x > limit) { p.pos.x = limit; p.vel.x *= -1; if(i===0) flashPlanes.px.opacity = 0.8; }
+                if (p.pos.x < -limit) { p.pos.x = -limit; p.vel.x *= -1; if(i===0) flashPlanes.nx.opacity = 0.8; }
+                
+                if (p.pos.y > limit) { p.pos.y = limit; p.vel.y *= -1; if(i===0) flashPlanes.py.opacity = 0.8; }
+                if (p.pos.y < -limit) { p.pos.y = -limit; p.vel.y *= -1; if(i===0) flashPlanes.ny.opacity = 0.8; }
+                
+                if (p.pos.z > limit) { p.pos.z = limit; p.vel.z *= -1; if(i===0) flashPlanes.pz.opacity = 0.8; }
+                if (p.pos.z < -limit) { p.pos.z = -limit; p.vel.z *= -1; if(i===0) flashPlanes.nz.opacity = 0.8; }
+
+                // Update Meshes
+                if (i === 0) {
+                    // Focus Particle
+                    focusMesh.position.copy(p.pos);
+                    
+                    // Update Trace
+                    if (step > 0) {
+                        for(let j = (CONFIG.traceLength - 1) * 3; j >= 3; j--) {
+                            tracePositions[j] = tracePositions[j-3];
+                        }
+                        tracePositions[0] = p.pos.x;
+                        tracePositions[1] = p.pos.y;
+                        tracePositions[2] = p.pos.z;
+                        traceGeo.attributes.position.needsUpdate = true;
+                        if (traceIndex < CONFIG.traceLength) traceIndex++;
+                        traceGeo.setDrawRange(0, traceIndex);
+                    }
+
+                    // Update Vectors
+                    const speed = p.vel.length();
+                    arrowV.update(p.pos, p.vel, speed * CONFIG.arrowScale);
+                    
+                    if (state.showComponents) {
+                        arrowVx.update(p.pos, new THREE.Vector3(Math.sign(p.vel.x), 0, 0), Math.abs(p.vel.x) * CONFIG.arrowScale);
+                        arrowVy.update(p.pos, new THREE.Vector3(0, Math.sign(p.vel.y), 0), Math.abs(p.vel.y) * CONFIG.arrowScale);
+                        arrowVz.update(p.pos, new THREE.Vector3(0, 0, Math.sign(p.vel.z)), Math.abs(p.vel.z) * CONFIG.arrowScale);
+                    } else {
+                        arrowVx.setVisible(false);
+                        arrowVy.setVisible(false);
+                        arrowVz.setVisible(false);
+                    }
+
+                    // Update UI Formula Card
+                    valVx.innerText = p.vel.x.toFixed(2).padStart(6, ' ');
+                    valVy.innerText = p.vel.y.toFixed(2).padStart(6, ' ');
+                    valVz.innerText = p.vel.z.toFixed(2).padStart(6, ' ');
+                    valV.innerText = speed.toFixed(2).padStart(6, ' ');
+
+                } else {
+                    // Background Particles
+                    dummy.position.copy(p.pos);
+                    dummy.updateMatrix();
+                    instancedBgParticles.setMatrixAt(instancedIdx++, dummy.matrix);
+                }
+            }
+            instancedBgParticles.instanceMatrix.needsUpdate = true;
+
+            // Decay Wall Flashes
+            for (let key in flashPlanes) {
+                if (flashPlanes[key].opacity > 0) {
+                    flashPlanes[key].opacity = Math.max(0, flashPlanes[key].opacity - dt * 3);
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        animate();
+    </script>
+</body>
+</html>

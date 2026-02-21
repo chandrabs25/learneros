@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ideal Gas Law Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            font-family: 'Inter', sans-serif;
+            color: #334155;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .glass-panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+        #formula-card {
+            top: 24px;
+            left: 24px;
+            min-width: 280px;
+        }
+        #control-panel {
+            top: 24px;
+            right: 24px;
+            width: 25%;
+            min-width: 300px;
+            max-width: 400px;
+        }
+        h1, h2 {
+            margin: 0 0 16px 0;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+        h1 { font-size: 1.5rem; }
+        h2 { font-size: 1.2rem; }
+        
+        .formula-display {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: #4361EE;
+            border: 1px solid rgba(67, 97, 238, 0.2);
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            align-items: center;
+        }
+        .data-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #64748b;
+        }
+        .data-value {
+            font-weight: 700;
+            color: #0f172a;
+            background: rgba(255,255,255,0.8);
+            padding: 4px 8px;
+            border-radius: 4px;
+            min-width: 100px;
+            text-align: right;
+        }
+        .pressure-highlight {
+            color: #F77F00;
+            font-size: 1.1rem;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            font-weight: 700;
+        }
+        
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3px solid #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        #temp-slider::-webkit-slider-thumb { border-color: #FF3366; }
+        #vol-slider::-webkit-slider-thumb { border-color: #06D6A0; }
+        #moles-slider::-webkit-slider-thumb { border-color: #4361EE; }
+
+        @media (max-width: 768px) {
+            #control-panel {
+                top: auto;
+                bottom: 24px;
+                right: 24px;
+                left: 24px;
+                width: auto;
+            }
+            #formula-card {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h1>Ideal Gas Law</h1>
+        <div class="formula-display">
+            <i>PV = nRT</i>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Pressure (P)</span>
+            <span class="data-value pressure-highlight" id="val-p">0 Pa</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Volume (V)</span>
+            <span class="data-value" id="val-v">10.0 m³</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Temperature (T)</span>
+            <span class="data-value" id="val-t">300 K</span>
+        </div>
+        <div class="data-row">
+            <span class="data-label">Amount (n)</span>
+            <span class="data-value" id="val-n">50 mol</span>
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <h2>Controls</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Temperature (K)</span>
+                <span class="control-value" id="lbl-t" style="color: #FF3366;">300</span>
+            </div>
+            <input type="range" id="temp-slider" min="100" max="1000" step="10" value="300">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Volume (m³)</span>
+                <span class="control-value" id="lbl-v" style="color: #06D6A0;">10.0</span>
+            </div>
+            <input type="range" id="vol-slider" min="5" max="20" step="0.5" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Amount (mol)</span>
+                <span class="control-value" id="lbl-n" style="color: #4361EE;">50</span>
+            </div>
+            <input type="range" id="moles-slider" min="10" max="200" step="10" value="50">
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Constants & State ---
+        const R = 8.314; // Ideal gas constant
+        const M = 0.032; // Molar mass (kg/mol) - arbitrary for visual scaling
+        const BASE_SIZE = 10; // Y and Z dimensions of the box
+        const PARTICLE_RADIUS = 0.2;
+        const MAX_PARTICLES = 200;
+        
+        let state = {
+            T: 300,
+            V: 10,
+            n: 50,
+            P: 0
+        };
+
+        // --- DOM Elements ---
+        const ui = {
+            valP: document.getElementById('val-p'),
+            valV: document.getElementById('val-v'),
+            valT: document.getElementById('val-t'),
+            valN: document.getElementById('val-n'),
+            lblT: document.getElementById('lbl-t'),
+            lblV: document.getElementById('lbl-v'),
+            lblN: document.getElementById('lbl-n'),
+            sliderT: document.getElementById('temp-slider'),
+            sliderV: document.getElementById('vol-slider'),
+            sliderN: document.getElementById('moles-slider')
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Add subtle fog to blend with background
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 10, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 60;
+        controls.minDistance = 10;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        
+        const pointLight = new THREE.PointLight(0xffffff, 0.5, 50);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        // --- Objects: Container ---
+        const containerGroup = new THREE.Group();
+        scene.add(containerGroup);
+
+        // Glass Box (Left, Top, Bottom, Front, Back)
+        const glassMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.8, // glass-like
+            transparent: true,
+            opacity: 1,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        // We create a box and remove the right face visually by using a custom geometry later, 
+        // but for simplicity, we use a standard box and place a solid plane inside it.
+        const boxGeom = new THREE.BoxGeometry(1, BASE_SIZE, BASE_SIZE);
+        const glassBox = new THREE.Mesh(boxGeom, glassMaterial);
+        containerGroup.add(glassBox);
+
+        // Wireframe
+        const edgesGeom = new THREE.EdgesGeometry(boxGeom);
+        const wireframeMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+        const wireframe = new THREE.LineSegments(edgesGeom, wireframeMat);
+        containerGroup.add(wireframe);
+
+        // Piston (Right Wall)
+        const pistonGeom = new THREE.PlaneGeometry(BASE_SIZE, BASE_SIZE);
+        const pistonMat = new THREE.MeshStandardMaterial({ 
+            color: 0xE1E8ED, 
+            side: THREE.DoubleSide,
+            roughness: 0.4
+        });
+        const piston = new THREE.Mesh(pistonGeom, pistonMat);
+        piston.rotation.y = -Math.PI / 2;
+        containerGroup.add(piston);
+
+        // --- Objects: Particles ---
+        const sphereGeom = new THREE.SphereGeometry(PARTICLE_RADIUS, 16, 16);
+        const particleMat = new THREE.MeshStandardMaterial({
+            color: 0x06D6A0,
+            roughness: 0.2,
+            metalness: 0.1
+        });
+        
+        const instancedMesh = new THREE.InstancedMesh(sphereGeom, particleMat, MAX_PARTICLES);
+        instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        scene.add(instancedMesh);
+
+        // Particle Data Arrays
+        const dummy = new THREE.Object3D();
+        const particlePositions = new Float32Array(MAX_PARTICLES * 3);
+        const particleVelocities = new Float32Array(MAX_PARTICLES * 3);
+
+        // Initialize particles
+        function initParticles() {
+            for (let i = 0; i < MAX_PARTICLES; i++) {
+                // Random position within initial volume (V=10 -> x from -5 to 5)
+                const halfV = state.V / 2;
+                particlePositions[i*3] = (Math.random() * (state.V - PARTICLE_RADIUS*2)) - (halfV - PARTICLE_RADIUS);
+                particlePositions[i*3+1] = (Math.random() * (BASE_SIZE - PARTICLE_RADIUS*2)) - (BASE_SIZE/2 - PARTICLE_RADIUS);
+                particlePositions[i*3+2] = (Math.random() * (BASE_SIZE - PARTICLE_RADIUS*2)) - (BASE_SIZE/2 - PARTICLE_RADIUS);
+
+                // Random direction
+                const theta = Math.random() * 2 * Math.PI;
+                const phi = Math.acos((Math.random() * 2) - 1);
+                
+                particleVelocities[i*3] = Math.sin(phi) * Math.cos(theta);
+                particleVelocities[i*3+1] = Math.sin(phi) * Math.sin(theta);
+                particleVelocities[i*3+2] = Math.cos(phi);
+            }
+            instancedMesh.count = state.n;
+        }
+        initParticles();
+
+        // --- Objects: Impact Rings ---
+        const NUM_RINGS = 30;
+        const rings = [];
+        const ringGeom = new THREE.RingGeometry(0.1, 0.2, 16);
+        const ringMat = new THREE.MeshBasicMaterial({
+            color: 0xF77F00,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false
+        });
+
+        for(let i=0; i<NUM_RINGS; i++) {
+            const ring = new THREE.Mesh(ringGeom, ringMat.clone());
+            ring.visible = false;
+            scene.add(ring);
+            rings.push({ mesh: ring, life: 0, active: false });
+        }
+
+        let ringIndex = 0;
+        function spawnRing(x, y, z, nx, ny, nz) {
+            const r = rings[ringIndex];
+            r.mesh.position.set(x, y, z);
+            
+            // Orient ring to wall normal
+            const target = new THREE.Vector3(x + nx, y + ny, z + nz);
+            r.mesh.lookAt(target);
+            
+            r.mesh.scale.set(1, 1, 1);
+            r.mesh.material.opacity = 0.8;
+            r.mesh.visible = true;
+            r.life = 1.0;
+            r.active = true;
+            
+            ringIndex = (ringIndex + 1) % NUM_RINGS;
+        }
+
+        // --- Logic Functions ---
+
+        function updateContainerGeometry() {
+            // Scale the glass box and wireframe along X axis
+            glassBox.scale.set(state.V, 1, 1);
+            wireframe.scale.set(state.V, 1, 1);
+            
+            // Move piston to the right edge
+            piston.position.x = state.V / 2;
+        }
+
+        function updateParticleColors() {
+            // Gradient: 100K (Blue) -> 550K (Green) -> 1000K (Red)
+            const cLow = new THREE.Color('#4361EE');
+            const cMid = new THREE.Color('#06D6A0');
+            const cHigh = new THREE.Color('#FF3366');
+            
+            let targetColor = new THREE.Color();
+            if (state.T < 550) {
+                targetColor.lerpColors(cLow, cMid, (state.T - 100) / 450);
+            } else {
+                targetColor.lerpColors(cMid, cHigh, (state.T - 550) / 450);
+            }
+            particleMat.color.copy(targetColor);
+        }
+
+        function calculatePhysics() {
+            // P = nRT / V
+            state.P = (state.n * R * state.T) / state.V;
+        }
+
+        function updateUI() {
+            ui.valP.innerText = state.P.toFixed(0) + ' Pa';
+            ui.valV.innerText = state.V.toFixed(1) + ' m³';
+            ui.valT.innerText = state.T + ' K';
+            ui.valN.innerText = state.n + ' mol';
+
+            ui.lblT.innerText = state.T;
+            ui.lblV.innerText = state.V.toFixed(1);
+            ui.lblN.innerText = state.n;
+        }
+
+        function handleInput() {
+            const oldN = state.n;
+            state.T = parseFloat(ui.sliderT.value);
+            state.V = parseFloat(ui.sliderV.value);
+            state.n = parseInt(ui.sliderN.value);
+
+            // If moles increased, ensure new particles are inside bounds
+            if (state.n > oldN) {
+                const halfV = state.V / 2;
+                for (let i = oldN; i < state.n; i++) {
+                    particlePositions[i*3] = (Math.random() * (state.V - PARTICLE_RADIUS*2)) - (halfV - PARTICLE_RADIUS);
+                    particlePositions[i*3+1] = (Math.random() * (BASE_SIZE - PARTICLE_RADIUS*2)) - (BASE_SIZE/2 - PARTICLE_RADIUS);
+                    particlePositions[i*3+2] = (Math.random() * (BASE_SIZE - PARTICLE_RADIUS*2)) - (BASE_SIZE/2 - PARTICLE_RADIUS);
+                }
+            }
+
+            instancedMesh.count = state.n;
+            
+            updateContainerGeometry();
+            updateParticleColors();
+            calculatePhysics();
+            updateUI();
+        }
+
+        // Event Listeners
+        ui.sliderT.addEventListener('input', handleInput);
+        ui.sliderV.addEventListener('input', handleInput);
+        ui.sliderN.addEventListener('input', handleInput);
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize state
+        updateContainerGeometry();
+        updateParticleColors();
+        calculatePhysics();
+        updateUI();
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.1); // Cap dt to prevent tunneling on lag
+            
+            // Physics: v_rms proportional to sqrt(T)
+            // Scale down for visual clarity
+            const visualSpeed = Math.sqrt(state.T) * 0.4; 
+            
+            const halfV = state.V / 2;
+            const halfBase = BASE_SIZE / 2;
+            const boundX = halfV - PARTICLE_RADIUS;
+            const boundY = halfBase - PARTICLE_RADIUS;
+            const boundZ = halfBase - PARTICLE_RADIUS;
+
+            for (let i = 0; i < state.n; i++) {
+                let px = particlePositions[i*3];
+                let py = particlePositions[i*3+1];
+                let pz = particlePositions[i*3+2];
+                
+                let vx = particleVelocities[i*3];
+                let vy = particleVelocities[i*3+1];
+                let vz = particleVelocities[i*3+2];
+
+                // Move
+                px += vx * visualSpeed * dt;
+                py += vy * visualSpeed * dt;
+                pz += vz * visualSpeed * dt;
+
+                // Collision Detection & Response
+                let hit = false;
+                let nx=0, ny=0, nz=0;
+
+                // X Walls (Piston and Left Wall)
+                if (px > boundX) {
+                    px = boundX; vx = -Math.abs(vx); hit = true; nx = -1;
+                } else if (px < -boundX) {
+                    px = -boundX; vx = Math.abs(vx); hit = true; nx = 1;
+                }
+
+                // Y Walls (Top and Bottom)
+                if (py > boundY) {
+                    py = boundY; vy = -Math.abs(vy); hit = true; ny = -1;
+                } else if (py < -boundY) {
+                    py = -boundY; vy = Math.abs(vy); hit = true; ny = 1;
+                }
+
+                // Z Walls (Front and Back)
+                if (pz > boundZ) {
+                    pz = boundZ; vz = -Math.abs(vz); hit = true; nz = -1;
+                } else if (pz < -boundZ) {
+                    pz = -boundZ; vz = Math.abs(vz); hit = true; nz = 1;
+                }
+
+                if (hit) {
+                    // Spawn impact ring slightly offset from wall to avoid z-fighting
+                    spawnRing(
+                        px + nx * PARTICLE_RADIUS, 
+                        py + ny * PARTICLE_RADIUS, 
+                        pz + nz * PARTICLE_RADIUS, 
+                        nx, ny, nz
+                    );
+                }
+
+                // Write back
+                particlePositions[i*3] = px;
+                particlePositions[i*3+1] = py;
+                particlePositions[i*3+2] = pz;
+                
+                particleVelocities[i*3] = vx;
+                particleVelocities[i*3+1] = vy;
+                particleVelocities[i*3+2] = vz;
+
+                // Update InstancedMesh matrix
+                dummy.position.set(px, py, pz);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+            }
+            
+            instancedMesh.instanceMatrix.needsUpdate = true;
+
+            // Animate Rings
+            for (let i = 0; i < NUM_RINGS; i++) {
+                const r = rings[i];
+                if (r.active) {
+                    r.life -= dt * 2.5; // Fade out speed
+                    if (r.life <= 0) {
+                        r.active = false;
+                        r.mesh.visible = false;
+                    } else {
+                        // Expand and fade
+                        const scale = 1 + (1 - r.life) * 3;
+                        r.mesh.scale.set(scale, scale, scale);
+                        r.mesh.material.opacity = r.life * 0.8;
+                    }
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

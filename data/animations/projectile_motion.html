@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projectile Motion Physics Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent: #7209B7;
+            --accent-hover: #5a0791;
+            --proj-color: #FF3366;
+            --traj-color: #4361EE;
+            --v-color: #06D6A0;
+            --g-color: #F77F00;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        .btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 10px;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(114, 9, 183, 0.2);
+        }
+
+        .btn:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 8px rgba(114, 9, 183, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .btn-secondary:hover {
+            background: #f7fafc;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+        }
+
+        #info-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            width: 200px;
+        }
+
+        .info-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .info-val {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.5); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="info-card">
+            <div class="info-row">
+                <span class="info-label">Time (t):</span>
+                <span class="info-val" id="val-t">0.00 s</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Pos (x, y):</span>
+                <span class="info-val" id="val-pos">(0.0, 0.0) m</span>
+            </div>
+            <div class="info-row" style="margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 10px;">
+                <span class="info-label">Max Height:</span>
+                <span class="info-val" id="val-h">0.00 m</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Range:</span>
+                <span class="info-val" id="val-r">0.00 m</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Projectile Motion</h1>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Initial Velocity (v₀)</span>
+                <span class="val-display" id="lbl-v0">25 m/s</span>
+            </div>
+            <input type="range" id="v0" min="5" max="50" step="1" value="25">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Launch Angle (θ)</span>
+                <span class="val-display" id="lbl-angle">45°</span>
+            </div>
+            <input type="range" id="angle" min="0" max="90" step="1" value="45">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Initial Height (h₀)</span>
+                <span class="val-display" id="lbl-h0">0 m</span>
+            </div>
+            <input type="range" id="h0" min="0" max="20" step="0.5" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Gravity (g)</span>
+                <span class="val-display" id="lbl-g">9.8 m/s²</span>
+            </div>
+            <input type="range" id="g" min="1.6" max="20" step="0.1" value="9.8">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Sim Speed</span>
+                <span class="val-display" id="lbl-speed">1.0x</span>
+            </div>
+            <input type="range" id="speed" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <button class="btn" id="btn-fire">Fire Projectile</button>
+        <button class="btn btn-secondary" id="btn-reset">Reset Scene</button>
+        <button class="btn btn-secondary" id="btn-toggle">Toggle Vectors</button>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: var(--proj-color);"></div> Projectile / v_y</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--traj-color);"></div> Trajectory / v_x</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--v-color);"></div> Total Velocity (v)</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--g-color);"></div> Gravity (g)</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(40, 20, 60);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(25, 0, 0);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(20, 50, 20);
+        scene.add(dirLight);
+
+        // --- Objects ---
+        // Ground
+        const gridHelper = new THREE.GridHelper(150, 75, 0xBDC3C7, 0xBDC3C7);
+        gridHelper.position.y = 0.01; // slightly above plane to prevent z-fighting
+        scene.add(gridHelper);
+
+        const planeGeo = new THREE.PlaneGeometry(150, 150);
+        const planeMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0, side: THREE.DoubleSide });
+        const plane = new THREE.Mesh(planeGeo, planeMat);
+        plane.rotation.x = Math.PI / 2;
+        scene.add(plane);
+
+        // Axes Helper for reference
+        const axesHelper = new THREE.AxesHelper(5);
+        scene.add(axesHelper);
+
+        // Projectile
+        const projGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        const projMat = new THREE.MeshPhongMaterial({ color: 0xFF3366, shininess: 100 });
+        const projectile = new THREE.Mesh(projGeo, projMat);
+        scene.add(projectile);
+
+        // Trajectory Line
+        const maxPoints = 5000;
+        const trajGeo = new THREE.BufferGeometry();
+        const positions = new Float32Array(maxPoints * 3);
+        trajGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        trajGeo.setDrawRange(0, 0);
+        const trajMat = new THREE.LineBasicMaterial({ color: 0x4361EE, linewidth: 2 });
+        const trajectoryLine = new THREE.Line(trajGeo, trajMat);
+        scene.add(trajectoryLine);
+
+        // Markers
+        const markerGeo = new THREE.SphereGeometry(0.5, 16, 16);
+        const apexMat = new THREE.MeshBasicMaterial({ color: 0x7209B7, transparent: true, opacity: 0.5 });
+        const rangeMat = new THREE.MeshBasicMaterial({ color: 0x06D6A0, transparent: true, opacity: 0.5 });
+        const apexMarker = new THREE.Mesh(markerGeo, apexMat);
+        const rangeMarker = new THREE.Mesh(markerGeo, rangeMat);
+        scene.add(apexMarker);
+        scene.add(rangeMarker);
+
+        // Vectors
+        const vecScale = 0.2; // Scale down velocity vectors for visual clarity
+        const vArrow = new THREE.ArrowHelper(new THREE.Vector3(1,1,0).normalize(), new THREE.Vector3(0,0,0), 1, 0x06D6A0, 0.8, 0.4);
+        const vxArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0x4361EE, 0.8, 0.4);
+        const vyArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, 0xFF3366, 0.8, 0.4);
+        const gArrow = new THREE.ArrowHelper(new THREE.Vector3(0,-1,0), new THREE.Vector3(0,0,0), 3, 0xF77F00, 0.8, 0.4);
+        
+        scene.add(vArrow);
+        scene.add(vxArrow);
+        scene.add(vyArrow);
+        scene.add(gArrow);
+
+        let showVectors = true;
+
+        // --- Physics State ---
+        let state = {
+            v0: 25,
+            theta: 45,
+            h0: 0,
+            g: 9.8,
+            speed: 1.0,
+            
+            // Calculated
+            v0x: 0,
+            v0y: 0,
+            T: 0,
+            H: 0,
+            R: 0,
+            
+            // Simulation
+            isRunning: false,
+            time: 0,
+            pointCount: 0
+        };
+
+        // DOM Elements
+        const ui = {
+            v0: document.getElementById('v0'),
+            angle: document.getElementById('angle'),
+            h0: document.getElementById('h0'),
+            g: document.getElementById('g'),
+            speed: document.getElementById('speed'),
+            lblV0: document.getElementById('lbl-v0'),
+            lblAngle: document.getElementById('lbl-angle'),
+            lblH0: document.getElementById('lbl-h0'),
+            lblG: document.getElementById('lbl-g'),
+            lblSpeed: document.getElementById('lbl-speed'),
+            valT: document.getElementById('val-t'),
+            valPos: document.getElementById('val-pos'),
+            valH: document.getElementById('val-h'),
+            valR: document.getElementById('val-r')
+        };
+
+        // --- Logic ---
+        function calculatePhysics() {
+            const thetaRad = state.theta * Math.PI / 180;
+            state.v0x = state.v0 * Math.cos(thetaRad);
+            state.v0y = state.v0 * Math.sin(thetaRad);
+
+            // Time of flight: y = h0 + v0y*t - 0.5*g*t^2 = 0
+            // 0.5*g*t^2 - v0y*t - h0 = 0
+            // t = (v0y + sqrt(v0y^2 - 4*(0.5*g)*(-h0))) / g
+            state.T = (state.v0y + Math.sqrt(state.v0y * state.v0y + 2 * state.g * state.h0)) / state.g;
+            
+            // Max Height
+            state.H = state.h0 + (state.v0y * state.v0y) / (2 * state.g);
+            
+            // Range
+            state.R = state.v0x * state.T;
+
+            // Update UI
+            ui.valH.innerText = state.H.toFixed(2) + ' m';
+            ui.valR.innerText = state.R.toFixed(2) + ' m';
+
+            // Update Markers
+            const tApex = state.v0y / state.g;
+            const xApex = state.v0x * tApex;
+            apexMarker.position.set(xApex, state.H, 0);
+            rangeMarker.position.set(state.R, 0, 0);
+
+            // Adjust camera target roughly to center of trajectory
+            controls.target.set(state.R / 2, state.H / 2, 0);
+        }
+
+        function updateVectors(x, y, vx, vy) {
+            if (!showVectors) {
+                vArrow.visible = false; vxArrow.visible = false; vyArrow.visible = false; gArrow.visible = false;
+                return;
+            }
+            vArrow.visible = true; vxArrow.visible = true; vyArrow.visible = true; gArrow.visible = true;
+
+            const pos = new THREE.Vector3(x, y, 0);
+            
+            // Total V
+            const vMag = Math.sqrt(vx*vx + vy*vy);
+            if (vMag > 0.01) {
+                vArrow.position.copy(pos);
+                vArrow.setDirection(new THREE.Vector3(vx, vy, 0).normalize());
+                vArrow.setLength(vMag * vecScale, 0.8, 0.4);
+            }
+
+            // Vx
+            if (Math.abs(vx) > 0.01) {
+                vxArrow.position.copy(pos);
+                vxArrow.setDirection(new THREE.Vector3(Math.sign(vx), 0, 0));
+                vxArrow.setLength(Math.abs(vx) * vecScale, 0.8, 0.4);
+            } else {
+                vxArrow.visible = false;
+            }
+
+            // Vy
+            if (Math.abs(vy) > 0.01) {
+                vyArrow.position.copy(pos);
+                vyArrow.setDirection(new THREE.Vector3(0, Math.sign(vy), 0));
+                vyArrow.setLength(Math.abs(vy) * vecScale, 0.8, 0.4);
+            } else {
+                vyArrow.visible = false;
+            }
+
+            // G
+            gArrow.position.copy(pos);
+        }
+
+        function resetSim() {
+            state.isRunning = false;
+            state.time = 0;
+            state.pointCount = 0;
+            trajGeo.setDrawRange(0, 0);
+            
+            projectile.position.set(0, state.h0, 0);
+            updateVectors(0, state.h0, state.v0x, state.v0y);
+            
+            ui.valT.innerText = '0.00 s';
+            ui.valPos.innerText = `(0.0, ${state.h0.toFixed(1)}) m`;
+        }
+
+        function fireSim() {
+            calculatePhysics();
+            resetSim();
+            state.isRunning = true;
+        }
+
+        // --- Event Listeners ---
+        function handleInput() {
+            state.v0 = parseFloat(ui.v0.value);
+            state.theta = parseFloat(ui.angle.value);
+            state.h0 = parseFloat(ui.h0.value);
+            state.g = parseFloat(ui.g.value);
+            state.speed = parseFloat(ui.speed.value);
+
+            ui.lblV0.innerText = state.v0 + ' m/s';
+            ui.lblAngle.innerText = state.theta + '°';
+            ui.lblH0.innerText = state.h0 + ' m';
+            ui.lblG.innerText = state.g.toFixed(1) + ' m/s²';
+            ui.lblSpeed.innerText = state.speed.toFixed(1) + 'x';
+
+            calculatePhysics();
+            if (!state.isRunning) resetSim();
+        }
+
+        ['v0', 'angle', 'h0', 'g', 'speed'].forEach(id => {
+            document.getElementById(id).addEventListener('input', handleInput);
+        });
+
+        document.getElementById('btn-fire').addEventListener('click', fireSim);
+        document.getElementById('btn-reset').addEventListener('click', resetSim);
+        document.getElementById('btn-toggle').addEventListener('click', () => {
+            showVectors = !showVectors;
+            updateVectors(projectile.position.x, projectile.position.y, 
+                state.v0x, state.v0y - state.g * state.time);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = clock.getDelta();
+
+            if (state.isRunning) {
+                state.time += dt * state.speed;
+                
+                if (state.time >= state.T) {
+                    state.time = state.T;
+                    state.isRunning = false;
+                }
+
+                // Kinematic equations
+                const x = state.v0x * state.time;
+                const y = state.h0 + (state.v0y * state.time) - (0.5 * state.g * state.time * state.time);
+                
+                // Velocity components
+                const vx = state.v0x;
+                const vy = state.v0y - state.g * state.time;
+
+                // Update Projectile
+                projectile.position.set(x, Math.max(0, y), 0);
+
+                // Update Trajectory
+                if (state.pointCount < maxPoints) {
+                    positions[state.pointCount * 3] = x;
+                    positions[state.pointCount * 3 + 1] = Math.max(0, y);
+                    positions[state.pointCount * 3 + 2] = 0;
+                    state.pointCount++;
+                    trajGeo.setDrawRange(0, state.pointCount);
+                    trajGeo.attributes.position.needsUpdate = true;
+                }
+
+                // Update Vectors
+                updateVectors(x, Math.max(0, y), vx, vy);
+
+                // Update UI
+                ui.valT.innerText = state.time.toFixed(2) + ' s';
+                ui.valPos.innerText = `(${x.toFixed(1)}, ${Math.max(0, y).toFixed(1)}) m`;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        handleInput();
+        resetSim();
+        animate();
+
+    </script>
+</body>
+</html>

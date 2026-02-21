@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oersted's Discovery: Magnetic Field of a Wire</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #2D3436;
+        }
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        #control-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25%;
+            min-width: 320px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            padding: 30px 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            overflow-y: auto;
+        }
+        h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #7209B7;
+            line-height: 1.2;
+        }
+        p.subtitle {
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+            color: #636e72;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #7209B7;
+            font-weight: 700;
+            font-size: 0.9rem;
+            background: rgba(114, 9, 183, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #7209B7;
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 2px 5px rgba(114, 9, 183, 0.4);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #dcdde1;
+            border-radius: 2px;
+        }
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+        input[type=checkbox] {
+            width: 18px;
+            height: 18px;
+            accent-color: #7209B7;
+            cursor: pointer;
+        }
+        #formula-card {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            z-index: 10;
+            font-family: 'Roboto Mono', monospace;
+            min-width: 200px;
+        }
+        .formula-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #636e72;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .formula-math {
+            font-size: 1.2rem;
+            color: #7209B7;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+        .formula-live {
+            font-size: 1.1rem;
+            color: #2D3436;
+            background: #f0f4f8;
+            padding: 8px 12px;
+            border-radius: 6px;
+            border-left: 4px solid #06D6A0;
+        }
+        .compass-label {
+            position: absolute;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 5;
+        }
+        .legend {
+            margin-top: auto;
+            background: rgba(240, 244, 248, 0.8);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-title">Magnetic Field Magnitude</div>
+        <div class="formula-math">B = &mu;<sub>0</sub>I / (2&pi;r)</div>
+        <div class="formula-live">B = <span id="b-value">0.50</span> &mu;T</div>
+    </div>
+
+    <div id="control-panel">
+        <div>
+            <h1>Oersted's Discovery</h1>
+            <p class="subtitle">Electromagnetism Simulation</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="current">Current (I)</label>
+                <span class="value-display" id="current-val">5.0 A</span>
+            </div>
+            <input type="range" id="current" min="-10" max="10" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="radius">Compass Distance (r)</label>
+                <span class="value-display" id="radius-val">2.0 m</span>
+            </div>
+            <input type="range" id="radius" min="1" max="5" step="0.1" value="2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="angle">Compass Angle (&theta;)</label>
+                <span class="value-display" id="angle-val">0&deg;</span>
+            </div>
+            <input type="range" id="angle" min="0" max="360" step="1" value="0">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="show-lines" checked>
+            Show Magnetic Field Lines
+        </label>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background: #06D6A0;"></div> Electrons (Flow opposite to I)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #7209B7;"></div> Magnetic Field (B)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #FF3366;"></div> Compass North</div>
+            <div class="legend-item"><div class="legend-color" style="background: #4361EE;"></div> Compass South</div>
+        </div>
+    </div>
+
+    <div id="label-n" class="compass-label" style="color: #FF3366;">N</div>
+    <div id="label-s" class="compass-label" style="color: #4361EE;">S</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // State Variables
+        let currentI = 5.0;
+        let radiusR = 2.0;
+        let thetaDeg = 0;
+        let showLines = true;
+
+        // DOM Elements
+        const currentSlider = document.getElementById('current');
+        const currentVal = document.getElementById('current-val');
+        const radiusSlider = document.getElementById('radius');
+        const radiusVal = document.getElementById('radius-val');
+        const angleSlider = document.getElementById('angle');
+        const angleVal = document.getElementById('angle-val');
+        const showLinesCheckbox = document.getElementById('show-lines');
+        const bValueDisplay = document.getElementById('b-value');
+        const labelN = document.getElementById('label-n');
+        const labelS = document.getElementById('label-s');
+
+        // Event Listeners
+        currentSlider.addEventListener('input', (e) => {
+            currentI = parseFloat(e.target.value);
+            currentVal.innerText = currentI.toFixed(1) + ' A';
+        });
+        radiusSlider.addEventListener('input', (e) => {
+            radiusR = parseFloat(e.target.value);
+            radiusVal.innerText = radiusR.toFixed(1) + ' m';
+        });
+        angleSlider.addEventListener('input', (e) => {
+            thetaDeg = parseFloat(e.target.value);
+            angleVal.innerHTML = thetaDeg + '&deg;';
+        });
+        showLinesCheckbox.addEventListener('change', (e) => {
+            showLines = e.target.checked;
+        });
+
+        // Three.js Setup
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        // Faint Grid Helper
+        const grid = new THREE.GridHelper(20, 20, 0xdcdde1, 0xe8eaed);
+        grid.position.y = -0.05;
+        scene.add(grid);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(6, 8, 10);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        // Offset target slightly to the left to account for right UI panel
+        controls.target.set(-1, 0, 0);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+        dirLight2.position.set(-10, -10, -15);
+        scene.add(dirLight2);
+
+        // 1. The Wire
+        const wireGeo = new THREE.CylinderGeometry(0.05, 0.05, 40, 32);
+        const wireMat = new THREE.MeshStandardMaterial({ color: 0x2D3436, roughness: 0.6, metalness: 0.2 });
+        const wire = new THREE.Mesh(wireGeo, wireMat);
+        scene.add(wire);
+
+        // 2. The Electrons
+        const electrons = [];
+        const electronGeo = new THREE.SphereGeometry(0.08, 16, 16);
+        const electronMat = new THREE.MeshStandardMaterial({ 
+            color: 0x06D6A0, 
+            roughness: 0.2, 
+            emissive: 0x06D6A0, 
+            emissiveIntensity: 0.6 
+        });
+        for(let i = 0; i < 30; i++) {
+            const el = new THREE.Mesh(electronGeo, electronMat);
+            // Distribute evenly
+            el.position.set(0, (i / 30) * 40 - 20, 0);
+            scene.add(el);
+            electrons.push(el);
+        }
+
+        // 3. Magnetic Field Lines & Arrows
+        const fieldLinesGroup = new THREE.Group();
+        const fieldArrows = [];
+        
+        for(let r = 1; r <= 5; r++) {
+            // Circle Line
+            const circleGeo = new THREE.BufferGeometry();
+            const pts = [];
+            const segments = 64;
+            for(let i = 0; i <= segments; i++) {
+                const ang = (i / segments) * Math.PI * 2;
+                pts.push(new THREE.Vector3(r * Math.cos(ang), 0, r * Math.sin(ang)));
+            }
+            circleGeo.setFromPoints(pts);
+            const opacity = Math.min(1.0, 1.2 / r);
+            const circleMat = new THREE.LineBasicMaterial({ color: 0x7209B7, transparent: true, opacity: opacity });
+            const circle = new THREE.LineLoop(circleGeo, circleMat);
+            fieldLinesGroup.add(circle);
+
+            // Directional Arrows (Cones)
+            for(let a = 0; a < 4; a++) {
+                const ang = (a / 4) * Math.PI * 2;
+                const coneGeo = new THREE.ConeGeometry(0.12, 0.35, 12);
+                const coneMat = new THREE.MeshBasicMaterial({ color: 0x7209B7, transparent: true, opacity: opacity });
+                const cone = new THREE.Mesh(coneGeo, coneMat);
+                cone.position.set(r * Math.cos(ang), 0, r * Math.sin(ang));
+                cone.userData = { r: r, angle: ang };
+                fieldLinesGroup.add(cone);
+                fieldArrows.push(cone);
+            }
+        }
+        scene.add(fieldLinesGroup);
+
+        // 4. The Compass & Probe
+        const compassGroup = new THREE.Group();
+        
+        // Base
+        const baseGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.05, 32);
+        const baseMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, metalness: 0.1 });
+        const base = new THREE.Mesh(baseGeo, baseMat);
+        compassGroup.add(base);
+
+        // Center Pin
+        const pinGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.15, 8);
+        const pinMat = new THREE.MeshStandardMaterial({ color: 0x2D3436 });
+        const pin = new THREE.Mesh(pinGeo, pinMat);
+        pin.position.y = 0.075;
+        compassGroup.add(pin);
+
+        // Needle Group
+        const needleGroup = new THREE.Group();
+        needleGroup.position.y = 0.15;
+        compassGroup.add(needleGroup);
+
+        // North Pole (Red)
+        const northGeo = new THREE.ConeGeometry(0.08, 0.45, 16);
+        northGeo.translate(0, 0.225, 0); // Base at origin
+        northGeo.rotateX(Math.PI / 2);   // Point along +Z
+        const northMat = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.3 });
+        const northCone = new THREE.Mesh(northGeo, northMat);
+        needleGroup.add(northCone);
+
+        // South Pole (Blue)
+        const southGeo = new THREE.ConeGeometry(0.08, 0.45, 16);
+        southGeo.translate(0, 0.225, 0);
+        southGeo.rotateX(-Math.PI / 2);  // Point along -Z
+        const southMat = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.3 });
+        const southCone = new THREE.Mesh(southGeo, southMat);
+        needleGroup.add(southCone);
+
+        // B-Field Vector Arrow
+        const bArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0.15,0), 1, 0x7209B7, 0.25, 0.15);
+        compassGroup.add(bArrow);
+
+        scene.add(compassGroup);
+
+        // Helper to project 3D to 2D screen coordinates
+        function updateLabelPosition(pos3D, element) {
+            const vector = pos3D.clone();
+            vector.project(camera);
+            
+            // Check if behind camera
+            if (vector.z > 1) {
+                element.style.display = 'none';
+                return;
+            }
+            
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+            
+            element.style.display = 'block';
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+        }
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+
+            // 1. Update Electrons
+            // Conventional current is +Y if I > 0. Electrons move opposite (-Y).
+            const driftSpeed = currentI * 2.0; 
+            electrons.forEach(el => {
+                el.position.y -= driftSpeed * dt;
+                if (el.position.y < -20) el.position.y += 40;
+                if (el.position.y > 20) el.position.y -= 40;
+            });
+
+            // 2. Update Field Lines & Arrows
+            fieldLinesGroup.visible = showLines;
+            if (showLines) {
+                fieldArrows.forEach(arrow => {
+                    arrow.visible = (currentI !== 0);
+                    if (currentI !== 0) {
+                        const dir = currentI > 0 ? 1 : -1;
+                        // Tangent vector for circle
+                        const tangent = new THREE.Vector3(
+                            Math.sin(arrow.userData.angle) * dir,
+                            0,
+                            -Math.cos(arrow.userData.angle) * dir
+                        );
+                        const target = arrow.position.clone().add(tangent);
+                        arrow.lookAt(target);
+                        arrow.rotateX(Math.PI / 2); // Align cone tip to Z axis
+                    }
+                });
+            }
+
+            // 3. Update Compass Position
+            const thetaRad = THREE.MathUtils.degToRad(thetaDeg);
+            const cx = radiusR * Math.cos(thetaRad);
+            const cz = radiusR * Math.sin(thetaRad);
+            compassGroup.position.set(cx, 0, cz);
+
+            // 4. Calculate Magnetic Field Vector (B)
+            let bDir = new THREE.Vector3();
+            let bMag = 0;
+            
+            if (currentI !== 0) {
+                const sign = Math.sign(currentI);
+                // Right hand rule: J = (0, sign, 0), r = (cx, 0, cz)
+                // J x r = (sign*cz, 0, -sign*cx)
+                bDir.set(cz * sign, 0, -cx * sign).normalize();
+                bMag = Math.abs(currentI) / radiusR; // Visual scaling factor
+            } else {
+                bDir.set(0, 0, -1); // Default Earth North
+                bMag = 0;
+            }
+
+            // 5. Align Compass Needle
+            // Needle's local +Z is North. lookAt aligns local +Z to target.
+            const targetPos = compassGroup.position.clone().add(bDir);
+            needleGroup.lookAt(targetPos);
+
+            // 6. Update B-Field Arrow
+            if (currentI !== 0) {
+                bArrow.visible = true;
+                bArrow.setDirection(bDir);
+                // Length scales with 1/r and I. Base length 0.6 for visibility.
+                bArrow.setLength(bMag * 0.4 + 0.6, 0.25, 0.15);
+            } else {
+                bArrow.visible = false;
+            }
+
+            // 7. Update HTML Labels
+            // Get world position of needle tips
+            const nTip = new THREE.Vector3(0, 0, 0.55).applyMatrix4(needleGroup.matrixWorld);
+            const sTip = new THREE.Vector3(0, 0, -0.55).applyMatrix4(needleGroup.matrixWorld);
+            updateLabelPosition(nTip, labelN);
+            updateLabelPosition(sTip, labelS);
+
+            // 8. Update Formula Card
+            // B = (mu_0 * I) / (2 * pi * r). Using scaled constant for display.
+            const bTesla = (0.2 * Math.abs(currentI) / radiusR).toFixed(2);
+            bValueDisplay.innerText = bTesla;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start Animation
+        animate();
+    </script>
+</body>
+</html>

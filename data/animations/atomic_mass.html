@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mass Spectrometer Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #1A202C;
+            display: flex;
+        }
+
+        #canvas-container {
+            width: 75vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #control-panel {
+            width: 25vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1A202C;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #D1D5DB;
+            border-radius: 2px;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #ffffff;
+            border: 1px solid #E2E8F0;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #4A5568;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+
+        button:hover {
+            background: #f8fafc;
+            border-color: #CBD5E1;
+            transform: translateY(-1px);
+        }
+
+        .btn-fire {
+            background: #FF3366;
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(255, 51, 102, 0.3);
+            margin-top: 1rem;
+        }
+
+        .btn-fire:hover {
+            background: #E62E5C;
+            border-color: transparent;
+            color: white;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .formula-title {
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+            color: #1A202C;
+        }
+
+        .formula-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            color: #4A5568;
+            margin-bottom: 0.4rem;
+        }
+
+        .live-value {
+            color: #06D6A0;
+            font-weight: 500;
+            margin-top: 0.8rem;
+            padding-top: 0.8rem;
+            border-top: 1px solid #E2E8F0;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Physics Engine Live Data</div>
+            <div class="formula-line">m = A × 1.6605e-27 kg</div>
+            <div class="formula-line">v = √(2qV / m)</div>
+            <div class="formula-line">r = (mv) / (qB)</div>
+            <div class="formula-line live-value" id="live-radius">Live Radius: 0.00 units</div>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <h1>Mass Spectrometer</h1>
+        <p style="font-size: 0.85rem; color: #718096; margin-bottom: 1rem;">
+            Visualize how isotopes are separated using electric and magnetic fields.
+        </p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Mass Number (A)</span>
+                <span class="value-display" id="val-mass">12</span>
+            </div>
+            <input type="range" id="slider-mass" min="1" max="20" step="1" value="12">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Magnetic Field (B)</span>
+                <span class="value-display" id="val-mag">0.8 T</span>
+            </div>
+            <input type="range" id="slider-mag" min="0.1" max="2.0" step="0.1" value="0.8">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Acceleration Voltage (V)</span>
+                <span class="value-display" id="val-vol">1000 V</span>
+            </div>
+            <input type="range" id="slider-vol" min="100" max="2000" step="100" value="1000">
+        </div>
+
+        <div class="control-group" style="margin-top: 1rem;">
+            <div class="control-header" style="margin-bottom: 0.5rem;">Isotope Presets</div>
+            <div class="preset-buttons">
+                <button onclick="setPreset(12)">Carbon-12</button>
+                <button onclick="setPreset(13)">Carbon-13</button>
+                <button onclick="setPreset(14)">Carbon-14</button>
+            </div>
+        </div>
+
+        <button class="btn-fire" onclick="fireIon()">Fire Ion</button>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- SCENE SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(15, 20, 45);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Prevent going under floor
+        controls.target.set(10, 10, 0);
+
+        // --- LIGHTING ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(20, 30, 20);
+        scene.add(dirLight);
+
+        // --- ENVIRONMENT ---
+        const gridHelper = new THREE.GridHelper(100, 100, 0xcccccc, 0xe2e8f0);
+        gridHelper.position.y = -0.1;
+        scene.add(gridHelper);
+
+        // --- STATIC APPARATUS ---
+        // Ion Source (Origin)
+        const sourceGeo = new THREE.SphereGeometry(0.8, 32, 32);
+        const sourceMat = new THREE.MeshStandardMaterial({ color: 0xFF3366, emissive: 0xFF3366, emissiveIntensity: 0.5 });
+        const sourceMesh = new THREE.Mesh(sourceGeo, sourceMat);
+        scene.add(sourceMesh);
+
+        // Acceleration Plates
+        const plateGeo = new THREE.PlaneGeometry(10, 10);
+        const plateMatRed = new THREE.MeshPhysicalMaterial({ color: 0xFF3366, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+        const plateMatBlue = new THREE.MeshPhysicalMaterial({ color: 0x4361EE, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+        
+        const plate1 = new THREE.Mesh(plateGeo, plateMatRed);
+        plate1.rotation.y = Math.PI / 2;
+        plate1.position.set(0, 5, 0);
+        scene.add(plate1);
+
+        const plate2 = new THREE.Mesh(plateGeo, plateMatBlue);
+        plate2.rotation.y = Math.PI / 2;
+        plate2.position.set(4, 5, 0);
+        scene.add(plate2);
+
+        // Detector Plate (at x=4, extending +y)
+        // Create Ruler Texture
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 1024;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 256, 1024);
+        ctx.fillStyle = '#1A202C';
+        ctx.font = 'bold 28px Inter';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        
+        // 40 units high -> 1024px. 1 unit = 25.6px
+        for(let i=0; i<=40; i+=2) {
+            const y = 1024 - (i * 25.6);
+            ctx.fillRect(0, y - 2, 40, 4);
+            if(i % 4 === 0) {
+                ctx.fillRect(0, y - 3, 60, 6);
+                ctx.fillText(i + " u", 75, y);
+            }
+        }
+        const rulerTex = new THREE.CanvasTexture(canvas);
+        rulerTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+        const detectorGeo = new THREE.PlaneGeometry(10, 40);
+        const detectorMat = new THREE.MeshStandardMaterial({ map: rulerTex, side: THREE.DoubleSide });
+        const detector = new THREE.Mesh(detectorGeo, detectorMat);
+        detector.rotation.y = Math.PI / 2;
+        detector.position.set(4, 20, 0);
+        scene.add(detector);
+
+        // Magnetic Field Visuals (Purple X's)
+        const bFieldGroup = new THREE.Group();
+        const xGeo = new THREE.BufferGeometry();
+        const xVerts = new Float32Array([
+            -0.3, -0.3, 0,   0.3, 0.3, 0,
+            -0.3, 0.3, 0,    0.3, -0.3, 0
+        ]);
+        xGeo.setAttribute('position', new THREE.BufferAttribute(xVerts, 3));
+        const bFieldMat = new THREE.LineBasicMaterial({ color: 0x7209B7, transparent: true, opacity: 0.5, linewidth: 2 });
+        
+        for(let x = 6; x <= 26; x += 2.5) {
+            for(let y = 2; y <= 38; y += 2.5) {
+                const cross = new THREE.LineSegments(xGeo, bFieldMat);
+                cross.position.set(x, y, -2); // slightly back in Z
+                bFieldGroup.add(cross);
+            }
+        }
+        scene.add(bFieldGroup);
+
+        // --- PHYSICS & PARTICLES ---
+        const particles = [];
+        const u_mass = 1.6605e-27;
+        const q_charge = 1.602e-19;
+
+        function createNucleus(A) {
+            const group = new THREE.Group();
+            const protons = Math.min(A, Math.ceil(A / 2));
+            const sphereGeo = new THREE.SphereGeometry(0.25, 16, 16);
+            const matProton = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.4 });
+            const matNeutron = new THREE.MeshStandardMaterial({ color: 0xD1D5DB, roughness: 0.4 });
+
+            for(let i=0; i<A; i++) {
+                const isProton = i < protons;
+                const mesh = new THREE.Mesh(sphereGeo, isProton ? matProton : matNeutron);
+                // Random cluster packing
+                const phi = Math.acos(-1 + (2 * i) / A);
+                const theta = Math.sqrt(A * Math.PI) * phi;
+                const r = 0.4 * Math.cbrt(A/12); // scale radius slightly with A
+                mesh.position.set(r * Math.cos(theta) * Math.sin(phi), r * Math.sin(theta) * Math.sin(phi), r * Math.cos(phi));
+                group.add(mesh);
+            }
+            return group;
+        }
+
+        class Particle {
+            constructor(A, V, B) {
+                this.A = A;
+                this.mesh = createNucleus(A);
+                this.mesh.position.set(0, 0, 0);
+                scene.add(this.mesh);
+
+                this.trailGeo = new THREE.BufferGeometry();
+                this.maxTrail = 2000;
+                this.trailPositions = new Float32Array(this.maxTrail * 3);
+                this.trailGeo.setAttribute('position', new THREE.BufferAttribute(this.trailPositions, 3));
+                this.trailMat = new THREE.LineBasicMaterial({ color: 0x06D6A0, linewidth: 3 });
+                this.trail = new THREE.Line(this.trailGeo, this.trailMat);
+                scene.add(this.trail);
+                this.trailCount = 0;
+
+                this.active = true;
+                this.pos = new THREE.Vector3(0, 0, 0);
+                this.vel = new THREE.Vector3(0, 0, 0);
+
+                // Real Physics
+                const m = A * u_mass;
+                const realV = Math.sqrt((2 * q_charge * V) / m);
+                const realR = (m * realV) / (q_charge * B);
+
+                // Reference scaling (C-12, 1000V, 0.8T maps to r=10)
+                const refM = 12 * u_mass;
+                const refV = Math.sqrt((2 * q_charge * 1000) / refM);
+                const refR = (refM * refV) / (q_charge * 0.8);
+
+                this.visR = 10 * (realR / refR);
+                this.visVelMag = 30 * (realV / refV); // Visual speed
+
+                // Acceleration zone (x=0 to x=4)
+                this.accelX = (this.visVelMag * this.visVelMag) / (2 * 4);
+
+                // Simulation charge for B-field integration
+                // a = v^2/r = q_sim * v * B / A
+                this.q_sim = (A * this.visVelMag) / (B * this.visR);
+                this.B_val = B;
+
+                // Update UI
+                document.getElementById('live-radius').innerText = `Live Radius: ${this.visR.toFixed(2)} units`;
+            }
+
+            update(dt) {
+                if (!this.active) return;
+
+                // Sub-stepping for stable circular integration
+                const subSteps = 10;
+                const subDt = dt / subSteps;
+
+                for(let i=0; i<subSteps; i++) {
+                    if (this.pos.x < 4) {
+                        // Electric Field Acceleration
+                        this.vel.x += this.accelX * subDt;
+                        this.pos.x += this.vel.x * subDt;
+                    } else {
+                        // Magnetic Field Lorentz Force
+                        // Force is +y initially when moving +x. B is in -z.
+                        // F = q(v x B). v=(vx, vy, 0), B=(0, 0, -B) -> Fx = -q*vy*B, Fy = q*vx*B
+                        const ax = -this.q_sim * this.vel.y * this.B_val / this.A;
+                        const ay = this.q_sim * this.vel.x * this.B_val / this.A;
+
+                        this.vel.x += ax * subDt;
+                        this.vel.y += ay * subDt;
+                        this.pos.x += this.vel.x * subDt;
+                        this.pos.y += this.vel.y * subDt;
+
+                        // Collision with detector plate at x=4
+                        if (this.pos.x <= 4 && this.vel.x < 0) {
+                            this.pos.x = 4;
+                            this.active = false;
+                            this.leaveMark();
+                            break;
+                        }
+                    }
+                }
+
+                this.mesh.position.copy(this.pos);
+
+                // Update trail
+                if (this.trailCount < this.maxTrail && (this.trailCount === 0 || this.pos.distanceTo(new THREE.Vector3(this.trailPositions[(this.trailCount-1)*3], this.trailPositions[(this.trailCount-1)*3+1], 0)) > 0.1)) {
+                    this.trailPositions[this.trailCount * 3] = this.pos.x;
+                    this.trailPositions[this.trailCount * 3 + 1] = this.pos.y;
+                    this.trailPositions[this.trailCount * 3 + 2] = this.pos.z;
+                    this.trailCount++;
+                    this.trailGeo.setDrawRange(0, this.trailCount);
+                    this.trailGeo.attributes.position.needsUpdate = true;
+                }
+            }
+
+            leaveMark() {
+                // Create permanent mark
+                const markGeo = new THREE.SphereGeometry(0.4, 16, 16);
+                const markMat = new THREE.MeshBasicMaterial({ color: 0x06D6A0 });
+                const mark = new THREE.Mesh(markGeo, markMat);
+                mark.position.copy(this.pos);
+                scene.add(mark);
+
+                // Dispose of particle mesh to save memory, keep trail and mark
+                scene.remove(this.mesh);
+                this.mesh.traverse((child) => {
+                    if (child.isMesh) {
+                        child.geometry.dispose();
+                        child.material.dispose();
+                    }
+                });
+            }
+        }
+
+        // --- UI & INTERACTION ---
+        const sliderMass = document.getElementById('slider-mass');
+        const sliderMag = document.getElementById('slider-mag');
+        const sliderVol = document.getElementById('slider-vol');
+        
+        const valMass = document.getElementById('val-mass');
+        const valMag = document.getElementById('val-mag');
+        const valVol = document.getElementById('val-vol');
+
+        sliderMass.addEventListener('input', (e) => valMass.innerText = e.target.value);
+        sliderMag.addEventListener('input', (e) => {
+            valMag.innerText = parseFloat(e.target.value).toFixed(1) + ' T';
+            bFieldMat.opacity = (parseFloat(e.target.value) / 2.0) * 0.8 + 0.1;
+        });
+        sliderVol.addEventListener('input', (e) => valVol.innerText = e.target.value + ' V');
+
+        window.setPreset = function(A) {
+            sliderMass.value = A;
+            valMass.innerText = A;
+            fireIon();
+        };
+
+        window.fireIon = function() {
+            // Source pulse effect
+            sourceMat.emissiveIntensity = 2.0;
+            setTimeout(() => sourceMat.emissiveIntensity = 0.5, 200);
+
+            const A = parseInt(sliderMass.value);
+            const B = parseFloat(sliderMag.value);
+            const V = parseFloat(sliderVol.value);
+
+            const p = new Particle(A, V, B);
+            particles.push(p);
+
+            // Cleanup old particles if too many
+            if(particles.length > 10) {
+                const old = particles.shift();
+                if(!old.active) {
+                    scene.remove(old.trail);
+                    old.trailGeo.dispose();
+                    old.trailMat.dispose();
+                }
+            }
+        };
+
+        // --- ANIMATION LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.03); // Cap dt to prevent huge jumps
+            
+            controls.update();
+
+            for(let p of particles) {
+                p.update(dt);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        animate();
+
+    </script>
+</body>
+</html>

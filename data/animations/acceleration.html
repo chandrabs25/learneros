@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Vector Dynamics of Acceleration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            color: #333;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        #ui-container {
+            width: 320px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            box-sizing: border-box;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin: 0 0 20px 0;
+            line-height: 1.3;
+            color: #1a1a1a;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #4a5568;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #2d3748;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        #btn-play { background: #06D6A0; box-shadow: 0 4px 6px rgba(6, 214, 160, 0.3); }
+        #btn-play:hover { background: #05b587; }
+        
+        #btn-reset { background: #ef476f; box-shadow: 0 4px 6px rgba(239, 71, 111, 0.3); }
+        #btn-reset:hover { background: #d9385e; }
+
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: #2d3748;
+            pointer-events: none;
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #a0aec0;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .math-line { margin-bottom: 4px; }
+        .math-var { font-style: italic; }
+        .color-v { color: #06D6A0; font-weight: bold; }
+        .color-a { color: #F77F00; font-weight: bold; }
+
+        .legend {
+            margin-top: auto;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Live Kinematics</div>
+            <div id="formula-content"></div>
+        </div>
+    </div>
+
+    <div id="ui-container">
+        <h1>Vector Dynamics</h1>
+        
+        <div class="control-group">
+            <label>Simulation Mode</label>
+            <select id="mode-select">
+                <option value="linear">Linear Acceleration</option>
+                <option value="projectile">Projectile Motion</option>
+                <option value="circular">Uniform Circular Motion</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Initial Velocity (v₀) <span class="val-display" id="val-v0">5.0</span></label>
+            <input type="range" id="slider-v0" min="0" max="20" step="0.1" value="5">
+        </div>
+
+        <div class="control-group" id="group-accel">
+            <label>Acceleration (a) <span class="val-display" id="val-accel">2.0</span></label>
+            <input type="range" id="slider-accel" min="-10" max="10" step="0.1" value="2">
+        </div>
+
+        <div class="control-group" id="group-angle" style="display: none;">
+            <label>Launch Angle (θ) <span class="val-display" id="val-angle">45°</span></label>
+            <input type="range" id="slider-angle" min="0" max="90" step="1" value="45">
+        </div>
+
+        <div class="control-group" id="group-radius" style="display: none;">
+            <label>Orbit Radius (r) <span class="val-display" id="val-radius">5.0</span></label>
+            <input type="range" id="slider-radius" min="2" max="10" step="0.5" value="5">
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-play">Play</button>
+            <button id="btn-reset">Reset</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background: #4361EE;"></div> Test Particle</div>
+            <div class="legend-item"><div class="legend-color" style="background: #06D6A0;"></div> Velocity Vector (v)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #F77F00;"></div> Acceleration Vector (a)</div>
+            <div class="legend-item"><div class="legend-color" style="background: #7209B7;"></div> Trajectory Path</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & Constants ---
+        const COLORS = {
+            bg: 0xf0f4f8,
+            particle: 0x4361EE,
+            velocity: 0x06D6A0,
+            acceleration: 0xF77F00,
+            path: 0x7209B7,
+            grid: 0xd1d9e6,
+            marker: 0xffffff
+        };
+        const VECTOR_SCALE = 0.5;
+        const GRAVITY = 9.81;
+        const MAX_PATH_POINTS = 500;
+
+        // --- State Variables ---
+        let mode = 'linear';
+        let isPlaying = false;
+        let time = 0;
+        let lastTime = 0;
+        
+        let params = {
+            v0: 5.0,
+            accel: 2.0,
+            angle: 45,
+            radius: 5.0
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(COLORS.bg);
+        // Add soft fog to blend grid into background
+        scene.fog = new THREE.Fog(COLORS.bg, 30, 100);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 15, 30);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below ground
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(5, 15, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 20;
+        dirLight.shadow.camera.bottom = -20;
+        dirLight.shadow.camera.left = -20;
+        dirLight.shadow.camera.right = 20;
+        scene.add(dirLight);
+
+        // --- Environment ---
+        const gridHelper = new THREE.GridHelper(100, 100, COLORS.grid, COLORS.grid);
+        gridHelper.position.y = 0;
+        scene.add(gridHelper);
+
+        // Reference Markers
+        const markerGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        const markerMat = new THREE.MeshStandardMaterial({ color: COLORS.marker, roughness: 0.1 });
+        for (let i = -50; i <= 50; i += 5) {
+            if (i === 0) continue;
+            const marker = new THREE.Mesh(markerGeo, markerMat);
+            marker.position.set(i, 0, 0);
+            marker.receiveShadow = true;
+            marker.castShadow = true;
+            scene.add(marker);
+        }
+
+        // --- Physics Objects ---
+        const particleGeo = new THREE.SphereGeometry(0.5, 32, 32);
+        const particleMat = new THREE.MeshStandardMaterial({ 
+            color: COLORS.particle, 
+            roughness: 0.2, 
+            metalness: 0.1 
+        });
+        const particle = new THREE.Mesh(particleGeo, particleMat);
+        particle.castShadow = true;
+        scene.add(particle);
+
+        // Vectors
+        const vArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), particle.position, 1, COLORS.velocity, 0.4, 0.3);
+        const aArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), particle.position, 1, COLORS.acceleration, 0.4, 0.3);
+        scene.add(vArrow);
+        scene.add(aArrow);
+
+        // Path Trace
+        const pathGeo = new THREE.BufferGeometry();
+        const pathPositions = new Float32Array(MAX_PATH_POINTS * 3);
+        const pathColors = new Float32Array(MAX_PATH_POINTS * 3);
+        pathGeo.setAttribute('position', new THREE.BufferAttribute(pathPositions, 3));
+        pathGeo.setAttribute('color', new THREE.BufferAttribute(pathColors, 3));
+        
+        const pathMat = new THREE.LineBasicMaterial({ 
+            vertexColors: true,
+            linewidth: 2,
+            transparent: true,
+            opacity: 0.8
+        });
+        const pathLine = new THREE.Line(pathGeo, pathMat);
+        scene.add(pathLine);
+        
+        let pathPoints = [];
+
+        // --- UI Elements ---
+        const uiMode = document.getElementById('mode-select');
+        const uiV0 = document.getElementById('slider-v0');
+        const uiAccel = document.getElementById('slider-accel');
+        const uiAngle = document.getElementById('slider-angle');
+        const uiRadius = document.getElementById('slider-radius');
+        const btnPlay = document.getElementById('btn-play');
+        const btnReset = document.getElementById('btn-reset');
+        const formulaContent = document.getElementById('formula-content');
+
+        // --- Functions ---
+
+        function updateUI() {
+            document.getElementById('val-v0').innerText = params.v0.toFixed(1);
+            document.getElementById('val-accel').innerText = params.accel.toFixed(1);
+            document.getElementById('val-angle').innerText = params.angle + '°';
+            document.getElementById('val-radius').innerText = params.radius.toFixed(1);
+
+            document.getElementById('group-accel').style.display = mode === 'linear' ? 'block' : 'none';
+            document.getElementById('group-angle').style.display = mode === 'projectile' ? 'block' : 'none';
+            document.getElementById('group-radius').style.display = mode === 'circular' ? 'block' : 'none';
+        }
+
+        function resetSimulation() {
+            time = 0;
+            pathPoints = [];
+            pathGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(MAX_PATH_POINTS * 3), 3));
+            pathGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(MAX_PATH_POINTS * 3), 3));
+            
+            if (mode === 'linear') {
+                particle.position.set(0, 0.5, 0);
+                camera.position.set(0, 15, 30);
+                controls.target.set(0, 0, 0);
+            } else if (mode === 'projectile') {
+                particle.position.set(-15, 0.5, 0);
+                camera.position.set(0, 15, 35);
+                controls.target.set(0, 5, 0);
+            } else if (mode === 'circular') {
+                particle.position.set(params.radius, 0.5, 0);
+                camera.position.set(0, 20, 25);
+                controls.target.set(0, 0, 0);
+            }
+            
+            updatePhysics(0);
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            btnPlay.innerText = isPlaying ? 'Pause' : 'Play';
+            btnPlay.style.background = isPlaying ? '#F77F00' : '#06D6A0';
+            btnPlay.style.boxShadow = isPlaying ? '0 4px 6px rgba(247, 127, 0, 0.3)' : '0 4px 6px rgba(6, 214, 160, 0.3)';
+            if (isPlaying) lastTime = performance.now();
+        }
+
+        function updatePath() {
+            if (!isPlaying && pathPoints.length > 0) return;
+
+            pathPoints.push(particle.position.clone());
+            if (pathPoints.length > MAX_PATH_POINTS) {
+                pathPoints.shift();
+            }
+
+            const positions = pathGeo.attributes.position.array;
+            const colors = pathGeo.attributes.color.array;
+            
+            const bgCol = new THREE.Color(COLORS.bg);
+            const pathCol = new THREE.Color(COLORS.path);
+
+            for (let i = 0; i < pathPoints.length; i++) {
+                positions[i * 3] = pathPoints[i].x;
+                positions[i * 3 + 1] = pathPoints[i].y;
+                positions[i * 3 + 2] = pathPoints[i].z;
+
+                // Fade color based on age
+                const t = i / (pathPoints.length - 1 || 1);
+                const c = bgCol.clone().lerp(pathCol, t);
+                
+                colors[i * 3] = c.r;
+                colors[i * 3 + 1] = c.g;
+                colors[i * 3 + 2] = c.b;
+            }
+            
+            // Clear remaining buffer
+            for(let i = pathPoints.length; i < MAX_PATH_POINTS; i++) {
+                positions[i*3] = positions[i*3+1] = positions[i*3+2] = 0;
+                colors[i*3] = colors[i*3+1] = colors[i*3+2] = 0;
+            }
+
+            pathGeo.attributes.position.needsUpdate = true;
+            pathGeo.attributes.color.needsUpdate = true;
+            pathGeo.setDrawRange(0, pathPoints.length);
+        }
+
+        function updatePhysics(dt) {
+            if (isPlaying) time += dt;
+
+            let pos = new THREE.Vector3();
+            let vel = new THREE.Vector3();
+            let acc = new THREE.Vector3();
+            let formulaHtml = '';
+
+            if (mode === 'linear') {
+                // x(t) = x0 + v0*t + 0.5*a*t^2
+                // v(t) = v0 + a*t
+                const x = params.v0 * time + 0.5 * params.accel * time * time;
+                const v = params.v0 + params.accel * time;
+                
+                pos.set(x, 0.5, 0);
+                vel.set(v, 0, 0);
+                acc.set(params.accel, 0, 0);
+
+                formulaHtml = `
+                    <div class="math-line"><span class="math-var">t</span> = ${time.toFixed(2)} s</div>
+                    <div class="math-line"><span class="color-v">v(t)</span> = v₀ + at</div>
+                    <div class="math-line">&nbsp;&nbsp;&nbsp;&nbsp; = ${params.v0.toFixed(1)} + (${params.accel.toFixed(1)})(${time.toFixed(2)})</div>
+                    <div class="math-line">&nbsp;&nbsp;&nbsp;&nbsp; = <b>${v.toFixed(2)} m/s</b></div>
+                    <div class="math-line"><span class="math-var">x(t)</span> = v₀t + ½at² = <b>${x.toFixed(2)} m</b></div>
+                    <div class="math-line"><span class="color-a">a</span> = <b>${params.accel.toFixed(2)} m/s²</b></div>
+                `;
+
+                // Camera follow
+                controls.target.x = x;
+                camera.position.x = x;
+
+            } else if (mode === 'projectile') {
+                const rad = params.angle * Math.PI / 180;
+                const v0x = params.v0 * Math.cos(rad);
+                const v0y = params.v0 * Math.sin(rad);
+                
+                let x = -15 + v0x * time;
+                let y = 0.5 + v0y * time - 0.5 * GRAVITY * time * time;
+                let vx = v0x;
+                let vy = v0y - GRAVITY * time;
+
+                // Ground collision
+                if (y < 0.5 && time > 0) {
+                    y = 0.5;
+                    vy = 0;
+                    vx = 0;
+                    if (isPlaying) togglePlay(); // Auto pause on hit
+                }
+
+                pos.set(x, y, 0);
+                vel.set(vx, vy, 0);
+                acc.set(0, y > 0.5 || time === 0 ? -GRAVITY : 0, 0);
+
+                const vMag = Math.sqrt(vx*vx + vy*vy);
+
+                formulaHtml = `
+                    <div class="math-line"><span class="math-var">t</span> = ${time.toFixed(2)} s</div>
+                    <div class="math-line"><span class="color-v">v_x</span> = v₀cos(θ) = <b>${vx.toFixed(2)} m/s</b></div>
+                    <div class="math-line"><span class="color-v">v_y</span> = v₀sin(θ) - gt = <b>${vy.toFixed(2)} m/s</b></div>
+                    <div class="math-line">|<span class="color-v">v</span>| = √(v_x² + v_y²) = <b>${vMag.toFixed(2)} m/s</b></div>
+                    <div class="math-line"><span class="color-a">a_y</span> = -g = <b>${(acc.y).toFixed(2)} m/s²</b></div>
+                `;
+
+            } else if (mode === 'circular') {
+                const r = params.radius;
+                const v = params.v0;
+                const omega = v / r;
+                const theta = omega * time;
+                
+                const x = r * Math.cos(theta);
+                const z = -r * Math.sin(theta); // Negative to rotate clockwise intuitively
+                
+                // Tangential velocity
+                const vx = -v * Math.sin(theta);
+                const vz = -v * Math.cos(theta);
+                
+                // Centripetal acceleration (towards origin)
+                const ac = (v * v) / r;
+                const ax = -ac * Math.cos(theta);
+                const az = ac * Math.sin(theta);
+
+                pos.set(x, 0.5, z);
+                vel.set(vx, 0, vz);
+                acc.set(ax, 0, az);
+
+                formulaHtml = `
+                    <div class="math-line"><span class="math-var">t</span> = ${time.toFixed(2)} s</div>
+                    <div class="math-line"><span class="math-var">ω</span> = v/r = ${v.toFixed(1)}/${r.toFixed(1)} = <b>${omega.toFixed(2)} rad/s</b></div>
+                    <div class="math-line">|<span class="color-v">v</span>| = <b>${v.toFixed(2)} m/s</b></div>
+                    <div class="math-line"><span class="color-a">a_c</span> = v²/r = <b>${ac.toFixed(2)} m/s²</b></div>
+                    <div class="math-line">Dir: Towards Center (0,0)</div>
+                `;
+            }
+
+            // Update Particle
+            particle.position.copy(pos);
+
+            // Update Vectors
+            const vLen = vel.length();
+            if (vLen > 0.01) {
+                vArrow.setDirection(vel.clone().normalize());
+                vArrow.setLength(vLen * VECTOR_SCALE, vLen * VECTOR_SCALE * 0.2, vLen * VECTOR_SCALE * 0.15);
+                vArrow.visible = true;
+            } else {
+                vArrow.visible = false;
+            }
+            vArrow.position.copy(pos);
+
+            const aLen = acc.length();
+            if (aLen > 0.01) {
+                aArrow.setDirection(acc.clone().normalize());
+                aArrow.setLength(aLen * VECTOR_SCALE, aLen * VECTOR_SCALE * 0.2, aLen * VECTOR_SCALE * 0.15);
+                aArrow.visible = true;
+            } else {
+                aArrow.visible = false;
+            }
+            aArrow.position.copy(pos);
+
+            // Update Path
+            updatePath();
+
+            // Update Formula Card
+            formulaContent.innerHTML = formulaHtml;
+        }
+
+        // --- Event Listeners ---
+        uiMode.addEventListener('change', (e) => {
+            mode = e.target.value;
+            updateUI();
+            resetSimulation();
+            if(isPlaying) togglePlay();
+        });
+
+        uiV0.addEventListener('input', (e) => { params.v0 = parseFloat(e.target.value); updateUI(); updatePhysics(0); });
+        uiAccel.addEventListener('input', (e) => { params.accel = parseFloat(e.target.value); updateUI(); updatePhysics(0); });
+        uiAngle.addEventListener('input', (e) => { params.angle = parseFloat(e.target.value); updateUI(); updatePhysics(0); });
+        uiRadius.addEventListener('input', (e) => { params.radius = parseFloat(e.target.value); updateUI(); updatePhysics(0); });
+
+        btnPlay.addEventListener('click', togglePlay);
+        btnReset.addEventListener('click', () => {
+            if(isPlaying) togglePlay();
+            resetSimulation();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const now = performance.now();
+            let dt = (now - lastTime) / 1000;
+            lastTime = now;
+            
+            // Cap dt to prevent huge jumps if tab is inactive
+            if (dt > 0.1) dt = 0.1;
+
+            controls.update();
+            updatePhysics(dt);
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        updateUI();
+        resetSimulation();
+        lastTime = performance.now();
+        animate();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spherical Mirror Geometry</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light: #f0f4f8;
+            --bg-dark: #d9e2ec;
+            --primary: #4361EE;
+            --secondary: #FF3366;
+            --accent: #06D6A0;
+            --text-main: #334155;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-dark) 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Panels */
+        .panel {
+            position: absolute;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: var(--glass-shadow);
+            padding: 20px;
+            z-index: 10;
+        }
+
+        #controls {
+            top: 20px;
+            right: 20px;
+            width: 300px;
+        }
+
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            width: 320px;
+        }
+
+        h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--primary);
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .radio-group label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 400;
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .formula-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        .math-vector {
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        /* 3D Labels */
+        .label3d {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            z-index: 5;
+            transition: opacity 0.1s;
+        }
+
+        .label-c { color: #7209B7; }
+        .label-p { color: #06D6A0; }
+        .label-f { color: #FF9F1C; }
+        .label-axis { color: #333; font-size: 0.75rem; background: transparent; box-shadow: none; border: none; }
+
+        .legend {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .line { width: 15px; height: 3px; border-radius: 2px; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- Formula Card -->
+    <div id="formula-card" class="panel">
+        <h2>Physics & Geometry</h2>
+        <div class="formula-line">
+            &ang; Incident (i) = <span id="val-i" class="val-display">20.0&deg;</span><br>
+            &ang; Reflected (r) = <span id="val-r" class="val-display">20.0&deg;</span>
+        </div>
+        <div class="formula-line">
+            R = <span id="val-R" class="val-display">5.0</span> m<br>
+            f = R/2 = <span id="val-f" class="val-display">2.5</span> m
+        </div>
+        <div class="formula-line" style="font-size: 0.85rem;">
+            <span class="math-vector">r</span> = <span class="math-vector">i</span> - 2(<span class="math-vector">i</span> &middot; <span class="math-vector">n</span>)<span class="math-vector">n</span>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item"><div class="line" style="background: #FF3366;"></div> Incident Ray</div>
+            <div class="legend-item"><div class="line" style="background: #4361EE;"></div> Reflected Ray</div>
+            <div class="legend-item"><div class="line" style="background: #F77F00; border-top: 2px dashed #fff;"></div> Normal Line</div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls" class="panel">
+        <h2>Parameters</h2>
+        
+        <div class="control-group">
+            <label>Mirror Type</label>
+            <div class="radio-group">
+                <label><input type="radio" name="mirrorType" value="concave" checked> Concave</label>
+                <label><input type="radio" name="mirrorType" value="convex"> Convex</label>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Radius of Curvature (R) <span id="lbl-radius" class="val-display">5.0</span></label>
+            <input type="range" id="inp-radius" min="2.0" max="10.0" step="0.1" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <label>Mirror Aperture <span id="lbl-aperture" class="val-display">45&deg;</span></label>
+            <input type="range" id="inp-aperture" min="10" max="90" step="1" value="45">
+        </div>
+
+        <div class="control-group">
+            <label>Incident Angle (&theta;) <span id="lbl-theta" class="val-display">20&deg;</span></label>
+            <input type="range" id="inp-theta" min="-45" max="45" step="1" value="20">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="inp-tangent" checked> Show Tangent Plane
+        </label>
+    </div>
+
+    <!-- 3D Labels -->
+    <div id="label-c" class="label3d label-c">C</div>
+    <div id="label-p" class="label3d label-p">P</div>
+    <div id="label-f" class="label3d label-f">F</div>
+    <div id="label-axis" class="label3d label-axis">Principal Axis</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        let params = {
+            R: 5.0,
+            aperture: 45, // degrees
+            theta: 20,    // degrees
+            type: 'concave',
+            showTangent: true
+        };
+
+        // --- DOM Elements ---
+        const ui = {
+            radius: document.getElementById('inp-radius'),
+            aperture: document.getElementById('inp-aperture'),
+            theta: document.getElementById('inp-theta'),
+            typeRadios: document.getElementsByName('mirrorType'),
+            tangent: document.getElementById('inp-tangent'),
+            lblRadius: document.getElementById('lbl-radius'),
+            lblAperture: document.getElementById('lbl-aperture'),
+            lblTheta: document.getElementById('lbl-theta'),
+            valI: document.getElementById('val-i'),
+            valR: document.getElementById('val-r'),
+            valR_form: document.getElementById('val-R'),
+            valF_form: document.getElementById('val-f'),
+            labelC: document.getElementById('label-c'),
+            labelP: document.getElementById('label-p'),
+            labelF: document.getElementById('label-f'),
+            labelAxis: document.getElementById('label-axis')
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Offset camera slightly to the left to account for right panel
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(-8, 6, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+        dirLight2.position.set(-10, -20, -10);
+        scene.add(dirLight2);
+
+        // --- Materials ---
+        const matRefSphere = new THREE.MeshBasicMaterial({ color: 0xD1D5DB, wireframe: true, transparent: true, opacity: 0.25 });
+        const matMirror = new THREE.MeshPhysicalMaterial({ 
+            color: 0xe2e8f0, metalness: 0.9, roughness: 0.1, 
+            clearcoat: 1.0, transparent: true, opacity: 0.75, side: THREE.DoubleSide 
+        });
+        const matC = new THREE.MeshBasicMaterial({ color: 0x7209B7 });
+        const matP = new THREE.MeshBasicMaterial({ color: 0x06D6A0 });
+        const matF = new THREE.MeshBasicMaterial({ color: 0xFF9F1C });
+        const matTangent = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+        const matIncident = new THREE.MeshBasicMaterial({ color: 0xFF3366 });
+        const matReflected = new THREE.MeshBasicMaterial({ color: 0x4361EE });
+        const matNormal = new THREE.LineDashedMaterial({ color: 0xF77F00, dashSize: 0.3, gapSize: 0.15, linewidth: 2 });
+        const matAxis = new THREE.LineDashedMaterial({ color: 0x333333, dashSize: 0.4, gapSize: 0.2 });
+
+        // --- Scene Objects ---
+        const group = new THREE.Group();
+        scene.add(group);
+
+        let meshRefSphere, meshMirror, meshC, meshP, meshF, meshTangent;
+        let lineNormal, lineAxis;
+        let cylIncident, cylReflected;
+
+        function initObjects() {
+            // Points
+            const sphereGeoSmall = new THREE.SphereGeometry(0.15, 16, 16);
+            meshC = new THREE.Mesh(sphereGeoSmall, matC);
+            meshP = new THREE.Mesh(sphereGeoSmall, matP);
+            meshF = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), matF);
+            
+            // Tangent Plane
+            meshTangent = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), matTangent);
+
+            // Lines
+            lineNormal = new THREE.Line(new THREE.BufferGeometry(), matNormal);
+            lineAxis = new THREE.Line(new THREE.BufferGeometry(), matAxis);
+
+            // Rays (Cylinders)
+            cylIncident = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1, 8), matIncident);
+            cylReflected = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1, 8), matReflected);
+
+            group.add(meshC, meshP, meshF, meshTangent, lineNormal, lineAxis, cylIncident, cylReflected);
+        }
+        initObjects();
+
+        // Helper to update cylinder between two points
+        function updateCylinder(cylinder, pt1, pt2) {
+            const distance = pt1.distanceTo(pt2);
+            cylinder.scale.set(1, distance, 1);
+            cylinder.position.copy(pt1).lerp(pt2, 0.5);
+            cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pt2.clone().sub(pt1).normalize());
+        }
+
+        // --- Core Physics & Geometry Update ---
+        function updateSimulation() {
+            const R = params.R;
+            const apertureRad = params.aperture * Math.PI / 180;
+            const thetaRad = params.theta * Math.PI / 180;
+            const isConcave = params.type === 'concave';
+
+            // 1. Update Reference Sphere
+            if (meshRefSphere) group.remove(meshRefSphere);
+            meshRefSphere = new THREE.Mesh(new THREE.SphereGeometry(R, 32, 32), matRefSphere);
+            group.add(meshRefSphere);
+
+            // 2. Update Mirror Cap
+            if (meshMirror) group.remove(meshMirror);
+            // Cap at the top (vertex at 0, R, 0)
+            meshMirror = new THREE.Mesh(
+                new THREE.SphereGeometry(R, 64, 64, 0, Math.PI * 2, 0, apertureRad),
+                matMirror
+            );
+            group.add(meshMirror);
+
+            // 3. Calculate Points
+            const C = new THREE.Vector3(0, 0, 0);
+            const P = new THREE.Vector3(R * Math.sin(thetaRad), R * Math.cos(thetaRad), 0);
+            const F = new THREE.Vector3(0, R / 2, 0); // Focal point is halfway between C and Vertex
+
+            meshC.position.copy(C);
+            meshP.position.copy(P);
+            meshF.position.copy(F);
+
+            // 4. Vectors and Physics
+            // Geometric normal points outward from center
+            const n_geom = P.clone().normalize(); 
+            
+            let i_vec, n_calc;
+            const rayLength = R * 1.5;
+
+            if (isConcave) {
+                // Light comes from bottom (-Y) travelling UP (+Y) to hit inner surface
+                i_vec = new THREE.Vector3(0, 1, 0);
+                // Normal for reflection points INTO the cavity (towards center)
+                n_calc = n_geom.clone().negate(); 
+            } else {
+                // Light comes from top (+Y) travelling DOWN (-Y) to hit outer surface
+                i_vec = new THREE.Vector3(0, -1, 0);
+                // Normal for reflection points OUTWARD
+                n_calc = n_geom.clone();
+            }
+
+            // Law of Reflection: r = i - 2(i . n)n
+            const dotProduct = i_vec.dot(n_calc);
+            const r_vec = i_vec.clone().sub(n_calc.clone().multiplyScalar(2 * dotProduct)).normalize();
+
+            // Calculate Angle of Incidence (angle between incident ray and normal)
+            // Since i_vec points TOWARDS surface and n_calc points AWAY, angle is acos(-i . n)
+            let angleRad = Math.acos(-dotProduct);
+            let angleDeg = (angleRad * 180 / Math.PI).toFixed(1);
+
+            // 5. Update Rays
+            const ptIncidentStart = P.clone().sub(i_vec.clone().multiplyScalar(rayLength));
+            const ptReflectedEnd = P.clone().add(r_vec.clone().multiplyScalar(rayLength));
+
+            updateCylinder(cylIncident, ptIncidentStart, P);
+            updateCylinder(cylReflected, P, ptReflectedEnd);
+
+            // 6. Update Normal Line (extend through C and beyond P)
+            const ptNormalEnd = P.clone().add(n_geom.clone().multiplyScalar(R * 0.4));
+            lineNormal.geometry.setFromPoints([C, ptNormalEnd]);
+            lineNormal.computeLineDistances();
+
+            // 7. Update Principal Axis
+            lineAxis.geometry.setFromPoints([
+                new THREE.Vector3(0, -R * 1.2, 0),
+                new THREE.Vector3(0, R * 1.2, 0)
+            ]);
+            lineAxis.computeLineDistances();
+
+            // 8. Update Tangent Plane
+            meshTangent.visible = params.showTangent;
+            if (params.showTangent) {
+                meshTangent.geometry.dispose();
+                meshTangent.geometry = new THREE.PlaneGeometry(R * 0.8, R * 0.8);
+                meshTangent.position.copy(P);
+                meshTangent.lookAt(P.clone().add(n_geom));
+            }
+
+            // Update OrbitControls target to focus on the mirror system
+            controls.target.set(0, R/2, 0);
+
+            // Update UI Text
+            ui.valI.innerText = `${angleDeg}°`;
+            ui.valR.innerText = `${angleDeg}°`;
+            ui.valR_form.innerText = R.toFixed(1);
+            ui.valF_form.innerText = (R/2).toFixed(2);
+        }
+
+        // --- UI Event Listeners ---
+        ui.radius.addEventListener('input', (e) => {
+            params.R = parseFloat(e.target.value);
+            ui.lblRadius.innerText = params.R.toFixed(1);
+            updateSimulation();
+        });
+
+        ui.aperture.addEventListener('input', (e) => {
+            params.aperture = parseInt(e.target.value);
+            ui.lblAperture.innerHTML = `${params.aperture}&deg;`;
+            // Constrain theta to aperture
+            ui.theta.min = -params.aperture;
+            ui.theta.max = params.aperture;
+            if (Math.abs(params.theta) > params.aperture) {
+                params.theta = Math.sign(params.theta) * params.aperture;
+                ui.theta.value = params.theta;
+                ui.lblTheta.innerHTML = `${params.theta}&deg;`;
+            }
+            updateSimulation();
+        });
+
+        ui.theta.addEventListener('input', (e) => {
+            params.theta = parseInt(e.target.value);
+            ui.lblTheta.innerHTML = `${params.theta}&deg;`;
+            updateSimulation();
+        });
+
+        ui.typeRadios.forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                params.type = e.target.value;
+                updateSimulation();
+            });
+        });
+
+        ui.tangent.addEventListener('change', (e) => {
+            params.showTangent = e.target.checked;
+            updateSimulation();
+        });
+
+        // --- Label Positioning ---
+        function updateLabels() {
+            const canvasBounds = renderer.domElement.getBoundingClientRect();
+            const halfW = canvasBounds.width / 2;
+            const halfH = canvasBounds.height / 2;
+
+            function setLabelPos(mesh, labelElement, offset = {x:0, y:0}) {
+                const pos = mesh.position.clone();
+                pos.project(camera);
+                
+                // Check if behind camera
+                if (pos.z > 1) {
+                    labelElement.style.opacity = 0;
+                    return;
+                }
+
+                const x = (pos.x * halfW) + halfW + offset.x;
+                const y = -(pos.y * halfH) + halfH + offset.y;
+                
+                labelElement.style.left = `${x}px`;
+                labelElement.style.top = `${y}px`;
+                labelElement.style.opacity = 1;
+            }
+
+            setLabelPos(meshC, ui.labelC, {x: 15, y: 15});
+            setLabelPos(meshP, ui.labelP, {x: 15, y: -15});
+            setLabelPos(meshF, ui.labelF, {x: 15, y: 10});
+
+            // Position Axis label near the bottom of the axis
+            const axisPos = new THREE.Vector3(0, -params.R, 0);
+            axisPos.project(camera);
+            if(axisPos.z <= 1) {
+                ui.labelAxis.style.left = `${(axisPos.x * halfW) + halfW + 10}px`;
+                ui.labelAxis.style.top = `${-(axisPos.y * halfH) + halfH + 20}px`;
+                ui.labelAxis.style.opacity = 1;
+            } else {
+                ui.labelAxis.style.opacity = 0;
+            }
+        }
+
+        // --- Window Resize ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+            updateLabels();
+        }
+
+        // Initialize
+        updateSimulation();
+        animate();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Theory of Pressure Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #control-panel {
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 30px 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.4rem;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #4a5568;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            color: #7209B7;
+            font-weight: 700;
+            background: rgba(114, 9, 183, 0.1);
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #F77F00;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            z-index: 5;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #718096;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .formula-math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .live-data {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .data-label {
+            font-size: 0.9rem;
+            color: #4a5568;
+            font-weight: 600;
+        }
+
+        .data-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .val-pressure { color: #7209B7; }
+        .val-velocity { color: #FF3366; }
+
+        .legend {
+            margin-top: auto;
+            padding: 15px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: #4a5568;
+        }
+
+        .legend-gradient {
+            height: 8px;
+            width: 100%;
+            background: linear-gradient(to right, #4361EE, #06D6A0, #FF3366);
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+        
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="formula-card">
+        <div class="formula-title">Ideal Gas Equations</div>
+        <div class="formula-math">
+            P = &frac13; &rho; v<sub>rms</sub>&sup2;<br>
+            v<sub>rms</sub> = &radic;(3RT/M)
+        </div>
+        <div class="live-data">
+            <div class="data-row">
+                <span class="data-label">Pressure (P)</span>
+                <span class="data-value val-pressure"><span id="out-pressure">101,325</span> Pa</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">RMS Velocity</span>
+                <span class="data-value val-velocity"><span id="out-velocity">500</span> m/s</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+
+    <div id="control-panel">
+        <h2>Simulation Controls</h2>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Temperature (T)</span>
+                <span class="control-value"><span id="val-temp">300</span> K</span>
+            </div>
+            <input type="range" id="slider-temp" min="100" max="1000" step="10" value="300">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Volume (V)</span>
+                <span class="control-value"><span id="val-vol">1.0</span> m&sup3;</span>
+            </div>
+            <input type="range" id="slider-vol" min="0.5" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Particle Count (N)</span>
+                <span class="control-value"><span id="val-n">100</span></span>
+            </div>
+            <input type="range" id="slider-n" min="10" max="300" step="10" value="100">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Molar Mass (M)</span>
+                <span class="control-value"><span id="val-mass">20</span> g/mol</span>
+            </div>
+            <input type="range" id="slider-mass" min="4" max="40" step="2" value="20">
+        </div>
+
+        <div class="legend">
+            <strong>Kinetic Energy Map</strong>
+            <div class="legend-gradient"></div>
+            <div class="legend-labels">
+                <span>Slow</span>
+                <span>Average</span>
+                <span>Fast</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        const state = {
+            temp: 300,
+            vol: 1.0,
+            n: 100,
+            mass: 20
+        };
+
+        const R = 8.314;
+        const BASE_PRESSURE = 101325; // 1 atm in Pascals for realistic display scaling
+        const BOX_SIZE = 10;
+        const MAX_PARTICLES = 300;
+        const SIM_SPEED_SCALE = 0.02; // Scales real m/s to Three.js units/frame
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(18, 12, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 0.6);
+        pointLight.position.set(15, 20, 15);
+        scene.add(pointLight);
+
+        const fillLight = new THREE.PointLight(0xffffff, 0.3);
+        fillLight.position.set(-15, -10, -15);
+        scene.add(fillLight);
+
+        // --- Scene Objects ---
+
+        // 1. Container (Glass Box for max volume)
+        // Base is at y = -BOX_SIZE/2. Max height is BOX_SIZE * 2.0.
+        const containerGeo = new THREE.BoxGeometry(BOX_SIZE, BOX_SIZE * 2, BOX_SIZE);
+        const containerMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transmission: 0.8,
+            opacity: 1,
+            metalness: 0.1,
+            roughness: 0.1,
+            transparent: true,
+            side: THREE.BackSide,
+            depthWrite: false
+        });
+        const glassBox = new THREE.Mesh(containerGeo, containerMat);
+        glassBox.position.y = BOX_SIZE / 2; // Center of max volume box
+        scene.add(glassBox);
+
+        // Wireframe edges for clarity
+        const edgesGeo = new THREE.EdgesGeometry(containerGeo);
+        const edgesMat = new THREE.LineBasicMaterial({ color: 0xa0aec0, linewidth: 2 });
+        const edges = new THREE.LineSegments(edgesGeo, edgesMat);
+        edges.position.y = BOX_SIZE / 2;
+        scene.add(edges);
+
+        // 2. Piston
+        const pistonThickness = 0.4;
+        const pistonGeo = new THREE.BoxGeometry(BOX_SIZE - 0.05, pistonThickness, BOX_SIZE - 0.05);
+        const pistonMat = new THREE.MeshStandardMaterial({ 
+            color: 0xF77F00,
+            roughness: 0.4,
+            metalness: 0.2
+        });
+        const piston = new THREE.Mesh(pistonGeo, pistonMat);
+        scene.add(piston);
+
+        // 3. Pressure Vector Arrow
+        const arrowDir = new THREE.Vector3(0, 1, 0);
+        const arrowOrigin = new THREE.Vector3(0, 0, 0);
+        const arrowHelper = new THREE.ArrowHelper(arrowDir, arrowOrigin, 5, 0x7209B7, 1, 0.6);
+        scene.add(arrowHelper);
+
+        // 4. Particles (InstancedMesh)
+        const particleRadius = 0.2;
+        const sphereGeo = new THREE.SphereGeometry(particleRadius, 16, 16);
+        const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+        const instancedMesh = new THREE.InstancedMesh(sphereGeo, sphereMat, MAX_PARTICLES);
+        instancedMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        scene.add(instancedMesh);
+
+        // 5. Velocity Vectors (LineSegments)
+        const lineGeo = new THREE.BufferGeometry();
+        const linePositions = new Float32Array(MAX_PARTICLES * 2 * 3);
+        lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x06D6A0, transparent: true, opacity: 0.4 });
+        const velocityLines = new THREE.LineSegments(lineGeo, lineMat);
+        scene.add(velocityLines);
+
+        // 6. Collision Ripples
+        const numRipples = 60;
+        const ripples = [];
+        const rippleGeo = new THREE.RingGeometry(0.05, 0.4, 24);
+        const rippleMat = new THREE.MeshBasicMaterial({ 
+            color: 0xffffff, 
+            transparent: true, 
+            side: THREE.DoubleSide, 
+            depthWrite: false 
+        });
+
+        for (let i = 0; i < numRipples; i++) {
+            const mesh = new THREE.Mesh(rippleGeo, rippleMat.clone());
+            mesh.visible = false;
+            scene.add(mesh);
+            ripples.push({ mesh: mesh, life: 0 });
+        }
+
+        // --- Physics & Particle Data ---
+        const particles = [];
+        const dummy = new THREE.Object3D();
+        const colorObj = new THREE.Color();
+        const colorBlue = new THREE.Color('#4361EE');
+        const colorGreen = new THREE.Color('#06D6A0');
+        const colorRed = new THREE.Color('#FF3366');
+
+        // Helper: Box-Muller transform for normal distribution
+        function randomGaussian() {
+            let u = 1 - Math.random();
+            let v = Math.random();
+            return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        }
+
+        function getPistonY() {
+            // Base is at -BOX_SIZE/2. Height is BOX_SIZE * state.vol
+            return -BOX_SIZE / 2 + (BOX_SIZE * state.vol);
+        }
+
+        function addParticle(targetSimSpeed) {
+            const py = getPistonY();
+            // Random position within current volume
+            const pos = new THREE.Vector3(
+                (Math.random() - 0.5) * (BOX_SIZE - particleRadius * 2),
+                -BOX_SIZE / 2 + particleRadius + Math.random() * (py - (-BOX_SIZE / 2) - particleRadius * 2),
+                (Math.random() - 0.5) * (BOX_SIZE - particleRadius * 2)
+            );
+
+            // Random direction
+            const dir = new THREE.Vector3(
+                Math.random() - 0.5,
+                Math.random() - 0.5,
+                Math.random() - 0.5
+            ).normalize();
+
+            // Speed with slight variance around target
+            const speedFactor = Math.max(0.2, 1.0 + 0.3 * randomGaussian());
+            
+            particles.push({
+                pos: pos,
+                dir: dir,
+                speedFactor: speedFactor
+            });
+        }
+
+        function triggerRipple(pos, normal) {
+            const r = ripples.find(rip => rip.life <= 0);
+            if (r) {
+                r.mesh.position.copy(pos);
+                
+                // Align ring to wall normal
+                const up = new THREE.Vector3(0, 0, 1);
+                const axis = new THREE.Vector3().crossVectors(up, normal);
+                const dot = up.dot(normal);
+                
+                if (axis.lengthSq() > 0.0001) {
+                    r.mesh.quaternion.setFromAxisAngle(axis.normalize(), Math.acos(dot));
+                } else {
+                    r.mesh.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), dot < 0 ? Math.PI : 0);
+                }
+                
+                // Offset slightly to prevent z-fighting
+                r.mesh.position.addScaledVector(normal, 0.05);
+                
+                r.life = 1.0;
+                r.mesh.visible = true;
+                r.mesh.scale.set(0.1, 0.1, 0.1);
+                r.mesh.material.opacity = 0.8;
+            }
+        }
+
+        // --- Main Update Loop ---
+        function updateSimulation() {
+            // 1. Calculate Physics Values
+            const v_rms_real = Math.sqrt(3 * R * state.temp / (state.mass / 1000));
+            const targetSimSpeed = v_rms_real * SIM_SPEED_SCALE;
+            const pistonY = getPistonY();
+
+            // 2. Manage Particle Count
+            while (particles.length < state.n) addParticle(targetSimSpeed);
+            while (particles.length > state.n) particles.pop();
+
+            instancedMesh.count = state.n;
+            velocityLines.geometry.setDrawRange(0, state.n * 2);
+
+            // 3. Update Particles
+            const dt = 0.016; // Fixed timestep for visual stability
+            const halfBox = BOX_SIZE / 2;
+            const r = particleRadius;
+
+            for (let i = 0; i < state.n; i++) {
+                const p = particles[i];
+                
+                // Apply current speed based on temperature
+                const currentSpeed = targetSimSpeed * p.speedFactor;
+                const vel = p.dir.clone().multiplyScalar(currentSpeed);
+
+                // Move
+                p.pos.addScaledVector(vel, dt);
+
+                // Collision Detection & Response
+                let hit = false;
+                const normal = new THREE.Vector3();
+
+                // X Walls
+                if (p.pos.x > halfBox - r) { p.pos.x = halfBox - r; p.dir.x *= -1; hit = true; normal.set(-1, 0, 0); }
+                else if (p.pos.x < -halfBox + r) { p.pos.x = -halfBox + r; p.dir.x *= -1; hit = true; normal.set(1, 0, 0); }
+
+                // Z Walls
+                if (p.pos.z > halfBox - r) { p.pos.z = halfBox - r; p.dir.z *= -1; hit = true; normal.set(0, 0, -1); }
+                else if (p.pos.z < -halfBox + r) { p.pos.z = -halfBox + r; p.dir.z *= -1; hit = true; normal.set(0, 0, 1); }
+
+                // Bottom Wall
+                if (p.pos.y < -halfBox + r) { p.pos.y = -halfBox + r; p.dir.y *= -1; hit = true; normal.set(0, 1, 0); }
+                
+                // Top Wall (Piston)
+                if (p.pos.y > pistonY - r) { 
+                    p.pos.y = pistonY - r; 
+                    p.dir.y = -Math.abs(p.dir.y); // Force downward
+                    hit = true; 
+                    normal.set(0, -1, 0); 
+                }
+
+                if (hit) triggerRipple(p.pos, normal);
+
+                // Update InstancedMesh
+                dummy.position.copy(p.pos);
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+
+                // Color based on speed relative to RMS
+                const speedRatio = p.speedFactor; // Since speedFactor is relative to targetSimSpeed
+                if (speedRatio < 1.0) {
+                    colorObj.copy(colorBlue).lerp(colorGreen, speedRatio);
+                } else {
+                    colorObj.copy(colorGreen).lerp(colorRed, Math.min(speedRatio - 1.0, 1.0));
+                }
+                instancedMesh.setColorAt(i, colorObj);
+
+                // Update Velocity Lines
+                const lineIdx = i * 6;
+                linePositions[lineIdx] = p.pos.x;
+                linePositions[lineIdx+1] = p.pos.y;
+                linePositions[lineIdx+2] = p.pos.z;
+                
+                // Trail points backwards
+                linePositions[lineIdx+3] = p.pos.x - vel.x * 0.05;
+                linePositions[lineIdx+4] = p.pos.y - vel.y * 0.05;
+                linePositions[lineIdx+5] = p.pos.z - vel.z * 0.05;
+            }
+
+            instancedMesh.instanceMatrix.needsUpdate = true;
+            instancedMesh.instanceColor.needsUpdate = true;
+            lineGeo.attributes.position.needsUpdate = true;
+
+            // 4. Update Ripples
+            for (let i = 0; i < numRipples; i++) {
+                const r = ripples[i];
+                if (r.life > 0) {
+                    r.life -= 0.03;
+                    const scale = 1.0 + (1.0 - r.life) * 2.0;
+                    r.mesh.scale.set(scale, scale, scale);
+                    r.mesh.material.opacity = r.life * 0.8;
+                    if (r.life <= 0) r.mesh.visible = false;
+                }
+            }
+
+            // 5. Update Piston & Pressure Arrow
+            piston.position.y = pistonY + pistonThickness / 2;
+
+            // Calculate Display Pressure: Proportional to N * T / V
+            // Scaled so default (100, 300, 1.0) = 101,325 Pa
+            const displayPressure = BASE_PRESSURE * (state.n / 100) * (state.temp / 300) / state.vol;
+
+            arrowHelper.position.set(0, piston.position.y + pistonThickness / 2, 0);
+            // Scale arrow length based on pressure (base length 2, max ~8)
+            const arrowLen = 2 + (displayPressure / BASE_PRESSURE) * 2;
+            arrowHelper.setLength(arrowLen, 1, 0.5);
+
+            // 6. Update UI DOM
+            document.getElementById('out-pressure').innerText = Math.round(displayPressure).toLocaleString();
+            document.getElementById('out-velocity').innerText = Math.round(v_rms_real).toLocaleString();
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateSimulation();
+            renderer.render(scene, camera);
+        }
+
+        // --- Event Listeners ---
+        function setupSlider(id, stateKey) {
+            const slider = document.getElementById(`slider-${id}`);
+            const valDisplay = document.getElementById(`val-${id}`);
+            slider.addEventListener('input', (e) => {
+                state[stateKey] = parseFloat(e.target.value);
+                valDisplay.innerText = e.target.value;
+            });
+        }
+
+        setupSlider('temp', 'temp');
+        setupSlider('vol', 'vol');
+        setupSlider('n', 'n');
+        setupSlider('mass', 'mass');
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        animate();
+
+    </script>
+</body>
+</html>

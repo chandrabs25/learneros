@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electrostatic Potential Landscape</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        /* Glassmorphic Control Panel */
+        #ui-panel {
+            width: 25%;
+            min-width: 300px;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Specific slider colors */
+        #q1::-webkit-slider-thumb { background: #FF3366; }
+        #q2::-webkit-slider-thumb { background: #4361EE; }
+
+        button {
+            background: #06D6A0;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(6, 214, 160, 0.3);
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #05b586;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(6, 214, 160, 0.4);
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #formula-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            color: #1a1a1a;
+        }
+
+        #formula-card p {
+            margin: 5px 0;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .math {
+            font-style: italic;
+        }
+
+        #live-v-container {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            font-weight: 600;
+            color: #FF3366;
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <h3>Electrostatic Potential</h3>
+            <p>V<sub class="math">total</sub> = &Sigma; <span class="math">kQ<sub>i</sub> / r<sub>i</sub></span></p>
+            <p>F = -eE = e&nabla;V</p>
+            <p id="live-v-container">Live V at e&minus;: <span id="live-v">0.00</span> V</p>
+            
+            <div class="legend">
+                <div class="legend-item"><div class="dot" style="background: #06D6A0;"></div> Force</div>
+                <div class="legend-item"><div class="dot" style="background: #F77F00;"></div> Velocity</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h2>Parameters</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <label for="q1">Charge 1 (Q₁)</label>
+                <span class="value-display"><span id="q1-val">2.0</span> nC</span>
+            </div>
+            <input type="range" id="q1" min="-5" max="5" step="0.1" value="2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="q2">Charge 2 (Q₂)</label>
+                <span class="value-display"><span id="q2-val">-2.0</span> nC</span>
+            </div>
+            <input type="range" id="q2" min="-5" max="5" step="0.1" value="-2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="dist">Separation Distance</label>
+                <span class="value-display"><span id="dist-val">5.0</span> m</span>
+            </div>
+            <input type="range" id="dist" min="2" max="10" step="0.5" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="scale">Surface Tension (Scale)</label>
+                <span class="value-display"><span id="scale-val">1.0</span></span>
+            </div>
+            <input type="range" id="scale" min="0.1" max="2" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="mass">Electron Mass</label>
+                <span class="value-display"><span id="mass-val">1.0</span> a.u.</span>
+            </div>
+            <input type="range" id="mass" min="0.5" max="5" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="friction">Damping (Friction)</label>
+                <span class="value-display"><span id="friction-val">0.02</span></span>
+            </div>
+            <input type="range" id="friction" min="0" max="0.1" step="0.01" value="0.02">
+        </div>
+
+        <button id="reset-btn">Reset Electron</button>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const params = {
+            q1: 2.0,
+            q2: -2.0,
+            dist: 5.0,
+            scale: 1.0,
+            mass: 1.0,
+            friction: 0.02,
+            k: 10.0, // Electrostatic constant for visual scaling
+            epsilon: 0.5 // Softening parameter
+        };
+
+        const colors = {
+            positive: new THREE.Color(0xFF3366),
+            negative: new THREE.Color(0x4361EE),
+            neutral: new THREE.Color(0xffffff),
+            electron: 0x06D6A0,
+            force: 0x06D6A0,
+            velocity: 0xF77F00
+        };
+
+        let electronState = {
+            pos: new THREE.Vector2(0, 3),
+            vel: new THREE.Vector2(0, 0)
+        };
+
+        // --- UI Binding ---
+        const bindSlider = (id, paramKey) => {
+            const slider = document.getElementById(id);
+            const display = document.getElementById(`${id}-val`);
+            slider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                params[paramKey] = val;
+                display.textContent = val.toFixed(id === 'friction' ? 2 : 1);
+            });
+        };
+
+        bindSlider('q1', 'q1');
+        bindSlider('q2', 'q2');
+        bindSlider('dist', 'dist');
+        bindSlider('scale', 'scale');
+        bindSlider('mass', 'mass');
+        bindSlider('friction', 'friction');
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            electronState.pos.set(0, params.dist * 0.8);
+            electronState.vel.set(0, 0);
+        });
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        // Orient camera to look at XY plane from an angle
+        camera.position.set(0, -20, 15);
+        camera.up.set(0, 0, 1); // Z is up
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below the plane
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, -10, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -15;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        scene.add(dirLight);
+
+        // --- Objects ---
+
+        // 1. Potential Surface
+        const planeSize = 30;
+        const planeSegments = 128;
+        const geometry = new THREE.PlaneGeometry(planeSize, planeSize, planeSegments, planeSegments);
+        
+        // Add color attribute
+        const count = geometry.attributes.position.count;
+        geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+
+        const material = new THREE.MeshStandardMaterial({
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.85,
+            side: THREE.DoubleSide,
+            roughness: 0.3,
+            metalness: 0.1,
+            polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 1
+        });
+
+        const surfaceMesh = new THREE.Mesh(geometry, material);
+        surfaceMesh.receiveShadow = true;
+        scene.add(surfaceMesh);
+
+        // Subtle Grid/Contour overlay
+        const wireMaterial = new THREE.MeshBasicMaterial({
+            color: 0x000000,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.05
+        });
+        const wireMesh = new THREE.Mesh(geometry, wireMaterial);
+        scene.add(wireMesh);
+
+        // 2. Source Charges
+        const chargeGeo = new THREE.SphereGeometry(0.6, 32, 32);
+        const matQ1 = new THREE.MeshStandardMaterial({ color: colors.positive, roughness: 0.2, metalness: 0.5 });
+        const matQ2 = new THREE.MeshStandardMaterial({ color: colors.negative, roughness: 0.2, metalness: 0.5 });
+        
+        const meshQ1 = new THREE.Mesh(chargeGeo, matQ1);
+        const meshQ2 = new THREE.Mesh(chargeGeo, matQ2);
+        meshQ1.castShadow = true;
+        meshQ2.castShadow = true;
+        scene.add(meshQ1);
+        scene.add(meshQ2);
+
+        // 3. Test Electron
+        const electronGeo = new THREE.SphereGeometry(0.3, 16, 16);
+        const electronMat = new THREE.MeshStandardMaterial({ 
+            color: colors.electron, 
+            emissive: colors.electron,
+            emissiveIntensity: 0.5,
+            roughness: 0.1 
+        });
+        const electronMesh = new THREE.Mesh(electronGeo, electronMat);
+        electronMesh.castShadow = true;
+        scene.add(electronMesh);
+
+        // 4. Vectors
+        const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, colors.force, 0.4, 0.3);
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, colors.velocity, 0.4, 0.3);
+        scene.add(forceArrow);
+        scene.add(velArrow);
+
+        // --- Physics Functions ---
+
+        function getPotential(x, y) {
+            const x1 = -params.dist / 2;
+            const y1 = 0;
+            const x2 = params.dist / 2;
+            const y2 = 0;
+
+            const d1 = Math.sqrt((x - x1)**2 + (y - y1)**2 + params.epsilon);
+            const d2 = Math.sqrt((x - x2)**2 + (y - y2)**2 + params.epsilon);
+
+            const v1 = (params.k * params.q1) / d1;
+            const v2 = (params.k * params.q2) / d2;
+
+            return v1 + v2;
+        }
+
+        function getGradient(x, y) {
+            const h = 0.01;
+            const dvdx = (getPotential(x + h, y) - getPotential(x - h, y)) / (2 * h);
+            const dvdy = (getPotential(x, y + h) - getPotential(x, y - h)) / (2 * h);
+            return new THREE.Vector2(dvdx, dvdy);
+        }
+
+        function getColorForPotential(v) {
+            // Normalize potential for color mapping
+            const maxV = 15.0; 
+            let t = v / maxV;
+            t = Math.max(-1, Math.min(1, t));
+            
+            const c = new THREE.Color();
+            if (t > 0) {
+                c.lerpColors(colors.neutral, colors.positive, t);
+            } else {
+                c.lerpColors(colors.neutral, colors.negative, -t);
+            }
+            return c;
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.03); // Cap dt to prevent explosions
+
+            // 1. Update Surface Geometry & Colors
+            const positions = geometry.attributes.position;
+            const colorAttr = geometry.attributes.color;
+
+            for (let i = 0; i < positions.count; i++) {
+                const x = positions.getX(i);
+                const y = positions.getY(i);
+                const v = getPotential(x, y);
+                
+                positions.setZ(i, v * params.scale);
+                
+                const c = getColorForPotential(v);
+                colorAttr.setXYZ(i, c.r, c.g, c.b);
+            }
+            
+            positions.needsUpdate = true;
+            colorAttr.needsUpdate = true;
+            geometry.computeVertexNormals();
+
+            // 2. Update Source Charges Positions
+            const x1 = -params.dist / 2;
+            const x2 = params.dist / 2;
+            meshQ1.position.set(x1, 0, getPotential(x1, 0) * params.scale);
+            meshQ2.position.set(x2, 0, getPotential(x2, 0) * params.scale);
+
+            // Update charge colors based on sign
+            matQ1.color.copy(params.q1 >= 0 ? colors.positive : colors.negative);
+            matQ2.color.copy(params.q2 >= 0 ? colors.positive : colors.negative);
+
+            // 3. Electron Physics
+            const pos2D = electronState.pos;
+            const vel2D = electronState.vel;
+            
+            const grad = getGradient(pos2D.x, pos2D.y);
+            
+            // Force F = e * grad(V). Electron accelerates UP the potential gradient.
+            const force2D = new THREE.Vector2(grad.x, grad.y);
+            const acc2D = force2D.clone().divideScalar(params.mass);
+
+            vel2D.add(acc2D.multiplyScalar(dt));
+            vel2D.multiplyScalar(1 - params.friction); // Damping
+            pos2D.add(vel2D.clone().multiplyScalar(dt));
+
+            // Boundary constraint (soft bounce)
+            const maxRadius = planeSize / 2 - 1;
+            if (pos2D.length() > maxRadius) {
+                pos2D.normalize().multiplyScalar(maxRadius);
+                vel2D.multiplyScalar(-0.5);
+            }
+
+            // 4. Update Electron Mesh
+            const eV = getPotential(pos2D.x, pos2D.y);
+            const eZ = eV * params.scale;
+            const electronPos3D = new THREE.Vector3(pos2D.x, pos2D.y, eZ);
+            electronMesh.position.copy(electronPos3D);
+
+            // Update UI Live Value
+            document.getElementById('live-v').textContent = eV.toFixed(2);
+            const liveVContainer = document.getElementById('live-v-container');
+            liveVContainer.style.color = eV >= 0 ? '#FF3366' : '#4361EE';
+
+            // 5. Update Vectors
+            // Calculate 3D direction for arrows to lie roughly tangent to surface
+            const dx = 0.1;
+            const dzdx = (getPotential(pos2D.x + dx, pos2D.y) - eV) * params.scale / dx;
+            const dzdy = (getPotential(pos2D.x, pos2D.y + dx) - eV) * params.scale / dx;
+
+            // Force Arrow
+            const fMag = force2D.length();
+            if (fMag > 0.001) {
+                forceArrow.visible = true;
+                const fDir3D = new THREE.Vector3(force2D.x, force2D.y, force2D.x*dzdx + force2D.y*dzdy).normalize();
+                forceArrow.position.copy(electronPos3D);
+                forceArrow.setDirection(fDir3D);
+                forceArrow.setLength(Math.min(fMag * 0.5, 4) + 0.5); // Scale length visually
+            } else {
+                forceArrow.visible = false;
+            }
+
+            // Velocity Arrow
+            const vMag = vel2D.length();
+            if (vMag > 0.001) {
+                velArrow.visible = true;
+                const vDir3D = new THREE.Vector3(vel2D.x, vel2D.y, vel2D.x*dzdx + vel2D.y*dzdy).normalize();
+                velArrow.position.copy(electronPos3D);
+                velArrow.setDirection(vDir3D);
+                velArrow.setLength(Math.min(vMag * 0.5, 4) + 0.5);
+            } else {
+                velArrow.visible = false;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>

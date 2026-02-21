@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physics Simulation: Elasticity, Stress, and Strain</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --accent-purple: #7209B7;
+            --accent-blue: #4361EE;
+            --accent-red: #FF3366;
+            --accent-green: #06D6A0;
+            --accent-orange: #F77F00;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphic Control Panel */
+        #control-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-purple);
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d3dce6;
+            border-radius: 2px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #d3dce6;
+            background: rgba(255,255,255,0.9);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            padding: 15px 20px;
+            min-width: 280px;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .math-symbol {
+            font-weight: bold;
+            display: inline-block;
+            width: 20px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .status-elastic {
+            background-color: rgba(6, 214, 160, 0.2);
+            color: #04936d;
+        }
+
+        .status-risk {
+            background-color: rgba(255, 51, 102, 0.2);
+            color: #d00030;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(255, 51, 102, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 51, 102, 0); }
+        }
+
+        /* Graph Container */
+        #graph-container {
+            width: 100%;
+            height: 150px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 8px;
+            border: 1px solid #d3dce6;
+            margin-top: 10px;
+            position: relative;
+        }
+
+        canvas#stress-strain-graph {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+        }
+
+        .graph-label {
+            position: absolute;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .gl-y { top: 5px; left: 5px; }
+        .gl-x { bottom: 5px; right: 5px; }
+
+        .note {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+            margin-top: 5px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div style="font-weight: 700; margin-bottom: 10px; font-size: 1.1rem;">Live Calculations</div>
+        <div class="math-line">
+            <span class="math-symbol">σ</span> = F / A = <span id="out-stress" style="margin-left:auto; color: var(--accent-purple);">0.00</span>&nbsp;MPa
+        </div>
+        <div class="math-line">
+            <span class="math-symbol">ε</span> = ΔL / L₀ = <span id="out-strain" style="margin-left:auto; color: var(--accent-purple);">0.00e0</span>
+        </div>
+        <div class="math-line">
+            <span class="math-symbol">ΔL</span> = <span id="out-deltaL" style="margin-left:auto; color: var(--accent-purple);">0.00</span>&nbsp;mm
+        </div>
+        <div id="status-indicator" class="status-badge status-elastic">ELASTIC REGION</div>
+    </div>
+
+    <div id="control-panel">
+        <h2>Parameters</h2>
+        
+        <div class="control-group">
+            <label>Material 
+                <span class="val-display" id="val-mat">Steel (200 GPa)</span>
+            </label>
+            <select id="material">
+                <option value="200">Steel (Y = 200 GPa)</option>
+                <option value="110">Copper (Y = 110 GPa)</option>
+                <option value="70">Aluminum (Y = 70 GPa)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Load Mass (M)
+                <span class="val-display"><span id="val-mass">2000</span> kg</span>
+            </label>
+            <input type="range" id="mass" min="500" max="10000" step="100" value="2000">
+        </div>
+
+        <div class="control-group">
+            <label>Rod Radius (r)
+                <span class="val-display"><span id="val-radius">0.050</span> m</span>
+            </label>
+            <input type="range" id="radius" min="0.01" max="0.1" step="0.005" value="0.05">
+        </div>
+
+        <div class="control-group">
+            <label>Original Length (L₀)
+                <span class="val-display"><span id="val-length">5.0</span> m</span>
+            </label>
+            <input type="range" id="length" min="2.0" max="10.0" step="0.5" value="5.0">
+        </div>
+
+        <div id="graph-container">
+            <span class="graph-label gl-y">Stress (σ)</span>
+            <span class="graph-label gl-x">Strain (ε)</span>
+            <canvas id="stress-strain-graph"></canvas>
+        </div>
+        <div class="note">* Deformation visually magnified 100x</div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Constants ---
+        const g = 9.81; // m/s^2
+        const visualMagnification = 100; // Exaggerate deformation for visualization
+        const poissonRatio = 0.3; // Typical for metals
+        const yieldStress = 250e6; // 250 MPa for visual warning threshold
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 5, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 4, 0);
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Prevent going too far below ground
+        controls.minDistance = 5;
+        controls.maxDistance = 50;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 50;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -5;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe0eaff, 0.3);
+        fillLight.position.set(-10, 5, -10);
+        scene.add(fillLight);
+
+        // --- Environment Objects ---
+        // Floor
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({ 
+            color: 0xe2e8f0,
+            roughness: 0.8,
+            metalness: 0.1
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = 0;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const grid = new THREE.GridHelper(100, 100, 0xcbd5e1, 0xe2e8f0);
+        grid.position.y = 0.01;
+        scene.add(grid);
+
+        // Top Support Structure
+        const supportHeight = 12;
+        const supportGeo = new THREE.BoxGeometry(4, 1, 4);
+        const supportMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4, metalness: 0.6 });
+        const support = new THREE.Mesh(supportGeo, supportMat);
+        support.position.y = supportHeight + 0.5;
+        support.castShadow = true;
+        support.receiveShadow = true;
+        scene.add(support);
+
+        // --- Physics Objects ---
+        
+        // 1. The Specimen (Cylinder)
+        // Base geometry has height 1, radius 1. Origin moved to top so scaling Y stretches downward.
+        const rodGeo = new THREE.CylinderGeometry(1, 1, 1, 64);
+        rodGeo.translate(0, -0.5, 0); 
+        const rodMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4361EE, 
+            metalness: 0.7, 
+            roughness: 0.2 
+        });
+        const rod = new THREE.Mesh(rodGeo, rodMat);
+        rod.position.y = supportHeight;
+        rod.castShadow = true;
+        rod.receiveShadow = true;
+        scene.add(rod);
+
+        // 2. The Load (Box)
+        const loadSize = 1.5;
+        const loadGeo = new THREE.BoxGeometry(loadSize, loadSize, loadSize);
+        const loadMat = new THREE.MeshStandardMaterial({ 
+            color: 0xF77F00, 
+            metalness: 0.8, 
+            roughness: 0.3 
+        });
+        const loadMesh = new THREE.Mesh(loadGeo, loadMat);
+        loadMesh.castShadow = true;
+        loadMesh.receiveShadow = true;
+        scene.add(loadMesh);
+
+        // 3. Force Vectors (Arrows)
+        const arrowWeight = new THREE.ArrowHelper(
+            new THREE.Vector3(0, -1, 0), 
+            new THREE.Vector3(0, 0, 0), 
+            2, 
+            0xFF3366, 
+            0.4, 
+            0.3
+        );
+        scene.add(arrowWeight);
+
+        const arrowRestoring = new THREE.ArrowHelper(
+            new THREE.Vector3(0, 1, 0), 
+            new THREE.Vector3(0, 0, 0), 
+            2, 
+            0x06D6A0, 
+            0.4, 
+            0.3
+        );
+        scene.add(arrowRestoring);
+
+        // 4. Reference Line (Original Length)
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-3, 0, 0),
+            new THREE.Vector3(3, 0, 0)
+        ]);
+        const lineMat = new THREE.LineDashedMaterial({ 
+            color: 0x2b2d42, 
+            linewidth: 1, 
+            scale: 1, 
+            dashSize: 0.2, 
+            gapSize: 0.2 
+        });
+        const refLine = new THREE.Line(lineGeo, lineMat);
+        refLine.computeLineDistances();
+        scene.add(refLine);
+
+        // --- UI Elements ---
+        const elMaterial = document.getElementById('material');
+        const elMass = document.getElementById('mass');
+        const elRadius = document.getElementById('radius');
+        const elLength = document.getElementById('length');
+
+        const valMat = document.getElementById('val-mat');
+        const valMass = document.getElementById('val-mass');
+        const valRadius = document.getElementById('val-radius');
+        const valLength = document.getElementById('val-length');
+
+        const outStress = document.getElementById('out-stress');
+        const outStrain = document.getElementById('out-strain');
+        const outDeltaL = document.getElementById('out-deltaL');
+        const statusIndicator = document.getElementById('status-indicator');
+
+        // --- Graph Setup ---
+        const graphCanvas = document.getElementById('stress-strain-graph');
+        const ctx = graphCanvas.getContext('2d');
+        
+        function resizeGraph() {
+            const rect = graphCanvas.parentElement.getBoundingClientRect();
+            graphCanvas.width = rect.width;
+            graphCanvas.height = rect.height;
+        }
+        window.addEventListener('resize', resizeGraph);
+        resizeGraph();
+
+        // --- Main Physics Update Function ---
+        let currentStress = 0;
+        let currentStrain = 0;
+
+        function updateSimulation() {
+            // 1. Get Input Values
+            const Y_GPa = parseFloat(elMaterial.value);
+            const Y = Y_GPa * 1e9; // Convert GPa to Pa
+            const M = parseFloat(elMass.value);
+            const r = parseFloat(elRadius.value);
+            const L0 = parseFloat(elLength.value);
+
+            // Update UI Labels
+            valMat.innerText = elMaterial.options[elMaterial.selectedIndex].text.split('(')[0].trim();
+            valMass.innerText = M;
+            valRadius.innerText = r.toFixed(3);
+            valLength.innerText = L0.toFixed(1);
+
+            // 2. Physics Calculations
+            const A = Math.PI * Math.pow(r, 2); // Cross-sectional Area
+            const F = M * g;                    // Applied Force (Weight)
+            const sigma = F / A;                // Stress (Pa)
+            const epsilon = sigma / Y;          // Strain (Dimensionless)
+            const deltaL = epsilon * L0;        // Elongation (m)
+
+            currentStress = sigma;
+            currentStrain = epsilon;
+
+            // 3. Visual Scaling
+            const visualDeltaL = deltaL * visualMagnification;
+            const visualEpsilon = epsilon * visualMagnification;
+
+            // 4. Update 3D Objects
+            
+            // Rod Deformation
+            // Y scale is total length. X/Z scale is radius adjusted by Poisson's ratio
+            const currentR = r * (1 - visualEpsilon * poissonRatio);
+            rod.scale.set(currentR, L0 + visualDeltaL, currentR);
+            
+            // Color Mapping (Stress Heatmap)
+            const stressRatio = Math.min(sigma / yieldStress, 1.0);
+            const colorBlue = new THREE.Color(0x4361EE);
+            const colorRed = new THREE.Color(0xFF3366);
+            rod.material.color.lerpColors(colorBlue, colorRed, stressRatio);
+
+            // Load Position
+            const loadY = supportHeight - (L0 + visualDeltaL) - (loadSize / 2);
+            loadMesh.position.set(0, loadY, 0);
+
+            // Reference Line Position
+            refLine.position.y = supportHeight - L0;
+
+            // Arrows
+            // Scale arrow length based on force (max force ~ 10000 * 9.81 = 98100 N)
+            const arrowLen = Math.max(1, (F / 98100) * 3); 
+            
+            arrowWeight.position.copy(loadMesh.position);
+            arrowWeight.setLength(arrowLen, 0.4, 0.3);
+
+            arrowRestoring.position.set(0, supportHeight - (L0 + visualDeltaL), 0);
+            arrowRestoring.setLength(arrowLen, 0.4, 0.3);
+
+            // 5. Update Formula Card
+            outStress.innerText = (sigma / 1e6).toFixed(2);
+            outStrain.innerText = epsilon.toExponential(2);
+            outDeltaL.innerText = (deltaL * 1000).toFixed(3);
+
+            if (sigma > yieldStress) {
+                statusIndicator.className = "status-badge status-risk";
+                statusIndicator.innerText = "PERMANENT DEFORMATION RISK";
+            } else {
+                statusIndicator.className = "status-badge status-elastic";
+                statusIndicator.innerText = "ELASTIC REGION";
+            }
+
+            drawGraph();
+        }
+
+        // --- Graph Drawing ---
+        function drawGraph() {
+            const w = graphCanvas.width;
+            const h = graphCanvas.height;
+            const padding = 25;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw Axes
+            ctx.beginPath();
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 2;
+            ctx.moveTo(padding, padding / 2);
+            ctx.lineTo(padding, h - padding);
+            ctx.lineTo(w - padding / 2, h - padding);
+            ctx.stroke();
+
+            // Calculate Max Bounds for Graph
+            // Max possible stress: 10000kg on 0.01m radius rod
+            const maxF = 10000 * g;
+            const minA = Math.PI * Math.pow(0.01, 2);
+            const maxSigma = maxF / minA; // ~312 MPa
+            // Max strain: maxSigma / min Y (Aluminum 70GPa)
+            const maxEpsilon = maxSigma / 70e9;
+
+            // Map current values to canvas coordinates
+            const x = padding + (currentStrain / maxEpsilon) * (w - padding * 1.5);
+            const y = (h - padding) - (currentStress / maxSigma) * (h - padding * 1.5);
+
+            // Draw Line
+            ctx.beginPath();
+            ctx.strokeStyle = '#7209B7';
+            ctx.lineWidth = 3;
+            ctx.moveTo(padding, h - padding);
+            ctx.lineTo(x, y);
+            ctx.stroke();
+
+            // Draw Point
+            ctx.beginPath();
+            ctx.fillStyle = '#FF3366';
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // --- Event Listeners ---
+        elMaterial.addEventListener('input', updateSimulation);
+        elMass.addEventListener('input', updateSimulation);
+        elRadius.addEventListener('input', updateSimulation);
+        elLength.addEventListener('input', updateSimulation);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            resizeGraph();
+            drawGraph();
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updateSimulation();
+        animate();
+
+    </script>
+</body>
+</html>

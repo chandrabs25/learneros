@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Energy Transformation Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --color-k: #06D6A0; /* Green */
+            --color-u: #4361EE; /* Blue */
+            --color-q: #FF3366; /* Red */
+            --color-f: #F77F00; /* Orange */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            position: absolute;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        /* Formula Card - Top Left */
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            width: 320px;
+        }
+
+        #formula-card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .equation {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 8px;
+        }
+
+        .live-values {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .val-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+        }
+
+        .val-k { color: var(--color-k); font-weight: 700; }
+        .val-u { color: var(--color-u); font-weight: 700; }
+        .val-q { color: var(--color-q); font-weight: 700; }
+        .val-e { color: var(--text-main); font-weight: 700; }
+
+        /* UI Controls - Right Side */
+        #controls-panel {
+            top: 20px;
+            right: 20px;
+            width: 340px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .control-group span {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--text-muted);
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--color-u);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            color: var(--text-main);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        button:hover {
+            background: #f7fafc;
+            transform: translateY(-1px);
+        }
+
+        button.primary {
+            background: var(--color-u);
+            color: white;
+            border: none;
+        }
+
+        button.primary:hover {
+            background: #324fc7;
+        }
+
+        /* Bar Chart */
+        .chart-container {
+            margin-top: 25px;
+            height: 160px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 8px;
+            padding: 10px;
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            border-bottom: 2px solid #a0aec0;
+        }
+
+        .bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 30%;
+            height: 100%;
+            justify-content: flex-end;
+        }
+
+        .bar {
+            width: 100%;
+            border-radius: 4px 4px 0 0;
+            transition: height 0.05s linear;
+            min-height: 2px;
+        }
+
+        .bar-k { background: var(--color-k); }
+        .bar-u { background: var(--color-u); }
+        .bar-q { background: var(--color-q); }
+
+        .bar-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 5px;
+            color: var(--text-muted);
+        }
+
+        #total-energy-line {
+            position: absolute;
+            left: 5%;
+            right: 5%;
+            height: 2px;
+            background: var(--text-main);
+            border-top: 1px dashed rgba(0,0,0,0.3);
+            transition: bottom 0.2s;
+            z-index: 2;
+        }
+
+        .legend {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        /* Overlay to prevent interaction with 3D scene when interacting with UI */
+        .ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div class="ui-layer">
+        <!-- Formula Card -->
+        <div id="formula-card" class="glass-panel">
+            <h2>Energy Transformation</h2>
+            <div class="equation">E<sub>total</sub> = K + U + Q</div>
+            <div class="live-values">
+                <div class="val-row val-k"><span>Kinetic (K):</span> <span id="val-k">0.0 J</span></div>
+                <div class="val-row val-u"><span>Potential (U):</span> <span id="val-u">0.0 J</span></div>
+                <div class="val-row val-q"><span>Thermal (Q):</span> <span id="val-q">0.0 J</span></div>
+                <hr style="border: 0; border-top: 1px solid rgba(0,0,0,0.1); margin: 4px 0;">
+                <div class="val-row val-e"><span>Total (E):</span> <span id="val-e">0.0 J</span></div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item"><div class="dot" style="background: var(--color-k)"></div> Velocity Vector</div>
+                <div class="legend-item"><div class="dot" style="background: var(--color-f)"></div> Net Force Vector</div>
+            </div>
+        </div>
+
+        <!-- Controls Panel -->
+        <div id="controls-panel" class="glass-panel">
+            <div class="control-group">
+                <label>Mass (m) <span id="lbl-m">1.0 kg</span></label>
+                <input type="range" id="slider-m" min="0.5" max="5.0" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+                <label>Gravity (g) <span id="lbl-g">9.8 m/s²</span></label>
+                <input type="range" id="slider-g" min="0" max="20" step="0.1" value="9.8">
+            </div>
+            <div class="control-group">
+                <label>Friction (μ<sub>k</sub>) <span id="lbl-mu">0.00</span></label>
+                <input type="range" id="slider-mu" min="0" max="0.5" step="0.01" value="0.00">
+            </div>
+            <div class="control-group">
+                <label>Initial Height (h<sub>0</sub>) <span id="lbl-h">5.0 m</span></label>
+                <input type="range" id="slider-h" min="2" max="10" step="0.1" value="5.0">
+            </div>
+
+            <div class="buttons">
+                <button id="btn-play" class="primary">Play</button>
+                <button id="btn-reset">Reset</button>
+            </div>
+
+            <div class="chart-container">
+                <div id="total-energy-line" style="bottom: 100%;"></div>
+                <div class="bar-wrapper">
+                    <div id="bar-k" class="bar bar-k" style="height: 0%;"></div>
+                    <div class="bar-label">K</div>
+                </div>
+                <div class="bar-wrapper">
+                    <div id="bar-u" class="bar bar-u" style="height: 0%;"></div>
+                    <div class="bar-label">U</div>
+                </div>
+                <div class="bar-wrapper">
+                    <div id="bar-q" class="bar bar-q" style="height: 0%;"></div>
+                    <div class="bar-label">Q</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- 1. Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 10, 35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below ground
+        controls.target.set(0, 4, 0);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.left = -20;
+        dirLight.shadow.camera.right = 20;
+        dirLight.shadow.camera.top = 20;
+        dirLight.shadow.camera.bottom = -20;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // Ground
+        const groundGeo = new THREE.PlaneGeometry(100, 100);
+        const groundMat = new THREE.MeshStandardMaterial({ 
+            color: 0xe2e8f0, 
+            roughness: 0.8, 
+            metalness: 0.1 
+        });
+        const ground = new THREE.Mesh(groundGeo, groundMat);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.5;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // --- 2. Track Generation & Physics Data ---
+        // Define control points for the rollercoaster
+        const trackPoints = [
+            new THREE.Vector3(-16, 10, -2),
+            new THREE.Vector3(-12, 6, 0),
+            new THREE.Vector3(-8, 1, 2),
+            new THREE.Vector3(-4, 0, 0),
+            new THREE.Vector3(0, 6, -3), // Hill
+            new THREE.Vector3(4, 1, 0),
+            new THREE.Vector3(8, 0, 2),
+            new THREE.Vector3(12, 4, 0), // Small hill
+            new THREE.Vector3(16, 1, -2)
+        ];
+
+        const curve = new THREE.CatmullRomCurve3(trackPoints);
+        curve.curveType = 'centripetal';
+
+        // Visual Track
+        const tubeGeo = new THREE.TubeGeometry(curve, 200, 0.3, 12, false);
+        const tubeMat = new THREE.MeshStandardMaterial({ 
+            color: 0xD1D9E6, 
+            roughness: 0.4, 
+            metalness: 0.2 
+        });
+        const trackMesh = new THREE.Mesh(tubeGeo, tubeMat);
+        trackMesh.castShadow = true;
+        trackMesh.receiveShadow = true;
+        scene.add(trackMesh);
+
+        // Track Supports
+        const supportMat = new THREE.MeshStandardMaterial({ color: 0xa0aec0, roughness: 0.7 });
+        const supportGeo = new THREE.CylinderGeometry(0.1, 0.1, 1, 8);
+        for(let i=0; i<=1; i+=0.1) {
+            const pt = curve.getPointAt(i);
+            if(pt.y > 0.5) {
+                const height = pt.y + 0.5;
+                const support = new THREE.Mesh(supportGeo, supportMat);
+                support.scale.y = height;
+                support.position.set(pt.x, height/2 - 0.5, pt.z);
+                support.castShadow = true;
+                scene.add(support);
+            }
+        }
+
+        // Precompute Physics Path Data
+        const numSamples = 2000;
+        const pathData = [];
+        let totalLength = 0;
+        let minY = Infinity;
+
+        for(let i=0; i<=numSamples; i++) {
+            const u = i / numSamples;
+            const p = curve.getPointAt(u);
+            const t = curve.getTangentAt(u).normalize();
+            
+            if(p.y < minY) minY = p.y;
+            
+            if(i > 0) {
+                totalLength += p.distanceTo(pathData[i-1].p);
+            }
+            pathData.push({ u, p, t, s: totalLength });
+        }
+
+        // Calculate Curvature (kappa) and Principal Normal (n)
+        for(let i=0; i<=numSamples; i++) {
+            const prev = i > 0 ? pathData[i-1] : pathData[0];
+            const next = i < numSamples ? pathData[i+1] : pathData[numSamples];
+            
+            const ds = next.s - prev.s;
+            let n = new THREE.Vector3(0,1,0);
+            let kappa = 0;
+            
+            if(ds > 0.0001) {
+                const dt = new THREE.Vector3().subVectors(next.t, prev.t);
+                kappa = dt.length() / ds;
+                if(kappa > 0.0001) {
+                    n = dt.clone().normalize();
+                } else {
+                    // Straight line fallback
+                    n = new THREE.Vector3(0,1,0).cross(prev.t).cross(prev.t).normalize().negate();
+                }
+            }
+            pathData[i].kappa = kappa;
+            pathData[i].n = n;
+        }
+
+        function getPathData(s) {
+            if(s <= 0) return pathData[0];
+            if(s >= totalLength) return pathData[numSamples];
+            
+            let low = 0, high = numSamples;
+            while(low <= high) {
+                let mid = Math.floor((low + high) / 2);
+                if(pathData[mid].s < s) low = mid + 1;
+                else if(pathData[mid].s > s) high = mid - 1;
+                else return pathData[mid];
+            }
+            
+            const p1 = pathData[high];
+            const p2 = pathData[low];
+            const t_interp = (s - p1.s) / (p2.s - p1.s);
+            
+            return {
+                p: new THREE.Vector3().lerpVectors(p1.p, p2.p, t_interp),
+                t: new THREE.Vector3().lerpVectors(p1.t, p2.t, t_interp).normalize(),
+                n: new THREE.Vector3().lerpVectors(p1.n, p2.n, t_interp).normalize(),
+                kappa: p1.kappa + t_interp * (p2.kappa - p1.kappa)
+            };
+        }
+
+        function getSForHeight(h) {
+            // Search forward from start to find first point matching height
+            for(let i=0; i<pathData.length; i++) {
+                if(pathData[i].p.y <= h) return pathData[i].s;
+            }
+            return 0;
+        }
+
+        // --- 3. Scene Objects ---
+        // The Mass (Sphere)
+        const sphereGeo = new THREE.SphereGeometry(0.5, 32, 32);
+        const sphereMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4361EE, 
+            roughness: 0.2, 
+            metalness: 0.5 
+        });
+        const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+        sphere.castShadow = true;
+        scene.add(sphere);
+
+        // Vectors
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0x06D6A0, 0.4, 0.2);
+        const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(0,-1,0), new THREE.Vector3(0,0,0), 1, 0xF77F00, 0.4, 0.2);
+        scene.add(velArrow);
+        scene.add(forceArrow);
+
+        // Heat Glow Light
+        const heatLight = new THREE.PointLight(0xFF3366, 0, 5);
+        scene.add(heatLight);
+
+        // Heat Particles
+        const particleCount = 300;
+        const pGeo = new THREE.BufferGeometry();
+        const pPos = new Float32Array(particleCount * 3);
+        const pLife = new Float32Array(particleCount);
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        pGeo.setAttribute('lifetime', new THREE.BufferAttribute(pLife, 1));
+        
+        const pMat = new THREE.PointsMaterial({ 
+            color: 0xFF3366, 
+            size: 0.15, 
+            transparent: true, 
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const particleSystem = new THREE.Points(pGeo, pMat);
+        scene.add(particleSystem);
+
+        let pIndex = 0;
+        function emitParticle(pos) {
+            pPos[pIndex*3] = pos.x + (Math.random()-0.5)*0.5;
+            pPos[pIndex*3+1] = pos.y + (Math.random()-0.5)*0.5;
+            pPos[pIndex*3+2] = pos.z + (Math.random()-0.5)*0.5;
+            pLife[pIndex] = 1.0; // 1 second lifetime
+            pIndex = (pIndex + 1) % particleCount;
+        }
+
+        // --- 4. Physics Engine ---
+        let isPlaying = false;
+        
+        // State
+        let s = 0;
+        let v = 0;
+        let Q = 0; // Thermal Energy
+        
+        // Parameters
+        let m = 1.0;
+        let g = 9.8;
+        let mu = 0.0;
+        let h0 = 5.0;
+
+        // Max possible energy for chart scaling (m_max * g_max * h_max)
+        const MAX_POSSIBLE_ENERGY = 5.0 * 20.0 * 10.0;
+
+        function resetSimulation() {
+            s = getSForHeight(h0);
+            v = 0;
+            Q = 0;
+            updateVisuals();
+            updateUI();
+        }
+
+        function physicsStep(dt) {
+            if (!isPlaying) return;
+            
+            // Clamp dt to prevent explosions on lag
+            dt = Math.min(dt, 0.05);
+            
+            // Sub-stepping for numerical stability
+            const steps = 20;
+            const subDt = dt / steps;
+            
+            for(let i=0; i<steps; i++) {
+                const data = getPathData(s);
+                
+                // Gravity vector
+                const Fg = new THREE.Vector3(0, -m * g, 0);
+                
+                // Tangential component of gravity
+                const Fgt_mag = Fg.dot(data.t);
+                
+                // Perpendicular component of gravity
+                const Fg_perp = new THREE.Vector3().copy(Fg).sub(new THREE.Vector3().copy(data.t).multiplyScalar(Fgt_mag));
+                
+                // Centripetal force required (points towards center of curvature, which is n)
+                const Fc_req = new THREE.Vector3().copy(data.n).multiplyScalar(m * v * v * data.kappa);
+                
+                // Track force (Normal force) required to balance perpendicular gravity and provide centripetal force
+                // F_track + Fg_perp = Fc_req  =>  F_track = Fc_req - Fg_perp
+                const F_track = new THREE.Vector3().copy(Fc_req).sub(Fg_perp);
+                const Fn_mag = F_track.length();
+                
+                // Friction
+                const Ff_mag = mu * Fn_mag;
+                
+                let a = 0;
+                
+                // Static vs Kinetic friction handling
+                if (Math.abs(v) < 0.05) {
+                    if (Math.abs(Fgt_mag) <= Ff_mag) {
+                        a = 0;
+                        v = 0;
+                    } else {
+                        const Ft_net = Fgt_mag - Math.sign(Fgt_mag) * Ff_mag;
+                        a = Ft_net / m;
+                    }
+                } else {
+                    const Ft_net = Fgt_mag - Math.sign(v) * Ff_mag;
+                    a = Ft_net / m;
+                }
+                
+                v += a * subDt;
+                s += v * subDt;
+                
+                // Work done by friction -> Thermal Energy
+                if (Math.abs(v) > 0) {
+                    Q += Ff_mag * Math.abs(v) * subDt;
+                }
+                
+                // Bounds check
+                if(s < 0) { s = 0; v = 0; }
+                if(s > totalLength) { s = totalLength; v = 0; }
+            }
+        }
+
+        // --- 5. UI and Visual Updates ---
+        const domK = document.getElementById('val-k');
+        const domU = document.getElementById('val-u');
+        const domQ = document.getElementById('val-q');
+        const domE = document.getElementById('val-e');
+        
+        const barK = document.getElementById('bar-k');
+        const barU = document.getElementById('bar-u');
+        const barQ = document.getElementById('bar-q');
+        const lineE = document.getElementById('total-energy-line');
+
+        function updateVisuals() {
+            const data = getPathData(s);
+            
+            // Update Sphere
+            sphere.position.copy(data.p);
+            // Adjust sphere scale based on mass
+            const scale = 0.5 + (m - 0.5) * 0.2;
+            sphere.scale.set(scale, scale, scale);
+            
+            // Update Velocity Arrow
+            if (Math.abs(v) > 0.1) {
+                velArrow.visible = true;
+                velArrow.position.copy(data.p);
+                velArrow.setDirection(new THREE.Vector3().copy(data.t).multiplyScalar(Math.sign(v)));
+                velArrow.setLength(Math.abs(v) * 0.2 + 0.5, 0.4, 0.2);
+            } else {
+                velArrow.visible = false;
+            }
+
+            // Update Force Arrow (Net Force)
+            const Fg = new THREE.Vector3(0, -m * g, 0);
+            const Fgt_mag = Fg.dot(data.t);
+            const Fg_perp = new THREE.Vector3().copy(Fg).sub(new THREE.Vector3().copy(data.t).multiplyScalar(Fgt_mag));
+            const Fc_req = new THREE.Vector3().copy(data.n).multiplyScalar(m * v * v * data.kappa);
+            const F_track = new THREE.Vector3().copy(Fc_req).sub(Fg_perp);
+            const Fn_mag = F_track.length();
+            const Ff_mag = mu * Fn_mag;
+            
+            // Net Force = F_track + Fg + F_friction
+            const Ff_vec = new THREE.Vector3().copy(data.t).multiplyScalar(-Math.sign(v) * Ff_mag);
+            const Fnet = new THREE.Vector3().copy(F_track).add(Fg).add(Ff_vec);
+            
+            if (Fnet.length() > 0.1) {
+                forceArrow.visible = true;
+                forceArrow.position.copy(data.p);
+                forceArrow.setDirection(Fnet.clone().normalize());
+                forceArrow.setLength(Fnet.length() * 0.05 + 0.5, 0.4, 0.2);
+            } else {
+                forceArrow.visible = false;
+            }
+
+            // Heat Visuals
+            if (mu > 0 && Math.abs(v) > 0.1) {
+                heatLight.position.copy(data.p);
+                heatLight.intensity = Math.min(Ff_mag * Math.abs(v) * 0.1, 5);
+                emitParticle(data.p);
+            } else {
+                heatLight.intensity = 0;
+            }
+        }
+
+        function updateUI() {
+            const data = getPathData(s);
+            const y = data.p.y - minY;
+            
+            const K = 0.5 * m * v * v;
+            const U = m * g * y;
+            const E = K + U + Q;
+
+            // Text
+            domK.innerText = K.toFixed(1) + ' J';
+            domU.innerText = U.toFixed(1) + ' J';
+            domQ.innerText = Q.toFixed(1) + ' J';
+            domE.innerText = E.toFixed(1) + ' J';
+
+            // Chart
+            // Scale relative to max possible energy to show magnitude changes
+            const scale = 100 / MAX_POSSIBLE_ENERGY;
+            
+            barK.style.height = `${Math.min(K * scale, 100)}%`;
+            barU.style.height = `${Math.min(U * scale, 100)}%`;
+            barQ.style.height = `${Math.min(Q * scale, 100)}%`;
+            
+            // Total Energy Line based on Initial Energy of current settings
+            const initialY = getPathData(getSForHeight(h0)).p.y - minY;
+            const E0 = m * g * initialY;
+            lineE.style.bottom = `${Math.min(E0 * scale, 100)}%`;
+        }
+
+        // --- 6. Event Listeners ---
+        document.getElementById('slider-m').addEventListener('input', (e) => {
+            m = parseFloat(e.target.value);
+            document.getElementById('lbl-m').innerText = m.toFixed(1) + ' kg';
+            if(!isPlaying) { resetSimulation(); } else { updateUI(); updateVisuals(); }
+        });
+
+        document.getElementById('slider-g').addEventListener('input', (e) => {
+            g = parseFloat(e.target.value);
+            document.getElementById('lbl-g').innerText = g.toFixed(1) + ' m/s²';
+            if(!isPlaying) { resetSimulation(); } else { updateUI(); updateVisuals(); }
+        });
+
+        document.getElementById('slider-mu').addEventListener('input', (e) => {
+            mu = parseFloat(e.target.value);
+            document.getElementById('lbl-mu').innerText = mu.toFixed(2);
+        });
+
+        document.getElementById('slider-h').addEventListener('input', (e) => {
+            h0 = parseFloat(e.target.value);
+            document.getElementById('lbl-h').innerText = h0.toFixed(1) + ' m';
+            resetSimulation();
+        });
+
+        const btnPlay = document.getElementById('btn-play');
+        btnPlay.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            btnPlay.innerText = isPlaying ? 'Pause' : 'Play';
+            btnPlay.classList.toggle('primary');
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            isPlaying = false;
+            btnPlay.innerText = 'Play';
+            btnPlay.classList.add('primary');
+            resetSimulation();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 7. Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = clock.getDelta();
+            
+            physicsStep(dt);
+            updateVisuals();
+            updateUI();
+
+            // Update Particles
+            const positions = particleSystem.geometry.attributes.position.array;
+            const lifetimes = particleSystem.geometry.attributes.lifetime.array;
+            
+            for(let i=0; i<particleCount; i++) {
+                if(lifetimes[i] > 0) {
+                    lifetimes[i] -= dt;
+                    positions[i*3+1] += dt * 2; // Move up
+                    // Add slight random drift
+                    positions[i*3] += (Math.random()-0.5)*dt;
+                    positions[i*3+2] += (Math.random()-0.5)*dt;
+                } else {
+                    // Hide dead particles far away
+                    positions[i*3] = 999;
+                }
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+            particleSystem.geometry.attributes.lifetime.needsUpdate = true;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        resetSimulation();
+        animate();
+
+    </script>
+</body>
+</html>

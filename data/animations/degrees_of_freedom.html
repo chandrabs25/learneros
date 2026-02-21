@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Theory: Degrees of Freedom</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.05);
+            padding: 30px 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0;
+            color: #111827;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #4B5563;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #E5E7EB;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #D1D5DB;
+            background: rgba(255, 255, 255, 0.9);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: #111827;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #4361EE;
+            cursor: pointer;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            font-family: 'Roboto Mono', monospace;
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #6B7280;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .math-line {
+            font-size: 1rem;
+            color: #111827;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .math-highlight {
+            color: #FF3366;
+            font-weight: 700;
+        }
+
+        .energy-result {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #D1D5DB;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #06D6A0;
+        }
+
+        .legend {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid #E5E7EB;
+            font-size: 0.8rem;
+            color: #6B7280;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.5); }
+            #formula-card { top: 10px; left: 10px; padding: 15px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title" id="fc-state">Monatomic Gas</div>
+            <div class="math-line">DoF (f) = <span class="math-highlight" id="fc-f">3</span></div>
+            <div class="math-line">U = (f/2) &middot; R &middot; T</div>
+            <div class="math-line">U = (<span id="fc-f2">3</span>/2) &middot; 8.314 &middot; <span id="fc-t">300</span></div>
+            <div class="energy-result" id="fc-u">U = 3741.3 J/mol</div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Kinetic Theory:<br>Degrees of Freedom</h1>
+
+        <div class="control-group">
+            <label for="moleculeType">Molecule Type</label>
+            <select id="moleculeType">
+                <option value="monatomic">Monatomic (f = 3)</option>
+                <option value="diatomic_rigid">Diatomic Rigid (f = 5)</option>
+                <option value="diatomic_nonrigid">Diatomic Non-Rigid (f = 7)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="tempK">Temperature (K) <span class="value-display" id="val-temp">300</span></label>
+            <input type="range" id="tempK" min="100" max="3000" step="10" value="300">
+        </div>
+
+        <div class="control-group">
+            <label for="particleCount">Number of Particles <span class="value-display" id="val-count">15</span></label>
+            <input type="range" id="particleCount" min="1" max="50" step="1" value="15">
+        </div>
+
+        <div class="control-group">
+            <label for="timeScale">Time Scale <span class="value-display" id="val-time">1.0x</span></label>
+            <input type="range" id="timeScale" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <label class="toggle-group">
+            <input type="checkbox" id="showVectors" checked>
+            Show Velocity Vectors
+        </label>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Monatomic Atom</div>
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Diatomic Atom</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Velocity Vector</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Active Vibration</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const params = {
+            type: 'monatomic', // monatomic, diatomic_rigid, diatomic_nonrigid
+            temp: 300,
+            count: 15,
+            timeScale: 1.0,
+            showVectors: true,
+            boxSize: 10,
+            R: 8.314 // Universal gas constant
+        };
+
+        const colors = {
+            monatomic: 0x4361EE,
+            diatomic: 0xFF3366,
+            bondRigid: 0xD1D5DB,
+            bondVib: 0xF77F00,
+            vector: 0x06D6A0,
+            box: 0xD1D5DB
+        };
+
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(12, 8, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+        dirLight2.position.set(-10, -10, -10);
+        scene.add(dirLight2);
+
+        // Containment Box
+        const boxGeo = new THREE.BoxGeometry(params.boxSize, params.boxSize, params.boxSize);
+        const edges = new THREE.EdgesGeometry(boxGeo);
+        const boxMaterial = new THREE.LineBasicMaterial({ color: colors.box, transparent: true, opacity: 0.5 });
+        const boxMesh = new THREE.LineSegments(edges, boxMaterial);
+        scene.add(boxMesh);
+
+        // --- Geometries & Materials ---
+        const sphereGeoMonatomic = new THREE.SphereGeometry(0.2, 32, 32);
+        const sphereGeoDiatomic = new THREE.SphereGeometry(0.15, 32, 32);
+        const cylinderGeo = new THREE.CylinderGeometry(0.04, 0.04, 1, 16);
+        cylinderGeo.rotateZ(Math.PI / 2); // Align bond along local X axis
+
+        const matMonatomic = new THREE.MeshStandardMaterial({ color: colors.monatomic, roughness: 0.2, metalness: 0.1 });
+        const matDiatomic = new THREE.MeshStandardMaterial({ color: colors.diatomic, roughness: 0.2, metalness: 0.1 });
+        const matBondRigid = new THREE.MeshStandardMaterial({ color: colors.bondRigid, roughness: 0.5 });
+        const matBondVib = new THREE.MeshStandardMaterial({ color: colors.bondVib, emissive: colors.bondVib, emissiveIntensity: 0.5 });
+
+        // --- Particle Class ---
+        let particles = [];
+        const limit = params.boxSize / 2;
+
+        class Particle {
+            constructor() {
+                this.group = new THREE.Group();
+                this.velocity = new THREE.Vector3();
+                this.rotAxis = new THREE.Vector3();
+                this.omega = 0;
+                this.vibPhase = Math.random() * Math.PI * 2;
+                this.vibFreq = 0;
+                this.vibAmp = 0;
+                this.baseBondLength = 0.6;
+
+                this.buildMesh();
+                this.resetPhysics();
+                
+                // Random initial position within bounds
+                const r = 0.4; // safe margin
+                this.group.position.set(
+                    (Math.random() - 0.5) * (params.boxSize - r * 2),
+                    (Math.random() - 0.5) * (params.boxSize - r * 2),
+                    (Math.random() - 0.5) * (params.boxSize - r * 2)
+                );
+
+                // Velocity Vector Arrow
+                this.arrow = new THREE.ArrowHelper(
+                    new THREE.Vector3(1,0,0), 
+                    this.group.position, 
+                    1, 
+                    colors.vector, 
+                    0.2, 
+                    0.1
+                );
+                scene.add(this.group);
+                scene.add(this.arrow);
+            }
+
+            buildMesh() {
+                if (params.type === 'monatomic') {
+                    const mesh = new THREE.Mesh(sphereGeoMonatomic, matMonatomic);
+                    this.group.add(mesh);
+                } else {
+                    this.atom1 = new THREE.Mesh(sphereGeoDiatomic, matDiatomic);
+                    this.atom2 = new THREE.Mesh(sphereGeoDiatomic, matDiatomic);
+                    this.bond = new THREE.Mesh(cylinderGeo, matBondRigid);
+                    
+                    this.atom1.position.set(this.baseBondLength / 2, 0, 0);
+                    this.atom2.position.set(-this.baseBondLength / 2, 0, 0);
+                    this.bond.scale.set(1, this.baseBondLength, 1);
+
+                    this.group.add(this.atom1);
+                    this.group.add(this.atom2);
+                    this.group.add(this.bond);
+
+                    // Random initial rotation
+                    this.group.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+                }
+            }
+
+            resetPhysics() {
+                // v_rms proportional to sqrt(T). Base speed at 300K = 2.0 units/sec
+                const speed = 2.0 * Math.sqrt(params.temp / 300);
+                this.velocity.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize().multiplyScalar(speed);
+
+                if (params.type !== 'monatomic') {
+                    // Angular velocity proportional to sqrt(T). Base omega at 300K = 3.0 rad/sec
+                    this.omega = 3.0 * Math.sqrt(params.temp / 300);
+                    this.assignRandomRotationAxis();
+
+                    if (params.type === 'diatomic_nonrigid') {
+                        // Vibration activates significantly at higher temps. 
+                        // Classical equipartition says it's always active, but visually we emphasize it when hot.
+                        const vibActive = params.temp >= 500;
+                        this.vibAmp = vibActive ? 0.15 * Math.sqrt(params.temp / 3000) : 0;
+                        this.vibFreq = 15.0; // Fixed frequency, amplitude changes with energy
+                        this.bond.material = vibActive ? matBondVib : matBondRigid;
+                    } else {
+                        this.vibAmp = 0;
+                        this.bond.material = matBondRigid;
+                    }
+                }
+            }
+
+            assignRandomRotationAxis() {
+                // Diatomic molecules rotate around axes perpendicular to the bond.
+                // Bond is local X axis. Get world direction of local X.
+                const bondDir = new THREE.Vector3(1, 0, 0);
+                bondDir.applyQuaternion(this.group.quaternion).normalize();
+
+                // Find a random vector perpendicular to bondDir
+                const randomVec = new THREE.Vector3(Math.random(), Math.random(), Math.random()).normalize();
+                this.rotAxis.crossVectors(bondDir, randomVec).normalize();
+            }
+
+            update(dt) {
+                const scaledDt = dt * params.timeScale;
+
+                // Translation
+                this.group.position.addScaledVector(this.velocity, scaledDt);
+
+                // Wall Collisions
+                const r = params.type === 'monatomic' ? 0.2 : 0.4;
+                let bounced = false;
+                if (this.group.position.x > limit - r) { this.group.position.x = limit - r; this.velocity.x *= -1; bounced = true; }
+                if (this.group.position.x < -limit + r) { this.group.position.x = -limit + r; this.velocity.x *= -1; bounced = true; }
+                if (this.group.position.y > limit - r) { this.group.position.y = limit - r; this.velocity.y *= -1; bounced = true; }
+                if (this.group.position.y < -limit + r) { this.group.position.y = -limit + r; this.velocity.y *= -1; bounced = true; }
+                if (this.group.position.z > limit - r) { this.group.position.z = limit - r; this.velocity.z *= -1; bounced = true; }
+                if (this.group.position.z < -limit + r) { this.group.position.z = -limit + r; this.velocity.z *= -1; bounced = true; }
+
+                // Rotation (Diatomic)
+                if (params.type !== 'monatomic') {
+                    // Rotate around world axis (preserves perpendicularity to bond)
+                    this.group.rotateOnWorldAxis(this.rotAxis, this.omega * scaledDt);
+                    
+                    // On bounce, randomize rotation axis to simulate collision scattering
+                    if (bounced) this.assignRandomRotationAxis();
+
+                    // Vibration
+                    if (this.vibAmp > 0) {
+                        this.vibPhase += this.vibFreq * scaledDt;
+                        const currentLength = this.baseBondLength + this.vibAmp * Math.sin(this.vibPhase);
+                        this.atom1.position.x = currentLength / 2;
+                        this.atom2.position.x = -currentLength / 2;
+                        this.bond.scale.x = currentLength; // cylinder rotated, so scale X changes length
+                    } else if (this.atom1) {
+                        this.atom1.position.x = this.baseBondLength / 2;
+                        this.atom2.position.x = -this.baseBondLength / 2;
+                        this.bond.scale.x = this.baseBondLength;
+                    }
+                }
+
+                // Update Arrow
+                if (params.showVectors) {
+                    this.arrow.visible = true;
+                    this.arrow.position.copy(this.group.position);
+                    this.arrow.setDirection(this.velocity.clone().normalize());
+                    this.arrow.setLength(this.velocity.length() * 0.4 + 0.2);
+                } else {
+                    this.arrow.visible = false;
+                }
+            }
+
+            destroy() {
+                scene.remove(this.group);
+                scene.remove(this.arrow);
+            }
+        }
+
+        function initParticles() {
+            particles.forEach(p => p.destroy());
+            particles = [];
+            for (let i = 0; i < params.count; i++) {
+                particles.push(new Particle());
+            }
+            updateFormula();
+        }
+
+        function updatePhysicsState() {
+            particles.forEach(p => p.resetPhysics());
+            updateFormula();
+        }
+
+        // --- UI & Logic ---
+        const uiType = document.getElementById('moleculeType');
+        const uiTemp = document.getElementById('tempK');
+        const uiCount = document.getElementById('particleCount');
+        const uiTime = document.getElementById('timeScale');
+        const uiVectors = document.getElementById('showVectors');
+
+        const valTemp = document.getElementById('val-temp');
+        const valCount = document.getElementById('val-count');
+        const valTime = document.getElementById('val-time');
+
+        const fcState = document.getElementById('fc-state');
+        const fcF = document.getElementById('fc-f');
+        const fcF2 = document.getElementById('fc-f2');
+        const fcT = document.getElementById('fc-t');
+        const fcU = document.getElementById('fc-u');
+
+        function updateFormula() {
+            let f = 3;
+            let stateName = "Monatomic Gas";
+            if (params.type === 'diatomic_rigid') { f = 5; stateName = "Diatomic (Rigid)"; }
+            if (params.type === 'diatomic_nonrigid') { f = 7; stateName = "Diatomic (Non-Rigid)"; }
+
+            fcState.innerText = stateName;
+            fcF.innerText = f;
+            fcF2.innerText = f;
+            fcT.innerText = params.temp;
+
+            const U = (f / 2) * params.R * params.temp;
+            fcU.innerText = `U = ${U.toFixed(1)} J/mol`;
+        }
+
+        uiType.addEventListener('change', (e) => {
+            params.type = e.target.value;
+            initParticles();
+        });
+
+        uiTemp.addEventListener('input', (e) => {
+            params.temp = parseInt(e.target.value);
+            valTemp.innerText = params.temp;
+            updatePhysicsState();
+        });
+
+        uiCount.addEventListener('input', (e) => {
+            params.count = parseInt(e.target.value);
+            valCount.innerText = params.count;
+            initParticles();
+        });
+
+        uiTime.addEventListener('input', (e) => {
+            params.timeScale = parseFloat(e.target.value);
+            valTime.innerText = params.timeScale.toFixed(1) + 'x';
+        });
+
+        uiVectors.addEventListener('change', (e) => {
+            params.showVectors = e.target.checked;
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.1); // Cap dt to prevent huge jumps on lag
+            
+            particles.forEach(p => p.update(dt));
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Initialize
+        initParticles();
+        animate();
+
+    </script>
+</body>
+</html>

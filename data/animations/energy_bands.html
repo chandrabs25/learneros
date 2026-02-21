@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy Band Theory Interactive</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --primary: #4361EE;
+            --secondary: #FF3366;
+            --accent: #06D6A0;
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 16px;
+            position: absolute;
+            z-index: 10;
+        }
+
+        #controls {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            padding: 24px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            min-width: 250px;
+        }
+
+        h1, h2 {
+            margin: 0 0 16px 0;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--primary);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.1);
+            border-radius: 2px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255,255,255,0.5);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 4px;
+        }
+        .math-line:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .math-label {
+            color: var(--text-muted);
+        }
+
+        /* 3D Labels */
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .scene-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .label-ec { color: var(--secondary); }
+        .label-ev { color: var(--primary); }
+        .label-ef { color: #000; border: 1px dashed #000; }
+        .label-eg { color: var(--text-muted); background: transparent; border: none; box-shadow: none; font-style: italic;}
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="labels-container">
+        <div id="lbl-ec" class="scene-label label-ec">Conduction Band (E_c)</div>
+        <div id="lbl-ev" class="scene-label label-ev">Valence Band (E_v)</div>
+        <div id="lbl-ef" class="scene-label label-ef">Fermi Level (E_f)</div>
+        <div id="lbl-eg" class="scene-label label-eg">Band Gap (E_g)</div>
+        <div id="lbl-donor" class="scene-label label-ef" style="display:none; color:#7209B7; border-color:#7209B7;">Donor Level</div>
+        <div id="lbl-acceptor" class="scene-label label-ef" style="display:none; color:#FF3366; border-color:#FF3366;">Acceptor Level</div>
+    </div>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>Physics Engine</h2>
+        <div class="math-line">
+            <span class="math-label">Band Gap (E_g):</span>
+            <span id="math-eg">1.12 eV</span>
+        </div>
+        <div class="math-line">
+            <span class="math-label">Band Width (W):</span>
+            <span id="math-w">1.00 eV</span>
+        </div>
+        <div class="math-line">
+            <span class="math-label">Carrier Conc (n_i):</span>
+            <span id="math-ni">1.0e10 cm⁻³</span>
+        </div>
+        <div class="math-line">
+            <span class="math-label">Fermi-Dirac f(E_c):</span>
+            <span id="math-fd">0.000</span>
+        </div>
+    </div>
+
+    <div id="controls" class="glass-panel">
+        <h1>Semiconductor State</h1>
+        
+        <div class="control-group">
+            <label>
+                <span>Lattice Constant (a)</span>
+                <span class="val-display" id="val-a">2.0 Å</span>
+            </label>
+            <input type="range" id="slider-a" min="0.5" max="2.5" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span>Temperature (T)</span>
+                <span class="val-display" id="val-t">300 K</span>
+            </label>
+            <input type="range" id="slider-t" min="0" max="600" step="10" value="300">
+        </div>
+
+        <div class="control-group">
+            <label><span>Doping Type</span></label>
+            <select id="select-doping">
+                <option value="intrinsic">Intrinsic (Pure Si)</option>
+                <option value="n-type">N-Type (Phosphorus)</option>
+                <option value="p-type">P-Type (Boron)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span>Doping Concentration</span>
+                <span class="val-display" id="val-conc">0</span>
+            </label>
+            <input type="range" id="slider-conc" min="0" max="10" step="1" value="0" disabled>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        const state = {
+            a: 2.0,
+            T: 300,
+            dopingType: 'intrinsic', // 'intrinsic', 'n-type', 'p-type'
+            dopingConc: 0
+        };
+
+        // --- Physics Constants & Calculated Targets ---
+        const physics = {
+            k_B: 8.617e-5, // eV/K
+            E_g0: 2.0, // Visual scale gap
+            W_0: 4.0, // Visual scale band width base
+            a_0: 1.0, // Scaling factor for lattice
+            
+            // Targets for smooth animation
+            targetW: 0,
+            targetEf: 0,
+            targetNi: 0,
+            targetNd: 0,
+            targetNa: 0,
+            
+            // Current visual values (lerped)
+            W: 0,
+            Ef: 0,
+            
+            update: function() {
+                // 1. Band Width vs Lattice Constant: W(a) = W_0 * exp(-a / a_0)
+                this.targetW = this.W_0 * Math.exp(-state.a / this.a_0);
+                
+                // 2. Intrinsic Carrier Concentration (Visual approximation)
+                // n_i scales with T. At T=0, n_i=0.
+                let thermalFactor = state.T / 600; 
+                this.targetNi = Math.floor(thermalFactor * thermalFactor * 20); 
+                if (state.T === 0) this.targetNi = 0;
+
+                // 3. Doping Effects
+                this.targetNd = 0;
+                this.targetNa = 0;
+                let efShift = 0;
+
+                if (state.dopingType === 'n-type' && state.dopingConc > 0) {
+                    this.targetNd = state.dopingConc * 2;
+                    // Ef moves towards Ec (which is at +E_g0/2 = +1.0)
+                    // Ef = Ei + kT ln(Nd/ni) -> visually approximated
+                    efShift = 0.8 * (state.dopingConc / 10) - 0.3 * thermalFactor;
+                    efShift = Math.max(0, Math.min(0.9, efShift));
+                } else if (state.dopingType === 'p-type' && state.dopingConc > 0) {
+                    this.targetNa = state.dopingConc * 2;
+                    // Ef moves towards Ev (which is at -E_g0/2 = -1.0)
+                    efShift = -0.8 * (state.dopingConc / 10) + 0.3 * thermalFactor;
+                    efShift = Math.min(0, Math.max(-0.9, efShift));
+                }
+
+                this.targetEf = efShift;
+
+                // Update UI Math
+                document.getElementById('math-w').innerText = this.targetW.toFixed(2) + " eV";
+                
+                let realNi = 1.5e10 * Math.pow(state.T/300, 1.5) * Math.exp(-1.12 / (2 * this.k_B * Math.max(state.T, 1)));
+                if(state.T === 0) realNi = 0;
+                document.getElementById('math-ni').innerText = realNi.toExponential(2) + " cm⁻³";
+
+                // Fermi-Dirac f(Ec)
+                let Ec = 1.0; // Visual Ec
+                let fE = 1 / (1 + Math.exp((Ec - this.targetEf) / Math.max(0.01, thermalFactor)));
+                if(state.T === 0) fE = 0;
+                document.getElementById('math-fd').innerText = fE.toFixed(4);
+            }
+        };
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.FogExp2('#f0f4f8', 0.02);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 18);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+        
+        const fillLight = new THREE.DirectionalLight(0xe0eaff, 0.4);
+        fillLight.position.set(-10, 0, -10);
+        scene.add(fillLight);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(30, 30, 0xcccccc, 0xe5e5e5);
+        gridHelper.position.y = -4;
+        scene.add(gridHelper);
+
+        // --- Left Side: Energy Band Diagram ---
+        const bandGroup = new THREE.Group();
+        bandGroup.position.set(-5, 0, 0);
+        scene.add(bandGroup);
+
+        const bandGeo = new THREE.BoxGeometry(4, 1, 3);
+        
+        const matEc = new THREE.MeshPhysicalMaterial({ 
+            color: 0xFF3366, transparent: true, opacity: 0.4, 
+            roughness: 0.2, transmission: 0.5, thickness: 0.5
+        });
+        const meshEc = new THREE.Mesh(bandGeo, matEc);
+        bandGroup.add(meshEc);
+
+        const matEv = new THREE.MeshPhysicalMaterial({ 
+            color: 0x4361EE, transparent: true, opacity: 0.4, 
+            roughness: 0.2, transmission: 0.5, thickness: 0.5
+        });
+        const meshEv = new THREE.Mesh(bandGeo, matEv);
+        bandGroup.add(meshEv);
+
+        // Fermi Level Line
+        const lineMat = new THREE.LineDashedMaterial({ color: 0x000000, dashSize: 0.2, gapSize: 0.1, linewidth: 2 });
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-2.5, 0, 0), new THREE.Vector3(2.5, 0, 0)]);
+        const lineEf = new THREE.Line(lineGeo, lineMat);
+        lineEf.computeLineDistances();
+        bandGroup.add(lineEf);
+
+        // Donor/Acceptor Lines
+        const donorMat = new THREE.LineDashedMaterial({ color: 0x7209B7, dashSize: 0.1, gapSize: 0.1 });
+        const donorLine = new THREE.Line(lineGeo, donorMat);
+        donorLine.computeLineDistances();
+        donorLine.position.y = 0.8;
+        donorLine.visible = false;
+        bandGroup.add(donorLine);
+
+        const acceptorMat = new THREE.LineDashedMaterial({ color: 0xFF3366, dashSize: 0.1, gapSize: 0.1 });
+        const acceptorLine = new THREE.Line(lineGeo, acceptorMat);
+        acceptorLine.computeLineDistances();
+        acceptorLine.position.y = -0.8;
+        acceptorLine.visible = false;
+        bandGroup.add(acceptorLine);
+
+        // 3D Label Anchors
+        const anchorEc = new THREE.Object3D();
+        const anchorEv = new THREE.Object3D();
+        const anchorEf = new THREE.Object3D();
+        const anchorEg = new THREE.Object3D();
+        bandGroup.add(anchorEc, anchorEv, anchorEf, anchorEg);
+
+        // --- Right Side: 3D Atomic Lattice ---
+        const latticeGroup = new THREE.Group();
+        latticeGroup.position.set(5, 0, 0);
+        scene.add(latticeGroup);
+
+        const gridSize = 3;
+        const numAtoms = gridSize * gridSize * gridSize;
+        
+        // Geometries & Materials
+        const atomGeo = new THREE.SphereGeometry(0.3, 32, 32);
+        const atomMat = new THREE.MeshPhysicalMaterial({ 
+            color: 0xffffff, roughness: 0.3, metalness: 0.1, clearcoat: 1.0 
+        });
+        
+        const bondGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
+        bondGeo.rotateX(Math.PI / 2); // Align along Z initially
+        const bondMat = new THREE.MeshBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.3 });
+
+        const electronGeo = new THREE.SphereGeometry(0.08, 16, 16);
+        const electronMat = new THREE.MeshBasicMaterial({ color: 0x06D6A0 });
+
+        const holeGeo = new THREE.TorusGeometry(0.1, 0.03, 8, 16);
+        const holeMat = new THREE.MeshBasicMaterial({ color: 0xF77F00 });
+
+        // Instanced Meshes
+        const atomsMesh = new THREE.InstancedMesh(atomGeo, atomMat, numAtoms);
+        latticeGroup.add(atomsMesh);
+
+        // Calculate bonds (simple cubic nearest neighbors)
+        const bonds = [];
+        const atomPositions = [];
+        let idx = 0;
+        for(let x=0; x<gridSize; x++) {
+            for(let y=0; y<gridSize; y++) {
+                for(let z=0; z<gridSize; z++) {
+                    atomPositions.push(new THREE.Vector3(x - 1, y - 1, z - 1));
+                    
+                    // Right bond
+                    if(x < gridSize - 1) bonds.push({ a: idx, b: idx + gridSize*gridSize });
+                    // Up bond
+                    if(y < gridSize - 1) bonds.push({ a: idx, b: idx + gridSize });
+                    // Forward bond
+                    if(z < gridSize - 1) bonds.push({ a: idx, b: idx + 1 });
+                    
+                    idx++;
+                }
+            }
+        }
+
+        const bondsMesh = new THREE.InstancedMesh(bondGeo, bondMat, bonds.length);
+        latticeGroup.add(bondsMesh);
+
+        // Carriers
+        const maxCarriers = 100;
+        const electronsMesh = new THREE.InstancedMesh(electronGeo, electronMat, maxCarriers);
+        latticeGroup.add(electronsMesh);
+        
+        const holesMesh = new THREE.InstancedMesh(holeGeo, holeMat, maxCarriers);
+        latticeGroup.add(holesMesh);
+
+        // Carrier Data Logic
+        const carriersData = [];
+        for(let i=0; i<maxCarriers; i++) {
+            carriersData.push({
+                pos: new THREE.Vector3(),
+                vel: new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize().multiplyScalar(0.05),
+                type: 'none', // 'conduction', 'valence', 'hole'
+                targetAtom: 0
+            });
+        }
+
+        // Colors
+        const colorSi = new THREE.Color(0x4361EE);
+        const colorN = new THREE.Color(0x7209B7);
+        const colorP = new THREE.Color(0xFF3366);
+        const dummy = new THREE.Object3D();
+        const mat4 = new THREE.Matrix4();
+
+        function updateLattice() {
+            // Update Atom Colors based on doping
+            let dopantIndices = new Set();
+            let totalDopants = state.dopingType === 'n-type' ? physics.targetNd : (state.dopingType === 'p-type' ? physics.targetNa : 0);
+            
+            while(dopantIndices.size < totalDopants && dopantIndices.size < numAtoms) {
+                dopantIndices.add(Math.floor(Math.random() * numAtoms));
+            }
+
+            for(let i=0; i<numAtoms; i++) {
+                if(dopantIndices.has(i)) {
+                    atomsMesh.setColorAt(i, state.dopingType === 'n-type' ? colorN : colorP);
+                } else {
+                    atomsMesh.setColorAt(i, colorSi);
+                }
+            }
+            atomsMesh.instanceColor.needsUpdate = true;
+        }
+
+        // --- UI Event Listeners ---
+        document.getElementById('slider-a').addEventListener('input', (e) => {
+            state.a = parseFloat(e.target.value);
+            document.getElementById('val-a').innerText = state.a.toFixed(1) + " Å";
+            physics.update();
+        });
+
+        document.getElementById('slider-t').addEventListener('input', (e) => {
+            state.T = parseFloat(e.target.value);
+            document.getElementById('val-t').innerText = state.T + " K";
+            physics.update();
+        });
+
+        document.getElementById('select-doping').addEventListener('change', (e) => {
+            state.dopingType = e.target.value;
+            const concSlider = document.getElementById('slider-conc');
+            if(state.dopingType === 'intrinsic') {
+                concSlider.disabled = true;
+                state.dopingConc = 0;
+                concSlider.value = 0;
+                document.getElementById('val-conc').innerText = "0";
+            } else {
+                concSlider.disabled = false;
+                if(state.dopingConc === 0) {
+                    state.dopingConc = 5;
+                    concSlider.value = 5;
+                    document.getElementById('val-conc').innerText = "5";
+                }
+            }
+            physics.update();
+            updateLattice();
+        });
+
+        document.getElementById('slider-conc').addEventListener('input', (e) => {
+            state.dopingConc = parseInt(e.target.value);
+            document.getElementById('val-conc').innerText = state.dopingConc;
+            physics.update();
+            updateLattice();
+        });
+
+        // Initialize
+        physics.update();
+        updateLattice();
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // 1. Smoothly interpolate physics visuals
+            physics.W += (physics.targetW - physics.W) * 5 * dt;
+            physics.Ef += (physics.targetEf - physics.Ef) * 5 * dt;
+
+            // Update Band Diagram Geometry
+            // Ec bottom is at +1.0. Center is 1.0 + W/2
+            meshEc.scale.y = physics.W;
+            meshEc.position.y = 1.0 + physics.W / 2;
+            
+            // Ev top is at -1.0. Center is -1.0 - W/2
+            meshEv.scale.y = physics.W;
+            meshEv.position.y = -1.0 - physics.W / 2;
+
+            lineEf.position.y = physics.Ef;
+
+            // Anchors for labels
+            anchorEc.position.set(0, meshEc.position.y, 1.5);
+            anchorEv.position.set(0, meshEv.position.y, 1.5);
+            anchorEf.position.set(2.5, physics.Ef, 0);
+            anchorEg.position.set(0, 0, 1.5);
+
+            // Dopant Lines
+            if(state.dopingType === 'n-type' && state.dopingConc > 0) {
+                donorLine.visible = true;
+                acceptorLine.visible = false;
+                document.getElementById('lbl-donor').style.display = 'block';
+                document.getElementById('lbl-acceptor').style.display = 'none';
+            } else if(state.dopingType === 'p-type' && state.dopingConc > 0) {
+                donorLine.visible = false;
+                acceptorLine.visible = true;
+                document.getElementById('lbl-donor').style.display = 'none';
+                document.getElementById('lbl-acceptor').style.display = 'block';
+            } else {
+                donorLine.visible = false;
+                acceptorLine.visible = false;
+                document.getElementById('lbl-donor').style.display = 'none';
+                document.getElementById('lbl-acceptor').style.display = 'none';
+            }
+
+            // 2. Update Lattice Positions (Jitter + Spacing)
+            const visualSpacing = state.a * 0.8; // Scale for view
+            const jitterAmount = (state.T / 600) * 0.05;
+
+            for(let i=0; i<numAtoms; i++) {
+                let basePos = atomPositions[i].clone().multiplyScalar(visualSpacing);
+                
+                // Add thermal jitter
+                if(state.T > 0) {
+                    basePos.x += (Math.random() - 0.5) * jitterAmount;
+                    basePos.y += (Math.random() - 0.5) * jitterAmount;
+                    basePos.z += (Math.random() - 0.5) * jitterAmount;
+                }
+
+                dummy.position.copy(basePos);
+                dummy.updateMatrix();
+                atomsMesh.setMatrixAt(i, dummy.matrix);
+            }
+            atomsMesh.instanceMatrix.needsUpdate = true;
+
+            // Update Bonds
+            for(let i=0; i<bonds.length; i++) {
+                mat4.fromArray(atomsMesh.instanceMatrix.array, bonds[i].a * 16);
+                const posA = new THREE.Vector3().setFromMatrixPosition(mat4);
+                mat4.fromArray(atomsMesh.instanceMatrix.array, bonds[i].b * 16);
+                const posB = new THREE.Vector3().setFromMatrixPosition(mat4);
+
+                const dir = new THREE.Vector3().subVectors(posB, posA);
+                const dist = dir.length();
+                const mid = new THREE.Vector3().addVectors(posA, posB).multiplyScalar(0.5);
+
+                dummy.position.copy(mid);
+                // Cylinder is along Y by default, we rotated geo to Z. LookAt aligns Z.
+                dummy.lookAt(posB);
+                dummy.scale.set(1, 1, dist);
+                dummy.updateMatrix();
+                bondsMesh.setMatrixAt(i, dummy.matrix);
+            }
+            bondsMesh.instanceMatrix.needsUpdate = true;
+
+            // 3. Update Carriers (Electrons & Holes)
+            let activeElectrons = physics.targetNi + physics.targetNd;
+            let activeHoles = physics.targetNi + physics.targetNa;
+            
+            electronsMesh.count = Math.min(activeElectrons, maxCarriers);
+            holesMesh.count = Math.min(activeHoles, maxCarriers);
+
+            const bounds = visualSpacing * 1.5;
+
+            // Animate Electrons (Conduction)
+            for(let i=0; i<electronsMesh.count; i++) {
+                let c = carriersData[i];
+                
+                // Random walk velocity change
+                c.vel.x += (Math.random() - 0.5) * 0.02;
+                c.vel.y += (Math.random() - 0.5) * 0.02;
+                c.vel.z += (Math.random() - 0.5) * 0.02;
+                c.vel.normalize().multiplyScalar(0.1 + (state.T/600)*0.1); // Speed depends on T
+
+                c.pos.add(c.vel);
+
+                // Bounce off bounds
+                if(Math.abs(c.pos.x) > bounds) { c.vel.x *= -1; c.pos.x = Math.sign(c.pos.x)*bounds; }
+                if(Math.abs(c.pos.y) > bounds) { c.vel.y *= -1; c.pos.y = Math.sign(c.pos.y)*bounds; }
+                if(Math.abs(c.pos.z) > bounds) { c.vel.z *= -1; c.pos.z = Math.sign(c.pos.z)*bounds; }
+
+                dummy.position.copy(c.pos);
+                dummy.scale.set(1,1,1);
+                dummy.updateMatrix();
+                electronsMesh.setMatrixAt(i, dummy.matrix);
+            }
+            electronsMesh.instanceMatrix.needsUpdate = true;
+
+            // Animate Holes (Valence - stick near atoms)
+            for(let i=0; i<holesMesh.count; i++) {
+                let h = carriersData[maxCarriers - 1 - i]; // use back of array
+                
+                // Occasionally jump to a new atom
+                if(Math.random() < 0.05) {
+                    h.targetAtom = Math.floor(Math.random() * numAtoms);
+                }
+
+                mat4.fromArray(atomsMesh.instanceMatrix.array, h.targetAtom * 16);
+                const atomPos = new THREE.Vector3().setFromMatrixPosition(mat4);
+                
+                // Orbit atom
+                const angle = time * 5 + i;
+                const radius = 0.4;
+                h.pos.set(
+                    atomPos.x + Math.cos(angle) * radius,
+                    atomPos.y + Math.sin(angle) * radius,
+                    atomPos.z + Math.cos(angle*0.5) * radius * 0.5
+                );
+
+                dummy.position.copy(h.pos);
+                dummy.lookAt(atomPos); // Ring faces atom
+                dummy.scale.set(1,1,1);
+                dummy.updateMatrix();
+                holesMesh.setMatrixAt(i, dummy.matrix);
+            }
+            holesMesh.instanceMatrix.needsUpdate = true;
+
+            // 4. Update HTML Labels
+            updateLabelPosition('lbl-ec', anchorEc, bandGroup);
+            updateLabelPosition('lbl-ev', anchorEv, bandGroup);
+            updateLabelPosition('lbl-ef', anchorEf, bandGroup);
+            updateLabelPosition('lbl-eg', anchorEg, bandGroup);
+            
+            if(donorLine.visible) {
+                const tempAnchor = new THREE.Vector3(2.5, 0.8, 0);
+                updateLabelPositionRaw('lbl-donor', tempAnchor, bandGroup);
+            }
+            if(acceptorLine.visible) {
+                const tempAnchor = new THREE.Vector3(2.5, -0.8, 0);
+                updateLabelPositionRaw('lbl-acceptor', tempAnchor, bandGroup);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Helper for 3D to 2D projection
+        const tempV = new THREE.Vector3();
+        function updateLabelPosition(id, object3D, parentGroup) {
+            tempV.setFromMatrixPosition(object3D.matrixWorld);
+            projectAndSet(id, tempV);
+        }
+        
+        function updateLabelPositionRaw(id, localVec, parentGroup) {
+            tempV.copy(localVec);
+            tempV.applyMatrix4(parentGroup.matrixWorld);
+            projectAndSet(id, tempV);
+        }
+
+        function projectAndSet(id, vec3) {
+            vec3.project(camera);
+            const x = (vec3.x * .5 + .5) * window.innerWidth;
+            const y = (vec3.y * -.5 + .5) * window.innerHeight;
+            
+            const el = document.getElementById(id);
+            if (vec3.z > 1.0) {
+                el.style.opacity = '0'; // Behind camera
+            } else {
+                el.style.opacity = '1';
+                el.style.transform = `translate(-50%, -50%) translate(${x}px, ${y}px)`;
+            }
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        animate();
+
+    </script>
+</body>
+</html>

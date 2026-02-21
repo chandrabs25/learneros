@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uniform Circular Motion & SHM Projection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #ui-container {
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 30px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 5px;
+            line-height: 1.3;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #7209B7;
+            font-weight: 700;
+            background: rgba(114, 9, 183, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #7209B7;
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 2px 5px rgba(114, 9, 183, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        .checkbox-group {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        input[type=checkbox] {
+            width: 18px;
+            height: 18px;
+            accent-color: #7209B7;
+            cursor: pointer;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            pointer-events: none;
+            z-index: 5;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 320px;
+        }
+
+        .formula-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #0f172a;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 8px;
+        }
+
+        .eq-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .eq-label {
+            color: #475569;
+        }
+
+        .eq-value {
+            font-weight: 700;
+        }
+
+        .color-x { color: #FF3366; }
+        .color-v { color: #06D6A0; }
+        .color-a { color: #F77F00; }
+
+        .scene-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+            z-index: 2;
+        }
+
+        #label-p { color: #7209B7; }
+        #label-pprime { color: #FF3366; }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.5);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-container { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.8); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Live Kinematics</div>
+            <div class="eq-line">
+                <span class="eq-label">x(t) = A cos(&omega;t + &phi;)</span>
+                <span class="eq-value color-x" id="val-eq-x">0.00 m</span>
+            </div>
+            <div class="eq-line">
+                <span class="eq-label">v<sub>x</sub>(t) = -&omega;A sin(&omega;t + &phi;)</span>
+                <span class="eq-value color-v" id="val-eq-v">0.00 m/s</span>
+            </div>
+            <div class="eq-line">
+                <span class="eq-label">a<sub>x</sub>(t) = -&omega;<sup>2</sup>x</span>
+                <span class="eq-value color-a" id="val-eq-a">0.00 m/s²</span>
+            </div>
+        </div>
+        <div id="label-p" class="scene-label">P</div>
+        <div id="label-pprime" class="scene-label">P'</div>
+    </div>
+
+    <div id="ui-container">
+        <div>
+            <h1>UCM & SHM Projection</h1>
+            <p class="subtitle">Observe how uniform circular motion projects onto the X-axis as Simple Harmonic Motion.</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="slider-A">Amplitude (A)</label>
+                <span class="val-display" id="display-A">3.0 m</span>
+            </div>
+            <input type="range" id="slider-A" min="1.0" max="5.0" step="0.1" value="3.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="slider-omega">Angular Speed (&omega;)</label>
+                <span class="val-display" id="display-omega">2.0 rad/s</span>
+            </div>
+            <input type="range" id="slider-omega" min="0.5" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="slider-phi">Initial Phase (&phi;)</label>
+                <span class="val-display" id="display-phi">0.0 rad</span>
+            </div>
+            <input type="range" id="slider-phi" min="0" max="6.28" step="0.1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="slider-timeScale">Time Scale</label>
+                <span class="val-display" id="display-timeScale">1.0x</span>
+            </div>
+            <input type="range" id="slider-timeScale" min="0" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <label class="control-group checkbox-group">
+            <span class="control-header" style="margin:0;">Show Vectors</span>
+            <input type="checkbox" id="check-vectors" checked>
+        </label>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> Particle P (UCM)</div>
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Particle P' (SHM)</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Velocity Vector (v)</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Acceleration Vector (a)</div>
+            <div class="legend-item"><div class="color-box" style="background: #ffffff; border: 1px solid #ccc;"></div> Position Vector (r)</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const params = {
+            A: 3.0,
+            omega: 2.0,
+            phi: 0.0,
+            timeScale: 1.0,
+            showVectors: true
+        };
+
+        let time = 0;
+        const clock = new THREE.Clock();
+
+        // --- DOM Elements ---
+        const container = document.getElementById('canvas-container');
+        const labelP = document.getElementById('label-p');
+        const labelPPrime = document.getElementById('label-pprime');
+        
+        const valEqX = document.getElementById('val-eq-x');
+        const valEqV = document.getElementById('val-eq-v');
+        const valEqA = document.getElementById('val-eq-a');
+
+        // --- Scene Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, -12, 15); // Looking at XY plane from an angle
+        camera.up.set(0, 1, 0);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Prevent going completely under
+        controls.minDistance = 5;
+        controls.maxDistance = 40;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(5, 5, 10);
+        scene.add(dirLight);
+
+        // --- Environment (Grid & Axes) ---
+        // Create a subtle grid on the XY plane
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcbd5e1, 0xe2e8f0);
+        gridHelper.rotation.x = Math.PI / 2;
+        scene.add(gridHelper);
+
+        // Custom Axes for clarity
+        const axesMaterial = new THREE.LineBasicMaterial({ color: 0x94a3b8, linewidth: 2 });
+        const xAxisGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-10, 0, 0), new THREE.Vector3(10, 0, 0)]);
+        const yAxisGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -10, 0), new THREE.Vector3(0, 10, 0)]);
+        scene.add(new THREE.Line(xAxisGeom, axesMaterial));
+        scene.add(new THREE.Line(yAxisGeom, axesMaterial));
+
+        // Origin marker
+        const originSphere = new THREE.Mesh(
+            new THREE.SphereGeometry(0.1, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0x475569 })
+        );
+        scene.add(originSphere);
+
+        // --- Physics Objects ---
+        
+        // 1. Reference Circle
+        const circleMaterial = new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.6 });
+        const circleGeometry = new THREE.BufferGeometry();
+        const circleLine = new THREE.LineLoop(circleGeometry, circleMaterial);
+        scene.add(circleLine);
+
+        function updateCircleGeometry() {
+            const points = [];
+            const segments = 64;
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                points.push(new THREE.Vector3(params.A * Math.cos(theta), params.A * Math.sin(theta), 0));
+            }
+            circleGeometry.setFromPoints(points);
+        }
+        updateCircleGeometry();
+
+        // 2. Particle P (UCM)
+        const pMaterial = new THREE.MeshPhongMaterial({ color: 0x7209B7, shininess: 100 });
+        const pSphere = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), pMaterial);
+        scene.add(pSphere);
+
+        // 3. Particle P' (SHM Projection)
+        const pPrimeMaterial = new THREE.MeshPhongMaterial({ color: 0xFF3366, shininess: 100 });
+        const pPrimeSphere = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), pPrimeMaterial);
+        scene.add(pPrimeSphere);
+
+        // 4. Position Vector (White Line)
+        const posVectorMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+        const posVectorGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]);
+        const posVectorLine = new THREE.Line(posVectorGeom, posVectorMaterial);
+        scene.add(posVectorLine);
+
+        // 5. Shadow Line (Dashed Blue)
+        const shadowMaterial = new THREE.LineDashedMaterial({ color: 0x4361EE, dashSize: 0.2, gapSize: 0.1 });
+        const shadowGeom = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,0)]);
+        const shadowLine = new THREE.Line(shadowGeom, shadowMaterial);
+        scene.add(shadowLine);
+
+        // 6. Vectors (Arrows)
+        const vColor = 0x06D6A0;
+        const aColor = 0xF77F00;
+        const velocityArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, vColor, 0.4, 0.2);
+        const accelerationArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, aColor, 0.4, 0.2);
+        scene.add(velocityArrow);
+        scene.add(accelerationArrow);
+
+        // --- UI Event Listeners ---
+        const bindSlider = (id, paramKey, displayId, unit) => {
+            const slider = document.getElementById(id);
+            const display = document.getElementById(displayId);
+            slider.addEventListener('input', (e) => {
+                params[paramKey] = parseFloat(e.target.value);
+                display.textContent = params[paramKey].toFixed(1) + unit;
+                if (paramKey === 'A') updateCircleGeometry();
+            });
+        };
+
+        bindSlider('slider-A', 'A', 'display-A', ' m');
+        bindSlider('slider-omega', 'omega', 'display-omega', ' rad/s');
+        bindSlider('slider-phi', 'phi', 'display-phi', ' rad');
+        bindSlider('slider-timeScale', 'timeScale', 'display-timeScale', 'x');
+
+        document.getElementById('check-vectors').addEventListener('change', (e) => {
+            params.showVectors = e.target.checked;
+            velocityArrow.visible = params.showVectors;
+            accelerationArrow.visible = params.showVectors;
+        });
+
+        // --- Window Resize ---
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = clock.getDelta();
+            time += dt * params.timeScale;
+
+            // Physics Calculations
+            const theta = params.omega * time + params.phi;
+            
+            // Positions
+            const x = params.A * Math.cos(theta);
+            const y = params.A * Math.sin(theta);
+            
+            pSphere.position.set(x, y, 0);
+            pPrimeSphere.position.set(x, 0, 0);
+
+            // Update Lines
+            posVectorLine.geometry.setFromPoints([new THREE.Vector3(0,0,0), pSphere.position]);
+            
+            shadowLine.geometry.setFromPoints([pSphere.position, pPrimeSphere.position]);
+            shadowLine.computeLineDistances(); // Required for dashed lines to render correctly
+
+            // Vectors
+            if (params.showVectors) {
+                // Velocity: tangential (-sin, cos)
+                const vDir = new THREE.Vector3(-Math.sin(theta), Math.cos(theta), 0);
+                const vMag = params.omega * params.A;
+                const vScaleFactor = 0.3; // Scale down for visual fit
+                
+                velocityArrow.position.copy(pSphere.position);
+                velocityArrow.setDirection(vDir);
+                velocityArrow.setLength(vMag * vScaleFactor, 0.4, 0.25);
+
+                // Acceleration: centripetal (-cos, -sin)
+                const aDir = new THREE.Vector3(-Math.cos(theta), -Math.sin(theta), 0);
+                const aMag = params.omega * params.omega * params.A;
+                const aScaleFactor = 0.1; // Scale down for visual fit
+                
+                accelerationArrow.position.copy(pSphere.position);
+                accelerationArrow.setDirection(aDir);
+                accelerationArrow.setLength(aMag * aScaleFactor, 0.4, 0.25);
+            }
+
+            // Update Formula Card
+            const vx = -params.omega * params.A * Math.sin(theta);
+            const ax = -params.omega * params.omega * x;
+
+            valEqX.textContent = `${x.toFixed(2)} m`;
+            valEqV.textContent = `${vx.toFixed(2)} m/s`;
+            valEqA.textContent = `${ax.toFixed(2)} m/s²`;
+
+            // Update HTML Labels Position (Project 3D to 2D)
+            const updateLabel = (mesh, labelElement, offsetX = 15, offsetY = -15) => {
+                const vector = mesh.position.clone();
+                vector.project(camera);
+                
+                const xPos = (vector.x * 0.5 + 0.5) * container.clientWidth;
+                const yPos = (vector.y * -0.5 + 0.5) * container.clientHeight;
+                
+                labelElement.style.left = `${xPos + offsetX}px`;
+                labelElement.style.top = `${yPos + offsetY}px`;
+            };
+
+            updateLabel(pSphere, labelP);
+            updateLabel(pPrimeSphere, labelPPrime, 0, 20); // P' label slightly below
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Start animation
+        animate();
+    </script>
+</body>
+</html>

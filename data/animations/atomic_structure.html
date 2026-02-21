@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atomic Structure & Electrostatic Charge Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent-red: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-orange: #F77F00;
+            --accent-green: #06D6A0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic Panel Base */
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            position: absolute;
+            z-index: 10;
+        }
+
+        /* Formula Card */
+        .formula-card {
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            min-width: 300px;
+        }
+
+        .formula-card h2 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .live-data {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .live-data span {
+            font-weight: 700;
+        }
+
+        .data-q {
+            color: var(--accent-blue);
+        }
+
+        .data-f {
+            color: var(--accent-orange);
+        }
+
+        /* Control Panel */
+        .control-panel {
+            top: 20px;
+            right: 20px;
+            width: 25%;
+            min-width: 280px;
+            max-width: 350px;
+            padding: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .control-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .control-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-weight: 700;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            border: 2px solid var(--text-main);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Slider Accents */
+        #protonCount::-webkit-slider-thumb {
+            border-color: var(--accent-red);
+        }
+
+        #electronCount::-webkit-slider-thumb {
+            border-color: var(--accent-blue);
+        }
+
+        #neutronCount::-webkit-slider-thumb {
+            border-color: var(--text-muted);
+        }
+
+        #testCharge::-webkit-slider-thumb {
+            border-color: var(--accent-orange);
+        }
+
+        #distance::-webkit-slider-thumb {
+            border-color: var(--accent-green);
+        }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.2);
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--accent-blue);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            transition: opacity 0.2s;
+            z-index: 5;
+        }
+
+        .label-nucleus {
+            color: var(--accent-red);
+        }
+
+        .label-test {
+            color: var(--accent-orange);
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .control-panel {
+                width: 90%;
+                top: auto;
+                bottom: 20px;
+                right: 5%;
+                max-height: 40vh;
+            }
+
+            .formula-card {
+                width: 90%;
+                left: 5%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- Formula Card -->
+    <div class="glass-panel formula-card">
+        <h2>Electrostatic Physics</h2>
+        <div class="math-text">
+            F = k<sub>e</sub> · (|Q<sub>atom</sub> · q<sub>t</sub>|) / r²
+        </div>
+        <div class="live-data">
+            <div>Net Atomic Charge (Q<sub>atom</sub>): <span id="val-qnet" class="data-q">0 C</span></div>
+            <div>Test Charge (q<sub>t</sub>): <span id="val-qt" class="data-q">0 C</span></div>
+            <div>Distance (r): <span id="val-r">15.0 Å</span></div>
+            <div>Electrostatic Force (F): <span id="val-f" class="data-f">0 N</span></div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="glass-panel control-panel">
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Protons (Z)</span>
+                <span class="control-value" id="disp-protons">6</span>
+            </div>
+            <input type="range" id="protonCount" min="1" max="20" value="6" step="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Electrons (e⁻)</span>
+                <span class="control-value" id="disp-electrons">6</span>
+            </div>
+            <input type="range" id="electronCount" min="0" max="20" value="6" step="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Neutrons (N)</span>
+                <span class="control-value" id="disp-neutrons">6</span>
+            </div>
+            <input type="range" id="neutronCount" min="0" max="22" value="6" step="1">
+        </div>
+
+        <div class="control-group" style="margin-top: 25px;">
+            <div class="control-header">
+                <span class="control-label">Test Charge (q<sub>t</sub>)</span>
+                <span class="control-value" id="disp-testcharge">+1 e</span>
+            </div>
+            <input type="range" id="testCharge" min="-5" max="5" value="1" step="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Distance (r)</span>
+                <span class="control-value" id="disp-distance">15.0 Å</span>
+            </div>
+            <input type="range" id="distance" min="5" max="30" value="15" step="0.1">
+        </div>
+
+        <div class="toggle-container">
+            <span class="control-label">Show Electric Field</span>
+            <label class="switch">
+                <input type="checkbox" id="showField">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="dot" style="background:#FF3366;"></div>Proton
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background:#BDC3C7;"></div>Neutron
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background:#4361EE;"></div>Electron
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background:#F77F00;"></div>F<sub>e</sub> Vector
+            </div>
+            <div class="legend-item">
+                <div class="dot" style="background:#06D6A0;"></div>Velocity Vector
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 3D Labels -->
+    <div id="label-nucleus" class="scene-label label-nucleus">Nucleus</div>
+    <div id="label-test" class="scene-label label-test">Test Charge</div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Constants ---
+        const e_charge = 1.602e-19; // Elementary charge in Coulombs
+        const k_e = 8.987e9; // Coulomb's constant in N·m²/C²
+        const angstrom = 1e-10; // Meters
+        const visual_k = 150; // Scaled constant for visual orbital velocity & force arrows
+
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.Fog(0xf0f4f8, 30, 100);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 25, 45);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 80;
+        controls.minDistance = 10;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 20;
+        dirLight.shadow.camera.bottom = -20;
+        dirLight.shadow.camera.left = -20;
+        dirLight.shadow.camera.right = 20;
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 0.4, 50);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        // --- Grid ---
+        const gridHelper = new THREE.GridHelper(100, 100, 0xd1d9e6, 0xe2e8f0);
+        gridHelper.position.y = -5;
+        scene.add(gridHelper);
+
+        // --- Materials & Geometries ---
+        const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
+        const smallSphereGeo = new THREE.SphereGeometry(0.4, 16, 16);
+        const medSphereGeo = new THREE.SphereGeometry(1.2, 32, 32);
+
+        const matProton = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.3, metalness: 0.1 });
+        const matNeutron = new THREE.MeshStandardMaterial({ color: 0xBDC3C7, roughness: 0.5, metalness: 0.1 });
+        const matElectron = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.2, metalness: 0.3, emissive: 0x4361EE, emissiveIntensity: 0.2 });
+        const matTestCharge = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.3, metalness: 0.2 });
+
+        // --- Groups ---
+        const nucleusGroup = new THREE.Group();
+        scene.add(nucleusGroup);
+
+        const electronGroup = new THREE.Group();
+        scene.add(electronGroup);
+
+        const fieldGroup = new THREE.Group();
+        scene.add(fieldGroup);
+
+        // --- Objects ---
+        let nucleusParticles = [];
+        let electrons = [];
+        let orbitLines = [];
+        let fieldLines = [];
+
+        // Test Charge
+        const testChargeMesh = new THREE.Mesh(medSphereGeo, matTestCharge);
+        testChargeMesh.castShadow = true;
+        scene.add(testChargeMesh);
+
+        // Force Arrow (Electrostatic Force)
+        const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 0, 0), 0, 0xF77F00, 1.5, 1);
+        scene.add(forceArrow);
+
+        // --- UI Elements ---
+        const uiProtons = document.getElementById('protonCount');
+        const uiElectrons = document.getElementById('electronCount');
+        const uiNeutrons = document.getElementById('neutronCount');
+        const uiTestCharge = document.getElementById('testCharge');
+        const uiDistance = document.getElementById('distance');
+        const uiShowField = document.getElementById('showField');
+
+        const dispProtons = document.getElementById('disp-protons');
+        const dispElectrons = document.getElementById('disp-electrons');
+        const dispNeutrons = document.getElementById('disp-neutrons');
+        const dispTestCharge = document.getElementById('disp-testcharge');
+        const dispDistance = document.getElementById('disp-distance');
+
+        const valQnet = document.getElementById('val-qnet');
+        const valQt = document.getElementById('val-qt');
+        const valR = document.getElementById('val-r');
+        const valF = document.getElementById('val-f');
+
+        const labelNucleus = document.getElementById('label-nucleus');
+        const labelTest = document.getElementById('label-test');
+
+        // --- Functions ---
+
+        function buildNucleus(Z, N) {
+            // Clear old
+            nucleusGroup.clear();
+            nucleusParticles = [];
+
+            const total = Z + N;
+            const radius = Math.pow(total, 1 / 3) * 0.6; // Packing radius
+
+            for (let i = 0; i < total; i++) {
+                const isProton = i < Z;
+                const mesh = new THREE.Mesh(sphereGeo, isProton ? matProton : matNeutron);
+                mesh.scale.setScalar(0.6);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+
+                // Random spherical distribution
+                const r = radius * Math.cbrt(Math.random());
+                const theta = Math.random() * 2 * Math.PI;
+                const phi = Math.acos(2 * Math.random() - 1);
+
+                mesh.position.set(
+                    r * Math.sin(phi) * Math.cos(theta),
+                    r * Math.sin(phi) * Math.sin(theta),
+                    r * Math.cos(phi)
+                );
+
+                mesh.userData = {
+                    basePos: mesh.position.clone(),
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 2 + Math.random() * 3
+                };
+
+                nucleusGroup.add(mesh);
+                nucleusParticles.push(mesh);
+            }
+        }
+
+        function buildElectrons(eCount) {
+            electronGroup.clear();
+            electrons = [];
+            orbitLines = [];
+
+            const shellCapacities = [2, 8, 8, 18];
+            const shellRadii = [5, 9, 13, 17];
+
+            let currentShell = 0;
+            let countInShell = 0;
+
+            // Draw Orbit Lines
+            for (let i = 0; i < shellRadii.length; i++) {
+                // Only draw shells that have or could have electrons based on current count
+                if (i > 0 && eCount <= shellCapacities.slice(0, i).reduce((a, b) => a + b, 0)) continue;
+
+                const curve = new THREE.EllipseCurve(0, 0, shellRadii[i], shellRadii[i], 0, 2 * Math.PI, false, 0);
+                const points = curve.getPoints(64);
+                const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                const material = new THREE.LineBasicMaterial({ color: 0x8898aa, transparent: true, opacity: 0.4 });
+                const ellipse = new THREE.Line(geometry, material);
+                ellipse.rotation.x = Math.PI / 2;
+                electronGroup.add(ellipse);
+            }
+
+            for (let i = 0; i < eCount; i++) {
+                if (countInShell >= shellCapacities[currentShell]) {
+                    currentShell++;
+                    countInShell = 0;
+                }
+
+                const r = shellRadii[currentShell];
+                const angle = (countInShell / shellCapacities[currentShell]) * Math.PI * 2;
+
+                const mesh = new THREE.Mesh(smallSphereGeo, matElectron);
+                mesh.castShadow = true;
+
+                // Velocity Arrow
+                const vArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 0, 0), 2, 0x06D6A0, 0.8, 0.6);
+
+                electronGroup.add(mesh);
+                electronGroup.add(vArrow);
+
+                electrons.push({
+                    mesh: mesh,
+                    r: r,
+                    angle: angle,
+                    shell: currentShell,
+                    vArrow: vArrow
+                });
+
+                countInShell++;
+            }
+        }
+
+        function buildElectricField() {
+            fieldGroup.clear();
+            fieldLines = [];
+            const numLines = 12;
+
+            for (let i = 0; i < numLines; i++) {
+                const phi = Math.acos(-1 + (2 * i) / numLines);
+                const theta = Math.sqrt(numLines * Math.PI) * phi;
+
+                const dir = new THREE.Vector3(
+                    Math.sin(phi) * Math.cos(theta),
+                    Math.sin(phi) * Math.sin(theta),
+                    Math.cos(phi)
+                ).normalize();
+
+                const arrow = new THREE.ArrowHelper(dir, dir.clone().multiplyScalar(3), 15, 0xaaaaaa, 1, 0.5);
+                arrow.line.material.transparent = true;
+                arrow.line.material.opacity = 0.2;
+                arrow.cone.material.transparent = true;
+                arrow.cone.material.opacity = 0.4;
+
+                fieldGroup.add(arrow);
+                fieldLines.push(arrow);
+            }
+        }
+
+        function updateLabels() {
+            const tempV = new THREE.Vector3();
+
+            // Nucleus Label
+            tempV.set(0, 3, 0);
+            tempV.project(camera);
+            labelNucleus.style.left = `${(tempV.x * 0.5 + 0.5) * window.innerWidth}px`;
+            labelNucleus.style.top = `${(tempV.y * -0.5 + 0.5) * window.innerHeight}px`;
+
+            // Test Charge Label
+            tempV.copy(testChargeMesh.position);
+            tempV.y += 2.5;
+            tempV.project(camera);
+            labelTest.style.left = `${(tempV.x * 0.5 + 0.5) * window.innerWidth}px`;
+            labelTest.style.top = `${(tempV.y * -0.5 + 0.5) * window.innerHeight}px`;
+        }
+
+        function formatScientific(num) {
+            if (num === 0) return "0";
+            const exponent = Math.floor(Math.log10(Math.abs(num)));
+            const mantissa = num / Math.pow(10, exponent);
+            return `${mantissa.toFixed(2)} × 10<sup>${exponent}</sup>`;
+        }
+
+        // --- Event Listeners ---
+        function onUIChange() {
+            const Z = parseInt(uiProtons.value);
+            const e = parseInt(uiElectrons.value);
+            const N = parseInt(uiNeutrons.value);
+            const qt = parseInt(uiTestCharge.value);
+            const r = parseFloat(uiDistance.value);
+
+            dispProtons.innerText = Z;
+            dispElectrons.innerText = e;
+            dispNeutrons.innerText = N;
+            dispTestCharge.innerText = (qt > 0 ? "+" : "") + qt + " e";
+            dispDistance.innerText = r.toFixed(1) + " Å";
+
+            // Rebuild geometries if counts changed
+            if (nucleusParticles.length !== (Z + N)) buildNucleus(Z, N);
+            if (electrons.length !== e) buildElectrons(e);
+
+            // Update Test Charge Color
+            if (qt > 0) testChargeMesh.material.color.setHex(0xFF3366);
+            else if (qt < 0) testChargeMesh.material.color.setHex(0x4361EE);
+            else testChargeMesh.material.color.setHex(0xBDC3C7);
+
+            // Update Field Lines Visibility
+            const Q_net = Z - e;
+            fieldGroup.visible = uiShowField.checked && Q_net !== 0;
+
+            if (fieldGroup.visible) {
+                const color = Q_net > 0 ? 0xFF3366 : 0x4361EE;
+                const dirMult = Q_net > 0 ? 1 : -1;
+                fieldLines.forEach(arrow => {
+                    arrow.setColor(color);
+                    const baseDir = arrow.userData.baseDir || arrow.dir.clone();
+                    arrow.userData.baseDir = baseDir;
+                    arrow.setDirection(baseDir.clone().multiplyScalar(dirMult));
+                });
+            }
+        }
+
+        uiProtons.addEventListener('input', onUIChange);
+        uiElectrons.addEventListener('input', onUIChange);
+        uiNeutrons.addEventListener('input', onUIChange);
+        uiTestCharge.addEventListener('input', onUIChange);
+        uiDistance.addEventListener('input', onUIChange);
+        uiShowField.addEventListener('change', onUIChange);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Initialization ---
+        buildNucleus(6, 6);
+        buildElectrons(6);
+        buildElectricField();
+        onUIChange();
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            const Z = parseInt(uiProtons.value);
+            const eCount = parseInt(uiElectrons.value);
+            const qt = parseInt(uiTestCharge.value);
+            const r_screen = parseFloat(uiDistance.value);
+
+            const Q_net_e = Z - eCount; // Net charge in elementary units
+
+            // 1. Physics Calculations
+            // Real physical values for UI
+            const Q_atom_C = Q_net_e * e_charge;
+            const qt_C = qt * e_charge;
+            const r_meters = r_screen * angstrom;
+
+            let F_real = 0;
+            if (r_meters > 0) {
+                F_real = k_e * Math.abs(Q_atom_C * qt_C) / (r_meters * r_meters);
+            }
+
+            // Visual Force for Arrow (Inverse Square Law scaled for screen)
+            let F_visual = 0;
+            if (r_screen > 0) {
+                F_visual = visual_k * Math.abs(Q_net_e * qt) / (r_screen * r_screen);
+            }
+
+            // 2. Update UI Data
+            valQnet.innerHTML = `${formatScientific(Q_atom_C)} C`;
+            valQt.innerHTML = `${formatScientific(qt_C)} C`;
+            valR.innerHTML = `${r_screen.toFixed(1)} Å`;
+            valF.innerHTML = `${formatScientific(F_real)} N`;
+
+            // 3. Update Test Charge Position
+            testChargeMesh.position.set(r_screen, 0, 0);
+
+            // 4. Update Force Arrow
+            if (F_visual > 0.05 && Q_net_e !== 0 && qt !== 0) {
+                forceArrow.visible = true;
+                const isRepulsive = (Q_net_e * qt) > 0;
+
+                // Vector pointing FROM nucleus TO test charge
+                const radialDir = new THREE.Vector3().copy(testChargeMesh.position).normalize();
+
+                // Offset the arrow origin so it starts at the edge of the test charge sphere (radius 1.2)
+                const origin = testChargeMesh.position.clone();
+
+                if (isRepulsive) {
+                    // Repulsion: Arrow starts at outer edge and points away
+                    origin.add(radialDir.clone().multiplyScalar(1.2));
+                    forceArrow.setDirection(radialDir);
+                } else {
+                    // Attraction: Arrow starts at inner edge and points towards nucleus
+                    origin.sub(radialDir.clone().multiplyScalar(1.2));
+                    forceArrow.setDirection(radialDir.clone().multiplyScalar(-1));
+                }
+
+                forceArrow.position.copy(origin);
+
+                // Clamp visual length for UI sanity
+                const arrowLen = Math.min(Math.max(F_visual, 1.5), 25);
+                forceArrow.setLength(arrowLen, arrowLen * 0.25, arrowLen * 0.15);
+            } else {
+                forceArrow.visible = false;
+            }
+
+            // 5. Nucleus Brownian Motion (Jitter)
+            nucleusParticles.forEach(p => {
+                p.position.x = p.userData.basePos.x + Math.sin(time * p.userData.speed + p.userData.phase) * 0.05;
+                p.position.y = p.userData.basePos.y + Math.cos(time * p.userData.speed * 1.1 + p.userData.phase) * 0.05;
+                p.position.z = p.userData.basePos.z + Math.sin(time * p.userData.speed * 0.9 + p.userData.phase) * 0.05;
+            });
+
+            // 6. Electron Orbits
+            electrons.forEach(el => {
+                // v = sqrt(k * Z / r)
+                const v_angular = Math.sqrt(visual_k * Z / el.r) * 0.05;
+                el.angle += v_angular * delta * 10;
+
+                const x = el.r * Math.cos(el.angle);
+                const z = el.r * Math.sin(el.angle);
+                el.mesh.position.set(x, 0, z);
+
+                // Velocity Vector Tangent
+                const tangent = new THREE.Vector3(-Math.sin(el.angle), 0, Math.cos(el.angle)).normalize();
+                el.vArrow.position.copy(el.mesh.position);
+                el.vArrow.setDirection(tangent);
+
+                // Scale velocity arrow based on speed
+                const v_mag = Math.max(v_angular * 15, 1.5);
+                el.vArrow.setLength(v_mag, v_mag * 0.3, v_mag * 0.2);
+            });
+
+            // 7. Update HTML Labels
+            updateLabels();
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+    </script>
+</body>
+
+</html>

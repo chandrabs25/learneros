@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RLC Circuit Phasor Dynamics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --color-v: #FF3366;
+            --color-i: #4361EE;
+            --color-vr: #F77F00;
+            --color-vl: #7209B7;
+            --color-vc: #06D6A0;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            position: absolute;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            padding: 20px;
+            pointer-events: auto;
+        }
+
+        #controls {
+            right: 20px;
+            top: 20px;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        #formulas {
+            left: 20px;
+            top: 20px;
+            min-width: 220px;
+        }
+
+        #triangle-container {
+            left: 20px;
+            bottom: 20px;
+            width: 220px;
+        }
+
+        h2, h3 {
+            margin: 0 0 15px 0;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        h3 { font-size: 1.1rem; }
+
+        .slider-group {
+            margin-bottom: 18px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .slider-value {
+            color: var(--color-i);
+            font-family: monospace;
+            font-size: 0.95rem;
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--color-i);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .math-row {
+            display: flex;
+            align-items: center;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: 600;
+            font-size: 1.05rem;
+            margin-bottom: 8px;
+        }
+
+        .math-label { width: 45px; }
+        .math-val { font-weight: 800; margin-left: auto; }
+
+        .legend-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: #cbd5e1;
+            margin: 15px 0;
+        }
+
+        .floating-label {
+            position: absolute;
+            font-weight: 800;
+            font-size: 1.2rem;
+            text-shadow: 0 2px 4px rgba(255,255,255,0.8);
+            pointer-events: none;
+            z-index: 5;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.2s;
+        }
+
+        #triangle-canvas {
+            width: 100%;
+            height: 160px;
+            display: block;
+        }
+
+        .resonance-badge {
+            display: none;
+            background: var(--color-vc);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-align: center;
+            margin-top: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(6, 214, 160, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(6, 214, 160, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(6, 214, 160, 0); }
+        }
+
+        /* Scrollbar styling for controls */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- Top Left: Live Formulas -->
+    <div id="formulas" class="glass-panel">
+        <h3>Circuit State</h3>
+        <div class="math-row">
+            <span class="legend-dot" style="background: var(--color-vl);"></span>
+            <span class="math-label">X<sub>L</sub></span> = <span class="math-val" id="val-xl">0.0</span> Ω
+        </div>
+        <div class="math-row">
+            <span class="legend-dot" style="background: var(--color-vc);"></span>
+            <span class="math-label">X<sub>C</sub></span> = <span class="math-val" id="val-xc">0.0</span> Ω
+        </div>
+        <div class="math-row">
+            <span class="legend-dot" style="background: var(--color-vr);"></span>
+            <span class="math-label">R</span> = <span class="math-val" id="val-r-disp">100</span> Ω
+        </div>
+        <hr>
+        <div class="math-row">
+            <span class="math-label">Z</span> = <span class="math-val" id="val-z">0.0</span> Ω
+        </div>
+        <div class="math-row">
+            <span class="legend-dot" style="background: var(--color-i);"></span>
+            <span class="math-label">I<sub>m</sub></span> = <span class="math-val" id="val-im">0.00</span> A
+        </div>
+        <div class="math-row">
+            <span class="math-label">φ</span> = <span class="math-val" id="val-phi">0.0</span>°
+        </div>
+        <div id="resonance-badge" class="resonance-badge">RESONANCE</div>
+    </div>
+
+    <!-- Bottom Left: Impedance Triangle -->
+    <div id="triangle-container" class="glass-panel">
+        <h3 style="text-align: center; margin-bottom: 5px;">Impedance Triangle</h3>
+        <canvas id="triangle-canvas" width="440" height="320"></canvas>
+    </div>
+
+    <!-- Right: Controls -->
+    <div id="controls" class="glass-panel">
+        <h2>Parameters</h2>
+        
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Frequency (f)</span>
+                <span class="slider-value"><span id="disp-f">50</span> Hz</span>
+            </div>
+            <input type="range" id="slider-f" min="10" max="100" step="1" value="50">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Resistance (R)</span>
+                <span class="slider-value"><span id="disp-R">100</span> Ω</span>
+            </div>
+            <input type="range" id="slider-R" min="10" max="200" step="5" value="100">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Inductance (L)</span>
+                <span class="slider-value"><span id="disp-L">0.5</span> H</span>
+            </div>
+            <input type="range" id="slider-L" min="0.1" max="2.0" step="0.1" value="0.5">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Capacitance (C)</span>
+                <span class="slider-value"><span id="disp-C">40</span> μF</span>
+            </div>
+            <input type="range" id="slider-C" min="10" max="100" step="1" value="40">
+        </div>
+
+        <div class="slider-group">
+            <div class="slider-header">
+                <span style="color: var(--color-v);">Source Voltage (V<sub>m</sub>)</span>
+                <span class="slider-value" style="color: var(--color-v);"><span id="disp-Vm">100</span> V</span>
+            </div>
+            <input type="range" id="slider-Vm" min="50" max="200" step="10" value="100">
+        </div>
+        
+        <hr>
+        <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.4;">
+            <strong>Legend:</strong><br>
+            <span style="color: var(--color-v); font-weight: bold;">Red:</span> Source Voltage (V)<br>
+            <span style="color: var(--color-i); font-weight: bold;">Blue:</span> Current (I)<br>
+            <span style="color: var(--color-vr); font-weight: bold;">Orange:</span> Resistor Voltage (V<sub>R</sub>)<br>
+            <span style="color: var(--color-vl); font-weight: bold;">Purple:</span> Inductor Voltage (V<sub>L</sub>)<br>
+            <span style="color: var(--color-vc); font-weight: bold;">Green:</span> Capacitor Voltage (V<sub>C</sub>)
+        </div>
+    </div>
+
+    <!-- 3D Floating Labels -->
+    <div id="label-v" class="floating-label" style="color: var(--color-v);">V</div>
+    <div id="label-i" class="floating-label" style="color: var(--color-i);">I</div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        // --- 1. Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(25, 20, 35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, -15);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(20, 40, 20);
+        scene.add(dirLight);
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-20, -20, -20);
+        scene.add(backLight);
+
+        // Grid & Time Axis
+        const gridHelper = new THREE.GridHelper(60, 60, 0xcccccc, 0xe2e8f0);
+        gridHelper.position.y = -0.1; // Slightly below to avoid z-fighting
+        scene.add(gridHelper);
+
+        const zAxisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-60)]);
+        const zAxisMat = new THREE.LineDashedMaterial({ color: 0x94a3b8, dashSize: 1, gapSize: 0.5 });
+        const zAxis = new THREE.Line(zAxisGeo, zAxisMat);
+        zAxis.computeLineDistances();
+        scene.add(zAxis);
+
+        // --- 2. Geometry Generators ---
+
+        // Creates a solid 3D arrow (Phasor)
+        function createPhasor(colorHex, radius, isThick = false) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshPhongMaterial({ 
+                color: colorHex, 
+                shininess: 80,
+                specular: 0x444444
+            });
+            
+            const cylGeo = new THREE.CylinderGeometry(radius, radius, 1, 16);
+            cylGeo.rotateZ(-Math.PI / 2);
+            const cyl = new THREE.Mesh(cylGeo, mat);
+            
+            const coneRadius = isThick ? radius * 2.5 : radius * 3;
+            const coneHeight = isThick ? radius * 5 : radius * 6;
+            const coneGeo = new THREE.ConeGeometry(coneRadius, coneHeight, 16);
+            coneGeo.rotateZ(-Math.PI / 2);
+            const cone = new THREE.Mesh(coneGeo, mat);
+            
+            group.add(cyl);
+            group.add(cone);
+            scene.add(group);
+            
+            return {
+                group: group,
+                update: function(length, angle) {
+                    if (length < 0.1) { group.visible = false; return; }
+                    group.visible = true;
+                    
+                    const headLen = Math.min(coneHeight, length * 0.4);
+                    const bodyLen = length - headLen;
+                    
+                    cyl.scale.set(bodyLen, 1, 1);
+                    cyl.position.set(bodyLen / 2, 0, 0);
+                    
+                    cone.scale.set(headLen / coneHeight, headLen / coneHeight, headLen / coneHeight);
+                    cone.position.set(bodyLen + headLen / 2, 0, 0);
+                    
+                    group.rotation.z = angle;
+                }
+            };
+        }
+
+        // Creates a 3D Ribbon for the sine wave
+        function createWaveRibbon(colorHex, width) {
+            const pts = 400;
+            const lengthZ = 60;
+            const geo = new THREE.BufferGeometry();
+            const vertices = new Float32Array(pts * 2 * 3);
+            const indices = [];
+            
+            for(let i=0; i<pts-1; i++) {
+                indices.push(i*2, i*2+1, i*2+2);
+                indices.push(i*2+1, i*2+3, i*2+2);
+            }
+            
+            geo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geo.setIndex(indices);
+            
+            const mat = new THREE.MeshPhongMaterial({ 
+                color: colorHex, 
+                side: THREE.DoubleSide,
+                shininess: 50,
+                transparent: true,
+                opacity: 0.85
+            });
+            
+            const mesh = new THREE.Mesh(geo, mat);
+            scene.add(mesh);
+            
+            return {
+                update: function(phase, amplitude, k) {
+                    const pos = geo.attributes.position.array;
+                    for (let i = 0; i < pts; i++) {
+                        const z = -(i / (pts-1)) * lengthZ;
+                        const angle = phase + z / k;
+                        const x = amplitude * Math.cos(angle);
+                        const y = amplitude * Math.sin(angle);
+                        
+                        // Normal vector in XY plane
+                        const nx = -Math.sin(angle) * width;
+                        const ny = Math.cos(angle) * width;
+                        
+                        pos[i*6]   = x + nx; pos[i*6+1] = y + ny; pos[i*6+2] = z;
+                        pos[i*6+3] = x - nx; pos[i*6+4] = y - ny; pos[i*6+5] = z;
+                    }
+                    geo.attributes.position.needsUpdate = true;
+                    geo.computeVertexNormals();
+                }
+            };
+        }
+
+        // --- 3. Instantiate Objects ---
+        const colors = {
+            V: 0xFF3366,
+            I: 0x4361EE,
+            VR: 0xF77F00,
+            VL: 0x7209B7,
+            VC: 0x06D6A0
+        };
+
+        const phasorV = createPhasor(colors.V, 0.3, true);
+        const phasorI = createPhasor(colors.I, 0.15, false);
+        const phasorVR = createPhasor(colors.VR, 0.1, false);
+        const phasorVL = createPhasor(colors.VL, 0.1, false);
+        const phasorVC = createPhasor(colors.VC, 0.1, false);
+
+        const waveV = createWaveRibbon(colors.V, 0.3);
+        const waveI = createWaveRibbon(colors.I, 0.15);
+
+        // --- 4. Physics & State ---
+        let params = { f: 50, R: 100, L: 0.5, C: 40, Vm: 100 };
+        let time = 0;
+        const clock = new THREE.Clock();
+
+        // Bind Sliders
+        const sliderIds = ['f', 'R', 'L', 'C', 'Vm'];
+        sliderIds.forEach(id => {
+            const slider = document.getElementById(`slider-${id}`);
+            const disp = document.getElementById(`disp-${id}`);
+            slider.addEventListener('input', (e) => {
+                params[id] = parseFloat(e.target.value);
+                disp.innerText = e.target.value;
+            });
+        });
+
+        function calculatePhysics() {
+            const w = 2 * Math.PI * params.f;
+            const XL = w * params.L;
+            const XC = 1 / (w * params.C * 1e-6); // C is in microFarads
+            const Xnet = XL - XC;
+            const Z = Math.sqrt(params.R * params.R + Xnet * Xnet);
+            const Im = params.Vm / Z;
+            const phi = Math.atan2(Xnet, params.R); // Phase angle (rad)
+            
+            return { w, XL, XC, Xnet, Z, Im, phi };
+        }
+
+        // --- 5. UI Updates ---
+        function updateUI(phys) {
+            document.getElementById('val-xl').innerText = phys.XL.toFixed(1);
+            document.getElementById('val-xc').innerText = phys.XC.toFixed(1);
+            document.getElementById('val-r-disp').innerText = params.R.toFixed(0);
+            document.getElementById('val-z').innerText = phys.Z.toFixed(1);
+            document.getElementById('val-im').innerText = phys.Im.toFixed(2);
+            document.getElementById('val-phi').innerText = (phys.phi * 180 / Math.PI).toFixed(1);
+
+            const badge = document.getElementById('resonance-badge');
+            if (Math.abs(phys.XL - phys.XC) < 5) {
+                badge.style.display = 'block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        function drawImpedanceTriangle(R, Xnet, Z) {
+            const canvas = document.getElementById('triangle-canvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            ctx.clearRect(0, 0, w, h);
+            
+            const padding = 40;
+            const maxVal = Math.max(R, Math.abs(Xnet), Z);
+            if(maxVal === 0) return;
+            
+            // Scale to fit canvas
+            const scale = (Math.min(w, h) - padding * 2) / maxVal;
+            
+            const cx = padding;
+            const cy = h / 2;
+            
+            const pxR = R * scale;
+            const pxX = -Xnet * scale; // Canvas Y is inverted
+            
+            // Draw Axes
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(0, cy); ctx.lineTo(w, cy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx, 0); ctx.lineTo(cx, h); ctx.stroke();
+            
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // R (Orange)
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + pxR, cy);
+            ctx.strokeStyle = '#F77F00'; ctx.stroke();
+            
+            // Xnet (Purple if Inductive, Green if Capacitive)
+            ctx.beginPath(); ctx.moveTo(cx + pxR, cy); ctx.lineTo(cx + pxR, cy + pxX);
+            ctx.strokeStyle = Xnet >= 0 ? '#7209B7' : '#06D6A0'; ctx.stroke();
+            
+            // Z (Dark)
+            ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + pxR, cy + pxX);
+            ctx.strokeStyle = '#1e293b'; ctx.stroke();
+            
+            // Labels
+            ctx.font = 'bold 16px Inter';
+            ctx.fillStyle = '#1e293b';
+            ctx.fillText('R', cx + pxR/2 - 5, cy + 20);
+            
+            const xLabel = Xnet >= 0 ? 'X_L - X_C' : 'X_C - X_L';
+            ctx.fillText(Xnet >= 0 ? 'X>0' : 'X<0', cx + pxR + 10, cy + pxX/2 + 5);
+            ctx.fillText('Z', cx + pxR/2 - 15, cy + pxX/2 - 10);
+        }
+
+        function updateFloatingLabels(vLen, iLen, phaseV, phaseI) {
+            const vPos = new THREE.Vector3(vLen * Math.cos(phaseV), vLen * Math.sin(phaseV), 0);
+            const iPos = new THREE.Vector3(iLen * Math.cos(phaseI), iLen * Math.sin(phaseI), 0);
+            
+            vPos.project(camera);
+            iPos.project(camera);
+            
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            const vEl = document.getElementById('label-v');
+            const iEl = document.getElementById('label-i');
+            
+            // Hide if behind camera
+            if (vPos.z > 1) vEl.style.opacity = 0;
+            else {
+                vEl.style.opacity = 1;
+                vEl.style.left = (vPos.x * 0.5 + 0.5) * w + 'px';
+                vEl.style.top = (-vPos.y * 0.5 + 0.5) * h + 'px';
+            }
+            
+            if (iPos.z > 1) iEl.style.opacity = 0;
+            else {
+                iEl.style.opacity = 1;
+                iEl.style.left = (iPos.x * 0.5 + 0.5) * w + 'px';
+                iEl.style.top = (-iPos.y * 0.5 + 0.5) * h + 'px';
+            }
+        }
+
+        // --- 6. Main Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = clock.getDelta();
+            const phys = calculatePhysics();
+            
+            // Visual time scaling: Make 50Hz readable. 
+            // Let visual 1 cycle take 2 seconds at 50Hz.
+            const visualFreq = params.f / 100; 
+            time += dt * visualFreq * 2 * Math.PI;
+            
+            const phaseV = time;
+            const phaseI = time - phys.phi; // Current lags voltage by phi
+            
+            // Calculate raw visual lengths
+            let vLen = params.Vm * 0.1;
+            let iLen = phys.Im * 8; // Scale up current for visibility
+            let vrLen = phys.Im * params.R * 0.1;
+            let vlLen = phys.Im * phys.XL * 0.1;
+            let vcLen = phys.Im * phys.XC * 0.1;
+            
+            // Auto-scaling to keep phasors on screen
+            const maxLen = Math.max(vLen, iLen, vrLen, vlLen, vcLen);
+            const targetMax = 12; // Max desired length in 3D units
+            if (maxLen > 0.1) {
+                const scaleF = targetMax / maxLen;
+                vLen *= scaleF;
+                iLen *= scaleF;
+                vrLen *= scaleF;
+                vlLen *= scaleF;
+                vcLen *= scaleF;
+            }
+            
+            // Update Phasors
+            phasorV.update(vLen, phaseV);
+            phasorI.update(iLen, phaseI);
+            
+            // Component voltages (Starting from origin as per spec)
+            phasorVR.update(vrLen, phaseI); // In phase with I
+            phasorVL.update(vlLen, phaseI + Math.PI/2); // Leads I by 90
+            phasorVC.update(vcLen, phaseI - Math.PI/2); // Lags I by 90
+            
+            // Update Waves
+            // k determines wavelength. lambda = 2*pi*k. Let lambda = 15 units.
+            const k = 15 / (2 * Math.PI);
+            waveV.update(phaseV, vLen, k);
+            waveI.update(phaseI, iLen, k);
+            
+            // Update 2D UI
+            updateUI(phys);
+            drawImpedanceTriangle(params.R, phys.Xnet, phys.Z);
+            updateFloatingLabels(vLen, iLen, phaseV, phaseI);
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        animate();
+
+    </script>
+</body>
+</html>

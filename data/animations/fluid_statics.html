@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluid Statics & Archimedes' Principle</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+            z-index: 2;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        #formula-card {
+            width: 320px;
+        }
+
+        #controls-card {
+            width: 320px;
+        }
+
+        h3 {
+            margin: 0 0 5px 0;
+            color: #111;
+            font-weight: 800;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid #4361EE;
+            padding-bottom: 8px;
+        }
+
+        p {
+            margin: 5px 0;
+            font-size: 0.95rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            margin: 5px 0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* Scrollbar styling for panels */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+
+        @media (max-width: 768px) {
+            #ui-container {
+                flex-direction: column;
+                overflow-y: auto;
+                pointer-events: auto;
+            }
+            .glass-panel {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            #canvas-container {
+                pointer-events: none; /* Disable 3D interaction on small screens if UI covers it */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-container">
+        <div class="glass-panel" id="formula-card">
+            <h3>Fluid Statics</h3>
+            <p><span>Probe Depth ($h$):</span> <span class="mono" id="val-h">5.0 m</span></p>
+            <p><span>Abs. Pressure ($P$):</span> <span class="mono" id="val-p">101325 Pa</span></p>
+            <hr>
+            <p><span>Buoyancy ($F_B$):</span> <span class="mono" id="val-fb" style="color: #06D6A0; background: rgba(6, 214, 160, 0.1);">0 N</span></p>
+            <p><span>Weight ($W$):</span> <span class="mono" id="val-w" style="color: #F77F00; background: rgba(247, 127, 0, 0.1);">0 N</span></p>
+            <p><span>Net Force ($F_{net}$):</span> <span class="mono" id="val-fnet">0 N</span></p>
+            <hr>
+            <p><span>Status:</span> <span class="mono" id="val-status" style="color: #7209B7; background: rgba(114, 9, 183, 0.1);">Neutral</span></p>
+            
+            <div style="margin-top: 10px; display: flex; flex-direction: column; gap: 5px;">
+                <div class="legend"><div class="color-box" style="background: #06D6A0;"></div> Buoyancy Force</div>
+                <div class="legend"><div class="color-box" style="background: #F77F00;"></div> Gravity (Weight)</div>
+                <div class="legend"><div class="color-box" style="background: #FF3366;"></div> Hydrostatic Pressure</div>
+            </div>
+        </div>
+
+        <div class="glass-panel" id="controls-card">
+            <h3>Parameters</h3>
+            
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Fluid Density ($\rho$)</span>
+                    <span class="mono" id="val-density-fluid">1000 kg/m³</span>
+                </div>
+                <input type="range" id="density_fluid" min="500" max="2000" step="10" value="1000">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Object Density ($\rho_{obj}$)</span>
+                    <span class="mono" id="val-density-obj">800 kg/m³</span>
+                </div>
+                <input type="range" id="density_obj" min="200" max="3000" step="10" value="800">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Gravity ($g$)</span>
+                    <span class="mono" id="val-gravity">9.8 m/s²</span>
+                </div>
+                <input type="range" id="gravity_val" min="0" max="20" step="0.1" value="9.8">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Object Volume ($V$)</span>
+                    <span class="mono" id="val-volume">1.0 m³</span>
+                </div>
+                <input type="range" id="obj_volume" min="0.5" max="8.0" step="0.1" value="1.0">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Probe Depth ($h$)</span>
+                    <span class="mono" id="val-probe">5.0 m</span>
+                </div>
+                <input type="range" id="probe_depth" min="0" max="10" step="0.1" value="5.0">
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(18, 12, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-10, 0, -15);
+        scene.add(fillLight);
+
+        // --- Objects ---
+        const TANK_SIZE = 10;
+        const TANK_BOTTOM = -5;
+        const TANK_TOP = 5;
+        const FLUID_SURFACE = 5; // Fluid fills the tank completely
+
+        // 1. Tank (Wireframe + Glass back)
+        const tankGeo = new THREE.BoxGeometry(TANK_SIZE, TANK_SIZE, TANK_SIZE);
+        const tankMat = new THREE.MeshPhysicalMaterial({ 
+            color: 0xffffff, 
+            transparent: true, 
+            opacity: 0.1, 
+            side: THREE.BackSide,
+            roughness: 0.1,
+            metalness: 0.1
+        });
+        const tank = new THREE.Mesh(tankGeo, tankMat);
+        scene.add(tank);
+
+        const edgesGeo = new THREE.EdgesGeometry(tankGeo);
+        const edgesMat = new THREE.LineBasicMaterial({ color: 0x999999, linewidth: 2 });
+        const tankEdges = new THREE.LineSegments(edgesGeo, edgesMat);
+        scene.add(tankEdges);
+
+        // Floor Grid
+        const gridHelper = new THREE.GridHelper(30, 30, 0xcccccc, 0xe0e0e0);
+        gridHelper.position.y = TANK_BOTTOM - 0.01;
+        scene.add(gridHelper);
+
+        // 2. Fluid
+        const fluidGeo = new THREE.BoxGeometry(TANK_SIZE - 0.02, TANK_SIZE - 0.02, TANK_SIZE - 0.02);
+        const fluidMat = new THREE.MeshPhongMaterial({ 
+            color: 0x4361EE, 
+            transparent: true, 
+            opacity: 0.4,
+            shininess: 100,
+            depthWrite: false
+        });
+        const fluid = new THREE.Mesh(fluidGeo, fluidMat);
+        scene.add(fluid);
+
+        // 3. Submerged Object (Cube)
+        const cubeMat = new THREE.MeshStandardMaterial({ color: 0x7209B7, roughness: 0.3, metalness: 0.2 });
+        const cubeGeo = new THREE.BoxGeometry(1, 1, 1);
+        const cube = new THREE.Mesh(cubeGeo, cubeMat);
+        scene.add(cube);
+
+        // 4. Probe Plane
+        const probeGeo = new THREE.PlaneGeometry(TANK_SIZE - 0.1, TANK_SIZE - 0.1);
+        const probeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+        const probe = new THREE.Mesh(probeGeo, probeMat);
+        probe.rotation.x = -Math.PI / 2;
+        scene.add(probe);
+
+        const probeGrid = new THREE.GridHelper(TANK_SIZE, 10, 0xffffff, 0xffffff);
+        probeGrid.rotation.x = Math.PI / 2;
+        probe.add(probeGrid);
+
+        // --- Force Arrows (Custom Thick Arrows) ---
+        function createForceArrow(color, isUp) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshPhongMaterial({ color: color });
+            const cylGeo = new THREE.CylinderGeometry(0.08, 0.08, 1, 16);
+            const coneGeo = new THREE.ConeGeometry(0.25, 0.4, 16);
+            
+            // Shift geometries so origin is at base
+            cylGeo.translate(0, 0.5, 0);
+            coneGeo.translate(0, 0.2, 0);
+
+            const cyl = new THREE.Mesh(cylGeo, mat);
+            const cone = new THREE.Mesh(coneGeo, mat);
+            group.add(cyl);
+            group.add(cone);
+
+            if (!isUp) {
+                group.rotation.x = Math.PI; // Point down
+            }
+
+            return {
+                mesh: group,
+                update: function(length) {
+                    if (length < 0.1) {
+                        group.visible = false;
+                        return;
+                    }
+                    group.visible = true;
+                    const cLen = Math.max(0.01, length - 0.4);
+                    cyl.scale.y = cLen;
+                    cone.position.y = cLen;
+                }
+            };
+        }
+
+        const buoyancyArrow = createForceArrow(0x06D6A0, true);
+        const gravityArrow = createForceArrow(0xF77F00, false);
+        scene.add(buoyancyArrow.mesh);
+        scene.add(gravityArrow.mesh);
+
+        // --- Pressure Arrows ---
+        const pArrows = [];
+        const pColor = 0xFF3366;
+
+        function addPArrow(nx, ny, nz, ox, oy, oz) {
+            const arrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(), 1, pColor);
+            scene.add(arrow);
+            pArrows.push({
+                arrow: arrow,
+                normal: new THREE.Vector3(nx, ny, nz),
+                localOffset: new THREE.Vector3(ox, oy, oz)
+            });
+        }
+
+        // Top and Bottom center
+        addPArrow(0, 1, 0, 0, 0.5, 0);
+        addPArrow(0, -1, 0, 0, -0.5, 0);
+
+        // Sides (Top, Mid, Bottom edges to show gradient)
+        const sideConfigs = [
+            {n: [1,0,0], o: [0.5, 0, 0]},
+            {n: [-1,0,0], o: [-0.5, 0, 0]},
+            {n: [0,0,1], o: [0, 0, 0.5]},
+            {n: [0,0,-1], o: [0, 0, -0.5]}
+        ];
+
+        sideConfigs.forEach(s => {
+            addPArrow(s.n[0], s.n[1], s.n[2], s.o[0], 0.4, s.o[2]);  // Top
+            addPArrow(s.n[0], s.n[1], s.n[2], s.o[0], 0, s.o[2]);    // Mid
+            addPArrow(s.n[0], s.n[1], s.n[2], s.o[0], -0.4, s.o[2]); // Bot
+        });
+
+        // --- Physics State & Constants ---
+        const P_atm = 101325;
+        let cubeY = 0;
+        let cubeV = 0;
+        let lastTime = performance.now();
+
+        // --- UI Elements ---
+        const ui = {
+            rho_f: document.getElementById('density_fluid'),
+            rho_o: document.getElementById('density_obj'),
+            g: document.getElementById('gravity_val'),
+            V: document.getElementById('obj_volume'),
+            h_probe: document.getElementById('probe_depth'),
+            
+            val_rho_f: document.getElementById('val-density-fluid'),
+            val_rho_o: document.getElementById('val-density-obj'),
+            val_g: document.getElementById('val-gravity'),
+            val_V: document.getElementById('val-volume'),
+            val_h_probe: document.getElementById('val-probe'),
+
+            out_h: document.getElementById('val-h'),
+            out_p: document.getElementById('val-p'),
+            out_fb: document.getElementById('val-fb'),
+            out_w: document.getElementById('val-w'),
+            out_fnet: document.getElementById('val-fnet'),
+            out_status: document.getElementById('val-status')
+        };
+
+        // Update UI labels on input
+        Object.keys(ui).forEach(key => {
+            if(ui[key].tagName === 'INPUT') {
+                ui[key].addEventListener('input', (e) => {
+                    let unit = "";
+                    if(key.includes('density')) unit = " kg/m³";
+                    else if(key === 'g') unit = " m/s²";
+                    else if(key === 'V') unit = " m³";
+                    else if(key === 'h_probe') unit = " m";
+                    ui['val_' + key].innerText = parseFloat(e.target.value).toFixed(1) + unit;
+                });
+            }
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const now = performance.now();
+            const dt = Math.min((now - lastTime) / 1000, 0.05); // Cap dt to prevent explosions
+            lastTime = now;
+
+            // 1. Read Inputs
+            const rho_f = parseFloat(ui.rho_f.value);
+            const rho_o = parseFloat(ui.rho_o.value);
+            const g = parseFloat(ui.g.value);
+            const V = parseFloat(ui.V.value);
+            const h_probe = parseFloat(ui.h_probe.value);
+
+            // 2. Geometry Updates
+            const s = Math.pow(V, 1/3); // Side length of cube
+            cube.scale.set(s, s, s);
+
+            // Update fluid color based on density (500 -> 40% sat, 2000 -> 100% sat)
+            const saturation = 0.4 + ((rho_f - 500) / 1500) * 0.6;
+            fluidMat.color.setHSL(229/360, saturation, 0.6);
+
+            // Update probe position
+            probe.position.y = FLUID_SURFACE - h_probe;
+
+            // 3. Physics Calculations
+            const y_top = cubeY + s/2;
+            const y_bot = cubeY - s/2;
+
+            // Calculate submerged volume
+            let V_sub = 0;
+            if (y_bot >= FLUID_SURFACE) {
+                V_sub = 0;
+            } else if (y_top <= FLUID_SURFACE) {
+                V_sub = V;
+            } else {
+                V_sub = s * s * (FLUID_SURFACE - y_bot);
+            }
+
+            const W = rho_o * V * g;
+            const Fb = rho_f * V_sub * g;
+            const m = rho_o * V;
+
+            // 4. Dynamics (Euler Integration)
+            if (g > 0) {
+                let Fnet = Fb - W;
+                const a = Fnet / m;
+                cubeV += a * dt;
+                
+                // Damping (Viscosity)
+                const submersionRatio = V_sub / V;
+                const damping = 0.98 - (submersionRatio * 0.15); // More drag when submerged
+                cubeV *= Math.pow(damping, dt * 60); 
+                
+                cubeY += cubeV * dt;
+
+                // Floor collision
+                if (cubeY - s/2 < TANK_BOTTOM) {
+                    cubeY = TANK_BOTTOM + s/2;
+                    cubeV *= -0.2; // slight bounce
+                }
+            } else {
+                // Zero gravity drift
+                cubeY += cubeV * dt;
+                if (cubeY - s/2 < TANK_BOTTOM) { cubeY = TANK_BOTTOM + s/2; cubeV *= -1; }
+                if (cubeY + s/2 > TANK_TOP) { cubeY = TANK_TOP - s/2; cubeV *= -1; }
+            }
+
+            cube.position.y = cubeY;
+
+            // 5. Update Visual Vectors
+            const forceScale = 0.000015; // Visual scale for force arrows
+            
+            buoyancyArrow.mesh.position.copy(cube.position);
+            gravityArrow.mesh.position.copy(cube.position);
+            
+            if (g > 0) {
+                buoyancyArrow.update(Fb * forceScale);
+                gravityArrow.update(W * forceScale);
+            } else {
+                buoyancyArrow.update(0);
+                gravityArrow.update(0);
+            }
+
+            // Update Pressure Arrows
+            const pScale = 0.000015; // Visual scale for pressure arrows
+            
+            pArrows.forEach(p => {
+                // World position of the point on the face
+                const facePoint = new THREE.Vector3(
+                    p.localOffset.x * s,
+                    p.localOffset.y * s + cubeY,
+                    p.localOffset.z * s
+                );
+                
+                // Gauge pressure depth
+                const depth = Math.max(0, FLUID_SURFACE - facePoint.y);
+                const P_gauge = rho_f * g * depth;
+                const length = P_gauge * pScale;
+                
+                if (length < 0.05 || g === 0) {
+                    p.arrow.visible = false;
+                } else {
+                    p.arrow.visible = true;
+                    const dir = p.normal.clone().negate(); // Point inward
+                    // Start arrow outside so tip touches the face
+                    const origin = facePoint.clone().add(p.normal.clone().multiplyScalar(length));
+                    
+                    p.arrow.position.copy(origin);
+                    p.arrow.setDirection(dir);
+                    p.arrow.setLength(length, Math.min(0.2, length * 0.3), Math.min(0.2, length * 0.3));
+                }
+            });
+
+            // 6. Update UI Data
+            const P_probe = P_atm + (rho_f * g * h_probe);
+            ui.out_h.innerText = h_probe.toFixed(1) + " m";
+            ui.out_p.innerText = P_probe.toFixed(0) + " Pa";
+            ui.out_fb.innerText = Fb.toFixed(0) + " N";
+            ui.out_w.innerText = W.toFixed(0) + " N";
+            ui.out_fnet.innerText = (Fb - W).toFixed(0) + " N";
+
+            let status = "Neutral";
+            if (g === 0) status = "Zero Gravity";
+            else if (cubeY - s/2 <= TANK_BOTTOM + 0.01) status = "Sinking (Bottom)";
+            else if (y_bot >= FLUID_SURFACE) status = "In Air";
+            else if (Math.abs(Fb - W) < 10 && Math.abs(cubeV) < 0.05) status = "Floating";
+            else if (Fb > W) status = "Rising";
+            else if (Fb < W) status = "Sinking";
+            
+            ui.out_status.innerText = status;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start Animation
+        animate();
+    </script>
+</body>
+</html>

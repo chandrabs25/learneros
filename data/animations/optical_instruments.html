@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optical Instruments: Convex Lens Ray Tracing</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 75%;
+            height: 100%;
+        }
+
+        #ui-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 30px 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+            color: #1a1a1a;
+            font-weight: 600;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #4361EE;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background: #d1d8e0;
+            border-radius: 10px;
+            transition: 0.3s;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        input[type="checkbox"] {
+            display: none;
+        }
+
+        input[type="checkbox"]:checked + .toggle-switch {
+            background: #06D6A0;
+        }
+
+        input[type="checkbox"]:checked + .toggle-switch::after {
+            transform: translateX(20px);
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            font-family: 'Roboto Mono', monospace;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .formula-line {
+            margin: 5px 0;
+            font-size: 0.95rem;
+        }
+
+        .formula-math {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            text-align: center;
+        }
+
+        .label-3d {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .legend {
+            margin-top: auto;
+            background: rgba(255,255,255,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-panel { width: 100%; height: 40%; top: 60%; flex-direction: row; flex-wrap: wrap; overflow-y: auto;}
+            .control-group { width: 45%; }
+            .legend { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-math">1/v - 1/u = 1/f</div>
+        <div class="formula-line">v = <span id="val-v">0.00</span> m</div>
+        <div class="formula-line">m = <span id="val-m">0.00</span> &times;</div>
+        <div class="formula-line" id="image-type" style="color: #4361EE; font-weight: bold; margin-top: 8px;">Real Image</div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Optical Bench Controls</h1>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Object Distance (u)</span>
+                <span class="value-display" id="disp-u">-6.0 m</span>
+            </div>
+            <input type="range" id="slider-u" min="-10.0" max="-1.5" step="0.1" value="-6.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Focal Length (f)</span>
+                <span class="value-display" id="disp-f">2.0 m</span>
+            </div>
+            <input type="range" id="slider-f" min="1.0" max="4.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Object Height (h<sub>o</sub>)</span>
+                <span class="value-display" id="disp-ho">1.0 m</span>
+            </div>
+            <input type="range" id="slider-ho" min="0.5" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <label class="toggle-container">
+            <input type="checkbox" id="toggle-screen" checked>
+            <div class="toggle-switch"></div>
+            <span>Show Space Screen</span>
+        </label>
+
+        <div class="legend">
+            <div style="font-weight: 600; margin-bottom: 8px;">Ray Legend</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Parallel Ray</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Central Ray</div>
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> Focal Ray</div>
+            <div class="legend-item" style="margin-top: 8px; font-style: italic; color: #666;">Dashed lines indicate virtual extensions.</div>
+        </div>
+    </div>
+
+    <!-- 3D Labels -->
+    <div id="label-obj" class="label-3d" style="color: #FF3366;">Object</div>
+    <div id="label-img" class="label-3d" style="color: #4361EE;">Image</div>
+    <div id="label-lens" class="label-3d" style="color: #333;">Convex Lens</div>
+    <div id="label-f1" class="label-3d" style="color: #d4af37;">F₁</div>
+    <div id="label-f2" class="label-3d" style="color: #d4af37;">F₂</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State ---
+        const params = {
+            u: -6.0,
+            f: 2.0,
+            ho: 1.0,
+            showScreen: true
+        };
+
+        const colors = {
+            object: 0xFF3366,
+            image: 0x4361EE,
+            ray1: 0xF77F00,
+            ray2: 0x06D6A0,
+            ray3: 0x7209B7,
+            lens: 0x4361EE,
+            focal: 0xFFD166
+        };
+
+        // --- Setup Three.js ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(8, 5, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+
+        // --- Geometries & Materials ---
+        
+        // Optical Axis
+        const axisGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, -20),
+            new THREE.Vector3(0, 0, 20)
+        ]);
+        const axisMat = new THREE.LineDashedMaterial({ color: 0x999999, dashSize: 0.5, gapSize: 0.2 });
+        const axis = new THREE.Line(axisGeo, axisMat);
+        axis.computeLineDistances();
+        scene.add(axis);
+
+        // Grid Helper
+        const grid = new THREE.GridHelper(40, 40, 0xe0e5ec, 0xe0e5ec);
+        grid.position.y = -2;
+        scene.add(grid);
+
+        // Lens
+        const lensGeo = new THREE.SphereGeometry(2.5, 32, 32);
+        const lensMat = new THREE.MeshPhysicalMaterial({
+            color: colors.lens,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.8, // glass-like
+            opacity: 1,
+            transparent: true,
+            ior: 1.5,
+            thickness: 0.5
+        });
+        const lens = new THREE.Mesh(lensGeo, lensMat);
+        scene.add(lens);
+
+        // Focal Points
+        const focalGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        const focalMat = new THREE.MeshBasicMaterial({ color: colors.focal });
+        const f1Mesh = new THREE.Mesh(focalGeo, focalMat);
+        const f2Mesh = new THREE.Mesh(focalGeo, focalMat);
+        scene.add(f1Mesh);
+        scene.add(f2Mesh);
+
+        // Arrow Helper Function
+        function createArrow(color) {
+            const group = new THREE.Group();
+            
+            const cylGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.8, 16);
+            const cylMat = new THREE.MeshPhongMaterial({ color: color });
+            const cyl = new THREE.Mesh(cylGeo, cylMat);
+            cyl.position.y = 0.4;
+            
+            const coneGeo = new THREE.ConeGeometry(0.2, 0.2, 16);
+            const cone = new THREE.Mesh(coneGeo, cylMat);
+            cone.position.y = 0.9;
+            
+            group.add(cyl);
+            group.add(cone);
+            return group;
+        }
+
+        const objArrow = createArrow(colors.object);
+        scene.add(objArrow);
+
+        const imgArrow = createArrow(colors.image);
+        scene.add(imgArrow);
+
+        // Screen
+        const screenGeo = new THREE.PlaneGeometry(4, 4);
+        const screenMat = new THREE.MeshBasicMaterial({ 
+            color: 0xffffff, 
+            transparent: true, 
+            opacity: 0.3, 
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+        // Add a subtle border to screen
+        const screenBorderGeo = new THREE.EdgesGeometry(screenGeo);
+        const screenBorderMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+        const screenBorder = new THREE.LineSegments(screenBorderGeo, screenBorderMat);
+        screenMesh.add(screenBorder);
+        scene.add(screenMesh);
+
+        // Ray Group
+        const raysGroup = new THREE.Group();
+        scene.add(raysGroup);
+
+        // --- Physics & Update Logic ---
+
+        function createTube(p1, p2, color) {
+            const path = new THREE.LineCurve3(p1, p2);
+            const geo = new THREE.TubeGeometry(path, 1, 0.04, 8, false);
+            const mat = new THREE.MeshBasicMaterial({ color: color });
+            return new THREE.Mesh(geo, mat);
+        }
+
+        function createDashedLine(p1, p2, color) {
+            const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+            const mat = new THREE.LineDashedMaterial({ color: color, dashSize: 0.2, gapSize: 0.1, linewidth: 2 });
+            const line = new THREE.Line(geo, mat);
+            line.computeLineDistances();
+            return line;
+        }
+
+        function updatePhysics() {
+            const { u, f, ho } = params;
+            
+            // Lens Formula: 1/v - 1/u = 1/f => 1/v = 1/f + 1/u => v = (f*u)/(f+u)
+            let v, m, hi;
+            const denom = f + u;
+            const isInfinity = Math.abs(denom) < 0.001;
+
+            if (isInfinity) {
+                v = 1000 * Math.sign(f); // Approaching infinity
+                m = v / u;
+                hi = m * ho;
+            } else {
+                v = (f * u) / denom;
+                m = v / u;
+                hi = m * ho;
+            }
+
+            const isVirtual = v < 0;
+
+            // Update UI Text
+            document.getElementById('val-v').innerText = isInfinity ? "∞" : v.toFixed(2);
+            document.getElementById('val-m').innerText = isInfinity ? "∞" : m.toFixed(2);
+            
+            const typeEl = document.getElementById('image-type');
+            if (isInfinity) {
+                typeEl.innerText = "Image at Infinity";
+                typeEl.style.color = "#999";
+            } else if (isVirtual) {
+                typeEl.innerText = "Virtual Image (Upright)";
+                typeEl.style.color = "#FF3366";
+            } else {
+                typeEl.innerText = "Real Image (Inverted)";
+                typeEl.style.color = "#4361EE";
+            }
+
+            // Update Objects
+            objArrow.position.set(0, 0, u);
+            objArrow.scale.set(1, ho, 1);
+
+            if (isInfinity) {
+                imgArrow.visible = false;
+                screenMesh.visible = false;
+            } else {
+                imgArrow.visible = true;
+                imgArrow.position.set(0, 0, v);
+                // If hi is negative, scaling by negative flips it automatically
+                imgArrow.scale.set(1, hi, 1);
+                
+                // Virtual images are slightly transparent
+                imgArrow.children.forEach(child => {
+                    child.material.transparent = isVirtual;
+                    child.material.opacity = isVirtual ? 0.5 : 1.0;
+                });
+
+                screenMesh.position.set(0, hi/2, v);
+                screenMesh.visible = params.showScreen && !isVirtual; // Screen only catches real images
+            }
+
+            // Update Lens Shape (thickness based on f)
+            lens.scale.set(1, 1, 0.1 + (1/f)*0.3);
+
+            // Update Focal Points
+            f1Mesh.position.set(0, 0, -f);
+            f2Mesh.position.set(0, 0, f);
+
+            // --- Ray Tracing ---
+            // Clear old rays
+            while(raysGroup.children.length > 0){ 
+                const child = raysGroup.children[0];
+                child.geometry.dispose();
+                child.material.dispose();
+                raysGroup.remove(child); 
+            }
+
+            const P_obj = new THREE.Vector3(0, ho, u);
+            const P_img = new THREE.Vector3(0, hi, v);
+            const Z_max = 25; // How far rays travel
+
+            // Ray 1: Parallel -> Focal
+            const R1_lens = new THREE.Vector3(0, ho, 0);
+            raysGroup.add(createTube(P_obj, R1_lens, colors.ray1)); // Object to Lens
+
+            if (!isInfinity) {
+                const dir1 = new THREE.Vector3().subVectors(P_img, R1_lens).normalize();
+                const R1_end = new THREE.Vector3().copy(R1_lens).add(dir1.multiplyScalar(Z_max));
+                
+                if (isVirtual) {
+                    // Solid line diverging forward
+                    const dir1_fwd = new THREE.Vector3().subVectors(R1_lens, P_img).normalize();
+                    const R1_fwd_end = new THREE.Vector3().copy(R1_lens).add(dir1_fwd.multiplyScalar(Z_max));
+                    raysGroup.add(createTube(R1_lens, R1_fwd_end, colors.ray1));
+                    // Dashed line backward to virtual image
+                    raysGroup.add(createDashedLine(R1_lens, P_img, colors.ray1));
+                } else {
+                    // Solid line through image
+                    raysGroup.add(createTube(R1_lens, R1_end, colors.ray1));
+                }
+            } else {
+                // Parallel out
+                const R1_end = new THREE.Vector3(0, ho - f, Z_max); // passes through f2
+                const dir1 = new THREE.Vector3(0, -ho, f).normalize();
+                raysGroup.add(createTube(R1_lens, R1_lens.clone().add(dir1.multiplyScalar(Z_max)), colors.ray1));
+            }
+
+            // Ray 2: Center
+            const R2_lens = new THREE.Vector3(0, 0, 0);
+            raysGroup.add(createTube(P_obj, R2_lens, colors.ray2));
+
+            if (!isInfinity) {
+                if (isVirtual) {
+                    const dir2_fwd = new THREE.Vector3().subVectors(R2_lens, P_img).normalize();
+                    const R2_fwd_end = new THREE.Vector3().copy(R2_lens).add(dir2_fwd.multiplyScalar(Z_max));
+                    raysGroup.add(createTube(R2_lens, R2_fwd_end, colors.ray2));
+                    raysGroup.add(createDashedLine(R2_lens, P_img, colors.ray2));
+                } else {
+                    const dir2 = new THREE.Vector3().subVectors(P_img, R2_lens).normalize();
+                    const R2_end = new THREE.Vector3().copy(R2_lens).add(dir2.multiplyScalar(Z_max));
+                    raysGroup.add(createTube(R2_lens, R2_end, colors.ray2));
+                }
+            } else {
+                const dir2 = new THREE.Vector3(0, -ho, -u).normalize();
+                raysGroup.add(createTube(R2_lens, R2_lens.clone().add(dir2.multiplyScalar(Z_max)), colors.ray2));
+            }
+
+            // Ray 3: Focal -> Parallel
+            // Intersects lens at y = hi (derived from similar triangles)
+            if (!isInfinity) {
+                const R3_lens = new THREE.Vector3(0, hi, 0);
+                
+                // Only draw Ray 3 if object is not exactly at focal point
+                raysGroup.add(createTube(P_obj, R3_lens, colors.ray3));
+
+                if (isVirtual) {
+                    const R3_fwd_end = new THREE.Vector3(0, hi, Z_max);
+                    raysGroup.add(createTube(R3_lens, R3_fwd_end, colors.ray3));
+                    raysGroup.add(createDashedLine(R3_lens, P_img, colors.ray3));
+                } else {
+                    const R3_end = new THREE.Vector3(0, hi, Z_max);
+                    raysGroup.add(createTube(R3_lens, R3_end, colors.ray3));
+                }
+            }
+        }
+
+        // --- UI Listeners ---
+        document.getElementById('slider-u').addEventListener('input', (e) => {
+            params.u = parseFloat(e.target.value);
+            document.getElementById('disp-u').innerText = params.u.toFixed(1) + ' m';
+            updatePhysics();
+        });
+
+        document.getElementById('slider-f').addEventListener('input', (e) => {
+            params.f = parseFloat(e.target.value);
+            document.getElementById('disp-f').innerText = params.f.toFixed(1) + ' m';
+            updatePhysics();
+        });
+
+        document.getElementById('slider-ho').addEventListener('input', (e) => {
+            params.ho = parseFloat(e.target.value);
+            document.getElementById('disp-ho').innerText = params.ho.toFixed(1) + ' m';
+            updatePhysics();
+        });
+
+        document.getElementById('toggle-screen').addEventListener('change', (e) => {
+            params.showScreen = e.target.checked;
+            updatePhysics();
+        });
+
+        // --- 3D to 2D Label Projection ---
+        function updateLabels() {
+            const widthHalf = container.clientWidth / 2;
+            const heightHalf = container.clientHeight / 2;
+
+            const projectLabel = (mesh, elementId, offset = new THREE.Vector3(0,0,0)) => {
+                const el = document.getElementById(elementId);
+                if (!mesh.visible && elementId === 'label-img') {
+                    el.style.opacity = 0;
+                    return;
+                }
+                
+                const pos = new THREE.Vector3();
+                mesh.getWorldPosition(pos);
+                pos.add(offset);
+                pos.project(camera);
+
+                if (pos.z > 1) { // Behind camera
+                    el.style.opacity = 0;
+                    return;
+                }
+
+                el.style.opacity = 1;
+                el.style.left = (pos.x * widthHalf + widthHalf) + 'px';
+                el.style.top = (-(pos.y * heightHalf) + heightHalf) + 'px';
+            };
+
+            projectLabel(objArrow, 'label-obj', new THREE.Vector3(0, params.ho + 0.3, 0));
+            
+            // Image label offset depends on whether it's inverted
+            const imgOffset = params.u + params.f > 0 ? new THREE.Vector3(0, (params.f*params.u/(params.f+params.u)/params.u)*params.ho + 0.3, 0) : new THREE.Vector3(0, (params.f*params.u/(params.f+params.u)/params.u)*params.ho - 0.3, 0);
+            projectLabel(imgArrow, 'label-img', imgOffset);
+            
+            projectLabel(lens, 'label-lens', new THREE.Vector3(0, 2.8, 0));
+            projectLabel(f1Mesh, 'label-f1', new THREE.Vector3(0, -0.4, 0));
+            projectLabel(f2Mesh, 'label-f2', new THREE.Vector3(0, -0.4, 0));
+        }
+
+        // --- Window Resize ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+            updateLabels();
+        }
+
+        // Initialize
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

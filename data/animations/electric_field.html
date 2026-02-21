@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electric Field Interactive 3D Visualization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --pos-color: #FF3366;
+            --neg-color: #4361EE;
+            --line-color: #7209B7;
+            --vec-color: #F77F00;
+            --test-color: #06D6A0;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 24px;
+            box-shadow: var(--glass-shadow);
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #formula-card h2 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--line-color);
+        }
+
+        #live-e-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 14px;
+            color: var(--text-main);
+            background: rgba(255,255,255,0.9);
+            padding: 6px 10px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        /* Sidebar Controls */
+        #sidebar {
+            width: 25%;
+            height: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid var(--glass-border);
+            box-shadow: -4px 0 24px rgba(0,0,0,0.05);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+            background: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--line-color);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #q1-slider::-webkit-slider-thumb { background: var(--pos-color); }
+        #q2-slider::-webkit-slider-thumb { background: var(--neg-color); }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: var(--text-main);
+            outline: none;
+            cursor: pointer;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--vec-color);
+            cursor: pointer;
+        }
+
+        button {
+            background: var(--test-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(6, 214, 160, 0.3);
+            margin-top: auto;
+        }
+
+        button:hover {
+            background: #05b586;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .charge-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: bold;
+            font-size: 14px;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #sidebar { width: 100%; height: 40%; border-left: none; border-top: 1px solid var(--glass-border); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <h2>Superposition Principle</h2>
+            <div class="math">E = &Sigma; k(q<sub>i</sub> / r<sub>i</sub>&sup2;) r&#770;</div>
+            <div id="live-e-value">Net E at Cursor: 0.00 V/m</div>
+        </div>
+        <div id="label-q1" class="charge-label" style="display:none;">+5 nC</div>
+        <div id="label-q2" class="charge-label" style="display:none;">-5 nC</div>
+    </div>
+
+    <div id="sidebar">
+        <div class="control-group">
+            <label>Configuration Mode</label>
+            <select id="mode-select">
+                <option value="dipole">Dipole (+ / -)</option>
+                <option value="like">Like Charges (+ / +)</option>
+                <option value="single">Single Point Charge</option>
+                <option value="capacitor">Parallel Plates (Capacitor)</option>
+            </select>
+        </div>
+
+        <div class="control-group" id="q1-group">
+            <div class="control-header">
+                <label>Charge 1 (q₁)</label>
+                <span class="value-display" id="q1-val">5 nC</span>
+            </div>
+            <input type="range" id="q1-slider" min="-10" max="10" step="1" value="5">
+        </div>
+
+        <div class="control-group" id="q2-group">
+            <div class="control-header">
+                <label>Charge 2 (q₂)</label>
+                <span class="value-display" id="q2-val">-5 nC</span>
+            </div>
+            <input type="range" id="q2-slider" min="-10" max="10" step="1" value="-5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Separation Distance</label>
+                <span class="value-display" id="dist-val">4.0 m</span>
+            </div>
+            <input type="range" id="dist-slider" min="1" max="10" step="0.5" value="4">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Field Line Density</label>
+                <span class="value-display" id="density-val">12</span>
+            </div>
+            <input type="range" id="density-slider" min="4" max="24" step="2" value="12">
+        </div>
+
+        <div class="control-group">
+            <label class="toggle-container">
+                <input type="checkbox" id="vector-toggle">
+                Show Field Vectors (Grass)
+            </label>
+        </div>
+
+        <button id="release-btn">Release Test Charge</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const state = {
+            q1: 5,
+            q2: -5,
+            dist: 4,
+            density: 12,
+            showVec: false,
+            mode: 'dipole', // dipole, like, single, capacitor
+            k: 10, // Coulomb constant scaled for visualization
+            softening: 0.1 // Prevent division by zero
+        };
+
+        const colors = {
+            pos: 0xFF3366,
+            neg: 0x4361EE,
+            line: 0x7209B7,
+            vec: 0xF77F00,
+            test: 0x06D6A0,
+            bg: 0xf0f4f8
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(colors.bg);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 8, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 50;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xe2e8f0);
+        gridHelper.position.y = -0.01; // Slightly below 0 to avoid z-fighting with lines
+        scene.add(gridHelper);
+
+        // --- Scene Objects ---
+        let chargeMeshes = [];
+        let plateMeshes = [];
+        let fieldLinesGroup = new THREE.Group();
+        scene.add(fieldLinesGroup);
+        let vectorArrows = new THREE.Group();
+        scene.add(vectorArrows);
+        
+        // Test Charge
+        const testChargeGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        const testChargeMat = new THREE.MeshPhongMaterial({ color: colors.test, emissive: colors.test, emissiveIntensity: 0.5 });
+        const testChargeMesh = new THREE.Mesh(testChargeGeo, testChargeMat);
+        scene.add(testChargeMesh);
+        testChargeMesh.visible = false;
+        
+        let testChargeData = { active: false, pos: new THREE.Vector3(), vel: new THREE.Vector3(), trail: [] };
+        let trailLine;
+
+        // Physics Model (Internal Representation)
+        let pointCharges = []; // {pos: Vector3, q: number}
+
+        // --- Core Physics Functions ---
+
+        function buildPhysicsModel() {
+            pointCharges = [];
+            if (state.mode === 'capacitor') {
+                // Approximate plates with a grid of point charges for realistic fringing
+                const plateSize = 4;
+                const steps = 8;
+                const stepSize = plateSize / steps;
+                const qPerPoint = 10 / (steps * steps); // Arbitrary total charge
+
+                for (let y = -plateSize/2; y <= plateSize/2; y += stepSize) {
+                    for (let z = -plateSize/2; z <= plateSize/2; z += stepSize) {
+                        // Positive plate
+                        pointCharges.push({ pos: new THREE.Vector3(-state.dist/2, y, z), q: qPerPoint });
+                        // Negative plate
+                        pointCharges.push({ pos: new THREE.Vector3(state.dist/2, y, z), q: -qPerPoint });
+                    }
+                }
+            } else {
+                if (state.mode === 'single') {
+                    pointCharges.push({ pos: new THREE.Vector3(0, 0, 0), q: state.q1 });
+                } else {
+                    pointCharges.push({ pos: new THREE.Vector3(-state.dist/2, 0, 0), q: state.q1 });
+                    pointCharges.push({ pos: new THREE.Vector3(state.dist/2, 0, 0), q: state.q2 });
+                }
+            }
+        }
+
+        function getEField(pos) {
+            let E = new THREE.Vector3(0, 0, 0);
+            let rVec = new THREE.Vector3();
+            
+            for (let i = 0; i < pointCharges.length; i++) {
+                const c = pointCharges[i];
+                rVec.subVectors(pos, c.pos);
+                const r2 = rVec.lengthSq() + state.softening;
+                const r = Math.sqrt(r2);
+                
+                // E = k * q / r^2 * (r_hat) = k * q / r^3 * rVec
+                const mag = (state.k * c.q) / (r2 * r);
+                E.addScaledVector(rVec, mag);
+            }
+            return E;
+        }
+
+        // --- Visual Generation ---
+
+        function updateGeometry() {
+            // Clear old
+            chargeMeshes.forEach(m => scene.remove(m));
+            plateMeshes.forEach(m => scene.remove(m));
+            chargeMeshes = [];
+            plateMeshes = [];
+            
+            document.getElementById('label-q1').style.display = 'none';
+            document.getElementById('label-q2').style.display = 'none';
+
+            if (state.mode === 'capacitor') {
+                const plateGeo = new THREE.PlaneGeometry(4, 4);
+                
+                const posMat = new THREE.MeshBasicMaterial({ color: colors.pos, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+                const posPlate = new THREE.Mesh(plateGeo, posMat);
+                posPlate.position.set(-state.dist/2, 0, 0);
+                posPlate.rotation.y = Math.PI / 2;
+                scene.add(posPlate);
+                plateMeshes.push(posPlate);
+
+                const negMat = new THREE.MeshBasicMaterial({ color: colors.neg, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+                const negPlate = new THREE.Mesh(plateGeo, negMat);
+                negPlate.position.set(state.dist/2, 0, 0);
+                negPlate.rotation.y = Math.PI / 2;
+                scene.add(negPlate);
+                plateMeshes.push(negPlate);
+
+            } else {
+                const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
+                
+                const addCharge = (q, x, labelId) => {
+                    if (q === 0) return;
+                    const radius = 0.2 + Math.abs(q) * 0.05;
+                    const color = q > 0 ? colors.pos : colors.neg;
+                    const mat = new THREE.MeshPhongMaterial({ color: color, shininess: 100 });
+                    const mesh = new THREE.Mesh(sphereGeo, mat);
+                    mesh.scale.set(radius, radius, radius);
+                    mesh.position.set(x, 0, 0);
+                    scene.add(mesh);
+                    chargeMeshes.push({mesh, q, id: labelId});
+                };
+
+                if (state.mode === 'single') {
+                    addCharge(state.q1, 0, 'label-q1');
+                } else {
+                    addCharge(state.q1, -state.dist/2, 'label-q1');
+                    addCharge(state.q2, state.dist/2, 'label-q2');
+                }
+            }
+        }
+
+        function generateFieldLines() {
+            // Clear old lines
+            while(fieldLinesGroup.children.length > 0){ 
+                fieldLinesGroup.remove(fieldLinesGroup.children[0]); 
+            }
+
+            const lineMat = new THREE.LineBasicMaterial({ 
+                color: colors.line, 
+                transparent: true, 
+                opacity: 0.4,
+                linewidth: 1 // WebGL limits this to 1 usually, but kept for semantics
+            });
+
+            const ds = 0.1;
+            const maxSteps = 400;
+            const bounds = 15;
+
+            // Helper to generate points on a sphere (Fibonacci lattice)
+            function getSpherePoints(n, radius, center) {
+                const points = [];
+                const phi = Math.PI * (3 - Math.sqrt(5));
+                for (let i = 0; i < n; i++) {
+                    const y = 1 - (i / (n - 1)) * 2;
+                    const r = Math.sqrt(1 - y * y);
+                    const theta = phi * i;
+                    const x = Math.cos(theta) * r;
+                    const z = Math.sin(theta) * r;
+                    points.push(new THREE.Vector3(x * radius + center.x, y * radius + center.y, z * radius + center.z));
+                }
+                return points;
+            }
+
+            function traceLine(startPos, sign) {
+                let currentPos = startPos.clone();
+                const points = [currentPos.clone()];
+                
+                for (let step = 0; step < maxSteps; step++) {
+                    // RK4 Integration
+                    const k1 = getEField(currentPos).multiplyScalar(sign);
+                    if (k1.lengthSq() < 0.0001) break;
+                    k1.normalize();
+
+                    const p2 = currentPos.clone().addScaledVector(k1, ds * 0.5);
+                    const k2 = getEField(p2).multiplyScalar(sign).normalize();
+
+                    const p3 = currentPos.clone().addScaledVector(k2, ds * 0.5);
+                    const k3 = getEField(p3).multiplyScalar(sign).normalize();
+
+                    const p4 = currentPos.clone().addScaledVector(k3, ds);
+                    const k4 = getEField(p4).multiplyScalar(sign).normalize();
+
+                    const move = k1.add(k2.multiplyScalar(2)).add(k3.multiplyScalar(2)).add(k4).multiplyScalar(ds / 6);
+                    currentPos.add(move);
+                    points.push(currentPos.clone());
+
+                    // Stop conditions
+                    if (currentPos.length() > bounds) break;
+                    
+                    let hitCharge = false;
+                    for (let c of pointCharges) {
+                        if (currentPos.distanceToSquared(c.pos) < 0.05) {
+                            hitCharge = true; break;
+                        }
+                    }
+                    if (hitCharge) break;
+                }
+                return points;
+            }
+
+            if (state.mode === 'capacitor') {
+                // Generate lines from inner face of positive plate
+                const plateSize = 3.5; // Slightly smaller than actual plate to avoid extreme edges
+                const steps = Math.floor(state.density / 2);
+                const stepSize = plateSize / steps;
+                
+                for (let y = -plateSize/2; y <= plateSize/2; y += stepSize) {
+                    for (let z = -plateSize/2; z <= plateSize/2; z += stepSize) {
+                        const start = new THREE.Vector3(-state.dist/2 + 0.1, y, z);
+                        const pts = traceLine(start, 1);
+                        if(pts.length > 1) {
+                            const geo = new THREE.BufferGeometry().setFromPoints(pts);
+                            fieldLinesGroup.add(new THREE.Line(geo, lineMat));
+                        }
+                    }
+                }
+            } else {
+                // Point charges
+                pointCharges.forEach(c => {
+                    if (c.q === 0) return;
+                    
+                    // Number of lines proportional to charge magnitude
+                    const numLines = Math.floor(Math.abs(c.q) * state.density);
+                    const radius = 0.2 + Math.abs(c.q) * 0.05 + 0.05; // Start slightly outside sphere
+                    const startPoints = getSpherePoints(numLines, radius, c.pos);
+
+                    // If positive, trace forward. If negative, trace backward (only if no positive charges exist to prevent double drawing in dipole)
+                    let hasPositive = pointCharges.some(pc => pc.q > 0);
+                    
+                    if (c.q > 0) {
+                        startPoints.forEach(p => {
+                            const pts = traceLine(p, 1);
+                            if(pts.length > 1) {
+                                const geo = new THREE.BufferGeometry().setFromPoints(pts);
+                                fieldLinesGroup.add(new THREE.Line(geo, lineMat));
+                            }
+                        });
+                    } else if (c.q < 0 && !hasPositive) {
+                        // Only draw inward lines if there are no positive charges to source them
+                        startPoints.forEach(p => {
+                            const pts = traceLine(p, -1);
+                            if(pts.length > 1) {
+                                const geo = new THREE.BufferGeometry().setFromPoints(pts);
+                                fieldLinesGroup.add(new THREE.Line(geo, lineMat));
+                            }
+                        });
+                    }
+                });
+            }
+        }
+
+        function generateVectors() {
+            while(vectorArrows.children.length > 0){ 
+                vectorArrows.remove(vectorArrows.children[0]); 
+            }
+
+            if (!state.showVec) return;
+
+            const gridExtents = 6;
+            const step = 2;
+            
+            for (let x = -gridExtents; x <= gridExtents; x += step) {
+                for (let y = -4; y <= 4; y += step) {
+                    for (let z = -gridExtents; z <= gridExtents; z += step) {
+                        const pos = new THREE.Vector3(x, y, z);
+                        
+                        // Skip if inside a charge
+                        let inside = false;
+                        for(let c of pointCharges) {
+                            if(pos.distanceTo(c.pos) < 0.5) inside = true;
+                        }
+                        if(inside) continue;
+
+                        const E = getEField(pos);
+                        const mag = E.length();
+                        if (mag < 0.01) continue;
+
+                        const dir = E.clone().normalize();
+                        // Scale length logarithmically
+                        const length = Math.min(1.5, Math.log10(mag + 1) * 0.5);
+                        
+                        // Color intensity based on magnitude
+                        const color = new THREE.Color(colors.vec);
+                        // Darken slightly if weak
+                        if(mag < 1) color.lerp(new THREE.Color(0xaaaaaa), 1 - mag);
+
+                        const arrow = new THREE.ArrowHelper(dir, pos, length, color.getHex(), length * 0.3, length * 0.2);
+                        vectorArrows.add(arrow);
+                    }
+                }
+            }
+        }
+
+        function updateScene() {
+            buildPhysicsModel();
+            updateGeometry();
+            generateFieldLines();
+            generateVectors();
+            
+            // Reset test charge
+            testChargeData.active = false;
+            testChargeMesh.visible = false;
+            if(trailLine) scene.remove(trailLine);
+        }
+
+        // --- UI Event Listeners ---
+
+        const q1Slider = document.getElementById('q1-slider');
+        const q2Slider = document.getElementById('q2-slider');
+        const distSlider = document.getElementById('dist-slider');
+        const densitySlider = document.getElementById('density-slider');
+        const modeSelect = document.getElementById('mode-select');
+        const vecToggle = document.getElementById('vector-toggle');
+
+        function syncUI() {
+            document.getElementById('q1-val').innerText = state.q1 + ' nC';
+            document.getElementById('q2-val').innerText = state.q2 + ' nC';
+            document.getElementById('dist-val').innerText = state.dist.toFixed(1) + ' m';
+            document.getElementById('density-val').innerText = state.density;
+
+            // Handle visibility based on mode
+            const q1Group = document.getElementById('q1-group');
+            const q2Group = document.getElementById('q2-group');
+            const distGroup = distSlider.parentElement;
+
+            if (state.mode === 'single') {
+                q2Group.style.display = 'none';
+                distGroup.style.display = 'none';
+            } else if (state.mode === 'capacitor') {
+                q1Group.style.display = 'none';
+                q2Group.style.display = 'none';
+                distGroup.style.display = 'flex';
+            } else {
+                q1Group.style.display = 'flex';
+                q2Group.style.display = 'flex';
+                distGroup.style.display = 'flex';
+            }
+        }
+
+        q1Slider.addEventListener('input', (e) => { state.q1 = parseFloat(e.target.value); syncUI(); updateScene(); });
+        q2Slider.addEventListener('input', (e) => { state.q2 = parseFloat(e.target.value); syncUI(); updateScene(); });
+        distSlider.addEventListener('input', (e) => { state.dist = parseFloat(e.target.value); syncUI(); updateScene(); });
+        densitySlider.addEventListener('input', (e) => { state.density = parseInt(e.target.value); syncUI(); updateScene(); });
+        
+        vecToggle.addEventListener('change', (e) => { state.showVec = e.target.checked; generateVectors(); });
+
+        modeSelect.addEventListener('change', (e) => {
+            state.mode = e.target.value;
+            if (state.mode === 'dipole') { state.q1 = 5; state.q2 = -5; }
+            if (state.mode === 'like') { state.q1 = 5; state.q2 = 5; }
+            q1Slider.value = state.q1;
+            q2Slider.value = state.q2;
+            syncUI();
+            updateScene();
+        });
+
+        document.getElementById('release-btn').addEventListener('click', () => {
+            // Random position slightly above origin
+            const x = (Math.random() - 0.5) * 4;
+            const y = Math.random() * 2 + 1;
+            const z = (Math.random() - 0.5) * 4;
+            
+            testChargeData.pos.set(x, y, z);
+            testChargeData.vel.set(0, 0, 0);
+            testChargeData.trail = [testChargeData.pos.clone()];
+            testChargeData.active = true;
+            testChargeMesh.visible = true;
+            
+            if(trailLine) scene.remove(trailLine);
+            const trailGeo = new THREE.BufferGeometry().setFromPoints(testChargeData.trail);
+            const trailMat = new THREE.LineBasicMaterial({ color: colors.test, linewidth: 2 });
+            trailLine = new THREE.Line(trailGeo, trailMat);
+            scene.add(trailLine);
+        });
+
+        // --- Raycasting for Live E-Field ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0); // XZ plane at y=0
+        const liveEValue = document.getElementById('live-e-value');
+
+        container.addEventListener('mousemove', (event) => {
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const target = new THREE.Vector3();
+            raycaster.ray.intersectPlane(plane, target);
+
+            if (target) {
+                const E = getEField(target);
+                const mag = E.length();
+                liveEValue.innerText = `Net E at Cursor: ${mag.toFixed(2)} V/m`;
+            }
+        });
+
+        // --- HTML Labels Update ---
+        function updateLabels() {
+            chargeMeshes.forEach(item => {
+                const el = document.getElementById(item.id);
+                if (el) {
+                    // Project 3D pos to 2D screen
+                    const pos = item.mesh.position.clone();
+                    pos.y += (0.3 + Math.abs(item.q)*0.05); // Offset above sphere
+                    pos.project(camera);
+                    
+                    const x = (pos.x * .5 + .5) * container.clientWidth;
+                    const y = (pos.y * -.5 + .5) * container.clientHeight;
+                    
+                    el.style.display = 'block';
+                    el.style.left = `${x}px`;
+                    el.style.top = `${y}px`;
+                    el.innerText = `${item.q > 0 ? '+' : ''}${item.q} nC`;
+                }
+            });
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            // Test Charge Physics (Verlet integration)
+            if (testChargeData.active) {
+                const dt = Math.min(clock.getDelta(), 0.05); // Cap dt
+                const q_test = 1; // Positive test charge
+                const mass = 1;
+                
+                const E = getEField(testChargeData.pos);
+                const acc = E.multiplyScalar(q_test / mass);
+                
+                testChargeData.vel.addScaledVector(acc, dt);
+                testChargeData.pos.addScaledVector(testChargeData.vel, dt);
+                
+                testChargeMesh.position.copy(testChargeData.pos);
+
+                // Update trail
+                if (testChargeData.trail.length === 0 || testChargeData.pos.distanceTo(testChargeData.trail[testChargeData.trail.length-1]) > 0.1) {
+                    testChargeData.trail.push(testChargeData.pos.clone());
+                    if (testChargeData.trail.length > 200) testChargeData.trail.shift(); // Max length
+                    trailLine.geometry.setFromPoints(testChargeData.trail);
+                }
+
+                // Stop if out of bounds or hits charge
+                if (testChargeData.pos.length() > 20) testChargeData.active = false;
+                for(let c of pointCharges) {
+                    if(testChargeData.pos.distanceTo(c.pos) < 0.5) testChargeData.active = false;
+                }
+            } else {
+                clock.getDelta(); // clear delta
+            }
+
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Initialization ---
+        syncUI();
+        updateScene();
+        animate();
+
+    </script>
+</body>
+</html>

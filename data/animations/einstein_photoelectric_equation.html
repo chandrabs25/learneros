@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einstein Photoelectric Effect Simulation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --success: #06D6A0;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #sidebar {
+            width: 320px;
+            min-width: 320px;
+            height: 100%;
+            padding: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--panel-border);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent);
+            font-weight: 700;
+            background: rgba(59, 130, 246, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Specific slider colors */
+        #freq::-webkit-slider-thumb { background: #7209B7; box-shadow: 0 2px 6px rgba(114, 9, 183, 0.4); }
+        #intensity::-webkit-slider-thumb { background: #F59E0B; box-shadow: 0 2px 6px rgba(245, 158, 11, 0.4); }
+        #workFunc::-webkit-slider-thumb { background: #10B981; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4); }
+        #voltage::-webkit-slider-thumb { background: #EF4444; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4); }
+
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 10px 32px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: #1e293b;
+        }
+
+        .math-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            gap: 24px;
+        }
+
+        .math-label {
+            color: var(--text-muted);
+        }
+
+        .math-value {
+            font-weight: 700;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px dashed #cbd5e1;
+            margin: 12px 0;
+        }
+
+        #status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+
+        .status-active {
+            background: rgba(6, 214, 160, 0.15);
+            color: #048c68;
+        }
+
+        .status-inactive {
+            background: rgba(239, 68, 68, 0.15);
+            color: #b91c1c;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .status-active .dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-inactive .dot { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #sidebar { width: 100%; height: 40%; min-height: 300px; border-right: none; border-bottom: 1px solid var(--panel-border); }
+            #canvas-container { height: 60%; }
+            #formula-card { top: 12px; left: 12px; padding: 12px; }
+            .math { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <div>
+            <h1>Photoelectric Effect</h1>
+            <p class="subtitle">Interactive Physics Simulation</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="freq">Light Frequency (f)</label>
+                <span class="value-display" id="freq-val" style="color: #7209B7;">6.0 ×10¹⁴ Hz</span>
+            </div>
+            <input type="range" id="freq" min="3.0" max="12.0" step="0.1" value="6.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="intensity">Light Intensity</label>
+                <span class="value-display" id="intensity-val" style="color: #F59E0B;">5</span>
+            </div>
+            <input type="range" id="intensity" min="1" max="20" step="1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="workFunc">Work Function (Φ)</label>
+                <span class="value-display" id="workFunc-val" style="color: #10B981;">2.2 eV</span>
+            </div>
+            <input type="range" id="workFunc" min="1.0" max="5.0" step="0.1" value="2.2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="voltage">Retarding Potential (V)</label>
+                <span class="value-display" id="voltage-val" style="color: #EF4444;">0.0 V</span>
+            </div>
+            <input type="range" id="voltage" min="0.0" max="5.0" step="0.1" value="0.0">
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="math" style="text-align: center; font-weight: 700; font-size: 1.2rem;">K<sub>max</sub> = hf - Φ</div>
+            <hr>
+            <div class="math-row">
+                <span class="math-label">Photon Energy (hf):</span>
+                <span class="math-value" id="calc-ep">0.00 eV</span>
+            </div>
+            <div class="math-row">
+                <span class="math-label">Work Function (Φ):</span>
+                <span class="math-value" id="calc-phi">0.00 eV</span>
+            </div>
+            <hr>
+            <div class="math-row" style="font-size: 1.2rem;">
+                <span class="math-label" style="color: #1e293b; font-weight: 600;">K<sub>max</sub>:</span>
+                <span class="math-value" id="calc-kmax" style="color: var(--success);">0.00 eV</span>
+            </div>
+            <div id="status-indicator" class="status-active">
+                <div class="dot"></div>
+                <span id="status-text">EMISSION ACTIVE</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Physics Constants & State ---
+        const h_eVs = 4.1357e-15; // Planck constant in eV*s
+        const freqMultiplier = 1e14;
+        
+        let state = {
+            freq: 6.0,
+            intensity: 5,
+            workFunc: 2.2,
+            voltage: 0.0,
+            Ep: 0,
+            Kmax: 0
+        };
+
+        // --- DOM Elements ---
+        const ui = {
+            freq: document.getElementById('freq'),
+            freqVal: document.getElementById('freq-val'),
+            intensity: document.getElementById('intensity'),
+            intensityVal: document.getElementById('intensity-val'),
+            workFunc: document.getElementById('workFunc'),
+            workFuncVal: document.getElementById('workFunc-val'),
+            voltage: document.getElementById('voltage'),
+            voltageVal: document.getElementById('voltage-val'),
+            calcEp: document.getElementById('calc-ep'),
+            calcPhi: document.getElementById('calc-phi'),
+            calcKmax: document.getElementById('calc-kmax'),
+            statusInd: document.getElementById('status-indicator'),
+            statusText: document.getElementById('status-text')
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Light background color
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.FogExp2('#f0f4f8', 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 5, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Prevent going too far below
+        controls.minDistance = 10;
+        controls.maxDistance = 50;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -15;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        scene.add(dirLight);
+
+        // --- Materials ---
+        const glassMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.05,
+            transmission: 0.9, // glass-like
+            ior: 1.5,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.DoubleSide
+        });
+
+        const cathodeMaterial = new THREE.MeshStandardMaterial({ color: 0x94A3B8, roughness: 0.4, metalness: 0.8 });
+        const anodeMaterial = new THREE.MeshStandardMaterial({ color: 0x64748B, roughness: 0.4, metalness: 0.8 });
+        const wireMaterial = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.7 });
+
+        // --- Geometry & Objects ---
+        // Vacuum Tube
+        const tubeGeom = new THREE.CylinderGeometry(4, 4, 16, 32, 1, true);
+        tubeGeom.rotateZ(Math.PI / 2);
+        const tube = new THREE.Mesh(tubeGeom, glassMaterial);
+        scene.add(tube);
+
+        // End caps for tube
+        const capGeom = new THREE.SphereGeometry(4, 32, 16, 0, Math.PI*2, 0, Math.PI/2);
+        const leftCap = new THREE.Mesh(capGeom, glassMaterial);
+        leftCap.position.set(-8, 0, 0);
+        leftCap.rotateZ(Math.PI / 2);
+        scene.add(leftCap);
+        
+        const rightCap = new THREE.Mesh(capGeom, glassMaterial);
+        rightCap.position.set(8, 0, 0);
+        rightCap.rotateZ(-Math.PI / 2);
+        scene.add(rightCap);
+
+        // Plates
+        const plateWidth = 0.5;
+        const plateHeight = 5;
+        const plateDepth = 5;
+        const plateDist = 10; // Distance between plates
+        const cathodeX = -plateDist / 2;
+        const anodeX = plateDist / 2;
+
+        const plateGeom = new THREE.BoxGeometry(plateWidth, plateHeight, plateDepth);
+        
+        const cathode = new THREE.Mesh(plateGeom, cathodeMaterial);
+        cathode.position.set(cathodeX, 0, 0);
+        cathode.castShadow = true;
+        cathode.receiveShadow = true;
+        scene.add(cathode);
+
+        const anode = new THREE.Mesh(plateGeom, anodeMaterial);
+        anode.position.set(anodeX, 0, 0);
+        anode.castShadow = true;
+        anode.receiveShadow = true;
+        scene.add(anode);
+
+        // Circuit Wires (Simple representation)
+        const wireGeom = new THREE.CylinderGeometry(0.1, 0.1, 8);
+        const wireL = new THREE.Mesh(wireGeom, wireMaterial);
+        wireL.position.set(cathodeX, -4, 0);
+        scene.add(wireL);
+        
+        const wireR = new THREE.Mesh(wireGeom, wireMaterial);
+        wireR.position.set(anodeX, -4, 0);
+        scene.add(wireR);
+
+        const baseWireGeom = new THREE.CylinderGeometry(0.1, 0.1, plateDist);
+        baseWireGeom.rotateZ(Math.PI/2);
+        const baseWire = new THREE.Mesh(baseWireGeom, wireMaterial);
+        baseWire.position.set(0, -8, 0);
+        scene.add(baseWire);
+
+        // Meter Box
+        const boxGeom = new THREE.BoxGeometry(3, 2, 2);
+        const boxMat = new THREE.MeshStandardMaterial({ color: 0x334155 });
+        const meterBox = new THREE.Mesh(boxGeom, boxMat);
+        meterBox.position.set(0, -8, 0);
+        scene.add(meterBox);
+
+        // --- Particle Systems ---
+
+        // Helper: Frequency to Color (HSL mapping)
+        // 3.0 (Red) -> 12.0 (Violet)
+        function getPhotonColor(f) {
+            // Map 3.0-12.0 to Hue 0-280
+            let hue = ((f - 3.0) / 9.0) * 280;
+            return new THREE.Color(`hsl(${hue}, 100%, 55%)`);
+        }
+
+        // Photons Pool
+        const MAX_PHOTONS = 100;
+        const photons = [];
+        const photonGeom = new THREE.SphereGeometry(0.15, 8, 8);
+        
+        for(let i=0; i<MAX_PHOTONS; i++) {
+            const mat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const mesh = new THREE.Mesh(photonGeom, mat);
+            
+            // Trail
+            const trailGeom = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0,0,0),
+                new THREE.Vector3(0.5, 0.5, 0) // Will point back along path
+            ]);
+            const trailMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+            const trail = new THREE.Line(trailGeom, trailMat);
+            mesh.add(trail);
+
+            mesh.visible = false;
+            scene.add(mesh);
+            photons.push({
+                mesh: mesh,
+                mat: mat,
+                trailMat: trailMat,
+                active: false,
+                x: 0, y: 0, z: 0,
+                vx: 0, vy: 0, vz: 0
+            });
+        }
+
+        // Electrons Pool
+        const MAX_ELECTRONS = 200;
+        const electrons = [];
+        const electronGeom = new THREE.SphereGeometry(0.12, 16, 16);
+        const electronMat = new THREE.MeshStandardMaterial({ 
+            color: 0x06D6A0, 
+            emissive: 0x06D6A0, 
+            emissiveIntensity: 0.5,
+            roughness: 0.2 
+        });
+
+        for(let i=0; i<MAX_ELECTRONS; i++) {
+            const mesh = new THREE.Mesh(electronGeom, electronMat);
+            mesh.visible = false;
+            scene.add(mesh);
+            electrons.push({
+                mesh: mesh,
+                active: false,
+                x: 0, y: 0, z: 0,
+                vx: 0, vy: 0, vz: 0
+            });
+        }
+
+        // Bound Electrons (Jittering in cathode)
+        const boundElectrons = [];
+        const boundMat = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.5 });
+        for(let i=0; i<30; i++) {
+            const mesh = new THREE.Mesh(electronGeom, boundMat);
+            // Random position inside cathode
+            mesh.position.set(
+                cathodeX + (Math.random() - 0.5) * plateWidth,
+                (Math.random() - 0.5) * (plateHeight - 0.5),
+                (Math.random() - 0.5) * (plateDepth - 0.5)
+            );
+            scene.add(mesh);
+            boundElectrons.push({
+                mesh: mesh,
+                baseX: mesh.position.x,
+                baseY: mesh.position.y,
+                baseZ: mesh.position.z
+            });
+        }
+
+        // --- Logic & Updates ---
+
+        function updatePhysicsState() {
+            state.freq = parseFloat(ui.freq.value);
+            state.intensity = parseInt(ui.intensity.value);
+            state.workFunc = parseFloat(ui.workFunc.value);
+            state.voltage = parseFloat(ui.voltage.value);
+
+            // Calculate Energy
+            // E = h * f.  f is in 10^14 Hz. h is in eV*s.
+            state.Ep = h_eVs * (state.freq * freqMultiplier);
+            state.Kmax = state.Ep - state.workFunc;
+
+            // Update UI
+            ui.freqVal.innerText = `${state.freq.toFixed(1)} ×10¹⁴ Hz`;
+            ui.intensityVal.innerText = state.intensity;
+            ui.workFuncVal.innerText = `${state.workFunc.toFixed(1)} eV`;
+            ui.voltageVal.innerText = `${state.voltage.toFixed(1)} V`;
+
+            ui.calcEp.innerText = `${state.Ep.toFixed(2)} eV`;
+            ui.calcPhi.innerText = `${state.workFunc.toFixed(2)} eV`;
+            
+            if (state.Kmax > 0) {
+                ui.calcKmax.innerText = `${state.Kmax.toFixed(2)} eV`;
+                ui.calcKmax.style.color = 'var(--success)';
+                ui.statusInd.className = 'status-active';
+                ui.statusText.innerText = 'EMISSION ACTIVE';
+            } else {
+                ui.calcKmax.innerText = `0.00 eV`;
+                ui.calcKmax.style.color = 'var(--danger)';
+                ui.statusInd.className = 'status-inactive';
+                ui.statusText.innerText = 'BELOW THRESHOLD';
+            }
+
+            // Update slider thumb colors dynamically (optional polish)
+            const pColor = getPhotonColor(state.freq);
+            ui.freqVal.style.color = pColor.getStyle();
+        }
+
+        // Event Listeners for Sliders
+        ['freq', 'intensity', 'workFunc', 'voltage'].forEach(id => {
+            ui[id].addEventListener('input', updatePhysicsState);
+        });
+
+        // Initialize state
+        updatePhysicsState();
+
+        // --- Animation Loop ---
+        
+        // Physics scaling factors for visual representation
+        // We want electrons to stop at anode (d=10) when Voltage = Kmax
+        // v_x = v_scale * sqrt(Kmax)
+        // a_x = -a_scale * Voltage
+        // d = v^2 / (2a) => 10 = (v_scale^2 * Kmax) / (2 * a_scale * Voltage)
+        // If V = Kmax, 10 = v_scale^2 / (2 * a_scale)
+        const v_scale = 0.15;
+        const a_scale = (v_scale * v_scale) / 20; // = 0.001125
+
+        function spawnPhoton() {
+            const p = photons.find(p => !p.active);
+            if (!p) return;
+
+            p.active = true;
+            p.mesh.visible = true;
+            
+            // Spawn top-left, moving towards cathode
+            const startY = 6 + Math.random() * 4;
+            const startZ = (Math.random() - 0.5) * plateDepth;
+            const targetY = (Math.random() - 0.5) * (plateHeight - 1);
+            const targetZ = startZ; // Keep it roughly planar for visual clarity
+
+            p.x = -12;
+            p.y = startY;
+            p.z = startZ;
+
+            // Velocity vector pointing to cathode
+            const dx = cathodeX - p.x;
+            const dy = targetY - p.y;
+            const dz = targetZ - p.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            
+            const speed = 0.3;
+            p.vx = (dx / dist) * speed;
+            p.vy = (dy / dist) * speed;
+            p.vz = (dz / dist) * speed;
+
+            // Set color based on current frequency
+            const color = getPhotonColor(state.freq);
+            p.mat.color = color;
+            p.trailMat.color = color;
+
+            // Orient trail
+            const positions = p.mesh.children[0].geometry.attributes.position.array;
+            positions[3] = -p.vx * 3;
+            positions[4] = -p.vy * 3;
+            positions[5] = -p.vz * 3;
+            p.mesh.children[0].geometry.attributes.position.needsUpdate = true;
+        }
+
+        function spawnElectron(y, z) {
+            if (state.Kmax <= 0) return;
+
+            const e = electrons.find(e => !e.active);
+            if (!e) return;
+
+            e.active = true;
+            e.mesh.visible = true;
+            
+            // Start slightly outside cathode
+            e.x = cathodeX + plateWidth/2 + 0.1;
+            e.y = y;
+            e.z = z;
+
+            // Velocity based on Kmax
+            e.vx = v_scale * Math.sqrt(state.Kmax);
+            // Small random spread
+            e.vy = (Math.random() - 0.5) * 0.02;
+            e.vz = (Math.random() - 0.5) * 0.02;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 1. Spawn Photons (Rate based on intensity)
+            // Intensity 1-20. 
+            if (Math.random() < state.intensity * 0.03) {
+                spawnPhoton();
+            }
+
+            // 2. Update Photons
+            for (let i = 0; i < MAX_PHOTONS; i++) {
+                const p = photons[i];
+                if (!p.active) continue;
+
+                p.x += p.vx;
+                p.y += p.vy;
+                p.z += p.vz;
+                p.mesh.position.set(p.x, p.y, p.z);
+
+                // Collision with Cathode plane
+                if (p.x >= cathodeX - plateWidth/2) {
+                    p.active = false;
+                    p.mesh.visible = false;
+                    // Trigger electron emission
+                    spawnElectron(p.y, p.z);
+                }
+            }
+
+            // 3. Update Electrons
+            const acceleration = -a_scale * state.voltage;
+
+            for (let i = 0; i < MAX_ELECTRONS; i++) {
+                const e = electrons[i];
+                if (!e.active) continue;
+
+                // Apply retarding potential
+                e.vx += acceleration;
+                
+                e.x += e.vx;
+                e.y += e.vy;
+                e.z += e.vz;
+                e.mesh.position.set(e.x, e.y, e.z);
+
+                // Hit Anode
+                if (e.x >= anodeX - plateWidth/2) {
+                    e.active = false;
+                    e.mesh.visible = false;
+                }
+                // Pushed back to Cathode
+                else if (e.x <= cathodeX + plateWidth/2 && e.vx < 0) {
+                    e.active = false;
+                    e.mesh.visible = false;
+                }
+                // Out of bounds (top/bottom)
+                else if (Math.abs(e.y) > 6 || Math.abs(e.z) > 6) {
+                    e.active = false;
+                    e.mesh.visible = false;
+                }
+            }
+
+            // 4. Jitter Bound Electrons
+            const time = Date.now() * 0.005;
+            for (let i = 0; i < boundElectrons.length; i++) {
+                const be = boundElectrons[i];
+                be.mesh.position.x = be.baseX + Math.sin(time + i) * 0.05;
+                be.mesh.position.y = be.baseY + Math.cos(time * 1.2 + i) * 0.05;
+                be.mesh.position.z = be.baseZ + Math.sin(time * 0.8 + i) * 0.05;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start animation
+        animate();
+
+    </script>
+</body>
+</html>

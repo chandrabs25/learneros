@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>p-n Junction Dynamics & Energy Bands</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            z-index: 10;
+        }
+
+        #controls {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            padding: 15px 20px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 14px;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #111;
+            font-weight: 600;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        .math-line {
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .math-label {
+            color: #666;
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+        }
+
+        .math-value {
+            font-weight: 700;
+            color: #111;
+        }
+
+        .legend {
+            margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .label-3d {
+            position: absolute;
+            font-weight: 600;
+            font-size: 16px;
+            color: rgba(0,0,0,0.6);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            text-shadow: 0 2px 4px rgba(255,255,255,0.8);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <div style="font-family: 'Inter', sans-serif; font-weight: 600; margin-bottom: 8px; color: #111;">Junction Parameters</div>
+        <div class="math-line">
+            <span class="math-label">Built-in Potential (V<sub>bi</sub>)</span>
+            <span class="math-value" id="val-vbi">0.00 V</span>
+        </div>
+        <div class="math-line">
+            <span class="math-label">Depletion Width (W)</span>
+            <span class="math-value" id="val-w">0.00 &mu;m</span>
+        </div>
+        <div class="math-line">
+            <span class="math-label">Barrier Height</span>
+            <span class="math-value" id="val-barrier">0.00 eV</span>
+        </div>
+    </div>
+
+    <div id="controls" class="glass-panel">
+        <h2>Simulation Controls</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Doping (N<sub>a</sub> = N<sub>d</sub>)</span>
+                <span class="val-display" id="disp-doping">1e16 cm⁻³</span>
+            </div>
+            <input type="range" id="slider-doping" min="15" max="18" step="0.1" value="16">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Applied Bias (V<sub>ext</sub>)</span>
+                <span class="val-display" id="disp-bias">0.0 V</span>
+            </div>
+            <input type="range" id="slider-bias" min="-2.0" max="0.7" step="0.05" value="0.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Temperature (T)</span>
+                <span class="val-display" id="disp-temp">300 K</span>
+            </div>
+            <input type="range" id="slider-temp" min="200" max="500" step="10" value="300">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Bandgap (E<sub>g</sub>)</span>
+                <span class="val-display" id="disp-eg">1.12 eV</span>
+            </div>
+            <input type="range" id="slider-eg" min="0.5" max="2.0" step="0.01" value="1.12">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="dot" style="background: #4361EE;"></div> Electrons</div>
+            <div class="legend-item"><div class="dot" style="border: 2px solid #FF3366; background: transparent; width: 6px; height: 6px;"></div> Holes</div>
+            <div class="legend-item"><div class="dot" style="background: #48CAE4;"></div> Donors (+)</div>
+            <div class="legend-item"><div class="dot" style="background: #FF85A1;"></div> Acceptors (-)</div>
+            <div class="legend-item"><div class="dot" style="background: #06D6A0; border-radius: 0; width: 12px; height: 2px;"></div> E-Field</div>
+            <div class="legend-item"><div class="dot" style="background: #7209B7; border-radius: 0; width: 12px; height: 2px; border-top: 2px dashed #7209B7; background: transparent;"></div> Fermi Level</div>
+        </div>
+    </div>
+
+    <div id="label-p" class="label-3d">P-Type</div>
+    <div id="label-n" class="label-3d">N-Type</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Constants & State ---
+        const kB = 8.617e-5; // eV/K
+        const q = 1; // using eV
+        let params = {
+            dopingLog: 16,
+            Vext: 0.0,
+            Temp: 300,
+            Eg: 1.12
+        };
+        let physicsState = {
+            Vbi: 0,
+            W: 0,
+            Barrier: 0,
+            ni: 0
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 8, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0xf0f4f8, 1);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-10, 0, -10);
+        scene.add(fillLight);
+
+        // --- Texture Generation for Ions ---
+        function createSignTexture(sign, bgColor, fgColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = bgColor;
+            ctx.beginPath();
+            ctx.arc(64, 64, 64, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = fgColor;
+            ctx.font = 'bold 80px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(sign, 64, 70);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            return tex;
+        }
+
+        const texDonor = createSignTexture('+', '#48CAE4', '#ffffff');
+        const texAcceptor = createSignTexture('-', '#FF85A1', '#ffffff');
+
+        // --- Materials ---
+        const matP = new THREE.MeshPhysicalMaterial({ color: 0xFF85A1, transparent: true, opacity: 0.05, roughness: 0.1, transmission: 0.9, thickness: 1 });
+        const matN = new THREE.MeshPhysicalMaterial({ color: 0x48CAE4, transparent: true, opacity: 0.05, roughness: 0.1, transmission: 0.9, thickness: 1 });
+        const matDepletion = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.15, blending: THREE.AdditiveBlending, depthWrite: false });
+        
+        const matElectron = new THREE.MeshPhongMaterial({ color: 0x4361EE, shininess: 100 });
+        const matHole = new THREE.MeshBasicMaterial({ color: 0xFF3366, wireframe: true });
+        
+        const matDonor = new THREE.MeshPhongMaterial({ map: texDonor, transparent: true, opacity: 0.7 });
+        const matAcceptor = new THREE.MeshPhongMaterial({ map: texAcceptor, transparent: true, opacity: 0.7 });
+
+        // --- Crystal Geometry ---
+        const crystalWidth = 20;
+        const crystalHeight = 4;
+        const crystalDepth = 4;
+
+        const pBlock = new THREE.Mesh(new THREE.BoxGeometry(crystalWidth/2, crystalHeight, crystalDepth), matP);
+        pBlock.position.x = -crystalWidth/4;
+        scene.add(pBlock);
+
+        const nBlock = new THREE.Mesh(new THREE.BoxGeometry(crystalWidth/2, crystalHeight, crystalDepth), matN);
+        nBlock.position.x = crystalWidth/4;
+        scene.add(nBlock);
+
+        const depletionRegion = new THREE.Mesh(new THREE.BoxGeometry(1, crystalHeight * 1.01, crystalDepth * 1.01), matDepletion);
+        scene.add(depletionRegion);
+
+        // Edges
+        const edgesGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(crystalWidth, crystalHeight, crystalDepth));
+        const edgesMat = new THREE.LineBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.1 });
+        const crystalEdges = new THREE.LineSegments(edgesGeo, edgesMat);
+        scene.add(crystalEdges);
+
+        // --- Instanced Meshes for Particles ---
+        const maxParticles = 2000;
+        const dummy = new THREE.Object3D();
+
+        // 1. Fixed Ions
+        const geoIon = new THREE.SphereGeometry(0.25, 16, 16);
+        const instAcceptors = new THREE.InstancedMesh(geoIon, matAcceptor, maxParticles);
+        const instDonors = new THREE.InstancedMesh(geoIon, matDonor, maxParticles);
+        scene.add(instAcceptors);
+        scene.add(instDonors);
+
+        // 2. Mobile Carriers
+        const geoElectron = new THREE.SphereGeometry(0.12, 16, 16);
+        const geoHole = new THREE.SphereGeometry(0.15, 8, 8); // Wireframe looks better with fewer segments
+        const instElectrons = new THREE.InstancedMesh(geoElectron, matElectron, maxParticles);
+        const instHoles = new THREE.InstancedMesh(geoHole, matHole, maxParticles);
+        scene.add(instElectrons);
+        scene.add(instHoles);
+
+        // Particle State Arrays
+        let electrons = [];
+        let holes = [];
+        let currentParticleCount = 0;
+
+        function initParticles() {
+            // Map doping 10^15 - 10^18 to 100 - 2000 particles
+            const t = (params.dopingLog - 15) / 3;
+            currentParticleCount = Math.floor(100 + t * 1900);
+            
+            instAcceptors.count = currentParticleCount;
+            instDonors.count = currentParticleCount;
+            instElectrons.count = currentParticleCount;
+            instHoles.count = currentParticleCount;
+
+            electrons = [];
+            holes = [];
+
+            for (let i = 0; i < currentParticleCount; i++) {
+                // Fixed Acceptors (P-side: -10 to 0)
+                dummy.position.set(-Math.random() * 10, (Math.random() - 0.5) * crystalHeight, (Math.random() - 0.5) * crystalDepth);
+                dummy.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+                dummy.updateMatrix();
+                instAcceptors.setMatrixAt(i, dummy.matrix);
+
+                // Fixed Donors (N-side: 0 to 10)
+                dummy.position.set(Math.random() * 10, (Math.random() - 0.5) * crystalHeight, (Math.random() - 0.5) * crystalDepth);
+                dummy.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, 0);
+                dummy.updateMatrix();
+                instDonors.setMatrixAt(i, dummy.matrix);
+
+                // Mobile Electrons (Start mostly in N-side)
+                electrons.push({
+                    pos: new THREE.Vector3(Math.random() * 10, (Math.random() - 0.5) * crystalHeight, (Math.random() - 0.5) * crystalDepth),
+                    vel: new THREE.Vector3(0,0,0)
+                });
+
+                // Mobile Holes (Start mostly in P-side)
+                holes.push({
+                    pos: new THREE.Vector3(-Math.random() * 10, (Math.random() - 0.5) * crystalHeight, (Math.random() - 0.5) * crystalDepth),
+                    vel: new THREE.Vector3(0,0,0)
+                });
+            }
+            instAcceptors.instanceMatrix.needsUpdate = true;
+            instDonors.instanceMatrix.needsUpdate = true;
+        }
+
+        // --- Energy Band Diagram ---
+        const bandGroup = new THREE.Group();
+        bandGroup.position.y = 4;
+        scene.add(bandGroup);
+
+        const numPoints = 100;
+        const bandGeoEc = new THREE.BufferGeometry();
+        const bandGeoEv = new THREE.BufferGeometry();
+        const bandGeoEf = new THREE.BufferGeometry();
+        
+        const posEc = new Float32Array(numPoints * 3);
+        const posEv = new Float32Array(numPoints * 3);
+        const posEf = new Float32Array(numPoints * 3);
+        
+        bandGeoEc.setAttribute('position', new THREE.BufferAttribute(posEc, 3));
+        bandGeoEv.setAttribute('position', new THREE.BufferAttribute(posEv, 3));
+        bandGeoEf.setAttribute('position', new THREE.BufferAttribute(posEf, 3));
+
+        const matEc = new THREE.LineBasicMaterial({ color: 0x4361EE, linewidth: 2 });
+        const matEv = new THREE.LineBasicMaterial({ color: 0xFF3366, linewidth: 2 });
+        const matEf = new THREE.LineDashedMaterial({ color: 0x7209B7, linewidth: 2, dashSize: 0.2, gapSize: 0.2 });
+
+        const lineEc = new THREE.Line(bandGeoEc, matEc);
+        const lineEv = new THREE.Line(bandGeoEv, matEv);
+        const lineEf = new THREE.Line(bandGeoEf, matEf);
+        
+        bandGroup.add(lineEc);
+        bandGroup.add(lineEv);
+        bandGroup.add(lineEf);
+
+        // --- Electric Field Arrows ---
+        const eFieldGroup = new THREE.Group();
+        scene.add(eFieldGroup);
+        const arrows = [];
+        for(let i=0; i<5; i++) {
+            const dir = new THREE.Vector3(-1, 0, 0);
+            const origin = new THREE.Vector3(0, (i-2)*0.8, 0);
+            const arrow = new THREE.ArrowHelper(dir, origin, 1, 0x06D6A0, 0.4, 0.3);
+            arrows.push(arrow);
+            eFieldGroup.add(arrow);
+        }
+
+        // --- Physics Calculation ---
+        function updatePhysics() {
+            const T = params.Temp;
+            const Eg = params.Eg;
+            const Vext = params.Vext;
+            const N = Math.pow(10, params.dopingLog);
+
+            // Simplified ni calculation to avoid overflow, normalized to 300K Si
+            const ni0 = 1e10;
+            const ni = ni0 * Math.pow(T/300, 1.5) * Math.exp((1.12/(2*kB*300)) - (Eg/(2*kB*T)));
+            physicsState.ni = ni;
+
+            // Built-in potential
+            let Vbi = 2 * kB * T * Math.log(N / ni);
+            if (Vbi < 0.1) Vbi = 0.1; // Clamp
+            physicsState.Vbi = Vbi;
+
+            // Barrier height
+            let barrier = Vbi - Vext;
+            if (barrier < 0.05) barrier = 0.05; // Prevent negative barrier in extreme forward bias
+            physicsState.Barrier = barrier;
+
+            // Depletion Width (scaled for visual)
+            // W = sqrt( 2*eps*(Vbi-Vext) / (q*N) ). We scale N visually.
+            const N_norm = Math.pow(10, params.dopingLog - 15); // 1 to 1000
+            let W = 3.0 * Math.sqrt(barrier / N_norm);
+            if (W < 0.2) W = 0.2;
+            if (W > 8.0) W = 8.0;
+            physicsState.W = W;
+
+            // Update UI
+            document.getElementById('val-vbi').innerHTML = Vbi.toFixed(2) + ' V';
+            document.getElementById('val-w').innerHTML = W.toFixed(2) + ' &mu;m';
+            document.getElementById('val-barrier').innerHTML = barrier.toFixed(2) + ' eV';
+
+            // Update Depletion Region Mesh
+            depletionRegion.scale.x = W;
+
+            // Update E-Field Arrows
+            const eFieldStrength = barrier / W;
+            arrows.forEach(arrow => {
+                arrow.setLength(Math.max(0.5, W * 0.8), 0.4, 0.3);
+                arrow.position.x = W/2 * 0.8; // Start slightly inside N-side
+                // Opacity based on field strength
+                arrow.line.material.opacity = Math.min(1, eFieldStrength * 2);
+                arrow.cone.material.opacity = Math.min(1, eFieldStrength * 2);
+                arrow.line.material.transparent = true;
+                arrow.cone.material.transparent = true;
+            });
+
+            // Update Band Diagram
+            const positionsEc = lineEc.geometry.attributes.position.array;
+            const positionsEv = lineEv.geometry.attributes.position.array;
+            const positionsEf = lineEf.geometry.attributes.position.array;
+
+            const xStart = -10;
+            const xEnd = 10;
+            const dx = (xEnd - xStart) / (numPoints - 1);
+
+            for (let i = 0; i < numPoints; i++) {
+                const x = xStart + i * dx;
+                let v = 0; // Potential
+
+                // Parabolic potential in depletion region
+                if (x < -W/2) {
+                    v = barrier;
+                } else if (x > W/2) {
+                    v = 0;
+                } else if (x <= 0) {
+                    // P-side depletion
+                    const normX = (x + W/2) / (W/2);
+                    v = barrier - (barrier / 2) * normX * normX;
+                } else {
+                    // N-side depletion
+                    const normX = (x - W/2) / (W/2);
+                    v = (barrier / 2) * normX * normX;
+                }
+
+                const idx = i * 3;
+                
+                // Ec and Ev
+                positionsEc[idx] = x;
+                positionsEc[idx+1] = Eg/2 + v;
+                positionsEc[idx+2] = 0;
+
+                positionsEv[idx] = x;
+                positionsEv[idx+1] = -Eg/2 + v;
+                positionsEv[idx+2] = 0;
+
+                // Fermi Level (Splits under bias)
+                positionsEf[idx] = x;
+                if (x < 0) {
+                    // P-side Ef
+                    positionsEf[idx+1] = -Vext; 
+                } else {
+                    // N-side Ef (Reference 0)
+                    positionsEf[idx+1] = 0;
+                }
+                positionsEf[idx+2] = 0;
+            }
+
+            lineEc.geometry.attributes.position.needsUpdate = true;
+            lineEv.geometry.attributes.position.needsUpdate = true;
+            lineEf.geometry.attributes.position.needsUpdate = true;
+            lineEf.computeLineDistances();
+        }
+
+        // --- UI Event Listeners ---
+        function bindSlider(id, paramKey, dispId, unit, formatFn) {
+            const slider = document.getElementById(id);
+            const disp = document.getElementById(dispId);
+            slider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                params[paramKey] = val;
+                disp.innerHTML = formatFn(val) + ' ' + unit;
+                if(paramKey === 'dopingLog') initParticles();
+                updatePhysics();
+            });
+        }
+
+        bindSlider('slider-doping', 'dopingLog', 'disp-doping', 'cm⁻³', v => '1e' + v.toFixed(1));
+        bindSlider('slider-bias', 'Vext', 'disp-bias', 'V', v => v.toFixed(2));
+        bindSlider('slider-temp', 'Temp', 'disp-temp', 'K', v => v.toFixed(0));
+        bindSlider('slider-eg', 'Eg', 'disp-eg', 'eV', v => v.toFixed(2));
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+
+            controls.update();
+
+            // Carrier Dynamics
+            const W = physicsState.W;
+            const E_max = physicsState.Barrier / W;
+            const v_th = Math.sqrt(params.Temp / 300) * 0.2; // Thermal jitter magnitude
+            const mobility = 0.5;
+
+            for (let i = 0; i < currentParticleCount; i++) {
+                // --- Electrons ---
+                let e = electrons[i];
+                // Diffusion (Random Walk)
+                e.vel.x += (Math.random() - 0.5) * v_th;
+                e.vel.y += (Math.random() - 0.5) * v_th;
+                e.vel.z += (Math.random() - 0.5) * v_th;
+
+                // Drift (Electric Field in Depletion Region)
+                if (e.pos.x > -W/2 && e.pos.x < W/2) {
+                    // E-field points -x. Force on electron is +x.
+                    // Triangular field profile
+                    const E_local = E_max * (1 - 2 * Math.abs(e.pos.x) / W);
+                    e.vel.x += mobility * E_local;
+                }
+
+                // Damping
+                e.vel.multiplyScalar(0.9);
+                e.pos.add(e.vel);
+
+                // Bounds
+                if (e.pos.x > 10) { e.pos.x = 10; e.vel.x *= -1; }
+                if (e.pos.x < -10) { 
+                    // If electron makes it deep into P-side, simulate recombination by respawning in N-side
+                    if(Math.random() < 0.05) {
+                        e.pos.set(Math.random()*5 + 5, (Math.random()-0.5)*crystalHeight, (Math.random()-0.5)*crystalDepth);
+                    } else {
+                        e.pos.x = -10; e.vel.x *= -1; 
+                    }
+                }
+                if (Math.abs(e.pos.y) > crystalHeight/2) { e.pos.y = Math.sign(e.pos.y)*crystalHeight/2; e.vel.y *= -1; }
+                if (Math.abs(e.pos.z) > crystalDepth/2) { e.pos.z = Math.sign(e.pos.z)*crystalDepth/2; e.vel.z *= -1; }
+
+                dummy.position.copy(e.pos);
+                dummy.updateMatrix();
+                instElectrons.setMatrixAt(i, dummy.matrix);
+
+                // --- Holes ---
+                let h = holes[i];
+                // Diffusion
+                h.vel.x += (Math.random() - 0.5) * v_th;
+                h.vel.y += (Math.random() - 0.5) * v_th;
+                h.vel.z += (Math.random() - 0.5) * v_th;
+
+                // Drift
+                if (h.pos.x > -W/2 && h.pos.x < W/2) {
+                    // E-field points -x. Force on hole is -x.
+                    const E_local = E_max * (1 - 2 * Math.abs(h.pos.x) / W);
+                    h.vel.x -= mobility * E_local;
+                }
+
+                // Damping
+                h.vel.multiplyScalar(0.9);
+                h.pos.add(h.vel);
+
+                // Bounds
+                if (h.pos.x < -10) { h.pos.x = -10; h.vel.x *= -1; }
+                if (h.pos.x > 10) { 
+                    // Recombination respawn
+                    if(Math.random() < 0.05) {
+                        h.pos.set(-Math.random()*5 - 5, (Math.random()-0.5)*crystalHeight, (Math.random()-0.5)*crystalDepth);
+                    } else {
+                        h.pos.x = 10; h.vel.x *= -1; 
+                    }
+                }
+                if (Math.abs(h.pos.y) > crystalHeight/2) { h.pos.y = Math.sign(h.pos.y)*crystalHeight/2; h.vel.y *= -1; }
+                if (Math.abs(h.pos.z) > crystalDepth/2) { h.pos.z = Math.sign(h.pos.z)*crystalDepth/2; h.vel.z *= -1; }
+
+                dummy.position.copy(h.pos);
+                // Spin the wireframe holes slightly
+                dummy.rotation.x += 0.1;
+                dummy.rotation.y += 0.1;
+                dummy.updateMatrix();
+                instHoles.setMatrixAt(i, dummy.matrix);
+            }
+
+            instElectrons.instanceMatrix.needsUpdate = true;
+            instHoles.instanceMatrix.needsUpdate = true;
+
+            // Update 3D Labels
+            updateLabels();
+
+            renderer.render(scene, camera);
+        }
+
+        const vec = new THREE.Vector3();
+        function updateLabels() {
+            const canvasBounds = renderer.domElement.getBoundingClientRect();
+            
+            // P-Type Label
+            vec.set(-5, 2.5, 0);
+            vec.project(camera);
+            let x = (vec.x * .5 + .5) * canvasBounds.width;
+            let y = (vec.y * -.5 + .5) * canvasBounds.height;
+            const labelP = document.getElementById('label-p');
+            if(vec.z < 1) {
+                labelP.style.display = 'block';
+                labelP.style.left = x + 'px';
+                labelP.style.top = y + 'px';
+            } else {
+                labelP.style.display = 'none';
+            }
+
+            // N-Type Label
+            vec.set(5, 2.5, 0);
+            vec.project(camera);
+            x = (vec.x * .5 + .5) * canvasBounds.width;
+            y = (vec.y * -.5 + .5) * canvasBounds.height;
+            const labelN = document.getElementById('label-n');
+            if(vec.z < 1) {
+                labelN.style.display = 'block';
+                labelN.style.left = x + 'px';
+                labelN.style.top = y + 'px';
+            } else {
+                labelN.style.display = 'none';
+            }
+        }
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize
+        initParticles();
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

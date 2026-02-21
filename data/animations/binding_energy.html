@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuclear Binding Energy & Mass Defect</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.6);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent-p: #FF3366;
+            --accent-n: #4361EE;
+            --accent-ui: #7209B7;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            position: absolute;
+            z-index: 10;
+        }
+
+        #ui-panel {
+            right: 24px;
+            top: 24px;
+            width: 320px;
+            padding: 24px;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+        }
+
+        #ui-panel h1 {
+            margin: 0 0 8px 0;
+            font-size: 20px;
+            font-weight: 800;
+            color: var(--accent-ui);
+            line-height: 1.2;
+        }
+
+        #ui-panel p.subtitle {
+            margin: 0 0 24px 0;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-ui);
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-ui);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(114, 9, 183, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        #slider-z::-webkit-slider-thumb { background: var(--accent-p); box-shadow: 0 2px 6px rgba(255, 51, 102, 0.4); }
+        #slider-n::-webkit-slider-thumb { background: var(--accent-n); box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4); }
+
+        #formula-card {
+            left: 24px;
+            top: 24px;
+            padding: 20px;
+            min-width: 300px;
+        }
+
+        .formula-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 14px;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        .formula-line:last-child { margin-bottom: 0; }
+        
+        .math-highlight {
+            background: rgba(114, 9, 183, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 700;
+            color: var(--accent-ui);
+        }
+
+        #graph-container {
+            left: 24px;
+            bottom: 24px;
+            padding: 16px;
+            width: 320px;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #graph-container h3 {
+            margin: 0 0 10px 0;
+            font-size: 13px;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        canvas#graph-canvas {
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        #tooltip {
+            position: absolute;
+            background: rgba(30, 41, 59, 0.9);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+            transform: translate(-50%, -120%);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .legend {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot.p { background: var(--accent-p); }
+        .dot.n { background: var(--accent-n); }
+        
+        /* Custom scrollbar for panel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <div class="formula-line" style="font-family: 'Inter', sans-serif; font-weight: 800; font-size: 16px; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;">
+            System Analytics
+        </div>
+        <div class="formula-line">
+            M<sub>const</sub> = Z(1.00727) + N(1.00866)<br>
+            = <span id="out-mconst" class="math-highlight">0.0000</span> u
+        </div>
+        <div class="formula-line">
+            E<sub>b</sub> (SEMF) = <span id="out-eb" class="math-highlight">0.00</span> MeV
+        </div>
+        <div class="formula-line">
+            &Delta;m = E<sub>b</sub> / 931.5<br>
+            = <span id="out-dm" class="math-highlight">0.0000</span> u
+        </div>
+        <div class="formula-line">
+            M<sub>nucleus</sub> = M<sub>const</sub> - &Delta;m<br>
+            = <span id="out-mnuc" class="math-highlight">0.0000</span> u
+        </div>
+        <div class="formula-line" style="margin-top: 12px; color: #FF3366; font-weight: bold;">
+            E<sub>b</sub> / A = <span id="out-ebn">0.00</span> MeV
+        </div>
+    </div>
+
+    <div id="graph-container" class="glass-panel">
+        <h3>Binding Energy per Nucleon (B/A)</h3>
+        <canvas id="graph-canvas" width="640" height="360"></canvas>
+    </div>
+
+    <div id="ui-panel" class="glass-panel">
+        <h1>Nuclear Binding</h1>
+        <p class="subtitle">Interactive Mass Defect Simulation</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Protons (Z)</span>
+                <span id="val-z" class="val-display" style="color: var(--accent-p)">2</span>
+            </div>
+            <input type="range" id="slider-z" min="1" max="26" step="1" value="2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Neutrons (N)</span>
+                <span id="val-n" class="val-display" style="color: var(--accent-n)">2</span>
+            </div>
+            <input type="range" id="slider-n" min="0" max="30" step="1" value="2">
+        </div>
+
+        <div class="control-group" style="margin-top: 30px;">
+            <div class="control-header">
+                <span>Separation State</span>
+                <span id="val-sep" class="val-display">0.00</span>
+            </div>
+            <input type="range" id="slider-sep" min="0" max="1" step="0.01" value="0">
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 4px;">
+                <span>Bound Nucleus</span>
+                <span>Free Nucleons</span>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Strong Force Range</span>
+                <span id="val-force" class="val-display">1.5</span>
+            </div>
+            <input type="range" id="slider-force" min="0.5" max="3.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="dot p"></div> Proton</div>
+            <div class="legend-item"><div class="dot n"></div> Neutron</div>
+        </div>
+    </div>
+
+    <div id="tooltip">Proton</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Engine ---
+        const PHYSICS = {
+            mp: 1.007276,
+            mn: 1.008665,
+            amu_mev: 931.5,
+            // SEMF Constants (MeV)
+            av: 15.8,
+            as: 18.3,
+            ac: 0.71,
+            aa: 23.2,
+            
+            calculate: function(Z, N) {
+                const A = Z + N;
+                const M_const = Z * this.mp + N * this.mn;
+                let Eb = 0;
+                
+                if (A > 1) {
+                    let ap = 0;
+                    if (A % 2 === 0) {
+                        if (Z % 2 === 0) ap = 12 / Math.sqrt(A);
+                        else ap = -12 / Math.sqrt(A);
+                    }
+                    
+                    const vol = this.av * A;
+                    const surf = this.as * Math.pow(A, 2/3);
+                    const coul = this.ac * (Z * (Z - 1)) / Math.pow(A, 1/3);
+                    const asym = this.aa * Math.pow(A - 2*Z, 2) / A;
+                    
+                    Eb = vol - surf - coul - asym + ap;
+                    if (Eb < 0) Eb = 0;
+                }
+                
+                const massDefect = Eb / this.amu_mev;
+                const M_nuc = M_const - massDefect;
+                const Ebn = A > 0 ? Eb / A : 0;
+                
+                return { A, M_const, Eb, massDefect, M_nuc, Ebn };
+            }
+        };
+
+        // --- State ---
+        const state = {
+            Z: 2,
+            N: 2,
+            separation: 0,
+            forceRange: 1.5,
+            physics: PHYSICS.calculate(2, 2),
+            nucleons: [] // { type, mesh, boundPos, gridPos }
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 8, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 50;
+        controls.minDistance = 5;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-10, -10, -10);
+        scene.add(backLight);
+
+        // --- Materials & Geometries ---
+        const sphereGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        const matProton = new THREE.MeshStandardMaterial({ 
+            color: 0xFF3366, roughness: 0.2, metalness: 0.1,
+            emissive: 0xFF3366, emissiveIntensity: 0.2
+        });
+        const matNeutron = new THREE.MeshStandardMaterial({ 
+            color: 0x4361EE, roughness: 0.2, metalness: 0.1,
+            emissive: 0x4361EE, emissiveIntensity: 0.2
+        });
+
+        const nucleonGroup = new THREE.Group();
+        scene.add(nucleonGroup);
+
+        // Potential Well
+        const wellMat = new THREE.MeshPhysicalMaterial({
+            color: 0x7209B7,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            roughness: 0.1,
+            transmission: 0.9,
+            thickness: 0.5
+        });
+        const wellMesh = new THREE.Mesh(new THREE.BufferGeometry(), wellMat);
+        scene.add(wellMesh);
+
+        // Energy Axis
+        const axisGeo = new THREE.CylinderGeometry(0.05, 0.05, 40, 8);
+        const axisMat = new THREE.MeshBasicMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.5 });
+        const axisMesh = new THREE.Mesh(axisGeo, axisMat);
+        axisMesh.position.set(-8, 0, 0);
+        scene.add(axisMesh);
+
+        const energyLevelGeo = new THREE.RingGeometry(0.5, 0.8, 32);
+        const energyLevelMat = new THREE.MeshBasicMaterial({ color: 0x7209B7, side: THREE.DoubleSide });
+        const energyLevelMesh = new THREE.Mesh(energyLevelGeo, energyLevelMat);
+        energyLevelMesh.rotation.x = Math.PI / 2;
+        energyLevelMesh.position.set(-8, 0, 0);
+        scene.add(energyLevelMesh);
+
+        // Force Vectors (Lines)
+        const strongForceGeo = new THREE.BufferGeometry();
+        const strongForceMat = new THREE.LineBasicMaterial({ color: 0x06D6A0, transparent: true, opacity: 0.6, linewidth: 2 });
+        const strongForceLines = new THREE.LineSegments(strongForceGeo, strongForceMat);
+        scene.add(strongForceLines);
+
+        const coulombGeo = new THREE.BufferGeometry();
+        const coulombMat = new THREE.LineBasicMaterial({ color: 0xF77F00, transparent: true, opacity: 0.3 });
+        const coulombLines = new THREE.LineSegments(coulombGeo, coulombMat);
+        scene.add(coulombLines);
+
+        // --- Logic Functions ---
+
+        function getSphericalFibonacci(n, radius) {
+            const points = [];
+            const phi = Math.PI * (3 - Math.sqrt(5)); // golden angle
+            for (let i = 0; i < n; i++) {
+                const y = 1 - (i / (n - 1)) * 2; // y goes from 1 to -1
+                const r = Math.sqrt(1 - y * y); // radius at y
+                const theta = phi * i;
+                
+                // Scale radius to distribute volume uniformly
+                const rScale = radius * Math.pow((i + 0.5) / n, 1/3);
+                
+                const x = Math.cos(theta) * r;
+                const z = Math.sin(theta) * r;
+                
+                // Normalize and scale
+                const vec = new THREE.Vector3(x, y, z).normalize().multiplyScalar(rScale);
+                points.push(vec);
+            }
+            return points;
+        }
+
+        function buildNucleus() {
+            // Clear old
+            while(nucleonGroup.children.length > 0){ 
+                nucleonGroup.remove(nucleonGroup.children[0]); 
+            }
+            state.nucleons = [];
+
+            const A = state.Z + state.N;
+            if (A === 0) return;
+
+            // R = R0 * A^(1/3). Visual scaling factor applied.
+            const R = 0.8 * Math.pow(A, 1/3);
+            
+            const boundPositions = getSphericalFibonacci(A, R);
+            
+            // Grid positions for separated state
+            const cols = Math.ceil(Math.sqrt(A));
+            const spacing = 1.5;
+            const offset = (cols - 1) * spacing / 2;
+
+            // Create array of types and shuffle
+            let types = Array(state.Z).fill('p').concat(Array(state.N).fill('n'));
+            for (let i = types.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [types[i], types[j]] = [types[j], types[i]];
+            }
+
+            for (let i = 0; i < A; i++) {
+                const type = types[i];
+                const mesh = new THREE.Mesh(sphereGeo, type === 'p' ? matProton : matNeutron);
+                
+                const gridX = (i % cols) * spacing - offset;
+                const gridZ = Math.floor(i / cols) * spacing - offset;
+                const gridPos = new THREE.Vector3(gridX, 0, gridZ);
+
+                mesh.userData = { type: type };
+                nucleonGroup.add(mesh);
+
+                state.nucleons.push({
+                    type: type,
+                    mesh: mesh,
+                    boundPos: boundPositions[i] || new THREE.Vector3(),
+                    gridPos: gridPos
+                });
+            }
+        }
+
+        function updateWellGeometry() {
+            const depth = state.physics.Eb * 0.08 * (1 - state.separation);
+            const points = [];
+            for(let i = 0; i <= 40; i++) {
+                const r = i * 0.5;
+                const y = -depth * Math.exp(-(r*r)/12);
+                points.push(new THREE.Vector2(r, y));
+            }
+            if(wellMesh.geometry) wellMesh.geometry.dispose();
+            wellMesh.geometry = new THREE.LatheGeometry(points, 64);
+        }
+
+        function updateUI() {
+            document.getElementById('val-z').innerText = state.Z;
+            document.getElementById('val-n').innerText = state.N;
+            document.getElementById('val-sep').innerText = state.separation.toFixed(2);
+            document.getElementById('val-force').innerText = state.forceRange.toFixed(1);
+
+            document.getElementById('out-mconst').innerText = state.physics.M_const.toFixed(5);
+            document.getElementById('out-eb').innerText = state.physics.Eb.toFixed(2);
+            document.getElementById('out-dm').innerText = state.physics.massDefect.toFixed(5);
+            document.getElementById('out-mnuc').innerText = state.physics.M_nuc.toFixed(5);
+            document.getElementById('out-ebn').innerText = state.physics.Ebn.toFixed(2);
+
+            drawGraph();
+        }
+
+        function drawGraph() {
+            const canvas = document.getElementById('graph-canvas');
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Axes
+            const padX = 40;
+            const padY = 30;
+            const graphW = w - padX - 20;
+            const graphH = h - padY - 20;
+
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padX, 20); ctx.lineTo(padX, h - padY); ctx.lineTo(w - 20, h - padY);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = '#64748b';
+            ctx.font = '12px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText('Mass Number (A)', padX + graphW/2, h - 10);
+            ctx.save();
+            ctx.translate(15, 20 + graphH/2);
+            ctx.rotate(-Math.PI/2);
+            ctx.fillText('E_b/A (MeV)', 0, 0);
+            ctx.restore();
+
+            // Draw theoretical curve
+            ctx.strokeStyle = '#4361EE';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            
+            const maxA = 60;
+            const maxEbn = 9.5; // MeV
+
+            for(let a = 1; a <= maxA; a++) {
+                // Approximate stable Z for given A
+                const z = Math.round(a / (2 + 0.015 * Math.pow(a, 2/3)));
+                const p = PHYSICS.calculate(z, a - z);
+                
+                const x = padX + (a / maxA) * graphW;
+                const y = (h - padY) - (p.Ebn / maxEbn) * graphH;
+                
+                if(a === 1) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Draw current state dot
+            if (state.physics.A > 0) {
+                const cx = padX + (Math.min(state.physics.A, maxA) / maxA) * graphW;
+                const cy = (h - padY) - (state.physics.Ebn / maxEbn) * graphH;
+                
+                ctx.fillStyle = '#FF3366';
+                ctx.beginPath();
+                ctx.arc(cx, cy, 6, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('slider-z').addEventListener('input', (e) => {
+            state.Z = parseInt(e.target.value);
+            state.physics = PHYSICS.calculate(state.Z, state.N);
+            buildNucleus();
+            updateWellGeometry();
+            updateUI();
+        });
+
+        document.getElementById('slider-n').addEventListener('input', (e) => {
+            state.N = parseInt(e.target.value);
+            state.physics = PHYSICS.calculate(state.Z, state.N);
+            buildNucleus();
+            updateWellGeometry();
+            updateUI();
+        });
+
+        document.getElementById('slider-sep').addEventListener('input', (e) => {
+            state.separation = parseFloat(e.target.value);
+            updateWellGeometry();
+            updateUI();
+        });
+
+        document.getElementById('slider-force').addEventListener('input', (e) => {
+            state.forceRange = parseFloat(e.target.value);
+            updateUI();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Tooltip Raycaster
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const tooltip = document.getElementById('tooltip');
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(nucleonGroup.children);
+
+            if (intersects.length > 0) {
+                const mesh = intersects[0].object;
+                tooltip.style.display = 'block';
+                tooltip.style.left = (e.clientX + 15) + 'px';
+                tooltip.style.top = (e.clientY + 15) + 'px';
+                tooltip.innerText = mesh.userData.type === 'p' ? 'Proton' : 'Neutron';
+                document.body.style.cursor = 'pointer';
+            } else {
+                tooltip.style.display = 'none';
+                document.body.style.cursor = 'default';
+            }
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            const depthBound = -state.physics.Eb * 0.08;
+            const depthSep = 0;
+            const currentBaseY = THREE.MathUtils.lerp(depthBound, depthSep, state.separation);
+
+            // Update Energy Level Indicator
+            energyLevelMesh.position.y = currentBaseY;
+            const colorScale = new THREE.Color().lerpColors(new THREE.Color(0x7209B7), new THREE.Color(0xFF3366), state.separation);
+            energyLevelMesh.material.color = colorScale;
+
+            // Update Nucleons
+            state.nucleons.forEach((n, i) => {
+                const bPos = n.boundPos.clone().add(new THREE.Vector3(0, depthBound, 0));
+                const sPos = n.gridPos.clone().add(new THREE.Vector3(0, depthSep, 0));
+                
+                const pos = new THREE.Vector3().lerpVectors(bPos, sPos, state.separation);
+
+                // Brownian motion / Jitter (only when bound)
+                const jitterAmt = 0.03 * (1 - state.separation);
+                if (jitterAmt > 0) {
+                    pos.x += Math.sin(time * 10 + i) * jitterAmt;
+                    pos.y += Math.cos(time * 12 + i) * jitterAmt;
+                    pos.z += Math.sin(time * 14 + i) * jitterAmt;
+                }
+
+                n.mesh.position.copy(pos);
+            });
+
+            // Update Force Vectors
+            const sPositions = [];
+            const cPositions = [];
+
+            // Only calculate forces if not fully separated to save performance
+            if (state.separation < 0.9 && state.nucleons.length > 1) {
+                const rangeSq = state.forceRange * state.forceRange;
+                
+                for (let i = 0; i < state.nucleons.length; i++) {
+                    const n1 = state.nucleons[i];
+                    for (let j = i + 1; j < state.nucleons.length; j++) {
+                        const n2 = state.nucleons[j];
+                        const distSq = n1.mesh.position.distanceToSquared(n2.mesh.position);
+                        
+                        if (distSq < rangeSq) {
+                            // Strong Force (Green)
+                            sPositions.push(
+                                n1.mesh.position.x, n1.mesh.position.y, n1.mesh.position.z,
+                                n2.mesh.position.x, n2.mesh.position.y, n2.mesh.position.z
+                            );
+                        }
+
+                        // Coulomb Repulsion (Orange) - only between protons, longer range visual
+                        if (n1.type === 'p' && n2.type === 'p' && distSq < (rangeSq * 4)) {
+                            // Limit number of coulomb lines to avoid clutter
+                            if(Math.random() > 0.5) continue; 
+                            cPositions.push(
+                                n1.mesh.position.x, n1.mesh.position.y, n1.mesh.position.z,
+                                n2.mesh.position.x, n2.mesh.position.y, n2.mesh.position.z
+                            );
+                        }
+                    }
+                }
+            }
+
+            strongForceGeo.setAttribute('position', new THREE.Float32BufferAttribute(sPositions, 3));
+            coulombGeo.setAttribute('position', new THREE.Float32BufferAttribute(cPositions, 3));
+            
+            // Fade out forces as they separate
+            strongForceMat.opacity = 0.6 * (1 - state.separation);
+            coulombMat.opacity = 0.3 * (1 - state.separation);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        buildNucleus();
+        updateWellGeometry();
+        updateUI();
+        animate();
+
+    </script>
+</body>
+</html>

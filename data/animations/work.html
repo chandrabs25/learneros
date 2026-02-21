@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work-Energy Theorem Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 75%;
+            height: 100%;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            color: #1a202c;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #btn-push {
+            background-color: #06D6A0;
+            color: white;
+            box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
+            user-select: none;
+        }
+
+        #btn-push:active {
+            transform: scale(0.96);
+            background-color: #05b587;
+        }
+
+        #btn-reset {
+            background-color: #ef476f;
+            color: white;
+            box-shadow: 0 4px 15px rgba(239, 71, 111, 0.3);
+        }
+
+        #btn-reset:active {
+            transform: scale(0.96);
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            z-index: 10;
+            min-width: 280px;
+        }
+
+        .formula-title {
+            font-weight: 800;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            color: #1a202c;
+            border-bottom: 2px solid #f0f4f8;
+            padding-bottom: 8px;
+        }
+
+        .equation {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .eq-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #64748b;
+        }
+
+        .eq-val {
+            font-weight: 700;
+        }
+
+        .val-applied { color: #FF3366; }
+        .val-friction { color: #F77F00; }
+        .val-kinetic { color: #06D6A0; }
+
+        .total-line {
+            border-top: 2px dashed #cbd5e1;
+            margin-top: 10px;
+            padding-top: 10px;
+        }
+
+        .vector-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 14px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff;
+            z-index: 5;
+            transition: opacity 0.1s;
+        }
+
+        #lbl-force { color: #FF3366; }
+        #lbl-friction { color: #F77F00; }
+        #lbl-velocity { color: #06D6A0; }
+
+        @media (max-width: 768px) {
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-container { top: 60%; right: 0; width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.5); }
+            #formula-card { transform: scale(0.8); transform-origin: top left; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-title">Work-Energy Theorem</div>
+        <div class="equation">
+            <span class="eq-label">W<sub>applied</sub> = &int; F cos(&theta;) dx</span>
+            <span class="eq-val val-applied" id="disp-wa">0.0 J</span>
+        </div>
+        <div class="equation">
+            <span class="eq-label">W<sub>friction</sub> = &int; -f<sub>k</sub> dx</span>
+            <span class="eq-val val-friction" id="disp-wf">0.0 J</span>
+        </div>
+        <div class="equation total-line">
+            <span class="eq-label">W<sub>net</sub> = &Delta;K</span>
+            <span class="eq-val val-kinetic" id="disp-k">0.0 J</span>
+        </div>
+        <div class="equation" style="margin-top: 15px; font-size: 0.85rem;">
+            <span class="eq-label">Velocity (v)</span>
+            <span class="eq-val val-kinetic" id="disp-v">0.00 m/s</span>
+        </div>
+        <div class="equation" style="font-size: 0.85rem;">
+            <span class="eq-label">Position (x)</span>
+            <span class="eq-val" id="disp-x">0.00 m</span>
+        </div>
+    </div>
+
+    <div id="labels">
+        <div id="lbl-force" class="vector-label">F</div>
+        <div id="lbl-friction" class="vector-label">f<sub>k</sub></div>
+        <div id="lbl-velocity" class="vector-label">v</div>
+    </div>
+
+    <div id="ui-container">
+        <h1>Control Panel</h1>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Mass (m)</span>
+                <span class="val-display" id="val-m">2.0 kg</span>
+            </div>
+            <input type="range" id="slider-m" min="1.0" max="10.0" step="0.5" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #FF3366;">Applied Force (F)</span>
+                <span class="val-display" style="color: #FF3366;" id="val-f">20 N</span>
+            </div>
+            <input type="range" id="slider-f" min="0" max="50" step="1" value="20">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #FF3366;">Angle (&theta;)</span>
+                <span class="val-display" style="color: #FF3366;" id="val-theta">0&deg;</span>
+            </div>
+            <input type="range" id="slider-theta" min="0" max="85" step="1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #F77F00;">Kinetic Friction (&mu;<sub>k</sub>)</span>
+                <span class="val-display" style="color: #F77F00;" id="val-mu">0.10</span>
+            </div>
+            <input type="range" id="slider-mu" min="0.0" max="0.8" step="0.01" value="0.10">
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-push">HOLD TO PUSH</button>
+            <button id="btn-reset">RESET</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Physics State ---
+        let params = {
+            m: 2.0,
+            F_app: 20.0,
+            theta: 0.0,
+            mu_k: 0.10,
+            g: 9.81
+        };
+
+        let state = {
+            x: 0,
+            v: 0,
+            a: 0,
+            Wa: 0,
+            Wf: 0,
+            K: 0,
+            isPushing: false,
+            f_actual: 0
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.Fog('#f0f4f8', 10, 50);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(-3, 4, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.target.set(2, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 20;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // --- Objects ---
+        // Floor
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({ color: '#D1D9E6', roughness: 0.8, metalness: 0.1 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const gridHelper = new THREE.GridHelper(100, 100, 0xa0aab5, 0xcbd5e1);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
+
+        // Block
+        const blockSize = 1;
+        const blockGeo = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+        const blockMat = new THREE.MeshStandardMaterial({ color: '#4361EE', roughness: 0.4, metalness: 0.2 });
+        const block = new THREE.Mesh(blockGeo, blockMat);
+        block.castShadow = true;
+        block.receiveShadow = true;
+        scene.add(block);
+
+        // Displacement Path (Ribbon)
+        const pathGeo = new THREE.PlaneGeometry(1, blockSize);
+        pathGeo.translate(0.5, 0, 0); // Origin at left edge
+        const pathMat = new THREE.MeshBasicMaterial({ color: '#F77F00', transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+        const pathMesh = new THREE.Mesh(pathGeo, pathMat);
+        pathMesh.rotation.x = -Math.PI / 2;
+        pathMesh.position.y = 0.02;
+        scene.add(pathMesh);
+
+        // Vectors
+        const arrowForce = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0xFF3366, 0.3, 0.2);
+        const arrowFriction = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0,0,0), 1, 0xF77F00, 0.2, 0.15);
+        const arrowVelocity = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0x06D6A0, 0.25, 0.15);
+        
+        // Make lines thicker
+        arrowForce.line.material.linewidth = 3;
+        arrowFriction.line.material.linewidth = 3;
+        arrowVelocity.line.material.linewidth = 3;
+
+        scene.add(arrowForce);
+        scene.add(arrowFriction);
+        scene.add(arrowVelocity);
+
+        // --- DOM Elements ---
+        const ui = {
+            m: document.getElementById('slider-m'),
+            f: document.getElementById('slider-f'),
+            theta: document.getElementById('slider-theta'),
+            mu: document.getElementById('slider-mu'),
+            valM: document.getElementById('val-m'),
+            valF: document.getElementById('val-f'),
+            valTheta: document.getElementById('val-theta'),
+            valMu: document.getElementById('val-mu'),
+            btnPush: document.getElementById('btn-push'),
+            btnReset: document.getElementById('btn-reset'),
+            dispWa: document.getElementById('disp-wa'),
+            dispWf: document.getElementById('disp-wf'),
+            dispK: document.getElementById('disp-k'),
+            dispV: document.getElementById('disp-v'),
+            dispX: document.getElementById('disp-x'),
+            lblForce: document.getElementById('lbl-force'),
+            lblFriction: document.getElementById('lbl-friction'),
+            lblVelocity: document.getElementById('lbl-velocity')
+        };
+
+        // --- Event Listeners ---
+        function updateParams() {
+            params.m = parseFloat(ui.m.value);
+            params.F_app = parseFloat(ui.f.value);
+            params.theta = parseFloat(ui.theta.value);
+            params.mu_k = parseFloat(ui.mu.value);
+
+            ui.valM.innerText = params.m.toFixed(1) + ' kg';
+            ui.valF.innerText = params.F_app.toFixed(0) + ' N';
+            ui.valTheta.innerText = params.theta.toFixed(0) + '°';
+            ui.valMu.innerText = params.mu_k.toFixed(2);
+
+            updateBlockScale();
+        }
+
+        ui.m.addEventListener('input', updateParams);
+        ui.f.addEventListener('input', updateParams);
+        ui.theta.addEventListener('input', updateParams);
+        ui.mu.addEventListener('input', updateParams);
+
+        // Push Button Logic
+        const startPush = (e) => { e.preventDefault(); state.isPushing = true; };
+        const endPush = (e) => { e.preventDefault(); state.isPushing = false; };
+
+        ui.btnPush.addEventListener('mousedown', startPush);
+        ui.btnPush.addEventListener('touchstart', startPush, {passive: false});
+        
+        window.addEventListener('mouseup', endPush);
+        window.addEventListener('touchend', endPush);
+
+        // Reset Button
+        ui.btnReset.addEventListener('click', () => {
+            state.x = 0;
+            state.v = 0;
+            state.a = 0;
+            state.Wa = 0;
+            state.Wf = 0;
+            state.K = 0;
+            state.isPushing = false;
+        });
+
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // --- Helper Functions ---
+        function updateBlockScale() {
+            // Volume proportional to mass. Base size is 1x1x1 for m=2.
+            const scale = Math.pow(params.m / 2.0, 1/3);
+            block.scale.set(scale, scale, scale);
+            block.position.y = scale / 2;
+        }
+
+        function projectLabel(element, position, offset = new THREE.Vector3(0,0,0)) {
+            if (element.style.display === 'none') return;
+            
+            const pos = position.clone().add(offset);
+            pos.project(camera);
+            
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            
+            // Check if behind camera
+            if (pos.z > 1) {
+                element.style.opacity = 0;
+                return;
+            }
+
+            const x = (pos.x * .5 + .5) * width;
+            const y = (pos.y * -.5 + .5) * height;
+            
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+            element.style.opacity = 1;
+        }
+
+        // --- Main Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            let dt = clock.getDelta();
+            if (dt > 0.1) dt = 0.1; // Cap dt to prevent instability if tab is inactive
+
+            // --- Physics Calculations ---
+            const theta_rad = params.theta * Math.PI / 180;
+            
+            // 1. Normal Force: N = mg - F*sin(theta)
+            let F_y = state.isPushing ? params.F_app * Math.sin(theta_rad) : 0;
+            let N = params.m * params.g - F_y;
+            if (N < 0) N = 0; // Clamp to 0 (block doesn't lift in this sim)
+
+            // 2. Applied Force (Horizontal)
+            let F_x = state.isPushing ? params.F_app * Math.cos(theta_rad) : 0;
+
+            // 3. Friction
+            let mu_s = params.mu_k + 0.05; // Static friction slightly higher
+            let max_static_f = mu_s * N;
+            let kinetic_f = params.mu_k * N;
+            
+            state.f_actual = 0;
+
+            if (state.v === 0) {
+                if (F_x > max_static_f) {
+                    // Overcomes static friction
+                    state.f_actual = kinetic_f;
+                    state.a = (F_x - state.f_actual) / params.m;
+                } else {
+                    // Stuck
+                    state.f_actual = F_x; // Friction matches applied force
+                    state.a = 0;
+                }
+            } else if (state.v > 0) {
+                // Moving right
+                state.f_actual = kinetic_f;
+                state.a = (F_x - state.f_actual) / params.m;
+            }
+
+            // 4. Symplectic Euler Integration
+            let v_new = state.v + state.a * dt;
+            
+            // Check if friction stopped the block
+            if (state.v > 0 && v_new < 0) {
+                v_new = 0;
+                state.a = 0;
+                state.f_actual = F_x; // Now stuck
+            }
+            
+            state.v = v_new;
+            let dx = state.v * dt;
+            state.x += dx;
+
+            // 5. Work & Energy
+            if (state.isPushing) {
+                state.Wa += F_x * dx;
+            }
+            if (state.v > 0 || dx > 0) {
+                state.Wf -= state.f_actual * dx;
+            }
+            
+            // Recalculate K directly to avoid floating point drift over time
+            state.K = 0.5 * params.m * state.v * state.v;
+
+            // --- Visual Updates ---
+            const scale = block.scale.x; // Block is uniformly scaled
+            block.position.x = state.x;
+
+            // Path
+            pathMesh.scale.x = Math.max(0.001, state.x); // Avoid 0 scale warning
+            
+            // Camera tracking (smooth)
+            controls.target.x += (state.x + 2 - controls.target.x) * 0.05;
+            camera.position.x += (state.x - 3 - camera.position.x) * 0.05;
+
+            // Arrow: Applied Force
+            if (state.isPushing && params.F_app > 0) {
+                arrowForce.visible = true;
+                ui.lblForce.style.display = 'block';
+                const dir = new THREE.Vector3(Math.cos(theta_rad), Math.sin(theta_rad), 0).normalize();
+                arrowForce.setDirection(dir);
+                const length = params.F_app * 0.08; // Scale for visual
+                arrowForce.setLength(length, length * 0.3, length * 0.2);
+                arrowForce.position.copy(block.position);
+                
+                projectLabel(ui.lblForce, block.position, dir.multiplyScalar(length * 1.1));
+            } else {
+                arrowForce.visible = false;
+                ui.lblForce.style.display = 'none';
+            }
+
+            // Arrow: Friction
+            if (state.f_actual > 0.01 && (state.v > 0 || state.isPushing)) {
+                arrowFriction.visible = true;
+                ui.lblFriction.style.display = 'block';
+                const length = state.f_actual * 0.08;
+                arrowFriction.setLength(length, length * 0.4, length * 0.3);
+                arrowFriction.position.set(state.x, 0.05, 0); // Bottom center
+                
+                projectLabel(ui.lblFriction, arrowFriction.position, new THREE.Vector3(-length - 0.2, 0, 0));
+            } else {
+                arrowFriction.visible = false;
+                ui.lblFriction.style.display = 'none';
+            }
+
+            // Arrow: Velocity
+            if (state.v > 0.01) {
+                arrowVelocity.visible = true;
+                ui.lblVelocity.style.display = 'block';
+                const length = state.v * 0.5;
+                arrowVelocity.setLength(length, Math.min(0.4, length*0.3), Math.min(0.3, length*0.2));
+                arrowVelocity.position.set(state.x + scale/2, scale/2, 0); // Front face
+                
+                projectLabel(ui.lblVelocity, arrowVelocity.position, new THREE.Vector3(length + 0.2, 0, 0));
+            } else {
+                arrowVelocity.visible = false;
+                ui.lblVelocity.style.display = 'none';
+            }
+
+            // --- UI Updates ---
+            ui.dispWa.innerText = state.Wa.toFixed(1) + ' J';
+            ui.dispWf.innerText = state.Wf.toFixed(1) + ' J';
+            
+            // To ensure perfect pedagogical consistency, display K as Wa + Wf
+            let netWork = state.Wa + state.Wf;
+            ui.dispK.innerText = netWork.toFixed(1) + ' J';
+            
+            ui.dispV.innerText = state.v.toFixed(2) + ' m/s';
+            ui.dispX.innerText = state.x.toFixed(2) + ' m';
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updateParams();
+        animate();
+
+    </script>
+</body>
+</html>

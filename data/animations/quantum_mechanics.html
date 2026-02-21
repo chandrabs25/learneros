@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Quantum Force & Ferromagnetic Domain Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2d3436;
+            --accent-blue: #4361EE;
+            --accent-red: #FF3366;
+            --accent-purple: #7209B7;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        /* Glassmorphic Control Panel */
+        #control-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 25%;
+            min-width: 300px;
+            height: 100vh;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+            z-index: 10;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            background: linear-gradient(45deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        h2 {
+            font-size: 1rem;
+            border-bottom: 2px solid rgba(0,0,0,0.1);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-blue);
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.1);
+            border-radius: 2px;
+        }
+        .mode-toggle {
+            display: flex;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: transparent;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.3s;
+            color: var(--text-main);
+        }
+        .mode-btn.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(5px);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            z-index: 10;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+        .math { color: var(--accent-purple); font-weight: bold; }
+        .energy-val { color: var(--accent-red); font-weight: bold; }
+        
+        #fission-btn {
+            background: var(--accent-red);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            display: none;
+            box-shadow: 0 4px 10px rgba(255, 51, 102, 0.3);
+        }
+        #fission-btn:hover { background: #e62e5c; }
+        
+        .tooltip {
+            position: absolute;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div id="nuclear-formulas">
+            <div><span class="math">V_C(r)</span> = k(q₁q₂)/r</div>
+            <div><span class="math">V_S(r)</span> = -g²(e<sup>-r/μ</sup>)/r</div>
+            <div style="margin-top: 8px; border-top: 1px solid #ccc; padding-top: 8px;">
+                Net Binding Energy: <br>
+                <span id="binding-energy" class="energy-val">0.00</span> MeV
+            </div>
+            <div id="instability-warning" style="color: var(--accent-red); font-size: 0.8rem; margin-top: 5px; display: none;">
+                ⚠️ Nucleus Unstable!
+            </div>
+        </div>
+        <div id="ferro-formulas" style="display: none;">
+            <div><span class="math">H</span> = -JΣ(Sᵢ·Sⱼ) - μB·ΣSᵢ</div>
+            <div><span class="math">P(θ)</span> ∝ exp(μB cosθ / k_BT)</div>
+            <div style="margin-top: 8px; border-top: 1px solid #ccc; padding-top: 8px;">
+                Magnetization (M): <br>
+                <span id="magnetization" class="energy-val">0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <h1>Quantum & Domain Explorer</h1>
+        
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="btn-nuclear" onclick="setMode('nuclear')">Nuclear</button>
+            <button class="mode-btn" id="btn-ferro" onclick="setMode('ferro')">Ferromagnetic</button>
+        </div>
+
+        <!-- Nuclear Controls -->
+        <div id="controls-nuclear">
+            <h2>Nuclear Stability</h2>
+            
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Protons (Z)</span>
+                    <span class="val-display" id="val-z">6</span>
+                </div>
+                <input type="range" id="slider-z" min="1" max="20" step="1" value="6">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Neutrons (N)</span>
+                    <span class="val-display" id="val-n">6</span>
+                </div>
+                <input type="range" id="slider-n" min="0" max="30" step="1" value="6">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Strong Force Range (μ)</span>
+                    <span class="val-display" id="val-mu">1.0 fm</span>
+                </div>
+                <input type="range" id="slider-mu" min="0.5" max="2.0" step="0.1" value="1.0">
+            </div>
+            
+            <button id="fission-btn" onclick="triggerFission()">Trigger Fission</button>
+            <p style="font-size: 0.8rem; color: #666; margin-top: 10px;">
+                * Hover over a proton to see Coulomb repulsion vectors.<br>
+                * Click nucleus to interact.
+            </p>
+        </div>
+
+        <!-- Ferromagnetic Controls -->
+        <div id="controls-ferro" style="display: none;">
+            <h2>Ferromagnetic Domains</h2>
+            
+            <div class="control-group">
+                <div class="control-header">
+                    <span>External Field (B_ext)</span>
+                    <span class="val-display" id="val-b">0.0 T</span>
+                </div>
+                <input type="range" id="slider-b" min="-5" max="5" step="0.1" value="0">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Temperature (T)</span>
+                    <span class="val-display" id="val-t">300 K</span>
+                </div>
+                <input type="range" id="slider-t" min="0" max="1000" step="10" value="300">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Exchange Coupling (J)</span>
+                    <span class="val-display" id="val-j">1.0</span>
+                </div>
+                <input type="range" id="slider-j" min="0.1" max="2.0" step="0.1" value="1.0">
+            </div>
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip">Coulomb Repulsion</div>
+
+<script>
+    // --- Global Variables & Setup ---
+    let currentMode = 'nuclear';
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f4f8);
+    
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 15, 25);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    dirLight.position.set(10, 20, 10);
+    dirLight.castShadow = true;
+    dirLight.shadow.camera.top = 20;
+    dirLight.shadow.camera.bottom = -20;
+    dirLight.shadow.camera.left = -20;
+    dirLight.shadow.camera.right = 20;
+    scene.add(dirLight);
+
+    // Groups
+    const nuclearGroup = new THREE.Group();
+    const ferroGroup = new THREE.Group();
+    scene.add(nuclearGroup);
+    scene.add(ferroGroup);
+
+    // Raycaster for interaction
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    // --- Nuclear Mode Implementation ---
+    const nucleons = [];
+    const NUCLEON_RADIUS = 0.4;
+    const sphereGeo = new THREE.SphereGeometry(NUCLEON_RADIUS, 32, 32);
+    const protonMat = new THREE.MeshPhongMaterial({ color: 0xFF3366, shininess: 100 });
+    const neutronMat = new THREE.MeshPhongMaterial({ color: 0xBDC3C7, shininess: 100 });
+    
+    // Potential Well Surface
+    const wellGeo = new THREE.PlaneGeometry(20, 20, 60, 60);
+    wellGeo.rotateX(-Math.PI / 2);
+    const wellMat = new THREE.MeshPhongMaterial({ 
+        color: 0x7209B7, 
+        wireframe: true, 
+        transparent: true, 
+        opacity: 0.3 
+    });
+    const potentialWell = new THREE.Mesh(wellGeo, wellMat);
+    potentialWell.position.y = -5;
+    nuclearGroup.add(potentialWell);
+
+    // Hover Arrows (Coulomb)
+    const arrowGeo = new THREE.CylinderGeometry(0, 0.1, 1, 8);
+    arrowGeo.translate(0, 0.5, 0);
+    const arrowMat = new THREE.MeshBasicMaterial({ color: 0x4361EE });
+    const hoverArrows = new THREE.InstancedMesh(arrowGeo, arrowMat, 50);
+    hoverArrows.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    nuclearGroup.add(hoverArrows);
+    let hoveredProton = null;
+
+    let isFissioning = false;
+
+    function updateNucleons() {
+        const Z = parseInt(document.getElementById('slider-z').value);
+        const N = parseInt(document.getElementById('slider-n').value);
+        
+        // Remove old
+        nucleons.forEach(n => nuclearGroup.remove(n.mesh));
+        nucleons.length = 0;
+        isFissioning = false;
+
+        // Add new
+        for(let i=0; i<Z+N; i++) {
+            const isProton = i < Z;
+            const mesh = new THREE.Mesh(sphereGeo, isProton ? protonMat : neutronMat);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            
+            // Random initial position in a small cluster
+            mesh.position.set(
+                (Math.random() - 0.5) * 3,
+                (Math.random() - 0.5) * 3,
+                (Math.random() - 0.5) * 3
+            );
+            
+            nuclearGroup.add(mesh);
+            nucleons.push({
+                mesh: mesh,
+                type: isProton ? 'p' : 'n',
+                vel: new THREE.Vector3(),
+                acc: new THREE.Vector3()
+            });
+        }
+        checkInstability();
+    }
+
+    function checkInstability() {
+        const Z = parseInt(document.getElementById('slider-z').value);
+        const N = parseInt(document.getElementById('slider-n').value);
+        const btn = document.getElementById('fission-btn');
+        const warning = document.getElementById('instability-warning');
+        
+        // Simple heuristic for instability: Too many protons for neutrons, or very heavy
+        if ((Z > 15 && N < Z * 1.2) || Z > 18) {
+            btn.style.display = 'block';
+            warning.style.display = 'block';
+            return true;
+        } else {
+            btn.style.display = 'none';
+            warning.style.display = 'none';
+            return false;
+        }
+    }
+
+    function triggerFission() {
+        if(!checkInstability()) return;
+        isFissioning = true;
+        
+        // Assign to two fragments
+        const axis = new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize();
+        nucleons.forEach((n, i) => {
+            const side = i % 2 === 0 ? 1 : -1;
+            // Massive velocity kick
+            n.vel.addScaledVector(axis, side * 15);
+        });
+        document.getElementById('fission-btn').style.display = 'none';
+    }
+
+    function simulateNuclearPhysics() {
+        const mu = parseFloat(document.getElementById('slider-mu').value);
+        const k_c = 2.0; // Coulomb constant
+        const g_s = 15.0; // Strong force constant
+        let totalEnergy = 0;
+        const unstable = checkInstability();
+
+        // Reset accelerations
+        nucleons.forEach(n => n.acc.set(0,0,0));
+
+        for(let i=0; i<nucleons.length; i++) {
+            for(let j=i+1; j<nucleons.length; j++) {
+                const n1 = nucleons[i];
+                const n2 = nucleons[j];
+                
+                const dir = new THREE.Vector3().subVectors(n1.mesh.position, n2.mesh.position);
+                let r = dir.length();
+                if(r < 0.1) r = 0.1; // Prevent singularity
+                dir.normalize();
+
+                // 1. Repulsive Core (Pauli exclusion / hard core)
+                const f_core = 5.0 / Math.pow(r, 4);
+
+                // 2. Coulomb Repulsion (Proton-Proton only)
+                let f_coulomb = 0;
+                let v_coulomb = 0;
+                if(n1.type === 'p' && n2.type === 'p') {
+                    f_coulomb = k_c / (r * r);
+                    v_coulomb = k_c / r;
+                }
+
+                // 3. Strong Nuclear Force (Yukawa) - Attractive
+                // V(r) = -g * e^(-r/mu) / r
+                // F(r) = -dV/dr = -g * e^(-r/mu) * (1/r^2 + 1/(mu*r))
+                const expTerm = Math.exp(-r / mu);
+                const f_strong = -g_s * expTerm * (1/(r*r) + 1/(mu*r));
+                const v_strong = -g_s * expTerm / r;
+
+                // Total Force magnitude (positive = repulsive, negative = attractive)
+                let f_net = f_core + f_coulomb + f_strong;
+                
+                if(isFissioning) {
+                    f_net = f_coulomb * 5; // Overpower strong force during fission
+                }
+
+                const forceVec = dir.clone().multiplyScalar(f_net);
+                n1.acc.add(forceVec);
+                n2.acc.sub(forceVec);
+
+                totalEnergy += (v_coulomb + v_strong);
+            }
+            
+            // Confinement force to keep cluster near origin
+            if(!isFissioning) {
+                const centerPull = nucleons[i].mesh.position.clone().multiplyScalar(-0.1);
+                nucleons[i].acc.add(centerPull);
+            }
+
+            // Thermal noise if unstable
+            if(unstable && !isFissioning) {
+                nucleons[i].acc.add(new THREE.Vector3(
+                    (Math.random()-0.5)*2, 
+                    (Math.random()-0.5)*2, 
+                    (Math.random()-0.5)*2
+                ));
+            }
+        }
+
+        // Update positions (Euler integration)
+        nucleons.forEach(n => {
+            n.vel.add(n.acc.multiplyScalar(0.016)); // dt approx 1/60
+            // Damping
+            n.vel.multiplyScalar(isFissioning ? 0.99 : 0.92);
+            n.mesh.position.add(n.vel.clone().multiplyScalar(0.016 * 50));
+        });
+
+        // Update Binding Energy Display
+        document.getElementById('binding-energy').innerText = Math.abs(totalEnergy).toFixed(2);
+
+        // Update Potential Well Mesh
+        const pos = wellGeo.attributes.position;
+        for(let i=0; i<pos.count; i++) {
+            const x = pos.getX(i);
+            const y = pos.getY(i);
+            let r = Math.sqrt(x*x + y*y);
+            if(r < 0.5) r = 0.5;
+            
+            // Approximate well shape based on parameters
+            const v_c = (k_c * 5) / r; // scaled for visual
+            const v_s = -g_s * 2 * Math.exp(-r/mu) / r;
+            let z = (v_c + v_s) * 0.5;
+            if(z > 5) z = 5;
+            if(z < -5) z = -5;
+            
+            pos.setZ(i, z);
+        }
+        pos.needsUpdate = true;
+    }
+
+    function updateHoverArrows() {
+        hoverArrows.count = 0;
+        if(!hoveredProton || currentMode !== 'nuclear') return;
+
+        let count = 0;
+        const dummy = new THREE.Object3D();
+        const pPos = hoveredProton.position;
+
+        nucleons.forEach(n => {
+            if(n.mesh !== hoveredProton && n.type === 'p') {
+                const dir = new THREE.Vector3().subVectors(n.mesh.position, pPos);
+                const dist = dir.length();
+                if(dist > 0.1 && dist < 10) {
+                    dir.normalize();
+                    // Arrow points AWAY from hovered proton (repulsion)
+                    dummy.position.copy(pPos);
+                    
+                    // Align cylinder with direction
+                    const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.negate());
+                    dummy.quaternion.copy(quaternion);
+                    
+                    // Scale length based on 1/r^2
+                    const forceMag = Math.min(2.0, 2.0 / (dist * dist));
+                    dummy.scale.set(1, forceMag * 2, 1);
+                    
+                    dummy.updateMatrix();
+                    hoverArrows.setMatrixAt(count++, dummy.matrix);
+                }
+            }
+        });
+        hoverArrows.count = count;
+        hoverArrows.instanceMatrix.needsUpdate = true;
+    }
+
+    // --- Ferromagnetic Mode Implementation ---
+    const GRID_SIZE = 10;
+    const SPACING = 1.2;
+    const numSpins = GRID_SIZE * GRID_SIZE;
+    
+    // Spin Geometry (Arrow)
+    const spinGeo = new THREE.CylinderGeometry(0, 0.2, 1, 8);
+    spinGeo.translate(0, 0.5, 0);
+    const spinMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+    const spinsMesh = new THREE.InstancedMesh(spinGeo, spinMat, numSpins);
+    spinsMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    spinsMesh.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(numSpins * 3), 3);
+    ferroGroup.add(spinsMesh);
+
+    // External Field Arrow
+    const bFieldGeo = new THREE.CylinderGeometry(0, 0.5, 3, 16);
+    bFieldGeo.translate(0, 1.5, 0);
+    const bFieldMat = new THREE.MeshBasicMaterial({ color: 0x7209B7, transparent: true, opacity: 0.5 });
+    const bFieldArrow = new THREE.Mesh(bFieldGeo, bFieldMat);
+    bFieldArrow.position.set(-8, 0, 0);
+    ferroGroup.add(bFieldArrow);
+
+    // State
+    const spinVectors = [];
+    for(let i=0; i<numSpins; i++) {
+        spinVectors.push(new THREE.Vector3(0, 1, 0)); // Start pointing up
+    }
+
+    function getNeighbors(index) {
+        const x = index % GRID_SIZE;
+        const y = Math.floor(index / GRID_SIZE);
+        const neighbors = [];
+        if(x > 0) neighbors.push(index - 1);
+        if(x < GRID_SIZE - 1) neighbors.push(index + 1);
+        if(y > 0) neighbors.push(index - GRID_SIZE);
+        if(y < GRID_SIZE - 1) neighbors.push(index + GRID_SIZE);
+        return neighbors;
+    }
+
+    function simulateFerroPhysics() {
+        const B_ext = parseFloat(document.getElementById('slider-b').value);
+        const T = parseFloat(document.getElementById('slider-t').value);
+        const J = parseFloat(document.getElementById('slider-j').value);
+
+        // Update B-field arrow visual
+        if(B_ext === 0) {
+            bFieldArrow.visible = false;
+        } else {
+            bFieldArrow.visible = true;
+            bFieldArrow.scale.set(1, Math.abs(B_ext)*0.5, 1);
+            bFieldArrow.rotation.z = B_ext > 0 ? 0 : Math.PI;
+        }
+
+        const dummy = new THREE.Object3D();
+        const color = new THREE.Color();
+        let totalMag = 0;
+
+        // Mean field / Langevin dynamics approximation
+        for(let i=0; i<numSpins; i++) {
+            const spin = spinVectors[i];
+            
+            // Calculate effective field H_eff
+            const H_eff = new THREE.Vector3(0, B_ext, 0);
+            
+            const neighbors = getNeighbors(i);
+            for(let n of neighbors) {
+                H_eff.addScaledVector(spinVectors[n], J * 0.5);
+            }
+
+            // Thermal noise (random vector scaled by Temperature)
+            // If T is very high, noise dominates
+            const noiseScale = (T / 300) * 2.0; 
+            const noise = new THREE.Vector3(
+                (Math.random() - 0.5),
+                (Math.random() - 0.5),
+                (Math.random() - 0.5)
+            ).multiplyScalar(noiseScale);
+            
+            H_eff.add(noise);
+
+            // Target alignment
+            if(H_eff.lengthSq() > 0.001) {
+                H_eff.normalize();
+                // Slerp towards effective field
+                spin.lerp(H_eff, 0.1).normalize();
+            }
+
+            totalMag += spin.y;
+
+            // Update Instance Matrix
+            const x = (i % GRID_SIZE) * SPACING - (GRID_SIZE * SPACING)/2 + SPACING/2;
+            const z = Math.floor(i / GRID_SIZE) * SPACING - (GRID_SIZE * SPACING)/2 + SPACING/2;
+            
+            dummy.position.set(x, 0, z);
+            
+            // Rotate arrow to match spin vector
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), spin);
+            dummy.quaternion.copy(quaternion);
+            dummy.updateMatrix();
+            
+            spinsMesh.setMatrixAt(i, dummy.matrix);
+
+            // Color mapping: Y component (-1 to 1) -> Blue to Red
+            const t_color = (spin.y + 1) / 2;
+            color.lerpColors(new THREE.Color(0x4361EE), new THREE.Color(0xFF3366), t_color);
+            spinsMesh.setColorAt(i, color);
+        }
+
+        spinsMesh.instanceMatrix.needsUpdate = true;
+        if(spinsMesh.instanceColor) spinsMesh.instanceColor.needsUpdate = true;
+
+        document.getElementById('magnetization').innerText = (totalMag / numSpins).toFixed(3);
+    }
+
+
+    // --- UI & Interaction Logic ---
+
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('btn-nuclear').classList.toggle('active', mode === 'nuclear');
+        document.getElementById('btn-ferro').classList.toggle('active', mode === 'ferro');
+        
+        document.getElementById('controls-nuclear').style.display = mode === 'nuclear' ? 'block' : 'none';
+        document.getElementById('controls-ferro').style.display = mode === 'ferro' ? 'block' : 'none';
+        
+        document.getElementById('nuclear-formulas').style.display = mode === 'nuclear' ? 'block' : 'none';
+        document.getElementById('ferro-formulas').style.display = mode === 'ferro' ? 'block' : 'none';
+
+        nuclearGroup.visible = mode === 'nuclear';
+        ferroGroup.visible = mode === 'ferro';
+
+        if(mode === 'nuclear') {
+            camera.position.set(0, 10, 15);
+            controls.target.set(0,0,0);
+            updateNucleons();
+        } else {
+            camera.position.set(0, 12, 12);
+            controls.target.set(0,0,0);
+        }
+    }
+
+    // Bind Sliders
+    const sliders = ['z', 'n', 'mu', 'b', 't', 'j'];
+    sliders.forEach(id => {
+        const el = document.getElementById(`slider-${id}`);
+        const valEl = document.getElementById(`val-${id}`);
+        el.addEventListener('input', (e) => {
+            let val = e.target.value;
+            if(id === 'mu') val += ' fm';
+            if(id === 'b') val += ' T';
+            if(id === 't') val += ' K';
+            valEl.innerText = val;
+            
+            if(id === 'z' || id === 'n') updateNucleons();
+        });
+    });
+
+    // Mouse Interaction
+    window.addEventListener('mousemove', (event) => {
+        // Calculate mouse position in normalized device coordinates
+        // (-1 to +1) for both components, adjusted for control panel width (75% canvas)
+        const canvasWidth = window.innerWidth * 0.75;
+        if(event.clientX > canvasWidth) {
+            hoveredProton = null;
+            document.getElementById('tooltip').style.opacity = 0;
+            return;
+        }
+
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+        if(currentMode === 'nuclear') {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(nucleons.map(n => n.mesh));
+            
+            if (intersects.length > 0) {
+                const obj = intersects[0].object;
+                const nucleonData = nucleons.find(n => n.mesh === obj);
+                if(nucleonData && nucleonData.type === 'p') {
+                    hoveredProton = obj;
+                    const tooltip = document.getElementById('tooltip');
+                    tooltip.style.left = event.clientX + 15 + 'px';
+                    tooltip.style.top = event.clientY + 15 + 'px';
+                    tooltip.style.opacity = 1;
+                    document.body.style.cursor = 'pointer';
+                } else {
+                    hoveredProton = null;
+                    document.getElementById('tooltip').style.opacity = 0;
+                    document.body.style.cursor = 'default';
+                }
+            } else {
+                hoveredProton = null;
+                document.getElementById('tooltip').style.opacity = 0;
+                document.body.style.cursor = 'default';
+            }
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // --- Main Loop ---
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+
+        if(currentMode === 'nuclear') {
+            simulateNuclearPhysics();
+            updateHoverArrows();
+        } else {
+            simulateFerroPhysics();
+        }
+
+        renderer.render(scene, camera);
+    }
+
+    // Init
+    setMode('nuclear');
+    animate();
+
+</script>
+</body>
+</html>

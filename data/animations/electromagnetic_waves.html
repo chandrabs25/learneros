@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Electromagnetic Wave Simulation</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --e-color: #FF3366;
+            --b-color: #7209B7;
+            --source-color: #F77F00;
+            --wavefront-color: #4361EE;
+            --axis-color: #4A5568;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            position: absolute;
+            z-index: 10;
+        }
+
+        /* Formula Card - Top Left */
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            min-width: 280px;
+        }
+
+        #formula-card h2 {
+            margin: 0 0 12px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .equation {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+        }
+
+        .eq-e {
+            color: var(--e-color);
+            font-weight: 500;
+        }
+
+        .eq-b {
+            color: var(--b-color);
+            font-weight: 500;
+        }
+
+        .live-vars {
+            margin-top: 12px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        /* Control Panel - Right Side */
+        #control-panel {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--text-main);
+        }
+
+        /* Custom Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--wavefront-color);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Specific slider colors */
+        #amp-slider::-webkit-slider-thumb {
+            background: var(--e-color);
+        }
+
+        #wave-slider::-webkit-slider-thumb {
+            background: var(--wavefront-color);
+        }
+
+        #freq-slider::-webkit-slider-thumb {
+            background: var(--source-color);
+        }
+
+        #pol-slider::-webkit-slider-thumb {
+            background: var(--axis-color);
+        }
+
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--b-color);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: var(--b-color);
+        }
+
+        input[type="checkbox"]:checked::after {
+            content: '✔';
+            position: absolute;
+            color: white;
+            font-size: 14px;
+            top: -1px;
+            left: 3px;
+        }
+
+        .legend {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .color-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>Wave Equations</h2>
+        <div class="equation eq-e">E(x,t) = E₀ sin(kx - ωt)</div>
+        <div class="equation eq-b">B(x,t) = B₀ sin(kx - ωt)</div>
+        <div class="live-vars">
+            <div>k = <span id="val-k">1.26</span> rad/m</div>
+            <div>ω = <span id="val-w">3.14</span> rad/s</div>
+            <div>v = <span id="val-v">2.50</span> m/s</div>
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Amplitude (E₀)</span>
+                <span class="control-value" id="amp-val">1.5 V/m</span>
+            </div>
+            <input type="range" id="amp-slider" min="0.5" max="3.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Wavelength (λ)</span>
+                <span class="control-value" id="wave-val">5.0 m</span>
+            </div>
+            <input type="range" id="wave-slider" min="2.0" max="10.0" step="0.1" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Frequency (f)</span>
+                <span class="control-value" id="freq-val">0.5 Hz</span>
+            </div>
+            <input type="range" id="freq-slider" min="0.1" max="2.0" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Polarization (θ)</span>
+                <span class="control-value" id="pol-val">0°</span>
+            </div>
+            <input type="range" id="pol-slider" min="0" max="180" step="5" value="0">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="show-b-checkbox" checked>
+            <span class="control-label">Show Magnetic Field (B)</span>
+        </label>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--e-color);"></div>
+                <span>Electric Field (E)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--b-color);"></div>
+                <span>Magnetic Field (B)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--source-color);"></div>
+                <span>Oscillating Source Charge</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--wavefront-color); opacity: 0.5;"></div>
+                <span>Wavefront Plane</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Physics & Simulation Parameters ---
+        const params = {
+            E0: 1.5,
+            lambda: 5.0,
+            freq: 0.5,
+            theta: 0, // degrees
+            showB: true
+        };
+
+        const simConfig = {
+            length: 30,       // Length of the X-axis to visualize
+            numPoints: 300,   // Resolution of the sine waves
+            arrowSpacing: 8   // Draw an arrow every N points
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(-10, 10, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(simConfig.length / 2, 0, 0);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Scene Objects ---
+
+        // 1. Grid (XZ Plane)
+        const gridHelper = new THREE.GridHelper(simConfig.length * 2, simConfig.length * 2, 0xcccccc, 0xe2e8f0);
+        gridHelper.position.set(simConfig.length / 2, -4, 0);
+        scene.add(gridHelper);
+
+        // 2. Propagation Axis (X-axis)
+        const axisGeo = new THREE.CylinderGeometry(0.05, 0.05, simConfig.length + 2, 16);
+        axisGeo.rotateZ(Math.PI / 2);
+        const axisMat = new THREE.MeshBasicMaterial({ color: 0x4A5568 });
+        const axis = new THREE.Mesh(axisGeo, axisMat);
+        axis.position.set(simConfig.length / 2 - 1, 0, 0);
+        scene.add(axis);
+
+        // 3. Oscillating Source
+        const sourceGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        const sourceMat = new THREE.MeshStandardMaterial({
+            color: 0xF77F00,
+            emissive: 0xF77F00,
+            emissiveIntensity: 0.4,
+            roughness: 0.2
+        });
+        const source = new THREE.Mesh(sourceGeo, sourceMat);
+        source.position.set(0, 0, 0);
+        scene.add(source);
+
+        // 4. Wavefront Plane
+        const planeGeo = new THREE.PlaneGeometry(8, 8);
+        const planeMat = new THREE.MeshBasicMaterial({
+            color: 0x4361EE,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const wavefront = new THREE.Mesh(planeGeo, planeMat);
+        wavefront.rotation.y = Math.PI / 2;
+        scene.add(wavefront);
+
+        // 5. Electric Field (E) Line
+        const eLineGeo = new THREE.BufferGeometry();
+        const ePositions = new Float32Array(simConfig.numPoints * 3);
+        eLineGeo.setAttribute('position', new THREE.BufferAttribute(ePositions, 3).setUsage(THREE.DynamicDrawUsage));
+        const eLineMat = new THREE.LineBasicMaterial({ color: 0xFF3366, linewidth: 2 });
+        const eLine = new THREE.Line(eLineGeo, eLineMat);
+        scene.add(eLine);
+
+        // 6. Magnetic Field (B) Line
+        const bLineGeo = new THREE.BufferGeometry();
+        const bPositions = new Float32Array(simConfig.numPoints * 3);
+        bLineGeo.setAttribute('position', new THREE.BufferAttribute(bPositions, 3).setUsage(THREE.DynamicDrawUsage));
+        const bLineMat = new THREE.LineBasicMaterial({ color: 0x7209B7, linewidth: 2 });
+        const bLine = new THREE.Line(bLineGeo, bLineMat);
+        scene.add(bLine);
+
+        // 7. Arrows for E and B fields
+        const eArrows = [];
+        const bArrows = [];
+        const arrowColorE = 0xFF3366;
+        const arrowColorB = 0x7209B7;
+
+        for (let i = 0; i < simConfig.numPoints; i += simConfig.arrowSpacing) {
+            const x = (i / (simConfig.numPoints - 1)) * simConfig.length;
+
+            // E Arrow
+            const eArrow = new THREE.ArrowHelper(
+                new THREE.Vector3(0, 1, 0),
+                new THREE.Vector3(x, 0, 0),
+                0.001,
+                arrowColorE,
+                0.2,
+                0.2
+            );
+            eArrows.push({ index: i, helper: eArrow });
+            scene.add(eArrow);
+
+            // B Arrow
+            const bArrow = new THREE.ArrowHelper(
+                new THREE.Vector3(0, 0, 1),
+                new THREE.Vector3(x, 0, 0),
+                0.001,
+                arrowColorB,
+                0.2,
+                0.2
+            );
+            bArrows.push({ index: i, helper: bArrow });
+            scene.add(bArrow);
+        }
+
+        // --- UI Interaction ---
+        const bindSlider = (id, paramKey, valId, unit) => {
+            const slider = document.getElementById(id);
+            const valDisplay = document.getElementById(valId);
+            slider.addEventListener('input', (e) => {
+                params[paramKey] = parseFloat(e.target.value);
+                valDisplay.textContent = `${params[paramKey].toFixed(1)} ${unit}`;
+            });
+        };
+
+        bindSlider('amp-slider', 'E0', 'amp-val', 'V/m');
+        bindSlider('wave-slider', 'lambda', 'wave-val', 'm');
+        bindSlider('freq-slider', 'freq', 'freq-val', 'Hz');
+
+        const polSlider = document.getElementById('pol-slider');
+        const polVal = document.getElementById('pol-val');
+        polSlider.addEventListener('input', (e) => {
+            params.theta = parseFloat(e.target.value);
+            polVal.textContent = `${params.theta}°`;
+        });
+
+        const showBCheckbox = document.getElementById('show-b-checkbox');
+        showBCheckbox.addEventListener('change', (e) => {
+            params.showB = e.target.checked;
+            bLine.visible = params.showB;
+            bArrows.forEach(a => a.helper.visible = params.showB);
+        });
+
+        // Live Formula Updates
+        const valK = document.getElementById('val-k');
+        const valW = document.getElementById('val-w');
+        const valV = document.getElementById('val-v');
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let timeAccumulator = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            timeAccumulator += delta;
+            const t = timeAccumulator;
+
+            // Physics Calculations
+            const omega = 2 * Math.PI * params.freq;
+            const k = (2 * Math.PI) / params.lambda;
+            const v = params.freq * params.lambda;
+            const thetaRad = params.theta * (Math.PI / 180);
+
+            // Update UI Math
+            valK.textContent = k.toFixed(2);
+            valW.textContent = omega.toFixed(2);
+            valV.textContent = v.toFixed(2);
+
+            // Update Source Position (oscillates at x=0)
+            // Phase at x=0 is -omega * t
+            const sourceMag = params.E0 * Math.sin(-omega * t);
+            source.position.y = sourceMag * Math.cos(thetaRad);
+            source.position.z = sourceMag * Math.sin(thetaRad);
+
+            // Update Wavefront Position
+            wavefront.position.x = (v * t) % simConfig.length;
+
+            // Update Wave Geometries
+            const ePosArray = eLineGeo.attributes.position.array;
+            const bPosArray = bLineGeo.attributes.position.array;
+
+            for (let i = 0; i < simConfig.numPoints; i++) {
+                const x = (i / (simConfig.numPoints - 1)) * simConfig.length;
+                const phase = k * x - omega * t;
+
+                // Magnitudes (In phase, orthogonal)
+                const mag = params.E0 * Math.sin(phase);
+
+                // Apply Polarization Rotation
+                // Base E is along Y, Base B is along Z
+                const ey = mag * Math.cos(thetaRad);
+                const ez = mag * Math.sin(thetaRad);
+
+                // B is perpendicular to E. Cross product of X_hat and E_hat gives B_hat
+                // X x (cos Y + sin Z) = cos Z - sin Y
+                const by = -mag * Math.sin(thetaRad);
+                const bz = mag * Math.cos(thetaRad);
+
+                const idx = i * 3;
+
+                // E Line
+                ePosArray[idx] = x;
+                ePosArray[idx + 1] = ey;
+                ePosArray[idx + 2] = ez;
+
+                // B Line
+                bPosArray[idx] = x;
+                bPosArray[idx + 1] = by;
+                bPosArray[idx + 2] = bz;
+            }
+
+            eLineGeo.attributes.position.needsUpdate = true;
+            bLineGeo.attributes.position.needsUpdate = true;
+
+            // Update Arrows
+            eArrows.forEach(item => {
+                const x = (item.index / (simConfig.numPoints - 1)) * simConfig.length;
+                const phase = k * x - omega * t;
+                const mag = params.E0 * Math.sin(phase);
+
+                const absMag = Math.abs(mag);
+                const safeLen = Math.max(absMag, 0.001); // Prevent Three.js warning for 0 length
+
+                // Direction vector
+                let dirY = Math.cos(thetaRad);
+                let dirZ = Math.sin(thetaRad);
+                if (mag < 0) {
+                    dirY = -dirY;
+                    dirZ = -dirZ;
+                }
+
+                item.helper.setDirection(new THREE.Vector3(0, dirY, dirZ).normalize());
+                item.helper.setLength(safeLen, safeLen * 0.2, safeLen * 0.2);
+            });
+
+            bArrows.forEach(item => {
+                const x = (item.index / (simConfig.numPoints - 1)) * simConfig.length;
+                const phase = k * x - omega * t;
+                const mag = params.E0 * Math.sin(phase);
+
+                const absMag = Math.abs(mag);
+                const safeLen = Math.max(absMag, 0.001);
+
+                let dirY = -Math.sin(thetaRad);
+                let dirZ = Math.cos(thetaRad);
+                if (mag < 0) {
+                    dirY = -dirY;
+                    dirZ = -dirZ;
+                }
+
+                item.helper.setDirection(new THREE.Vector3(0, dirY, dirZ).normalize());
+                item.helper.setLength(safeLen, safeLen * 0.2, safeLen * 0.2);
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start Animation
+        animate();
+    </script>
+</body>
+
+</html>

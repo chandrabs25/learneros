@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Flux Interactive 3D</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #1e293b;
+            --accent-blue: #4361EE;
+            --accent-purple: #7209B7;
+            --accent-orange: #F77F00;
+            --accent-red: #FF3366;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+        }
+
+        #app-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--panel-border);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.05);
+            padding: 2rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 0.5rem 0;
+            color: var(--accent-purple);
+        }
+
+        p.desc {
+            font-size: 0.9rem;
+            color: #475569;
+            margin-top: 0;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-blue);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        /* Custom Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        #b-field::-webkit-slider-thumb { background: var(--accent-purple); }
+        #radius::-webkit-slider-thumb { background: var(--accent-orange); }
+        #angle::-webkit-slider-thumb { background: var(--accent-red); }
+
+        .checkbox-group {
+            flex-direction: row;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-blue);
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-left: 5px solid var(--accent-blue);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .formula-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            color: #334155;
+        }
+
+        .formula-main {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-main);
+        }
+
+        .formula-calc {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            color: #475569;
+            line-height: 1.6;
+        }
+
+        .calc-result {
+            display: block;
+            margin-top: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-blue);
+            background: rgba(67, 97, 238, 0.05);
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 2px 4px rgba(255,255,255,0.8), 0 -2px 4px rgba(255,255,255,0.8), 2px 0 4px rgba(255,255,255,0.8), -2px 0 4px rgba(255,255,255,0.8);
+            z-index: 5;
+            transition: opacity 0.2s;
+        }
+
+        #label-b { color: var(--accent-purple); font-size: 1.3rem; }
+        #label-n { color: var(--accent-red); }
+        #label-theta { color: #1e293b; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            #app-container { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid var(--panel-border); padding: 1rem; }
+            #formula-card { top: 1rem; left: 1rem; padding: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="canvas-container">
+        <!-- 3D Labels -->
+        <div id="label-b" class="scene-label">B</div>
+        <div id="label-n" class="scene-label">n̂</div>
+        <div id="label-theta" class="scene-label">&theta;</div>
+        
+        <!-- Formula Card -->
+        <div id="formula-card">
+            <div class="formula-title">Magnetic Flux</div>
+            <div class="formula-main">&Phi;<sub>B</sub> = B &middot; A &middot; cos(&theta;)</div>
+            <div class="formula-calc">
+                A = &pi;r&sup2; = <span id="calc-a">0.00</span> m&sup2;<br>
+                &Phi;<sub>B</sub> = <span id="calc-b">0.0</span> &middot; <span id="calc-a-sub">0.00</span> &middot; <span id="calc-cos">0.00</span>
+                <span class="calc-result">&Phi;<sub>B</sub> = <span id="calc-flux">0.00</span> Wb</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <div>
+            <h1>Magnetic Flux</h1>
+            <p class="desc">Explore how magnetic field strength, area, and orientation affect the total flux passing through a surface.</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="b-field">Field Strength (B)</label>
+                <span class="val-display" id="b-val">1.0 T</span>
+            </div>
+            <input type="range" id="b-field" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="radius">Loop Radius (r)</label>
+                <span class="val-display" id="r-val">1.5 m</span>
+            </div>
+            <input type="range" id="radius" min="0.5" max="2.5" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="angle">Orientation (&theta;)</label>
+                <span class="val-display" id="t-val">30&deg;</span>
+            </div>
+            <input type="range" id="angle" min="0" max="180" step="1" value="30">
+        </div>
+
+        <div class="control-group checkbox-group">
+            <input type="checkbox" id="auto-rotate">
+            <label for="auto-rotate" style="font-weight: 600; font-size: 0.95rem; user-select: none;">Auto-Rotate Loop</label>
+        </div>
+    </div>
+</div>
+
+<!-- Three.js and OrbitControls via CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    // --- Scene Setup ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f4f8);
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(8, 6, 10);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 0, 0);
+
+    // --- Lighting ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    scene.add(ambientLight);
+
+    const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight1.position.set(10, 20, 10);
+    scene.add(dirLight1);
+
+    const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+    dirLight2.position.set(-10, -20, -10);
+    scene.add(dirLight2);
+
+    // --- Materials & Colors ---
+    const colorBBase = new THREE.Color(0x7209B7); // Purple
+    const colorBHigh = new THREE.Color(0x4CC9F0); // Cyan glow
+    const colorLoop = 0xF77F00; // Orange
+    const colorNormal = 0xFF3366; // Red
+    const colorFilmPos = 0x4361EE; // Blue
+    const colorFilmNeg = 0xFF3366; // Red
+
+    // --- Objects ---
+
+    // 1. B-Field (InstancedMesh for performance)
+    const gridSize = 10;
+    const spacing = 1.2;
+    const offset = (gridSize - 1) * spacing / 2;
+    const count = gridSize * gridSize * gridSize;
+
+    // Arrow geometries
+    const shaftGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.6, 8);
+    shaftGeo.translate(0, 0.3, 0);
+    shaftGeo.rotateX(Math.PI / 2);
+
+    const headGeo = new THREE.ConeGeometry(0.06, 0.2, 8);
+    headGeo.translate(0, 0.6 + 0.1, 0);
+    headGeo.rotateX(Math.PI / 2);
+
+    const arrowMat = new THREE.MeshPhongMaterial({ color: 0xffffff });
+    const shaftMesh = new THREE.InstancedMesh(shaftGeo, arrowMat, count);
+    const headMesh = new THREE.InstancedMesh(headGeo, arrowMat, count);
+    scene.add(shaftMesh);
+    scene.add(headMesh);
+
+    // 2. The Loop & Surface
+    const loopGroup = new THREE.Group();
+    scene.add(loopGroup);
+
+    const loopMat = new THREE.MeshPhongMaterial({ color: colorLoop, shininess: 80 });
+    let torusMesh = new THREE.Mesh(new THREE.TorusGeometry(1.5, 0.06, 16, 64), loopMat);
+    loopGroup.add(torusMesh);
+
+    const filmMat = new THREE.MeshBasicMaterial({ 
+        color: colorFilmPos, 
+        transparent: true, 
+        opacity: 0.5, 
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+    let filmMesh = new THREE.Mesh(new THREE.CircleGeometry(1.5, 64), filmMat);
+    loopGroup.add(filmMesh);
+
+    // 3. Normal Vector (Attached to Loop)
+    const normalGroup = new THREE.Group();
+    const nShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2.5, 8), new THREE.MeshPhongMaterial({color: colorNormal}));
+    nShaft.position.z = 1.25;
+    nShaft.rotation.x = Math.PI / 2;
+    const nHead = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.3, 8), new THREE.MeshPhongMaterial({color: colorNormal}));
+    nHead.position.z = 2.5 + 0.15;
+    nHead.rotation.x = Math.PI / 2;
+    normalGroup.add(nShaft);
+    normalGroup.add(nHead);
+    loopGroup.add(normalGroup);
+
+    // 4. Angle Arc
+    const arcMat = new THREE.LineBasicMaterial({ color: 0x1e293b, linewidth: 2 });
+    let arcLine = new THREE.Line(new THREE.BufferGeometry(), arcMat);
+    scene.add(arcLine);
+
+    // --- Logic & Updates ---
+    const dummy = new THREE.Object3D();
+
+    function updateSimulation() {
+        // Get values
+        const B = parseFloat(document.getElementById('b-field').value);
+        const r = parseFloat(document.getElementById('radius').value);
+        let thetaDeg = parseFloat(document.getElementById('angle').value);
+        const theta = thetaDeg * Math.PI / 180;
+
+        // Update UI Labels
+        document.getElementById('b-val').innerText = B.toFixed(1) + ' T';
+        document.getElementById('r-val').innerText = r.toFixed(1) + ' m';
+        document.getElementById('t-val').innerText = Math.round(thetaDeg) + '°';
+
+        // Physics Calculations
+        const A = Math.PI * r * r;
+        const cosTheta = Math.cos(theta);
+        const flux = B * A * cosTheta;
+
+        // Update Formula Card
+        document.getElementById('calc-a').innerText = A.toFixed(2);
+        document.getElementById('calc-b').innerText = B.toFixed(1);
+        document.getElementById('calc-a-sub').innerText = A.toFixed(2);
+        document.getElementById('calc-cos').innerText = cosTheta.toFixed(2);
+        
+        const fluxEl = document.getElementById('calc-flux');
+        fluxEl.innerText = flux.toFixed(2);
+        fluxEl.style.color = flux < 0 ? 'var(--accent-red)' : 'var(--accent-blue)';
+
+        // Rebuild Loop & Film Geometry to maintain tube thickness
+        torusMesh.geometry.dispose();
+        torusMesh.geometry = new THREE.TorusGeometry(r, 0.06, 16, 64);
+        
+        filmMesh.geometry.dispose();
+        filmMesh.geometry = new THREE.CircleGeometry(r, 64);
+
+        // Update Film Material based on flux sign
+        if (cosTheta >= 0) {
+            filmMesh.material.color.setHex(colorFilmPos);
+        } else {
+            filmMesh.material.color.setHex(colorFilmNeg);
+        }
+        filmMesh.material.opacity = 0.7 * Math.abs(cosTheta);
+
+        // Rotate Loop (Normal is (0, sin(theta), cos(theta)), so rotate around X by -theta)
+        loopGroup.rotation.x = -theta;
+
+        // Update Angle Arc
+        const arcPoints = [];
+        const arcRadius = 1.5;
+        const segments = 32;
+        for (let i = 0; i <= segments; i++) {
+            const t = (i / segments) * (-theta);
+            arcPoints.push(new THREE.Vector3(0, arcRadius * Math.sin(t), arcRadius * Math.cos(t)));
+        }
+        arcLine.geometry.dispose();
+        arcLine.geometry = new THREE.BufferGeometry().setFromPoints(arcPoints);
+
+        // Update B-Field Grid
+        let idx = 0;
+        const absCos = Math.abs(cosTheta);
+        
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                for (let k = 0; k < gridSize; k++) {
+                    const x = i * spacing - offset;
+                    const y = j * spacing - offset;
+                    const z = k * spacing - offset;
+
+                    dummy.position.set(x, y, z);
+
+                    // Check if arrow column intersects the projected loop area
+                    let isInside = false;
+                    if (absCos > 0.001) {
+                        const yProj = y / cosTheta;
+                        if (x*x + yProj*yProj <= r*r) {
+                            isInside = true;
+                        }
+                    }
+
+                    // Scale and Color
+                    let scale = B * 0.6; // Base scale proportional to B
+                    if (isInside && absCos > 0.001) {
+                        scale *= 1.8; // Highlighted arrows are thicker/longer
+                        shaftMesh.setColorAt(idx, colorBHigh);
+                        headMesh.setColorAt(idx, colorBHigh);
+                    } else {
+                        shaftMesh.setColorAt(idx, colorBBase);
+                        headMesh.setColorAt(idx, colorBBase);
+                    }
+
+                    dummy.scale.set(scale, scale, scale);
+                    dummy.updateMatrix();
+                    
+                    shaftMesh.setMatrixAt(idx, dummy.matrix);
+                    headMesh.setMatrixAt(idx, dummy.matrix);
+                    idx++;
+                }
+            }
+        }
+        shaftMesh.instanceMatrix.needsUpdate = true;
+        shaftMesh.instanceColor.needsUpdate = true;
+        headMesh.instanceMatrix.needsUpdate = true;
+        headMesh.instanceColor.needsUpdate = true;
+    }
+
+    // --- HTML Label Projection ---
+    function updateLabels() {
+        const width = container.clientWidth;
+        const height = container.clientHeight;
+        const hw = width / 2;
+        const hh = height / 2;
+
+        // Normal Vector Label
+        const nPos = new THREE.Vector3(0, 0, 2.9);
+        nPos.applyMatrix4(loopGroup.matrixWorld);
+        nPos.project(camera);
+        const nEl = document.getElementById('label-n');
+        nEl.style.left = (nPos.x * hw + hw) + 'px';
+        nEl.style.top = (-nPos.y * hh + hh) + 'px';
+
+        // B Vector Label (Static at top right of grid)
+        const bPos = new THREE.Vector3(offset + 0.5, offset + 0.5, offset);
+        bPos.project(camera);
+        const bEl = document.getElementById('label-b');
+        bEl.style.left = (bPos.x * hw + hw) + 'px';
+        bEl.style.top = (-bPos.y * hh + hh) + 'px';
+
+        // Theta Label
+        const thetaDeg = parseFloat(document.getElementById('angle').value);
+        const tEl = document.getElementById('label-theta');
+        if (thetaDeg === 0) {
+            tEl.style.opacity = 0;
+        } else {
+            tEl.style.opacity = 1;
+            const theta = thetaDeg * Math.PI / 180;
+            const tPos = new THREE.Vector3(0, 1.7 * Math.sin(-theta/2), 1.7 * Math.cos(-theta/2));
+            tPos.project(camera);
+            tEl.style.left = (tPos.x * hw + hw) + 'px';
+            tEl.style.top = (-tPos.y * hh + hh) + 'px';
+        }
+    }
+
+    // --- Event Listeners ---
+    document.getElementById('b-field').addEventListener('input', updateSimulation);
+    document.getElementById('radius').addEventListener('input', updateSimulation);
+    document.getElementById('angle').addEventListener('input', updateSimulation);
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    // --- Animation Loop ---
+    function animate() {
+        requestAnimationFrame(animate);
+
+        if (document.getElementById('auto-rotate').checked) {
+            let t = parseFloat(document.getElementById('angle').value);
+            t += 0.5;
+            if (t > 180) t = 0;
+            document.getElementById('angle').value = t;
+            updateSimulation();
+        }
+
+        controls.update();
+        updateLabels();
+        renderer.render(scene, camera);
+    }
+
+    // Initialize
+    updateSimulation();
+    animate();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biot-Savart Law 3D Visualization</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #2B2D42;
+            --text-math: #4361EE;
+            --wire-color: #2B2D42;
+            --current-color: #06D6A0;
+            --dl-color: #FF3366;
+            --p-color: #FFD700;
+            --r-color: #4361EE;
+            --b-color: #7209B7;
+            --border-color: #d1d9e6;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #ui-panel {
+            width: 25%;
+            min-width: 320px;
+            max-width: 400px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border-color);
+            box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            padding: 24px 24px 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-header h1 {
+            margin: 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .panel-header p {
+            margin: 8px 0 0 0;
+            font-size: 0.85rem;
+            color: #6c757d;
+            line-height: 1.4;
+        }
+
+        .controls-container {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-math);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--text-math);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .checkbox-group input {
+            cursor: pointer;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--text-math);
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .formula-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6c757d;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .math-eq {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .math-fraction {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 4px;
+        }
+
+        .math-num {
+            border-bottom: 1px solid var(--text-main);
+            padding: 0 2px;
+        }
+
+        .math-den {
+            padding: 0 2px;
+        }
+
+        .live-values {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-math);
+            background: rgba(67, 97, 238, 0.05);
+            padding: 10px;
+            border-radius: 6px;
+        }
+
+        .html-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+            z-index: 4;
+            transition: opacity 0.1s;
+        }
+
+        #lbl-dl {
+            color: var(--dl-color);
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        #lbl-p {
+            color: #B8860B;
+            background: rgba(255, 215, 0, 0.2);
+        }
+
+        #lbl-db {
+            color: var(--b-color);
+            background: rgba(114, 9, 183, 0.1);
+        }
+
+        #lbl-r {
+            color: var(--r-color);
+        }
+
+        .legend {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="ui-panel">
+        <div class="panel-header">
+            <h1>Biot-Savart Law</h1>
+            <p>Interactive 3D visualization of the magnetic field generated by a differential current element.</p>
+        </div>
+
+        <div class="controls-container">
+            <div class="control-group">
+                <div class="control-header">
+                    <span class="control-label">Wire Type</span>
+                </div>
+                <select id="wireType">
+                    <option value="straight">Straight Wire</option>
+                    <option value="loop">Circular Loop</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span class="control-label">Current (I)</span>
+                    <span class="control-value" id="val-currentI">5.0 A</span>
+                </div>
+                <input type="range" id="currentI" min="-10" max="10" step="0.1" value="5.0">
+            </div>
+
+            <div class="control-group" id="group-radius" style="display: none;">
+                <div class="control-header">
+                    <span class="control-label">Loop Radius (R)</span>
+                    <span class="control-value" id="val-radiusR">2.0 m</span>
+                </div>
+                <input type="range" id="radiusR" min="0.5" max="4" step="0.1" value="2.0">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span class="control-label">Element Position (θ)</span>
+                    <span class="control-value" id="val-theta">0.00 rad</span>
+                </div>
+                <input type="range" id="theta" min="0" max="6.283" step="0.01" value="0">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span class="control-label">Point P (X)</span>
+                    <span class="control-value" id="val-pX">2.0 m</span>
+                </div>
+                <input type="range" id="pX" min="-5" max="5" step="0.1" value="2.0">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span class="control-label">Point P (Y)</span>
+                    <span class="control-value" id="val-pY">0.0 m</span>
+                </div>
+                <input type="range" id="pY" min="-5" max="5" step="0.1" value="0.0">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span class="control-label">Point P (Z)</span>
+                    <span class="control-value" id="val-pZ">0.0 m</span>
+                </div>
+                <input type="range" id="pZ" min="-5" max="5" step="0.1" value="0.0">
+            </div>
+
+            <label class="checkbox-group">
+                <input type="checkbox" id="showCompass">
+                <span class="control-label">Show Total Field Grid (XZ Plane)</span>
+            </label>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="color-box" style="background: var(--wire-color)"></div> Wire
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: var(--current-color)"></div> Current Flow (I)
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: var(--dl-color)"></div> Differential Element (dl)
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: var(--r-color)"></div> Position Vector (r)
+                </div>
+                <div class="legend-item">
+                    <div class="color-box" style="background: var(--b-color)"></div> Magnetic Field (dB & B_total)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Biot-Savart Law</div>
+            <div class="math-eq">
+                <span>d<b>B</b> = </span>
+                <span class="math-fraction">
+                    <span class="math-num">μ₀ I</span>
+                    <span class="math-den">4π</span>
+                </span>
+                <span>·</span>
+                <span class="math-fraction">
+                    <span class="math-num">d<b>l</b> × <b>r̂</b></span>
+                    <span class="math-den">r²</span>
+                </span>
+            </div>
+            <div class="live-values">
+                <div>|d<b>B</b>| = <span id="calc-db">0.000</span> T</div>
+                <div>|<b>B</b><sub>total</sub>| = <span id="calc-btot">0.000</span> T</div>
+                <div>r = <span id="calc-r">0.00</span> m</div>
+            </div>
+        </div>
+
+        <div id="lbl-dl" class="html-label">dl</div>
+        <div id="lbl-p" class="html-label">P</div>
+        <div id="lbl-db" class="html-label">dB</div>
+        <div id="lbl-r" class="html-label">r</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const state = {
+            wireType: 'straight',
+            currentI: 5.0,
+            radiusR: 2.0,
+            theta: 0.0,
+            pX: 2.0,
+            pY: 0.0,
+            pZ: 0.0,
+            showCompass: false
+        };
+
+        const COLORS = {
+            wire: 0x2B2D42,
+            current: 0x06D6A0,
+            dl: 0xFF3366,
+            p: 0xFFD700,
+            r: 0x4361EE,
+            b: 0x7209B7
+        };
+
+        const CONSTANTS = {
+            dlLength: 0.4,
+            kScale: 2.0, // Visual scaling factor for magnetic field
+            maxArrowLength: 8.0
+        };
+
+        // --- DOM Elements ---
+        const container = document.getElementById('canvas-container');
+        const lblDl = document.getElementById('lbl-dl');
+        const lblP = document.getElementById('lbl-p');
+        const lblDb = document.getElementById('lbl-db');
+        const lblR = document.getElementById('lbl-r');
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(8, 6, 10);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Grid & Axes
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xe0e0e0);
+        gridHelper.position.y = -5; // Move grid down a bit
+        scene.add(gridHelper);
+
+        // --- 3D Objects ---
+
+        // 1. Wires
+        const wireMat = new THREE.MeshPhongMaterial({ color: COLORS.wire, shininess: 30 });
+
+        // Straight Wire
+        const straightGeo = new THREE.CylinderGeometry(0.1, 0.1, 40, 16);
+        const straightWire = new THREE.Mesh(straightGeo, wireMat);
+        scene.add(straightWire);
+
+        // Loop Wire
+        let loopGeo = new THREE.TorusGeometry(state.radiusR, 0.1, 16, 64);
+        const loopWire = new THREE.Mesh(loopGeo, wireMat);
+        loopWire.rotation.x = Math.PI / 2; // XZ plane
+        scene.add(loopWire);
+
+        // 2. Differential Element (dl)
+        const dlMat = new THREE.MeshPhongMaterial({ color: COLORS.dl, emissive: 0x440000 });
+        const dlGeo = new THREE.CylinderGeometry(0.15, 0.15, CONSTANTS.dlLength, 16);
+        const dlMesh = new THREE.Mesh(dlGeo, dlMat);
+        scene.add(dlMesh);
+
+        const dlArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 1.5, COLORS.dl, 0.3, 0.2);
+        scene.add(dlArrow);
+
+        // 3. Current Particles
+        const numParticles = 30;
+        const particleGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        const particleMat = new THREE.MeshBasicMaterial({ color: COLORS.current });
+        const particles = [];
+        for (let i = 0; i < numParticles; i++) {
+            const p = new THREE.Mesh(particleGeo, particleMat);
+            scene.add(p);
+            particles.push(p);
+        }
+
+        // 4. Point P
+        const pGeo = new THREE.SphereGeometry(0.2, 32, 32);
+        const pMat = new THREE.MeshPhongMaterial({ color: COLORS.p, emissive: 0x443300 });
+        const pointP = new THREE.Mesh(pGeo, pMat);
+        scene.add(pointP);
+
+        // 5. Position Vector (r)
+        const rMat = new THREE.LineDashedMaterial({ color: COLORS.r, dashSize: 0.2, gapSize: 0.1, linewidth: 2 });
+        const rGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+        const rLine = new THREE.Line(rGeo, rMat);
+        scene.add(rLine);
+
+        // Arrow head for r
+        const rArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), new THREE.Vector3(), 0.01, COLORS.r, 0.3, 0.2);
+        scene.add(rArrow);
+
+        // 6. Magnetic Field Vectors
+        const dBArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 1, COLORS.b, 0.4, 0.3);
+        scene.add(dBArrow);
+
+        const bTotArrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 1, COLORS.b, 0.5, 0.4);
+        // Make B_total semi-transparent
+        bTotArrow.line.material.transparent = true;
+        bTotArrow.line.material.opacity = 0.3;
+        bTotArrow.cone.material.transparent = true;
+        bTotArrow.cone.material.opacity = 0.3;
+        scene.add(bTotArrow);
+
+        // 7. Compass Grid
+        const compassGrid = [];
+        const gridSize = 10;
+        const gridSpacing = 1.0;
+        for (let x = -gridSize / 2; x <= gridSize / 2; x++) {
+            for (let z = -gridSize / 2; z <= gridSize / 2; z++) {
+                if (x === 0 && z === 0) continue; // Skip center to avoid wire overlap
+                const arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(x * gridSpacing, 0, z * gridSpacing), 0.6, 0x888888, 0.2, 0.15);
+                arrow.visible = false;
+                scene.add(arrow);
+                compassGrid.push(arrow);
+            }
+        }
+
+        // --- Math & Physics Logic ---
+
+        function getWirePosAndTan(t, type, radius) {
+            const pos = new THREE.Vector3();
+            const tan = new THREE.Vector3();
+
+            if (type === 'straight') {
+                // Map t (0 to 2PI) to y (-10 to 10) for the dl element placement
+                const y = (t / Math.PI - 1) * 10;
+                pos.set(0, y, 0);
+                tan.set(0, 1, 0);
+            } else {
+                // Circular loop in XZ plane
+                pos.set(radius * Math.cos(t), 0, radius * Math.sin(t));
+                tan.set(-Math.sin(t), 0, Math.cos(t)).normalize();
+            }
+            return { pos, tan };
+        }
+
+        function calculateBTotal(targetPos) {
+            let B = new THREE.Vector3(0, 0, 0);
+            const steps = 200;
+
+            if (state.wireType === 'straight') {
+                // Integrate from y = -50 to 50
+                const yMin = -50;
+                const yMax = 50;
+                const dy = (yMax - yMin) / steps;
+                for (let i = 0; i < steps; i++) {
+                    let y = yMin + i * dy + dy / 2;
+                    let dl_pos = new THREE.Vector3(0, y, 0);
+                    let dl_vec = new THREE.Vector3(0, dy, 0);
+
+                    let r_vec = new THREE.Vector3().subVectors(targetPos, dl_pos);
+                    let r2 = r_vec.lengthSq();
+                    if (r2 < 0.0001) continue;
+
+                    let r_hat = r_vec.clone().normalize();
+                    let dB = new THREE.Vector3().crossVectors(dl_vec, r_hat).multiplyScalar(state.currentI / r2);
+                    B.add(dB);
+                }
+            } else {
+                // Integrate around loop 0 to 2PI
+                const dTheta = (Math.PI * 2) / steps;
+                for (let i = 0; i < steps; i++) {
+                    let t = i * dTheta + dTheta / 2;
+                    let dl_pos = new THREE.Vector3(state.radiusR * Math.cos(t), 0, state.radiusR * Math.sin(t));
+                    // dl vector is tangent * length (R * dTheta)
+                    let dl_vec = new THREE.Vector3(-Math.sin(t), 0, Math.cos(t)).multiplyScalar(state.radiusR * dTheta);
+
+                    let r_vec = new THREE.Vector3().subVectors(targetPos, dl_pos);
+                    let r2 = r_vec.lengthSq();
+                    if (r2 < 0.0001) continue;
+
+                    let r_hat = r_vec.clone().normalize();
+                    let dB = new THREE.Vector3().crossVectors(dl_vec, r_hat).multiplyScalar(state.currentI / r2);
+                    B.add(dB);
+                }
+            }
+            return B.multiplyScalar(CONSTANTS.kScale);
+        }
+
+        // --- Update Loop ---
+
+        function updateLabels(dlPos, pPos, dbVec, rVec) {
+            const project = (pos, element, offset = { x: 0, y: 0 }) => {
+                const vec = pos.clone();
+                vec.project(camera);
+                if (vec.z > 1) {
+                    element.style.display = 'none';
+                    return;
+                }
+                element.style.display = 'block';
+                const x = (vec.x * 0.5 + 0.5) * container.clientWidth;
+                const y = (vec.y * -0.5 + 0.5) * container.clientHeight;
+                element.style.left = `${x + offset.x}px`;
+                element.style.top = `${y + offset.y}px`;
+            };
+
+            project(dlPos, lblDl, { x: 20, y: -20 });
+            project(pPos, lblP, { x: 15, y: -15 });
+
+            if (dbVec.lengthSq() > 0.01) {
+                const dbEnd = pPos.clone().add(dbVec);
+                project(dbEnd, lblDb, { x: 10, y: -10 });
+            } else {
+                lblDb.style.display = 'none';
+            }
+
+            const rMid = dlPos.clone().lerp(pPos, 0.5);
+            project(rMid, lblR, { x: 0, y: -15 });
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            const time = Date.now() * 0.001;
+
+            // 1. Toggle Wire Visibility & Geometry
+            straightWire.visible = (state.wireType === 'straight');
+            loopWire.visible = (state.wireType === 'loop');
+
+            if (state.wireType === 'loop') {
+                // Rebuild torus if radius changed (inefficient but fine for this scope)
+                if (loopWire.geometry.parameters.radius !== state.radiusR) {
+                    loopWire.geometry.dispose();
+                    loopWire.geometry = new THREE.TorusGeometry(state.radiusR, 0.1, 16, 64);
+                }
+            }
+
+            // 2. Update Particles
+            const pathLength = state.wireType === 'straight' ? 40 : 2 * Math.PI * state.radiusR;
+            const speed = state.currentI * 0.5;
+
+            particles.forEach((p, i) => {
+                let fraction = (i / numParticles + time * speed / pathLength) % 1.0;
+                if (fraction < 0) fraction += 1.0;
+
+                let t = fraction * Math.PI * 2; // Map to 0-2PI
+                const { pos } = getWirePosAndTan(t, state.wireType, state.radiusR);
+
+                if (state.wireType === 'straight') {
+                    // Remap for straight wire to cover -20 to 20
+                    pos.y = (fraction - 0.5) * 40;
+                }
+                p.position.copy(pos);
+            });
+
+            // 3. Update dl Element
+            const { pos: dlPos, tan: dlTan } = getWirePosAndTan(state.theta, state.wireType, state.radiusR);
+            dlMesh.position.copy(dlPos);
+
+            // Align cylinder with tangent
+            const defaultAxis = new THREE.Vector3(0, 1, 0);
+            const quaternion = new THREE.Quaternion().setFromUnitVectors(defaultAxis, dlTan);
+            dlMesh.quaternion.copy(quaternion);
+
+            dlArrow.position.copy(dlPos);
+            const currentSign = state.currentI >= 0 ? 1 : -1;
+            const currentDir = dlTan.clone().multiplyScalar(currentSign);
+            if (state.currentI !== 0) {
+                dlArrow.setDirection(currentDir);
+                dlArrow.setLength(CONSTANTS.dlLength * 1.5 + Math.abs(state.currentI) * 0.1);
+                dlArrow.visible = true;
+            } else {
+                dlArrow.visible = false;
+            }
+
+            // 4. Update Point P
+            pointP.position.set(state.pX, state.pY, state.pZ);
+
+            // 5. Update r Vector
+            const rVec = new THREE.Vector3().subVectors(pointP.position, dlPos);
+            const rDist = rVec.length();
+
+            if (rDist > 0.01) {
+                const rDir = rVec.clone().normalize();
+                rGeo.setFromPoints([dlPos, pointP.position]);
+                rLine.computeLineDistances();
+                rLine.visible = true;
+
+                rArrow.position.copy(pointP.position.clone().sub(rDir.clone().multiplyScalar(0.2)));
+                rArrow.setDirection(rDir);
+                rArrow.visible = true;
+            } else {
+                rLine.visible = false;
+                rArrow.visible = false;
+            }
+
+            // 6. Calculate dB
+            let dB_mag = 0;
+            let dB_vec_scaled = new THREE.Vector3();
+
+            if (rDist > 0.01 && state.currentI !== 0) {
+                const rDir = rVec.clone().normalize();
+                const I_vec = dlTan.clone().multiplyScalar(state.currentI * CONSTANTS.dlLength);
+
+                // dB = (k * I_vec x r_hat) / r^2
+                const dB_dir = new THREE.Vector3().crossVectors(I_vec, rDir);
+                dB_mag = (CONSTANTS.kScale * dB_dir.length()) / (rDist * rDist);
+
+                if (dB_mag > 0.001) {
+                    dBArrow.position.copy(pointP.position);
+                    dBArrow.setDirection(dB_dir.normalize());
+
+                    // Clamp length for visual sanity
+                    const visualLength = Math.min(dB_mag, CONSTANTS.maxArrowLength);
+                    dBArrow.setLength(visualLength, visualLength * 0.2, visualLength * 0.1);
+                    dBArrow.visible = true;
+
+                    dB_vec_scaled.copy(dB_dir).normalize().multiplyScalar(visualLength);
+                } else {
+                    dBArrow.visible = false;
+                }
+            } else {
+                dBArrow.visible = false;
+            }
+
+            // 7. Calculate B_total
+            const bTot = calculateBTotal(pointP.position);
+            const bTotMag = bTot.length();
+            if (bTotMag > 0.01) {
+                bTotArrow.position.copy(pointP.position);
+                bTotArrow.setDirection(bTot.clone().normalize());
+                const visualLenTot = Math.min(bTotMag, CONSTANTS.maxArrowLength * 1.5);
+                bTotArrow.setLength(visualLenTot, visualLenTot * 0.2, visualLenTot * 0.1);
+                bTotArrow.visible = true;
+            } else {
+                bTotArrow.visible = false;
+            }
+
+            // 8. Update Compass Grid
+            if (state.showCompass) {
+                compassGrid.forEach(arrow => {
+                    arrow.visible = true;
+                    const b = calculateBTotal(arrow.position);
+                    const mag = b.length();
+                    if (mag > 0.01) {
+                        arrow.setDirection(b.normalize());
+                        // Optional: scale by magnitude
+                        // arrow.setLength(Math.min(mag * 0.5, 0.8));
+                    }
+                });
+            } else {
+                compassGrid.forEach(arrow => arrow.visible = false);
+            }
+
+            // 9. Update UI & Labels
+            updateLabels(dlPos, pointP.position, dB_vec_scaled, rVec);
+
+            document.getElementById('calc-db').innerText = dB_mag.toFixed(4);
+            document.getElementById('calc-btot').innerText = bTotMag.toFixed(4);
+            document.getElementById('calc-r').innerText = rDist.toFixed(2);
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Event Listeners ---
+
+        function bindSlider(id, stateKey, suffix = '') {
+            const el = document.getElementById(id);
+            const valEl = document.getElementById(`val-${id}`);
+            el.addEventListener('input', (e) => {
+                state[stateKey] = parseFloat(e.target.value);
+                valEl.innerText = state[stateKey].toFixed(el.step.includes('.') ? el.step.split('.')[1].length : 0) + suffix;
+            });
+        }
+
+        bindSlider('currentI', 'currentI', ' A');
+        bindSlider('radiusR', 'radiusR', ' m');
+        bindSlider('theta', 'theta', ' rad');
+        bindSlider('pX', 'pX', ' m');
+        bindSlider('pY', 'pY', ' m');
+        bindSlider('pZ', 'pZ', ' m');
+
+        document.getElementById('wireType').addEventListener('change', (e) => {
+            state.wireType = e.target.value;
+            document.getElementById('group-radius').style.display = state.wireType === 'loop' ? 'flex' : 'none';
+        });
+
+        document.getElementById('showCompass').addEventListener('change', (e) => {
+            state.showCompass = e.target.checked;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start Animation
+        animate();
+
+    </script>
+</body>
+
+</html>

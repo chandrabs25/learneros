@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Electric Dipole Visualization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --color-pos: #FF3366;
+            --color-neg: #4361EE;
+            --color-p: #7209B7;
+            --color-e: #F77F00;
+            --color-tau: #06D6A0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 75%;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--color-p);
+            background: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--color-p);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        /* Specific slider colors */
+        #q::-webkit-slider-thumb { background: linear-gradient(90deg, var(--color-neg), var(--color-pos)); }
+        #E_ext::-webkit-slider-thumb, #theta_ext::-webkit-slider-thumb { background: var(--color-e); }
+
+        /* Toggles */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .toggle-switch {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background: #d1d8e0;
+            border-radius: 10px;
+            transition: 0.3s;
+        }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        input[type="checkbox"] { display: none; }
+        input[type="checkbox"]:checked + .toggle-switch { background: var(--color-p); }
+        input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(20px); }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .formula-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            gap: 20px;
+        }
+        .formula-row:last-child { margin-bottom: 0; }
+        
+        .math-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .math-val {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .c-p { color: var(--color-p); }
+        .c-tau { color: var(--color-tau); }
+        .c-u { color: var(--text-main); }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            top: 0; left: 0;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 1rem;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 0 0 4px white, 0 0 4px white;
+            z-index: 2;
+            transition: opacity 0.1s;
+        }
+        #label-plus { color: var(--color-pos); }
+        #label-minus { color: var(--color-neg); }
+        #label-p { color: var(--color-p); font-size: 1.2rem; }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.6); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="label-plus" class="scene-label">+q</div>
+        <div id="label-minus" class="scene-label">-q</div>
+        <div id="label-p" class="scene-label">p</div>
+
+        <div id="formula-card">
+            <div class="formula-row">
+                <span class="math-label c-p">Dipole Moment (p):</span>
+                <span class="math-val c-p" id="val-p">0.00</span>
+            </div>
+            <div class="formula-row">
+                <span class="math-label c-tau">Torque (&tau;):</span>
+                <span class="math-val c-tau" id="val-tau">0.00</span>
+            </div>
+            <div class="formula-row">
+                <span class="math-label c-u">Potential Energy (U):</span>
+                <span class="math-val c-u" id="val-u">0.00</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <div>
+            <h1>Electric Dipole</h1>
+            <p class="subtitle">Interactive Physics Visualization</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Charge Magnitude (q)</span>
+                <span class="val-display" id="disp-q">5.0 nC</span>
+            </div>
+            <input type="range" id="q" min="1" max="10" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Separation (2a)</span>
+                <span class="val-display" id="disp-dist">2.0 m</span>
+            </div>
+            <input type="range" id="dist" min="0.5" max="4.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Dipole Rotation</span>
+                <span class="val-display" id="disp-rot">45&deg;</span>
+            </div>
+            <input type="range" id="dipole_rot" min="0" max="360" step="1" value="45">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Ext. Field Strength (E)</span>
+                <span class="val-display" id="disp-e">0 V/m</span>
+            </div>
+            <input type="range" id="E_ext" min="0" max="100" step="1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Ext. Field Angle</span>
+                <span class="val-display" id="disp-e-ang">0&deg;</span>
+            </div>
+            <input type="range" id="theta_ext" min="0" max="360" step="1" value="0">
+        </div>
+
+        <div class="control-group" style="background: transparent; border: none; padding: 0; gap: 15px; margin-top: 10px;">
+            <label class="toggle-container">
+                <input type="checkbox" id="toggleLines" checked>
+                <div class="toggle-switch"></div>
+                Show Electric Field Lines
+            </label>
+            
+            <label class="toggle-container">
+                <input type="checkbox" id="togglePot">
+                <div class="toggle-switch"></div>
+                Show Equipotential Plane
+            </label>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Management ---
+        const state = {
+            q: 5.0,
+            dist: 2.0,
+            dipole_rot: 45,
+            E_ext: 0,
+            theta_ext: 0,
+            showLines: true,
+            showPot: false
+        };
+
+        // --- DOM Elements ---
+        const container = document.getElementById('canvas-container');
+        const labels = {
+            plus: document.getElementById('label-plus'),
+            minus: document.getElementById('label-minus'),
+            p: document.getElementById('label-p')
+        };
+        const displays = {
+            q: document.getElementById('disp-q'),
+            dist: document.getElementById('disp-dist'),
+            rot: document.getElementById('disp-rot'),
+            e: document.getElementById('disp-e'),
+            eAng: document.getElementById('disp-e-ang'),
+            valP: document.getElementById('val-p'),
+            valTau: document.getElementById('val-tau'),
+            valU: document.getElementById('val-u')
+        };
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 0, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 30;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // --- Scene Objects ---
+        
+        // 1. Dipole Group (Rotates together)
+        const dipoleGroup = new THREE.Group();
+        scene.add(dipoleGroup);
+
+        // Charges
+        const sphereGeo = new THREE.SphereGeometry(0.25, 32, 32);
+        const matPlus = new THREE.MeshPhongMaterial({ color: 0xFF3366, shininess: 100 });
+        const matMinus = new THREE.MeshPhongMaterial({ color: 0x4361EE, shininess: 100 });
+        
+        const meshPlus = new THREE.Mesh(sphereGeo, matPlus);
+        const meshMinus = new THREE.Mesh(sphereGeo, matMinus);
+        dipoleGroup.add(meshPlus);
+        dipoleGroup.add(meshMinus);
+
+        // Axis
+        const axisGeo = new THREE.CylinderGeometry(0.02, 0.02, 1, 8);
+        const axisMat = new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.5 });
+        const axisMesh = new THREE.Mesh(axisGeo, axisMat);
+        axisMesh.rotation.z = Math.PI / 2; // Align with X axis
+        dipoleGroup.add(axisMesh);
+
+        // Dipole Moment Vector (p) - Points from -q to +q
+        const pArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0x7209B7, 0.4, 0.2);
+        // Thicken the arrow line
+        pArrow.line.material.linewidth = 3; 
+        dipoleGroup.add(pArrow);
+
+        // Field Lines
+        let linesMesh;
+        const linesMat = new THREE.LineBasicMaterial({ color: 0x88aaff, transparent: true, opacity: 0.4 });
+
+        // Equipotential Plane (Custom Shader)
+        const planeGeo = new THREE.PlaneGeometry(20, 20, 1, 1);
+        const potShaderMat = new THREE.ShaderMaterial({
+            uniforms: {
+                q: { value: state.q },
+                a: { value: state.dist / 2 }
+            },
+            vertexShader: `
+                varying vec3 vPos;
+                void main() {
+                    vPos = position;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform float q;
+                uniform float a;
+                varying vec3 vPos;
+
+                void main() {
+                    // Distances to +q (at a,0) and -q (at -a,0)
+                    float dPlus = distance(vPos.xy, vec2(a, 0.0));
+                    float dMinus = distance(vPos.xy, vec2(-a, 0.0));
+                    
+                    dPlus = max(dPlus, 0.05);
+                    dMinus = max(dMinus, 0.05);
+
+                    float V = q / dPlus - q / dMinus;
+
+                    vec3 colorHigh = vec3(1.0, 0.2, 0.4); // Red
+                    vec3 colorLow = vec3(0.26, 0.38, 0.93); // Blue
+
+                    float vScaled = V * 0.15; // Visual scaling
+                    float alpha = clamp(abs(vScaled), 0.0, 0.7);
+
+                    vec3 finalColor = mix(vec3(1.0), colorHigh, clamp(vScaled, 0.0, 1.0));
+                    if (V < 0.0) {
+                        finalColor = mix(vec3(1.0), colorLow, clamp(-vScaled, 0.0, 1.0));
+                    }
+
+                    // Cutout for charges
+                    if (dPlus < 0.25 || dMinus < 0.25) alpha = 0.0;
+
+                    gl_FragColor = vec4(finalColor, alpha);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        });
+        const potPlane = new THREE.Mesh(planeGeo, potShaderMat);
+        potPlane.visible = state.showPot;
+        dipoleGroup.add(potPlane);
+
+        // 2. External Field Group (World Space)
+        const extFieldGroup = new THREE.Group();
+        scene.add(extFieldGroup);
+        
+        // Create grid of arrows
+        const extArrows = [];
+        for(let x=-10; x<=10; x+=2.5) {
+            for(let y=-10; y<=10; y+=2.5) {
+                const arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(x,y,-2), 1, 0xF77F00, 0.2, 0.1);
+                extArrows.push(arrow);
+                extFieldGroup.add(arrow);
+            }
+        }
+
+        // 3. Torque Vector (World Space)
+        const torqueArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 1, 0x06D6A0, 0.4, 0.2);
+        scene.add(torqueArrow);
+
+        // --- Logic & Update Functions ---
+
+        function generateFieldLines() {
+            if(linesMesh) dipoleGroup.remove(linesMesh);
+            
+            const positions = [];
+            const q = state.q;
+            const a = state.dist / 2;
+            const k = 1;
+            const stepSize = 0.05;
+            const maxDist = 15;
+
+            // Number of lines proportional to charge
+            const numLines = Math.max(6, Math.floor(q * 2.5));
+            
+            // Generate in 3D around +q
+            for(let i=0; i<numLines; i++) {
+                const phi = (i / numLines) * Math.PI * 2;
+                
+                // Polar angles (avoid exact poles to prevent straight line issues)
+                for(let j=1; j<=5; j++) {
+                    const theta = (j / 6) * Math.PI;
+                    
+                    // Start slightly outside the sphere
+                    let currentPos = new THREE.Vector3(
+                        a + 0.26 * Math.sin(theta) * Math.cos(phi),
+                        0.26 * Math.sin(theta) * Math.sin(phi),
+                        0.26 * Math.cos(theta)
+                    );
+
+                    let isAlive = true;
+                    let steps = 0;
+
+                    while(isAlive && steps < 800) {
+                        positions.push(currentPos.x, currentPos.y, currentPos.z);
+
+                        let rPlus = new THREE.Vector3().subVectors(currentPos, new THREE.Vector3(a, 0, 0));
+                        let rMinus = new THREE.Vector3().subVectors(currentPos, new THREE.Vector3(-a, 0, 0));
+
+                        let dPlus = rPlus.length();
+                        let dMinus = rMinus.length();
+
+                        if (dMinus < 0.25 || currentPos.length() > maxDist) {
+                            positions.push(currentPos.x, currentPos.y, currentPos.z); // Close the line
+                            break;
+                        }
+
+                        let ePlus = rPlus.normalize().multiplyScalar(k * q / (dPlus * dPlus));
+                        let eMinus = rMinus.normalize().multiplyScalar(-k * q / (dMinus * dMinus));
+                        
+                        let eNet = new THREE.Vector3().addVectors(ePlus, eMinus).normalize();
+
+                        currentPos.add(eNet.multiplyScalar(stepSize));
+                        positions.push(currentPos.x, currentPos.y, currentPos.z);
+                        steps++;
+                    }
+                }
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+            linesMesh = new THREE.LineSegments(geometry, linesMat);
+            linesMesh.visible = state.showLines;
+            dipoleGroup.add(linesMesh);
+        }
+
+        function updateDipoleGeometry() {
+            const a = state.dist / 2;
+            
+            // +q is at +a, -q is at -a (so p points +X)
+            meshPlus.position.set(a, 0, 0);
+            meshMinus.position.set(-a, 0, 0);
+            
+            axisMesh.scale.y = state.dist;
+            
+            pArrow.position.set(-a, 0, 0);
+            pArrow.setLength(state.dist, 0.4, 0.2);
+
+            potShaderMat.uniforms.q.value = state.q;
+            potShaderMat.uniforms.a.value = a;
+
+            generateFieldLines();
+        }
+
+        function updatePhysics() {
+            // 1. Rotation
+            const dipRad = state.dipole_rot * Math.PI / 180;
+            dipoleGroup.rotation.z = dipRad;
+
+            // 2. External Field
+            const eRad = state.theta_ext * Math.PI / 180;
+            const eDir = new THREE.Vector3(Math.cos(eRad), Math.sin(eRad), 0);
+            
+            if (state.E_ext === 0) {
+                extFieldGroup.visible = false;
+            } else {
+                extFieldGroup.visible = true;
+                const arrowLength = 0.5 + (state.E_ext / 100) * 1.5;
+                extArrows.forEach(arrow => {
+                    arrow.setDirection(eDir);
+                    arrow.setLength(arrowLength, 0.2, 0.1);
+                });
+            }
+
+            // 3. Math Calculations
+            const pMag = state.q * state.dist;
+            const E = state.E_ext;
+            
+            // p vector in world space
+            const pVec = new THREE.Vector3(Math.cos(dipRad), Math.sin(dipRad), 0);
+            
+            // Torque = p x E
+            const tVec = new THREE.Vector3().crossVectors(pVec, eDir).multiplyScalar(pMag * E * 0.005); // visual scale
+            const tMag = tVec.length();
+            const actualTau = pMag * E * Math.sin(eRad - dipRad);
+
+            if (Math.abs(actualTau) < 0.1 || E === 0) {
+                torqueArrow.visible = false;
+            } else {
+                torqueArrow.visible = true;
+                torqueArrow.setDirection(tVec.normalize());
+                torqueArrow.setLength(Math.max(0.5, tMag), 0.3, 0.15);
+            }
+
+            // Energy U = -p.E
+            const U = -pMag * E * Math.cos(eRad - dipRad);
+
+            // Update UI
+            displays.valP.innerText = pMag.toFixed(1) + ' nC·m';
+            displays.valTau.innerText = actualTau.toFixed(1) + ' N·m';
+            displays.valU.innerText = U.toFixed(1) + ' J';
+        }
+
+        function updateLabels() {
+            const a = state.dist / 2;
+            const dipRad = state.dipole_rot * Math.PI / 180;
+            
+            const posPlus = new THREE.Vector3(a * Math.cos(dipRad), a * Math.sin(dipRad), 0);
+            const posMinus = new THREE.Vector3(-a * Math.cos(dipRad), -a * Math.sin(dipRad), 0);
+            const posP = new THREE.Vector3(0, 0, 0);
+
+            const hw = container.clientWidth / 2;
+            const hh = container.clientHeight / 2;
+
+            const projPlus = posPlus.clone().project(camera);
+            const projMinus = posMinus.clone().project(camera);
+            const projP = posP.clone().project(camera);
+
+            // Hide labels if behind camera
+            labels.plus.style.opacity = projPlus.z > 1 ? 0 : 1;
+            labels.minus.style.opacity = projMinus.z > 1 ? 0 : 1;
+            labels.p.style.opacity = projP.z > 1 ? 0 : 1;
+
+            labels.plus.style.transform = `translate(${projPlus.x * hw + hw + 15}px, ${-projPlus.y * hh + hh - 15}px)`;
+            labels.minus.style.transform = `translate(${projMinus.x * hw + hw - 25}px, ${-projMinus.y * hh + hh + 15}px)`;
+            labels.p.style.transform = `translate(${projP.x * hw + hw}px, ${-projP.y * hh + hh - 20}px)`;
+        }
+
+        // --- Event Listeners ---
+        
+        function attachSlider(id, stateKey, displayElem, unit, requiresGeoUpdate = false) {
+            const elem = document.getElementById(id);
+            elem.addEventListener('input', (e) => {
+                state[stateKey] = parseFloat(e.target.value);
+                displayElem.innerText = state[stateKey].toFixed(elem.step.includes('.') ? 1 : 0) + ' ' + unit;
+                if(requiresGeoUpdate) updateDipoleGeometry();
+                updatePhysics();
+            });
+        }
+
+        attachSlider('q', 'q', displays.q, 'nC', true);
+        attachSlider('dist', 'dist', displays.dist, 'm', true);
+        attachSlider('dipole_rot', 'dipole_rot', displays.rot, '°');
+        attachSlider('E_ext', 'E_ext', displays.e, 'V/m');
+        attachSlider('theta_ext', 'theta_ext', displays.eAng, '°');
+
+        document.getElementById('toggleLines').addEventListener('change', (e) => {
+            state.showLines = e.target.checked;
+            if(linesMesh) linesMesh.visible = state.showLines;
+        });
+
+        document.getElementById('togglePot').addEventListener('change', (e) => {
+            state.showPot = e.target.checked;
+            potPlane.visible = state.showPot;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Initialization & Loop ---
+        updateDipoleGeometry();
+        updatePhysics();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Anatomy of an Oscillation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+        }
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100%;
+        }
+        #ui-panel {
+            width: 25%;
+            min-width: 280px;
+            max-width: 350px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.05);
+            padding: 25px 20px;
+            overflow-y: auto;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 15px;
+            pointer-events: none;
+            line-height: 1.6;
+        }
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #1e293b;
+            font-weight: 700;
+        }
+        p.subtitle {
+            margin: 0 0 20px 0;
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.4;
+        }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            font-weight: 700;
+            color: #334155;
+        }
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 400;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        #reset-btn {
+            margin-top: auto;
+            padding: 12px;
+            background: #4361EE;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+            transition: all 0.2s;
+        }
+        #reset-btn:hover {
+            background: #3651d4;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(67, 97, 238, 0.4);
+        }
+        #reset-btn:active {
+            transform: translateY(1px);
+        }
+        
+        /* Formula Card Colors */
+        .fc-y { color: #4361EE; font-weight: bold; }
+        .fc-v { color: #06D6A0; font-weight: bold; }
+        .fc-a { color: #F77F00; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="fc-y">y = <span id="val-y">0.00</span> m</div>
+            <div class="fc-v">v = <span id="val-v">0.00</span> m/s</div>
+            <div class="fc-a">a = <span id="val-a">0.00</span> m/s²</div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <div>
+            <h2>Oscillation Physics</h2>
+            <p class="subtitle">From Simple Harmonic Motion to Wave Propagation</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Amplitude (A)</span>
+                <span class="val-display" id="disp-amp">2.0 m</span>
+            </div>
+            <input type="range" id="amp" min="0.5" max="3.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Frequency (f)</span>
+                <span class="val-display" id="disp-freq">0.5 Hz</span>
+            </div>
+            <input type="range" id="freq" min="0.1" max="2.0" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Phase Constant (φ)</span>
+                <span class="val-display" id="disp-phase">0.0 rad</span>
+            </div>
+            <input type="range" id="phase" min="0" max="6.283" step="0.1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Damping (ζ)</span>
+                <span class="val-display" id="disp-damp">0.00</span>
+            </div>
+            <input type="range" id="damp" min="0" max="0.5" step="0.01" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Wave Speed (v_w)</span>
+                <span class="val-display" id="disp-waveSpeed">5.0 m/s</span>
+            </div>
+            <input type="range" id="waveSpeed" min="1.0" max="10.0" step="0.5" value="5.0">
+        </div>
+
+        <button id="reset-btn">Reset Time (t=0)</button>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(12, 8, 18);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 5);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(5, 10, 7);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // --- Objects ---
+        
+        // Equilibrium Plane (Grid)
+        const gridHelper = new THREE.GridHelper(40, 40, 0x94a3b8, 0xe2e8f0);
+        gridHelper.position.y = 0;
+        gridHelper.position.z = 10;
+        scene.add(gridHelper);
+
+        // Primary Oscillator
+        const primaryGeo = new THREE.SphereGeometry(0.5, 32, 32);
+        const primaryMat = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.2, metalness: 0.1 });
+        const primaryOscillator = new THREE.Mesh(primaryGeo, primaryMat);
+        primaryOscillator.castShadow = true;
+        scene.add(primaryOscillator);
+
+        // Reference Circle
+        const circleGeo = new THREE.RingGeometry(0.98, 1.02, 64);
+        const circleMat = new THREE.MeshBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.4, side: THREE.DoubleSide });
+        const refCircle = new THREE.Mesh(circleGeo, circleMat);
+        scene.add(refCircle);
+
+        // Ghost Particle
+        const ghostGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        const ghostMat = new THREE.MeshBasicMaterial({ color: 0xef476f });
+        const ghostParticle = new THREE.Mesh(ghostGeo, ghostMat);
+        scene.add(ghostParticle);
+
+        // Spring
+        const springGeo = new THREE.BufferGeometry();
+        const springMat = new THREE.LineBasicMaterial({ color: 0x7209B7, linewidth: 2 });
+        const spring = new THREE.Line(springGeo, springMat);
+        scene.add(spring);
+
+        // Wave Train
+        const waveSpheres = [];
+        const numWaveParticles = 40;
+        const waveSpacing = 0.5;
+        const waveGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        
+        for (let i = 0; i < numWaveParticles; i++) {
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: 0x4361EE, 
+                transparent: true, 
+                opacity: 1.0 - (i / numWaveParticles) * 0.8,
+                roughness: 0.2
+            });
+            const sphere = new THREE.Mesh(waveGeo, mat);
+            sphere.castShadow = true;
+            scene.add(sphere);
+            waveSpheres.push(sphere);
+        }
+
+        // Vectors (Velocity and Acceleration)
+        const vColor = 0x06D6A0; // Green
+        const aColor = 0xF77F00; // Orange
+        
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0.7, 0, 0), 1, vColor, 0.3, 0.2);
+        const accArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(-0.7, 0, 0), 1, aColor, 0.3, 0.2);
+        scene.add(velArrow);
+        scene.add(accArrow);
+
+        // --- UI Elements & State ---
+        const inputs = {
+            amp: document.getElementById('amp'),
+            freq: document.getElementById('freq'),
+            phase: document.getElementById('phase'),
+            damp: document.getElementById('damp'),
+            waveSpeed: document.getElementById('waveSpeed')
+        };
+
+        const displays = {
+            amp: document.getElementById('disp-amp'),
+            freq: document.getElementById('disp-freq'),
+            phase: document.getElementById('disp-phase'),
+            damp: document.getElementById('disp-damp'),
+            waveSpeed: document.getElementById('disp-waveSpeed')
+        };
+
+        const formulaDisplays = {
+            y: document.getElementById('val-y'),
+            v: document.getElementById('val-v'),
+            a: document.getElementById('val-a')
+        };
+
+        // Update display values on input
+        Object.keys(inputs).forEach(key => {
+            inputs[key].addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value).toFixed(key === 'damp' ? 2 : 1);
+                let unit = "";
+                if(key === 'amp') unit = " m";
+                if(key === 'freq') unit = " Hz";
+                if(key === 'phase') unit = " rad";
+                if(key === 'waveSpeed') unit = " m/s";
+                displays[key].innerText = val + unit;
+            });
+        });
+
+        let t = 0;
+        const clock = new THREE.Clock();
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            t = 0;
+        });
+
+        // --- Animation Loop ---
+        function updateSpring(yPos) {
+            const points = [];
+            const turns = 15;
+            const topY = 8;
+            const bottomY = yPos + 0.5; // Attach to top of sphere
+            const h = topY - bottomY;
+            
+            for(let i = 0; i <= 200; i++) {
+                let t_spring = i / 200;
+                let angle = t_spring * Math.PI * 2 * turns;
+                let r = 0.3;
+                points.push(new THREE.Vector3(Math.cos(angle)*r, topY - t_spring*h, Math.sin(angle)*r));
+            }
+            springGeo.setFromPoints(points);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            let dt = clock.getDelta();
+            t += dt;
+
+            // Read Parameters
+            const A = parseFloat(inputs.amp.value);
+            const f = parseFloat(inputs.freq.value);
+            const phi = parseFloat(inputs.phase.value);
+            const zeta = parseFloat(inputs.damp.value);
+            const vw = parseFloat(inputs.waveSpeed.value);
+
+            // Physics Calculations
+            const omega = 2 * Math.PI * f;
+            const k = omega / vw;
+            
+            const dampFactor = Math.exp(-zeta * t);
+            const y = A * dampFactor * Math.cos(omega * t + phi);
+            
+            // Velocity and Acceleration (ignoring damping for vector simplicity as per spec)
+            const v = -A * omega * Math.sin(omega * t + phi);
+            const a = -omega * omega * y;
+
+            // Update Primary Oscillator
+            primaryOscillator.position.y = y;
+
+            // Update Reference Circle & Ghost Particle
+            refCircle.scale.set(A, A, 1);
+            // Projection: x = -A*sin(wt+phi), y = A*cos(wt+phi) ensures y matches exactly
+            ghostParticle.position.set(-A * Math.sin(omega * t + phi), A * Math.cos(omega * t + phi), 0);
+
+            // Update Spring
+            updateSpring(y);
+
+            // Update Wave Train
+            for (let i = 0; i < numWaveParticles; i++) {
+                let zi = (i + 1) * waveSpacing;
+                let yi = A * Math.cos(omega * t - k * zi + phi);
+                waveSpheres[i].position.set(0, yi, zi);
+            }
+
+            // Update Vectors
+            const vScale = 0.3;
+            const aScale = 0.08;
+
+            if (Math.abs(v) > 0.01) {
+                velArrow.setDirection(new THREE.Vector3(0, Math.sign(v), 0));
+                velArrow.setLength(Math.abs(v) * vScale, 0.3, 0.2);
+                velArrow.position.set(0.7, y, 0);
+                velArrow.visible = true;
+            } else {
+                velArrow.visible = false;
+            }
+
+            if (Math.abs(a) > 0.01) {
+                accArrow.setDirection(new THREE.Vector3(0, Math.sign(a), 0));
+                accArrow.setLength(Math.abs(a) * aScale, 0.3, 0.2);
+                accArrow.position.set(-0.7, y, 0);
+                accArrow.visible = true;
+            } else {
+                accArrow.visible = false;
+            }
+
+            // Update Formula Card
+            formulaDisplays.y.innerText = (y >= 0 ? "+" : "") + y.toFixed(2);
+            formulaDisplays.v.innerText = (v >= 0 ? "+" : "") + v.toFixed(2);
+            formulaDisplays.a.innerText = (a >= 0 ? "+" : "") + a.toFixed(2);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start Animation
+        animate();
+    </script>
+</body>
+</html>

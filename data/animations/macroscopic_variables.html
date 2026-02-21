@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thermodynamic Macroscopic Variables Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent-blue: #4361EE;
+            --accent-red: #FF3366;
+            --accent-green: #06D6A0;
+            --accent-orange: #F77F00;
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            flex: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+        }
+
+        #formula-card h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .math-equation {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--accent-blue);
+        }
+
+        .live-values {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            background: rgba(0,0,0,0.03);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .live-values span {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* Control Panel */
+        #ui-panel {
+            width: 25%;
+            min-width: 320px;
+            max-width: 400px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid var(--glass-border);
+            box-shadow: -8px 0 32px rgba(0, 0, 0, 0.05);
+            padding: 30px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .panel-header {
+            font-size: 1.2rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-main);
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding-bottom: 15px;
+            margin-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.05);
+            padding: 4px 8px;
+            border-radius: 6px;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ffffff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            border: 2px solid var(--text-main);
+        }
+
+        /* Specific Slider Colors */
+        #temp-slider::-webkit-slider-runnable-track {
+            background: linear-gradient(90deg, var(--accent-blue) 0%, var(--accent-red) 100%);
+        }
+        #temp-slider::-webkit-slider-thumb { border-color: var(--accent-red); }
+
+        #vol-slider::-webkit-slider-runnable-track { background: #94A3B8; }
+        #vol-slider::-webkit-slider-thumb { border-color: var(--accent-green); }
+
+        #mol-slider::-webkit-slider-runnable-track { background: #94A3B8; }
+        #mol-slider::-webkit-slider-thumb { border-color: #8B5CF6; }
+
+        .btn {
+            background: var(--text-main);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.1s, background 0.2s;
+            margin-top: auto;
+        }
+
+        .btn:hover {
+            background: #334155;
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #ui-panel { width: 100%; height: 40%; max-width: none; border-left: none; border-top: 1px solid var(--glass-border); }
+            #canvas-container { height: 60%; }
+            #formula-card { transform: scale(0.8); transform-origin: top left; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <h2>Ideal Gas Law</h2>
+            <div class="math-equation">PV = nRT</div>
+            <div class="live-values">
+                (<span id="val-P" style="color: var(--accent-orange)">0</span> Pa) &times; 
+                (<span id="val-V" style="color: var(--accent-green)">0</span> m³) = <br>
+                (<span id="val-n" style="color: #8B5CF6">0</span> mol) &times; 8.314 &times; 
+                (<span id="val-T" style="color: var(--accent-red)">0</span> K)
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <div class="panel-header">Controls</div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Temperature (T)</span>
+                <span class="control-value"><span id="lbl-T">300</span> K</span>
+            </div>
+            <input type="range" id="temp-slider" min="100" max="1000" step="10" value="300">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Volume (V)</span>
+                <span class="control-value"><span id="lbl-V">2.5</span> m³</span>
+            </div>
+            <input type="range" id="vol-slider" min="1.0" max="5.0" step="0.1" value="2.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Amount (n)</span>
+                <span class="control-value"><span id="lbl-n">1.0</span> mol</span>
+            </div>
+            <input type="range" id="mol-slider" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <button class="btn" id="btn-pause">Pause Simulation</button>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics & State Variables ---
+        const R = 8.314; // Universal Gas Constant
+        let state = {
+            T: 300,
+            V: 2.5,
+            n: 1.0,
+            P: 0,
+            isPaused: false
+        };
+
+        // Constants for visual mapping
+        const CYLINDER_RADIUS = 10;
+        const VOL_TO_HEIGHT = 6; // V=1 -> h=6, V=5 -> h=30
+        const MAX_PARTICLES = 500;
+        const PARTICLE_RADIUS = 0.4;
+        const BASE_SPEED = 0.4; // Speed at T=300
+
+        // Colors
+        const COLOR_COLD = new THREE.Color(0x4361EE);
+        const COLOR_HOT = new THREE.Color(0xFF3366);
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Light background to match UI
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.Fog(0xf0f4f8, 60, 120);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(40, 25, 50);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 15, 0);
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Don't go too far below ground
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(20, 40, 20);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 30;
+        dirLight.shadow.camera.bottom = -30;
+        dirLight.shadow.camera.left = -30;
+        dirLight.shadow.camera.right = 30;
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 0.5, 50);
+        pointLight.position.set(-15, 15, -15);
+        scene.add(pointLight);
+
+        // --- Geometry & Materials ---
+
+        // 1. Cylinder (Glass)
+        const cylinderGeo = new THREE.CylinderGeometry(CYLINDER_RADIUS, CYLINDER_RADIUS, 35, 64, 1, true);
+        const glassMat = new THREE.MeshPhysicalMaterial({
+            color: 0xE2E8F0,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.8, // glass-like
+            transparent: true,
+            opacity: 1,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const cylinder = new THREE.Mesh(cylinderGeo, glassMat);
+        cylinder.position.y = 17.5; // Base at y=0
+        scene.add(cylinder);
+
+        // Base plate
+        const baseGeo = new THREE.CylinderGeometry(CYLINDER_RADIUS + 0.5, CYLINDER_RADIUS + 0.5, 1, 64);
+        const metalMat = new THREE.MeshStandardMaterial({ color: 0x94A3B8, metalness: 0.7, roughness: 0.3 });
+        const base = new THREE.Mesh(baseGeo, metalMat);
+        base.position.y = -0.5;
+        base.receiveShadow = true;
+        scene.add(base);
+
+        // 2. Piston
+        const pistonGeo = new THREE.CylinderGeometry(CYLINDER_RADIUS - 0.1, CYLINDER_RADIUS - 0.1, 1.5, 64);
+        const piston = new THREE.Mesh(pistonGeo, metalMat);
+        piston.castShadow = true;
+        piston.receiveShadow = true;
+        scene.add(piston);
+
+        // Piston Rod
+        const rodGeo = new THREE.CylinderGeometry(1, 1, 20, 16);
+        const rod = new THREE.Mesh(rodGeo, metalMat);
+        rod.position.y = 10;
+        piston.add(rod);
+
+        // Force Arrow (External Pressure)
+        const forceArrow = new THREE.ArrowHelper(
+            new THREE.Vector3(0, -1, 0), 
+            new THREE.Vector3(0, 20, 0), 
+            10, 
+            0xF77F00, 
+            2, 1
+        );
+        piston.add(forceArrow);
+
+        // 3. Pressure Gauge
+        const gaugeGroup = new THREE.Group();
+        gaugeGroup.position.set(CYLINDER_RADIUS, 10, 0);
+        gaugeGroup.rotation.z = -Math.PI / 2;
+        scene.add(gaugeGroup);
+
+        // Gauge Body
+        const gaugeBodyGeo = new THREE.CylinderGeometry(3, 3, 1, 32);
+        const gaugeBodyMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.2 });
+        const gaugeBody = new THREE.Mesh(gaugeBodyGeo, gaugeBodyMat);
+        gaugeGroup.add(gaugeBody);
+
+        // Gauge Face
+        const gaugeFaceGeo = new THREE.CylinderGeometry(2.8, 2.8, 1.1, 32);
+        const gaugeFaceMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const gaugeFace = new THREE.Mesh(gaugeFaceGeo, gaugeFaceMat);
+        gaugeGroup.add(gaugeFace);
+
+        // Gauge Needle
+        const needleGeo = new THREE.BoxGeometry(0.2, 0.1, 2.4);
+        needleGeo.translate(0, 0, 1.2); // Pivot at end
+        const needleMat = new THREE.MeshBasicMaterial({ color: 0xFF3366 });
+        const needle = new THREE.Mesh(needleGeo, needleMat);
+        needle.position.y = 0.6;
+        gaugeGroup.add(needle);
+
+        // 4. Gas Particles (InstancedMesh)
+        const particleGeo = new THREE.SphereGeometry(PARTICLE_RADIUS, 16, 16);
+        const particleMat = new THREE.MeshPhongMaterial({ 
+            color: 0xffffff,
+            shininess: 100
+        });
+        const instancedParticles = new THREE.InstancedMesh(particleGeo, particleMat, MAX_PARTICLES);
+        instancedParticles.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        scene.add(instancedParticles);
+
+        // Particle Data Arrays
+        const particlePositions = new Float32Array(MAX_PARTICLES * 3);
+        const particleVelocities = new Float32Array(MAX_PARTICLES * 3);
+        const dummy = new THREE.Object3D();
+        const colorObj = new THREE.Color();
+
+        // Initialize Particles
+        function initParticles() {
+            for (let i = 0; i < MAX_PARTICLES; i++) {
+                // Random position within initial volume (V=2.5 -> h=15)
+                const r = (CYLINDER_RADIUS - PARTICLE_RADIUS) * Math.sqrt(Math.random());
+                const theta = Math.random() * 2 * Math.PI;
+                const x = r * Math.cos(theta);
+                const z = r * Math.sin(theta);
+                const y = PARTICLE_RADIUS + Math.random() * (15 - 2 * PARTICLE_RADIUS);
+
+                particlePositions[i * 3] = x;
+                particlePositions[i * 3 + 1] = y;
+                particlePositions[i * 3 + 2] = z;
+
+                // Random velocity direction
+                const vx = (Math.random() - 0.5) * 2;
+                const vy = (Math.random() - 0.5) * 2;
+                const vz = (Math.random() - 0.5) * 2;
+                const vVec = new THREE.Vector3(vx, vy, vz).normalize();
+                
+                particleVelocities[i * 3] = vVec.x;
+                particleVelocities[i * 3 + 1] = vVec.y;
+                particleVelocities[i * 3 + 2] = vVec.z;
+
+                // Set initial matrix
+                dummy.position.set(x, y, z);
+                dummy.updateMatrix();
+                instancedParticles.setMatrixAt(i, dummy.matrix);
+                instancedParticles.setColorAt(i, COLOR_COLD);
+            }
+            instancedParticles.instanceMatrix.needsUpdate = true;
+            if(instancedParticles.instanceColor) instancedParticles.instanceColor.needsUpdate = true;
+        }
+        initParticles();
+
+        // Velocity Vectors (Arrows on a few particles)
+        const NUM_ARROWS = 15;
+        const velocityArrows = [];
+        for(let i=0; i<NUM_ARROWS; i++) {
+            const arrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 2, 0x06D6A0, 0.5, 0.3);
+            scene.add(arrow);
+            velocityArrows.push(arrow);
+        }
+
+
+        // --- Physics & Update Logic ---
+
+        function updatePhysicsState() {
+            // 1. Calculate Pressure: P = nRT / V
+            state.P = (state.n * R * state.T) / state.V;
+            
+            // 2. Update UI Text
+            document.getElementById('lbl-T').innerText = state.T;
+            document.getElementById('lbl-V').innerText = state.V.toFixed(1);
+            document.getElementById('lbl-n').innerText = state.n.toFixed(1);
+            
+            document.getElementById('val-P').innerText = Math.round(state.P);
+            document.getElementById('val-V').innerText = state.V.toFixed(1);
+            document.getElementById('val-n').innerText = state.n.toFixed(1);
+            document.getElementById('val-T').innerText = state.T;
+
+            // 3. Update Piston Position
+            const targetHeight = state.V * VOL_TO_HEIGHT;
+            piston.position.y = targetHeight;
+
+            // Update Force Arrow length based on Pressure (Visual scaling)
+            // Max P is approx 16600. Map to length 5 to 25
+            const forceLen = 5 + (state.P / 16600) * 20;
+            forceArrow.setLength(forceLen, forceLen*0.2, forceLen*0.1);
+            forceArrow.position.y = 1.5 + forceLen; // Keep base on piston
+
+            // 4. Update Gauge Needle
+            // Map P (0 to 20000) to Angle (1.25 PI to -0.25 PI)
+            const maxP = 20000;
+            const angleRange = 1.5 * Math.PI;
+            const startAngle = 1.25 * Math.PI;
+            let targetAngle = startAngle - (state.P / maxP) * angleRange;
+            targetAngle = Math.max(-0.25 * Math.PI, Math.min(1.25 * Math.PI, targetAngle));
+            needle.rotation.y = targetAngle;
+
+            // 5. Update Particle Count
+            instancedParticles.count = Math.floor((state.n / 2.0) * MAX_PARTICLES);
+
+            // 6. Update Particle Colors & Speeds based on T
+            const colorLerpFactor = (state.T - 100) / 900;
+            colorObj.lerpColors(COLOR_COLD, COLOR_HOT, colorLerpFactor);
+            
+            const targetSpeed = BASE_SPEED * Math.sqrt(state.T / 300);
+
+            for (let i = 0; i < instancedParticles.count; i++) {
+                instancedParticles.setColorAt(i, colorObj);
+                
+                // Normalize current velocity and scale to new speed
+                let vx = particleVelocities[i*3];
+                let vy = particleVelocities[i*3+1];
+                let vz = particleVelocities[i*3+2];
+                let len = Math.sqrt(vx*vx + vy*vy + vz*vz);
+                
+                particleVelocities[i*3] = (vx / len) * targetSpeed;
+                particleVelocities[i*3+1] = (vy / len) * targetSpeed;
+                particleVelocities[i*3+2] = (vz / len) * targetSpeed;
+            }
+            if(instancedParticles.instanceColor) instancedParticles.instanceColor.needsUpdate = true;
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('temp-slider').addEventListener('input', (e) => {
+            state.T = parseInt(e.target.value);
+            updatePhysicsState();
+        });
+
+        document.getElementById('vol-slider').addEventListener('input', (e) => {
+            state.V = parseFloat(e.target.value);
+            updatePhysicsState();
+        });
+
+        document.getElementById('mol-slider').addEventListener('input', (e) => {
+            state.n = parseFloat(e.target.value);
+            updatePhysicsState();
+        });
+
+        const btnPause = document.getElementById('btn-pause');
+        btnPause.addEventListener('click', () => {
+            state.isPaused = !state.isPaused;
+            btnPause.innerText = state.isPaused ? "Resume Simulation" : "Pause Simulation";
+            btnPause.style.background = state.isPaused ? "#FF3366" : "";
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Initial State Update
+        updatePhysicsState();
+
+        // --- Animation Loop ---
+        const vVec = new THREE.Vector3();
+        const pVec = new THREE.Vector3();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!state.isPaused) {
+                const currentHeight = state.V * VOL_TO_HEIGHT;
+                const maxRadiusSq = Math.pow(CYLINDER_RADIUS - PARTICLE_RADIUS, 2);
+
+                for (let i = 0; i < instancedParticles.count; i++) {
+                    let px = particlePositions[i*3];
+                    let py = particlePositions[i*3+1];
+                    let pz = particlePositions[i*3+2];
+
+                    let vx = particleVelocities[i*3];
+                    let vy = particleVelocities[i*3+1];
+                    let vz = particleVelocities[i*3+2];
+
+                    // Move
+                    px += vx;
+                    py += vy;
+                    pz += vz;
+
+                    // Collision: Floor
+                    if (py < PARTICLE_RADIUS) {
+                        py = PARTICLE_RADIUS;
+                        vy *= -1;
+                    }
+
+                    // Collision: Piston (Ceiling)
+                    if (py > currentHeight - PARTICLE_RADIUS) {
+                        py = currentHeight - PARTICLE_RADIUS;
+                        vy *= -1;
+                    }
+
+                    // Collision: Cylinder Walls
+                    let distSq = px*px + pz*pz;
+                    if (distSq > maxRadiusSq) {
+                        let dist = Math.sqrt(distSq);
+                        // Normal vector at collision point
+                        let nx = px / dist;
+                        let nz = pz / dist;
+                        
+                        // Dot product v . n
+                        let dot = vx * nx + vz * nz;
+                        
+                        // Reflect velocity: v = v - 2(v.n)n
+                        vx -= 2 * dot * nx;
+                        vz -= 2 * dot * nz;
+
+                        // Snap position to boundary
+                        px = nx * (CYLINDER_RADIUS - PARTICLE_RADIUS);
+                        pz = nz * (CYLINDER_RADIUS - PARTICLE_RADIUS);
+                    }
+
+                    // Save back
+                    particlePositions[i*3] = px;
+                    particlePositions[i*3+1] = py;
+                    particlePositions[i*3+2] = pz;
+                    particleVelocities[i*3] = vx;
+                    particleVelocities[i*3+1] = vy;
+                    particleVelocities[i*3+2] = vz;
+
+                    // Update Matrix
+                    dummy.position.set(px, py, pz);
+                    dummy.updateMatrix();
+                    instancedParticles.setMatrixAt(i, dummy.matrix);
+
+                    // Update Velocity Arrows for first N particles
+                    if (i < NUM_ARROWS) {
+                        if (i < instancedParticles.count) {
+                            velocityArrows[i].visible = true;
+                            velocityArrows[i].position.set(px, py, pz);
+                            vVec.set(vx, vy, vz).normalize();
+                            velocityArrows[i].setDirection(vVec);
+                            // Scale arrow length by speed
+                            let speed = Math.sqrt(vx*vx + vy*vy + vz*vz);
+                            velocityArrows[i].setLength(speed * 3, speed, speed*0.5);
+                        } else {
+                            velocityArrows[i].visible = false;
+                        }
+                    }
+                }
+                instancedParticles.instanceMatrix.needsUpdate = true;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

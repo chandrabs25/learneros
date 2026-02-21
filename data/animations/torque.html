@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torque & Rotational Dynamics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light: #f0f4f8;
+            --bg-white: #ffffff;
+            --primary: #4361EE;
+            --danger: #FF3366;
+            --purple: #7209B7;
+            --warning: #F77F00;
+            --dark: #2B2D42;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-white) 100%);
+            color: var(--dark);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphic Control Panel */
+        #control-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25%;
+            min-width: 300px;
+            height: 100vh;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--panel-border);
+            box-shadow: var(--shadow);
+            z-index: 10;
+            padding: 24px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+            border-bottom: 2px solid var(--bg-light);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--primary);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+
+        /* Specific slider colors */
+        #slider-f::-webkit-slider-thumb { background: var(--danger); }
+        #slider-phi::-webkit-slider-thumb { background: #10ac84; }
+        #slider-m::-webkit-slider-thumb { background: var(--dark); }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #3651d4;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .math-label {
+            width: 40px;
+            display: inline-block;
+        }
+
+        .highlight-tau { color: var(--purple); font-weight: bold; }
+        .highlight-d { color: var(--warning); font-weight: bold; }
+        .highlight-f { color: var(--danger); font-weight: bold; }
+        .highlight-r { color: var(--primary); font-weight: bold; }
+
+        /* 3D Labels */
+        .label-3d {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: bold;
+            font-size: 14px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+        }
+        
+        #label-r { color: var(--primary); }
+        #label-f { color: var(--danger); }
+        #label-tau { color: var(--purple); }
+        #label-d { color: var(--warning); }
+
+        @media (max-width: 768px) {
+            #control-panel {
+                width: 100%;
+                height: 40vh;
+                top: auto;
+                bottom: 0;
+                border-left: none;
+                border-top: 1px solid var(--panel-border);
+            }
+            #formula-card {
+                top: 10px;
+                left: 10px;
+                padding: 12px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- 3D Overlays -->
+    <div id="label-r" class="label-3d">r</div>
+    <div id="label-f" class="label-3d">F</div>
+    <div id="label-tau" class="label-3d">τ</div>
+    <div id="label-d" class="label-3d">d</div>
+
+    <div id="formula-card">
+        <div class="formula-title">Rotational Dynamics</div>
+        <div class="math-line">
+            <span class="highlight-tau">τ&#8407;</span>&nbsp;=&nbsp;<span class="highlight-r">r&#8407;</span>&nbsp;&times;&nbsp;<span class="highlight-f">F&#8407;</span>
+        </div>
+        <div class="math-line">
+            <span class="math-label">|τ| =</span> <span id="val-tau" class="highlight-tau">0.00</span> N·m
+        </div>
+        <div class="math-line">
+            <span class="math-label">d =</span> <span id="val-d" class="highlight-d">0.00</span> m
+        </div>
+        <div class="math-line" style="font-size: 0.85rem; color: #666; margin-top: 12px;">
+            I = <span id="val-i">0.00</span> kg·m²<br>
+            α = <span id="val-alpha">0.00</span> rad/s²
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <h2>Parameters</h2>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Force Magnitude (F)</span>
+                <span class="value-display"><span id="disp-f">50</span> N</span>
+            </div>
+            <input type="range" id="slider-f" min="0" max="100" step="1" value="50">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Position (r)</span>
+                <span class="value-display"><span id="disp-r">3.0</span> m</span>
+            </div>
+            <input type="range" id="slider-r" min="0.5" max="5.0" step="0.1" value="3.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Angle of Application (φ)</span>
+                <span class="value-display"><span id="disp-phi">90</span>°</span>
+            </div>
+            <input type="range" id="slider-phi" min="0" max="360" step="1" value="90">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Mass of Rod (M)</span>
+                <span class="value-display"><span id="disp-m">5.0</span> kg</span>
+            </div>
+            <input type="range" id="slider-m" min="1" max="20" step="0.5" value="5">
+        </div>
+
+        <button id="btn-impulse">Apply Impulse</button>
+        
+        <div style="margin-top: auto; font-size: 0.8rem; color: #666; line-height: 1.4;">
+            <strong>Right-Hand Rule:</strong> Point fingers along <span style="color:var(--primary)">r</span>, curl towards <span style="color:var(--danger)">F</span>. Thumb points along <span style="color:var(--purple)">τ</span>.<br><br>
+            <strong>Moment Arm (d):</strong> The perpendicular distance from pivot to the force's line of action.
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Setup Scene, Camera, Renderer ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Light background
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // Position camera to see XY plane clearly, slightly angled
+        camera.position.set(4, 4, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(2.5, 0, 0); // Look at center of rod
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // --- Grid ---
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xe0e0e0);
+        gridHelper.rotation.x = Math.PI / 2; // Align to XY plane
+        scene.add(gridHelper);
+
+        // --- Colors ---
+        const colorPivot = 0x2B2D42;
+        const colorRod = 0x999999;
+        const colorR = 0x4361EE;
+        const colorF = 0xFF3366;
+        const colorTau = 0x7209B7;
+        const colorD = 0xF77F00;
+
+        // --- 3D Objects ---
+        
+        // Pivot
+        const pivotGeo = new THREE.SphereGeometry(0.2, 32, 32);
+        const pivotMat = new THREE.MeshPhongMaterial({ color: colorPivot });
+        const pivot = new THREE.Mesh(pivotGeo, pivotMat);
+        scene.add(pivot);
+
+        // Main Rod (Fixed length 5, thickness varies with mass)
+        const rodLength = 5.0;
+        const rodGeo = new THREE.CylinderGeometry(0.1, 0.1, rodLength, 32);
+        rodGeo.translate(0, rodLength / 2, 0); // Move origin to end
+        rodGeo.rotateZ(-Math.PI / 2); // Align along X axis
+        const rodMat = new THREE.MeshPhongMaterial({ 
+            color: colorRod, 
+            transparent: true, 
+            opacity: 0.6 
+        });
+        const rod = new THREE.Mesh(rodGeo, rodMat);
+        scene.add(rod);
+
+        // Ghost Rod (For animation)
+        const ghostMat = new THREE.MeshPhongMaterial({ 
+            color: 0x10ac84, 
+            transparent: true, 
+            opacity: 0.3,
+            wireframe: false
+        });
+        const ghostRod = new THREE.Mesh(rodGeo, ghostMat);
+        scene.add(ghostRod);
+
+        // Vectors (ArrowHelpers)
+        const origin = new THREE.Vector3(0, 0, 0);
+        
+        // r Vector
+        const rArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), origin, 1, colorR, 0.3, 0.2);
+        // Make r arrow thicker
+        rArrow.line.material.linewidth = 3;
+        scene.add(rArrow);
+
+        // F Vector
+        const fArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), origin, 1, colorF, 0.4, 0.25);
+        scene.add(fArrow);
+
+        // Tau Vector
+        const tauArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,1), origin, 1, colorTau, 0.5, 0.3);
+        scene.add(tauArrow);
+
+        // Line of Action (Faint dashed line)
+        const lineOfActionMat = new THREE.LineDashedMaterial({ color: 0x888888, dashSize: 0.2, gapSize: 0.2 });
+        const lineOfActionGeo = new THREE.BufferGeometry();
+        const lineOfAction = new THREE.Line(lineOfActionGeo, lineOfActionMat);
+        scene.add(lineOfAction);
+
+        // Moment Arm (d) (Orange dashed line)
+        const dLineMat = new THREE.LineDashedMaterial({ color: colorD, dashSize: 0.15, gapSize: 0.1, linewidth: 2 });
+        const dLineGeo = new THREE.BufferGeometry();
+        const dLine = new THREE.Line(dLineGeo, dLineMat);
+        scene.add(dLine);
+
+        // --- State Variables ---
+        let state = {
+            F: 50,
+            r: 3.0,
+            phi: 90,
+            M: 5.0,
+            tau: 0,
+            d: 0,
+            I: 0,
+            alpha: 0
+        };
+
+        let animState = {
+            active: false,
+            angle: 0,
+            omega: 0,
+            time: 0
+        };
+
+        // --- DOM Elements ---
+        const sliders = {
+            F: document.getElementById('slider-f'),
+            r: document.getElementById('slider-r'),
+            phi: document.getElementById('slider-phi'),
+            M: document.getElementById('slider-m')
+        };
+        const displays = {
+            F: document.getElementById('disp-f'),
+            r: document.getElementById('disp-r'),
+            phi: document.getElementById('disp-phi'),
+            M: document.getElementById('disp-m')
+        };
+        const vals = {
+            tau: document.getElementById('val-tau'),
+            d: document.getElementById('val-d'),
+            I: document.getElementById('val-i'),
+            alpha: document.getElementById('val-alpha')
+        };
+        const labels = {
+            r: document.getElementById('label-r'),
+            F: document.getElementById('label-f'),
+            tau: document.getElementById('label-tau'),
+            d: document.getElementById('label-d')
+        };
+
+        // --- Physics & Geometry Update ---
+        function updatePhysics() {
+            // Read state
+            state.F = parseFloat(sliders.F.value);
+            state.r = parseFloat(sliders.r.value);
+            state.phi = parseFloat(sliders.phi.value);
+            state.M = parseFloat(sliders.M.value);
+
+            // Update displays
+            displays.F.innerText = state.F;
+            displays.r.innerText = state.r.toFixed(1);
+            displays.phi.innerText = state.phi;
+            displays.M.innerText = state.M.toFixed(1);
+
+            // Math
+            const phiRad = state.phi * Math.PI / 180;
+            state.tau = state.r * state.F * Math.sin(phiRad);
+            state.d = Math.abs(state.r * Math.sin(phiRad));
+            
+            // Moment of Inertia of rod pivoted at end: I = 1/3 M L^2
+            // We use the full rodLength (5.0) for the physical rod's inertia
+            state.I = (1/3) * state.M * Math.pow(rodLength, 2); 
+            state.alpha = state.tau / state.I;
+
+            // Update Formula Card
+            vals.tau.innerText = Math.abs(state.tau).toFixed(2);
+            vals.d.innerText = state.d.toFixed(2);
+            vals.I.innerText = state.I.toFixed(2);
+            vals.alpha.innerText = Math.abs(state.alpha).toFixed(2);
+
+            // --- Update 3D Visuals ---
+
+            // Rod thickness based on mass
+            const thickness = 0.05 + (state.M * 0.015);
+            rod.scale.set(1, thickness/0.1, thickness/0.1);
+            ghostRod.scale.set(1, thickness/0.1, thickness/0.1);
+
+            // r Vector
+            rArrow.setLength(state.r, 0.3, 0.2);
+
+            // F Vector
+            const fVisLength = state.F / 20; // Scale down for visual
+            const fDir = new THREE.Vector3(Math.cos(phiRad), Math.sin(phiRad), 0).normalize();
+            const pApp = new THREE.Vector3(state.r, 0, 0);
+            
+            fArrow.position.copy(pApp);
+            fArrow.setDirection(fDir);
+            
+            if (fVisLength < 0.01) {
+                fArrow.visible = false;
+            } else {
+                fArrow.visible = true;
+                fArrow.setLength(fVisLength, 0.4, 0.25);
+            }
+
+            // Tau Vector (Cross Product)
+            // r x F. Z direction depends on sign of tau.
+            const tauVisLength = Math.abs(state.tau) / 30; // Scale down
+            if (tauVisLength < 0.01) {
+                tauArrow.visible = false;
+            } else {
+                tauArrow.visible = true;
+                const tauDir = new THREE.Vector3(0, 0, Math.sign(state.tau));
+                tauArrow.setDirection(tauDir);
+                tauArrow.setLength(tauVisLength, 0.5, 0.3);
+            }
+
+            // Line of Action
+            const p1 = new THREE.Vector3().copy(pApp).addScaledVector(fDir, 15);
+            const p2 = new THREE.Vector3().copy(pApp).addScaledVector(fDir, -15);
+            lineOfActionGeo.setFromPoints([p1, p2]);
+            lineOfAction.computeLineDistances();
+
+            // Moment Arm (d)
+            // Intersection point C = (r*sin^2(phi), -r*sin(phi)*cos(phi), 0)
+            const cx = state.r * Math.pow(Math.sin(phiRad), 2);
+            const cy = -state.r * Math.sin(phiRad) * Math.cos(phiRad);
+            const pC = new THREE.Vector3(cx, cy, 0);
+            
+            dLineGeo.setFromPoints([origin, pC]);
+            dLine.computeLineDistances();
+
+            if (state.d < 0.01) {
+                dLine.visible = false;
+            } else {
+                dLine.visible = true;
+            }
+        }
+
+        // Event Listeners for Sliders
+        Object.values(sliders).forEach(slider => {
+            slider.addEventListener('input', updatePhysics);
+        });
+
+        // Impulse Button
+        document.getElementById('btn-impulse').addEventListener('click', () => {
+            animState.active = true;
+            animState.angle = 0;
+            // Provide an initial angular velocity proportional to alpha
+            // Scale it so it looks good visually
+            animState.omega = state.alpha * 0.5; 
+            animState.time = 0;
+            ghostRod.rotation.z = 0;
+        });
+
+        // --- Label Positioning ---
+        function updateLabels() {
+            const widthHalf = window.innerWidth / 2;
+            const heightHalf = window.innerHeight / 2;
+
+            function toScreenXY(pos3D, element) {
+                if (!element) return;
+                const pos = pos3D.clone();
+                pos.project(camera);
+                
+                // Check if behind camera
+                if (pos.z > 1) {
+                    element.style.display = 'none';
+                    return;
+                }
+                
+                element.style.display = 'block';
+                element.style.left = (pos.x * widthHalf + widthHalf) + 'px';
+                element.style.top = (-(pos.y * heightHalf) + heightHalf) + 'px';
+            }
+
+            // Position r label
+            toScreenXY(new THREE.Vector3(state.r / 2, -0.3, 0), labels.r);
+
+            // Position F label
+            const phiRad = state.phi * Math.PI / 180;
+            const fVisLength = state.F / 20;
+            const fDir = new THREE.Vector3(Math.cos(phiRad), Math.sin(phiRad), 0);
+            const fPos = new THREE.Vector3(state.r, 0, 0).addScaledVector(fDir, fVisLength / 2);
+            // Offset slightly to not overlap arrow
+            fPos.add(new THREE.Vector3(-fDir.y, fDir.x, 0).multiplyScalar(0.3));
+            if (state.F > 0) toScreenXY(fPos, labels.F);
+            else labels.F.style.display = 'none';
+
+            // Position Tau label
+            const tauVisLength = Math.abs(state.tau) / 30;
+            const tauPos = new THREE.Vector3(0, 0, Math.sign(state.tau) * (tauVisLength + 0.4));
+            if (Math.abs(state.tau) > 0.1) toScreenXY(tauPos, labels.tau);
+            else labels.tau.style.display = 'none';
+
+            // Position d label
+            const cx = state.r * Math.pow(Math.sin(phiRad), 2);
+            const cy = -state.r * Math.sin(phiRad) * Math.cos(phiRad);
+            const dPos = new THREE.Vector3(cx / 2, cy / 2, 0);
+            // Offset slightly
+            const dDir = new THREE.Vector3(cx, cy, 0).normalize();
+            dPos.add(new THREE.Vector3(-dDir.y, dDir.x, 0).multiplyScalar(0.2));
+            if (state.d > 0.1) toScreenXY(dPos, labels.d);
+            else labels.d.style.display = 'none';
+        }
+
+        // --- Window Resize ---
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = clock.getDelta();
+
+            controls.update();
+
+            // Handle Ghost Rod Animation
+            if (animState.active) {
+                animState.angle += animState.omega * dt;
+                // Apply artificial friction/damping
+                animState.omega *= 0.95; 
+                animState.time += dt;
+
+                ghostRod.rotation.z = animState.angle;
+
+                // Stop after 5 seconds or when very slow
+                if (animState.time > 5 || Math.abs(animState.omega) < 0.001) {
+                    animState.active = false;
+                    // Fade back to 0 or leave it? Let's leave it to show final position
+                }
+            } else {
+                // If not animating, sync ghost rod with main rod
+                ghostRod.rotation.z = 0;
+            }
+
+            renderer.render(scene, camera);
+            
+            // Update HTML labels after rendering
+            updateLabels();
+        }
+
+        // Initialize
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

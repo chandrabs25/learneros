@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutherford Scattering Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #102a43;
+            --text-muted: #486581;
+            --accent-gold: #FFD700;
+            --accent-red: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-green: #06D6A0;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            position: absolute;
+            z-index: 10;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #controls-panel {
+            top: 24px;
+            right: 24px;
+            width: 320px;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+        }
+
+        #formula-card {
+            top: 24px;
+            left: 24px;
+            width: 280px;
+        }
+
+        h1, h2 {
+            margin: 0;
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        h2 {
+            font-size: 1rem;
+            color: var(--accent-blue);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-red);
+            background: rgba(255, 51, 102, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #btn-fire {
+            background: var(--accent-blue);
+            color: white;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        #btn-fire:hover {
+            background: #324fc7;
+            transform: translateY(-1px);
+        }
+
+        #btn-clear {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        #btn-clear:hover {
+            background: #cbd5e1;
+        }
+
+        .formula-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .formula-line:last-child {
+            border-bottom: none;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+        }
+
+        .label-overlay {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #854d0e;
+            background: rgba(255, 215, 0, 0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            pointer-events: none;
+            transform: translate(-50%, -150%);
+            z-index: 5;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            font-size: 0.75rem;
+            margin-top: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+    <div id="nucleus-label" class="label-overlay">Gold Nucleus (¹⁹⁷₇₉Au)</div>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>Scattering Physics</h2>
+        <div class="formula-line">
+            <span>Closest Approach ($d$)</span>
+            <span class="math" id="val-d">0.00 fm</span>
+        </div>
+        <div class="formula-line">
+            <span>Scattering Angle ($\theta$)</span>
+            <span class="math" id="val-theta" style="color: var(--accent-blue); font-size: 1.1rem;">0.0°</span>
+        </div>
+        <div class="formula-line" style="font-size: 0.8rem; color: var(--text-muted); text-align: center; display: block;">
+            $\theta = 2 \cdot \cot^{-1}(2b/d)$
+        </div>
+    </div>
+
+    <div id="controls-panel" class="glass-panel">
+        <h1>Simulation Controls</h1>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Atomic Number (Z)</span>
+                <span class="val-display" id="disp-Z">79</span>
+            </div>
+            <input type="range" id="slider-Z" min="10" max="92" step="1" value="79">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Kinetic Energy (K)</span>
+                <span class="val-display" id="disp-K">5.5 MeV</span>
+            </div>
+            <input type="range" id="slider-K" min="1.0" max="10.0" step="0.1" value="5.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Impact Parameter (b)</span>
+                <span class="val-display" id="disp-b">1.2 fm</span>
+            </div>
+            <input type="range" id="slider-b" min="0.0" max="5.0" step="0.1" value="1.2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Beam Density</span>
+                <span class="val-display" id="disp-count">1</span>
+            </div>
+            <input type="range" id="slider-count" min="1" max="21" step="2" value="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Sim Speed</span>
+                <span class="val-display" id="disp-speed">1.0x</span>
+            </div>
+            <input type="range" id="slider-speed" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-clear">Clear Paths</button>
+            <button id="btn-fire">Fire Alpha</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #FFD700;"></div> Target</div>
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Alpha</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Velocity</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Path</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script>
+        // --- Configuration & State ---
+        const config = {
+            Z: 79,
+            K: 5.5,
+            b: 1.2,
+            count: 1,
+            speed: 1.0,
+            C: 0.08, // Physics scaling constant
+            startX: -25
+        };
+
+        let scene, camera, renderer, controls;
+        let nucleus, nucleusGlow;
+        let predictedGroup = new THREE.Group();
+        let particles = [];
+
+        // Colors
+        const colBg = new THREE.Color(0xf0f4f8);
+        const colTrail = new THREE.Color(0x4361EE);
+
+        // --- Initialization ---
+        function init() {
+            // Scene Setup
+            scene = new THREE.Scene();
+            scene.background = colBg;
+            scene.add(predictedGroup);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 0, 35);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.maxDistance = 100;
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(10, 20, 20);
+            scene.add(dirLight);
+
+            // Grid
+            const grid = new THREE.GridHelper(60, 60, 0xBCCCDC, 0xDFE7EF);
+            grid.rotation.x = Math.PI / 2;
+            grid.position.z = -2;
+            scene.add(grid);
+
+            createNucleus();
+            setupUI();
+            updatePhysicsState();
+
+            window.addEventListener('resize', onWindowResize);
+            animate();
+        }
+
+        // --- Objects ---
+        function createNucleus() {
+            if (nucleus) scene.remove(nucleus);
+
+            const radius = 0.2 * Math.pow(config.Z, 1/3);
+            
+            // Core
+            const geo = new THREE.SphereGeometry(radius, 32, 32);
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: 0xFFD700, 
+                metalness: 0.6, 
+                roughness: 0.2 
+            });
+            nucleus = new THREE.Mesh(geo, mat);
+            
+            // Glow
+            const glowGeo = new THREE.SphereGeometry(radius * 1.4, 32, 32);
+            const glowMat = new THREE.MeshBasicMaterial({
+                color: 0xFFD700,
+                transparent: true,
+                opacity: 0.3,
+                blending: THREE.AdditiveBlending,
+                depthWrite: false
+            });
+            nucleusGlow = new THREE.Mesh(glowGeo, glowMat);
+            nucleus.add(nucleusGlow);
+
+            // Internal Light
+            const pointLight = new THREE.PointLight(0xFFD700, 1.5, 20);
+            nucleus.add(pointLight);
+
+            scene.add(nucleus);
+        }
+
+        // --- Physics & Prediction ---
+        function updatePhysicsState() {
+            // Update Nucleus Size
+            const radius = 0.2 * Math.pow(config.Z, 1/3);
+            if(nucleus) {
+                nucleus.scale.setScalar(1); // Reset before applying new geometry scale implicitly
+                nucleus.geometry.dispose();
+                nucleus.geometry = new THREE.SphereGeometry(radius, 32, 32);
+                nucleusGlow.geometry.dispose();
+                nucleusGlow.geometry = new THREE.SphereGeometry(radius * 1.4, 32, 32);
+            }
+
+            // Calculate Math
+            const d = (2 * config.C * config.Z) / config.K;
+            let theta = 180;
+            if (config.b > 0.01) {
+                theta = 2 * Math.atan((config.C * config.Z) / (config.b * config.K)) * (180 / Math.PI);
+            }
+
+            // Update UI
+            document.getElementById('val-d').innerText = d.toFixed(2) + ' fm';
+            document.getElementById('val-theta').innerText = theta.toFixed(1) + '°';
+
+            drawPredictedPath(theta);
+        }
+
+        function drawPredictedPath(thetaDeg) {
+            // Clear old prediction
+            while(predictedGroup.children.length > 0){ 
+                const child = predictedGroup.children[0];
+                if(child.geometry) child.geometry.dispose();
+                if(child.material) child.material.dispose();
+                predictedGroup.remove(child); 
+            }
+
+            // 1. Simulate path instantly for dashed line
+            const pts = [];
+            let p = new THREE.Vector3(config.startX, config.b, 0);
+            let v = new THREE.Vector3(Math.sqrt(config.K), 0, 0);
+            let dt = 0.02;
+            
+            for(let i=0; i<3000; i++) {
+                pts.push(p.clone());
+                let r = p.length();
+                if(r < 0.05) break; // Avoid singularity
+                let a = p.clone().normalize().multiplyScalar((config.C * config.Z) / (r * r));
+                v.add(a.multiplyScalar(dt));
+                p.add(v.clone().multiplyScalar(dt));
+                if(p.x > 30 || p.y > 30 || p.y < -30) break;
+            }
+
+            const pathGeo = new THREE.BufferGeometry().setFromPoints(pts);
+            const pathMat = new THREE.LineDashedMaterial({
+                color: 0x4361EE, 
+                dashSize: 0.6, 
+                gapSize: 0.4,
+                transparent: true,
+                opacity: 0.5
+            });
+            const pathLine = new THREE.Line(pathGeo, pathMat);
+            pathLine.computeLineDistances();
+            predictedGroup.add(pathLine);
+
+            // 2. Impact Parameter Line (b)
+            if (config.b > 0) {
+                const bGeo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(config.startX, 0, 0),
+                    new THREE.Vector3(config.startX, config.b, 0)
+                ]);
+                const bMat = new THREE.LineDashedMaterial({color: 0xFF3366, dashSize: 0.3, gapSize: 0.2});
+                const bLine = new THREE.Line(bGeo, bMat);
+                bLine.computeLineDistances();
+                predictedGroup.add(bLine);
+            }
+
+            // 3. Scattering Angle Arc
+            if (config.b > 0.01 && thetaDeg < 179) {
+                const arcRadius = 6;
+                // Asymptote angle
+                const alpha = thetaDeg * Math.PI / 180;
+                
+                const curve = new THREE.EllipseCurve(
+                    0, 0,            // ax, aY
+                    arcRadius, arcRadius, // xRadius, yRadius
+                    0, alpha,  // aStartAngle, aEndAngle
+                    false,            // aClockwise
+                    0                 // aRotation
+                );
+                const arcPts = curve.getPoints(50).map(p => new THREE.Vector3(p.x, p.y, 0));
+                const arcGeo = new THREE.BufferGeometry().setFromPoints(arcPts);
+                const arcMat = new THREE.LineBasicMaterial({ color: 0x06D6A0, transparent: true, opacity: 0.8 });
+                const arcLine = new THREE.Line(arcGeo, arcMat);
+                predictedGroup.add(arcLine);
+
+                // Asymptote line
+                const asymDir = new THREE.Vector3(Math.cos(alpha), Math.sin(alpha), 0);
+                const asymGeo = new THREE.BufferGeometry().setFromPoints([
+                    new THREE.Vector3(0,0,0),
+                    asymDir.multiplyScalar(10)
+                ]);
+                const asymMat = new THREE.LineDashedMaterial({color: 0x06D6A0, dashSize: 0.4, gapSize: 0.4, transparent: true, opacity: 0.4});
+                const asymLine = new THREE.Line(asymGeo, asymMat);
+                asymLine.computeLineDistances();
+                predictedGroup.add(asymLine);
+            }
+        }
+
+        // --- Particle System ---
+        class AlphaParticle {
+            constructor(startY) {
+                this.active = true;
+                this.pos = new THREE.Vector3(config.startX, startY, 0);
+                this.vel = new THREE.Vector3(Math.sqrt(config.K), 0, 0);
+                
+                // Mesh
+                this.mesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.25, 16, 16),
+                    new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.2 })
+                );
+                this.mesh.position.copy(this.pos);
+                scene.add(this.mesh);
+
+                // Velocity Vector
+                this.arrow = new THREE.ArrowHelper(
+                    this.vel.clone().normalize(), 
+                    this.pos, 
+                    this.vel.length() * 1.5, 
+                    0x06D6A0, 0.6, 0.4
+                );
+                scene.add(this.arrow);
+
+                // Trail
+                this.maxTrail = 200;
+                this.trailPts = [];
+                this.trailGeo = new THREE.BufferGeometry();
+                // Use vertex colors for fading effect
+                this.trailMat = new THREE.LineBasicMaterial({ vertexColors: true, linewidth: 2 });
+                this.trail = new THREE.Line(this.trailGeo, this.trailMat);
+                scene.add(this.trail);
+            }
+
+            update(dt) {
+                if (!this.active) return;
+
+                // Sub-stepping for numerical stability near singularity
+                const substeps = 20;
+                const sdt = dt / substeps;
+
+                for(let i=0; i<substeps; i++) {
+                    let r = this.pos.length();
+                    if (r < 0.05) continue; // Prevent extreme forces
+                    
+                    let a = this.pos.clone().normalize().multiplyScalar((config.C * config.Z) / (r * r));
+                    this.vel.add(a.multiplyScalar(sdt));
+                    this.pos.add(this.vel.clone().multiplyScalar(sdt));
+                }
+
+                // Update Visuals
+                this.mesh.position.copy(this.pos);
+                
+                const speed = this.vel.length();
+                this.arrow.position.copy(this.pos);
+                this.arrow.setDirection(this.vel.clone().normalize());
+                this.arrow.setLength(speed * 1.5);
+
+                // Update Trail
+                this.trailPts.push(this.pos.clone());
+                if(this.trailPts.length > this.maxTrail) {
+                    this.trailPts.shift();
+                }
+
+                this.trailGeo.setFromPoints(this.trailPts);
+                
+                // Update Vertex Colors (Fading to background)
+                const colors = [];
+                const len = this.trailPts.length;
+                for(let i=0; i<len; i++) {
+                    const ratio = i / (len - 1 || 1); // 0 is oldest, 1 is newest
+                    // Interpolate between Background and Trail Color
+                    const r = colBg.r + (colTrail.r - colBg.r) * ratio;
+                    const g = colBg.g + (colTrail.g - colBg.g) * ratio;
+                    const b = colBg.b + (colTrail.b - colBg.b) * ratio;
+                    colors.push(r, g, b);
+                }
+                this.trailGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+                // Bounds Check
+                if (this.pos.length() > 45) {
+                    this.destroy();
+                }
+            }
+
+            destroy() {
+                this.active = false;
+                scene.remove(this.mesh);
+                scene.remove(this.arrow);
+                // Keep trail for a bit or remove? Let's remove to prevent clutter
+                scene.remove(this.trail);
+                this.mesh.geometry.dispose();
+                this.mesh.material.dispose();
+                this.trailGeo.dispose();
+                this.trailMat.dispose();
+            }
+        }
+
+        function fireParticles() {
+            if (config.count === 1) {
+                particles.push(new AlphaParticle(config.b));
+            } else {
+                // Fire a spread from -b to +b
+                for(let i=0; i<config.count; i++) {
+                    let yOffset = 0;
+                    if (config.b > 0) {
+                        yOffset = -config.b + (2 * config.b * i) / (config.count - 1);
+                    }
+                    particles.push(new AlphaParticle(yOffset));
+                }
+            }
+        }
+
+        function clearParticles() {
+            particles.forEach(p => p.destroy());
+            particles = [];
+        }
+
+        // --- UI & Events ---
+        function setupUI() {
+            const bindSlider = (id, key, suffix = '') => {
+                const slider = document.getElementById(`slider-${key}`);
+                const disp = document.getElementById(`disp-${key}`);
+                slider.addEventListener('input', (e) => {
+                    config[key] = parseFloat(e.target.value);
+                    disp.innerText = config[key] + suffix;
+                    if(key !== 'speed' && key !== 'count') updatePhysicsState();
+                });
+            };
+
+            bindSlider('slider-Z', 'Z');
+            bindSlider('slider-K', 'K', ' MeV');
+            bindSlider('slider-b', 'b', ' fm');
+            bindSlider('slider-count', 'count');
+            bindSlider('slider-speed', 'speed', 'x');
+
+            document.getElementById('btn-fire').addEventListener('click', fireParticles);
+            document.getElementById('btn-clear').addEventListener('click', clearParticles);
+        }
+
+        function updateLabelPosition() {
+            if(!nucleus) return;
+            const vector = new THREE.Vector3(0, 1.5, 0); // Offset above nucleus
+            vector.project(camera);
+            
+            const x = (vector.x * .5 + .5) * window.innerWidth;
+            const y = (vector.y * -.5 + .5) * window.innerHeight;
+            
+            const label = document.getElementById('nucleus-label');
+            // Only show if in front of camera
+            if (vector.z < 1) {
+                label.style.display = 'block';
+                label.style.left = `${x}px`;
+                label.style.top = `${y}px`;
+            } else {
+                label.style.display = 'none';
+            }
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- Main Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.1) * config.speed;
+            
+            controls.update();
+            updateLabelPosition();
+
+            // Update Particles
+            particles.forEach(p => p.update(dt));
+            // Cleanup inactive
+            particles = particles.filter(p => p.active);
+
+            renderer.render(scene, camera);
+        }
+
+        // Start
+        init();
+    </script>
+</body>
+</html>

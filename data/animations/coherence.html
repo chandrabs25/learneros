@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optical Coherence & Interference</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            position: absolute;
+            z-index: 10;
+        }
+        #ui-panel {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            min-width: 250px;
+        }
+        h2, h3 {
+            margin: 0 0 10px 0;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        h2 { font-size: 1.2rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; }
+        h3 { font-size: 1rem; }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            font-weight: bold;
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 5px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #4361EE; }
+        input:checked + .slider:before { transform: translateX(24px); }
+        
+        .formula-text {
+            font-size: 0.9rem;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .instruction {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h3>Interference Physics</h3>
+        <div class="formula-text">
+            <span>Path Diff (ΔL):</span>
+            <span id="val-deltaL" class="mono">0.000 mm</span>
+        </div>
+        <div class="formula-text">
+            <span>Phase Diff (Δφ):</span>
+            <span id="val-deltaPhi" class="mono">0.0°</span>
+        </div>
+        <div class="instruction">Hover over the screen to measure.</div>
+    </div>
+
+    <div id="ui-panel" class="glass-panel">
+        <h2>Simulation Controls</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Wavelength (λ)</span>
+                <span id="val-lambda" class="mono">550 nm</span>
+            </div>
+            <input type="range" id="lambda" min="400" max="700" step="10" value="550">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Slit Separation (d)</span>
+                <span id="val-d" class="mono">2.0 mm</span>
+            </div>
+            <input type="range" id="d" min="0.5" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Source Phase Offset</span>
+                <span id="val-phi" class="mono">0°</span>
+            </div>
+            <input type="range" id="phi" min="0" max="360" step="5" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Coherence Time (τ_c)</span>
+                <span id="val-tau" class="mono">1.0 ns</span>
+            </div>
+            <input type="range" id="tau" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="toggle-container">
+            <span style="font-weight: 600; font-size: 0.9rem;">Mode: <span id="val-mode" class="mono">Coherent</span></span>
+            <label class="switch">
+                <input type="checkbox" id="mode-toggle" checked>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        let params = {
+            lambda: 550,
+            d: 2.0,
+            phi_offset: 0,
+            tau_c: 1.0,
+            isCoherent: true
+        };
+        const D = 15.0; // Distance to screen
+        let phi_random = 0;
+        let lastJumpTime = 0;
+        let targetY = 0;
+        let isHovering = false;
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(20, 15, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(7.5, 0, 0);
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.enableDamping = true;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Grid Floor
+        const gridHelper = new THREE.GridHelper(40, 40, 0xcccccc, 0xe2e8f0);
+        gridHelper.position.y = -10.1;
+        scene.add(gridHelper);
+
+        // --- Objects ---
+        
+        // Sources
+        const sphereGeo = new THREE.SphereGeometry(0.25, 32, 32);
+        const matS1 = new THREE.MeshPhongMaterial({ color: 0xFF3366, emissive: 0xFF3366, emissiveIntensity: 0.5 });
+        const matS2 = new THREE.MeshPhongMaterial({ color: 0x4361EE, emissive: 0x4361EE, emissiveIntensity: 0.5 });
+        const source1 = new THREE.Mesh(sphereGeo, matS1);
+        const source2 = new THREE.Mesh(sphereGeo, matS2);
+        scene.add(source1);
+        scene.add(source2);
+
+        // Wavelength to RGB Converter
+        function waveLengthToRGB(Wavelength) {
+            let R, G, B;
+            if (Wavelength >= 380 && Wavelength < 440) {
+                R = -(Wavelength - 440) / (440 - 380); G = 0.0; B = 1.0;
+            } else if (Wavelength >= 440 && Wavelength < 490) {
+                R = 0.0; G = (Wavelength - 440) / (490 - 440); B = 1.0;
+            } else if (Wavelength >= 490 && Wavelength < 510) {
+                R = 0.0; G = 1.0; B = -(Wavelength - 510) / (510 - 490);
+            } else if (Wavelength >= 510 && Wavelength < 580) {
+                R = (Wavelength - 510) / (580 - 510); G = 1.0; B = 0.0;
+            } else if (Wavelength >= 580 && Wavelength < 645) {
+                R = 1.0; G = -(Wavelength - 645) / (645 - 580); B = 0.0;
+            } else if (Wavelength >= 645 && Wavelength <= 780) {
+                R = 1.0; G = 0.0; B = 0.0;
+            } else { R = 0.0; G = 0.0; B = 0.0; }
+            return new THREE.Color(R, G, B);
+        }
+
+        // Wavefront Shader Plane
+        const waveGeo = new THREE.PlaneGeometry(D, 20, 128, 128);
+        const waveUniforms = {
+            uTime: { value: 0 },
+            uS1: { value: new THREE.Vector2(0, params.d/2) },
+            uS2: { value: new THREE.Vector2(0, -params.d/2) },
+            uK: { value: 0 },
+            uOmega: { value: 15.0 },
+            uPhi: { value: 0 },
+            uColor: { value: new THREE.Color() }
+        };
+
+        const waveMat = new THREE.ShaderMaterial({
+            uniforms: waveUniforms,
+            vertexShader: `
+                varying vec2 vUv;
+                void main() {
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                varying vec2 vUv;
+                uniform float uTime;
+                uniform vec2 uS1;
+                uniform vec2 uS2;
+                uniform float uK;
+                uniform float uOmega;
+                uniform float uPhi;
+                uniform vec3 uColor;
+
+                void main() {
+                    vec2 pos = vec2(vUv.x * 15.0, vUv.y * 20.0 - 10.0);
+                    float r1 = distance(pos, uS1);
+                    float r2 = distance(pos, uS2);
+                    
+                    float e1 = cos(uK * r1 - uOmega * uTime);
+                    float e2 = cos(uK * r2 - uOmega * uTime + uPhi);
+                    float E = e1 + e2;
+                    
+                    float intensity = (E * E) / 4.0;
+                    float fade = smoothstep(15.0, 0.0, pos.x);
+                    
+                    gl_FragColor = vec4(uColor, intensity * fade * 0.5);
+                }
+            `,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.DoubleSide
+        });
+
+        const wavePlane = new THREE.Mesh(waveGeo, waveMat);
+        wavePlane.position.set(D/2, 0, 0);
+        scene.add(wavePlane);
+
+        // Interference Screen
+        const screenCanvas = document.createElement('canvas');
+        screenCanvas.width = 1;
+        screenCanvas.height = 512;
+        const screenCtx = screenCanvas.getContext('2d');
+        const screenImgData = screenCtx.createImageData(1, 512);
+        const screenTexture = new THREE.CanvasTexture(screenCanvas);
+        screenTexture.magFilter = THREE.LinearFilter;
+        screenTexture.minFilter = THREE.LinearFilter;
+
+        const screenGeo = new THREE.PlaneGeometry(10, 20);
+        const screenMat = new THREE.MeshBasicMaterial({ map: screenTexture, side: THREE.DoubleSide });
+        const screenMesh = new THREE.Mesh(screenGeo, screenMat);
+        screenMesh.position.set(D, 0, 0);
+        screenMesh.rotation.y = -Math.PI / 2;
+        scene.add(screenMesh);
+
+        // Screen Border
+        const borderGeo = new THREE.EdgesGeometry(screenGeo);
+        const borderMat = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 2 });
+        const screenBorder = new THREE.LineSegments(borderGeo, borderMat);
+        screenMesh.add(screenBorder);
+
+        // Hover Target Line
+        const targetLineGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, -5),
+            new THREE.Vector3(0, 0, 5)
+        ]);
+        const targetLineMat = new THREE.LineBasicMaterial({ color: 0x00ffcc, linewidth: 2 });
+        const targetLine = new THREE.Line(targetLineGeo, targetLineMat);
+        targetLine.visible = false;
+        screenMesh.add(targetLine);
+
+        // Phase Indicator Paths (Sine Waves)
+        const pathGeo1 = new THREE.BufferGeometry();
+        const pathGeo2 = new THREE.BufferGeometry();
+        const pathPositions1 = new Float32Array(101 * 3);
+        const pathPositions2 = new Float32Array(101 * 3);
+        pathGeo1.setAttribute('position', new THREE.BufferAttribute(pathPositions1, 3));
+        pathGeo2.setAttribute('position', new THREE.BufferAttribute(pathPositions2, 3));
+        
+        const pathMat1 = new THREE.LineBasicMaterial({ color: 0xFF3366 });
+        const pathMat2 = new THREE.LineBasicMaterial({ color: 0x4361EE });
+        const path1 = new THREE.Line(pathGeo1, pathMat1);
+        const path2 = new THREE.Line(pathGeo2, pathMat2);
+        scene.add(path1);
+        scene.add(path2);
+
+        // --- Logic & Math ---
+        
+        let avgIntensity = new Float32Array(512).fill(0);
+
+        function updateScreenTexture(phi_total) {
+            const k = 2 * Math.PI / (params.lambda * 0.0003);
+            
+            for(let i=0; i<512; i++) {
+                let y = (i / 511) * 20 - 10;
+                let r1 = Math.sqrt(D*D + (y - params.d/2)**2);
+                let r2 = Math.sqrt(D*D + (y + params.d/2)**2);
+                
+                // Time-averaged intensity formula for current phase
+                let targetI = 2 + 2 * Math.cos(k * (r2 - r1) + phi_total);
+                
+                // Exponential moving average to simulate time integration
+                avgIntensity[i] = avgIntensity[i] * 0.92 + targetI * 0.08;
+                
+                // Map 0-4 to 0-255
+                let val = Math.min(255, (avgIntensity[i] / 4) * 255);
+                
+                let idx = i * 4;
+                screenImgData.data[idx] = val;           // R
+                screenImgData.data[idx+1] = val * 0.9;   // G
+                screenImgData.data[idx+2] = val * 0.2;   // B (Yellowish white)
+                screenImgData.data[idx+3] = 255;         // A
+            }
+            screenCtx.putImageData(screenImgData, 0, 0);
+            screenTexture.needsUpdate = true;
+        }
+
+        function updatePathLine(line, start, end, t, phase) {
+            const positions = line.geometry.attributes.position.array;
+            const dist = start.distanceTo(end);
+            const perp = new THREE.Vector3(0, 0, 1); // Oscillate in Z
+            const k = 2 * Math.PI / (params.lambda * 0.0003);
+            const omega = 15.0;
+            
+            for(let i=0; i<=100; i++) {
+                let t_line = i / 100;
+                let s = t_line * dist;
+                let basePos = new THREE.Vector3().lerpVectors(start, end, t_line);
+                let waveOffset = Math.sin(k * s - omega * t + phase) * 0.4;
+                
+                positions[i*3] = basePos.x + perp.x * waveOffset;
+                positions[i*3+1] = basePos.y + perp.y * waveOffset;
+                positions[i*3+2] = basePos.z + perp.z * waveOffset;
+            }
+            line.geometry.attributes.position.needsUpdate = true;
+        }
+
+        function updateFormulaCard() {
+            if (!isHovering) return;
+            let r1 = Math.sqrt(D*D + (targetY - params.d/2)**2);
+            let r2 = Math.sqrt(D*D + (targetY + params.d/2)**2);
+            let deltaL = Math.abs(r2 - r1);
+            let k = 2 * Math.PI / (params.lambda * 0.0003);
+            let deltaPhi = (k * deltaL + (params.phi_offset * Math.PI / 180)) % (2 * Math.PI);
+            
+            document.getElementById('val-deltaL').innerText = deltaL.toFixed(3) + ' mm';
+            document.getElementById('val-deltaPhi').innerText = (deltaPhi * 180 / Math.PI).toFixed(1) + '°';
+        }
+
+        // --- Interaction ---
+        
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(screenMesh);
+            
+            if(intersects.length > 0) {
+                isHovering = true;
+                // Screen is rotated, its local Y is global Y
+                targetY = intersects[0].point.y;
+                targetLine.position.y = targetY;
+                targetLine.visible = true;
+                path1.visible = true;
+                path2.visible = true;
+                updateFormulaCard();
+            } else {
+                isHovering = false;
+                targetLine.visible = false;
+                path1.visible = false;
+                path2.visible = false;
+                document.getElementById('val-deltaL').innerText = "--- mm";
+                document.getElementById('val-deltaPhi').innerText = "--- °";
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // UI Listeners
+        const bindSlider = (id, paramKey, unit = '') => {
+            const el = document.getElementById(id);
+            const valEl = document.getElementById(`val-${id}`);
+            el.addEventListener('input', (e) => {
+                params[paramKey] = parseFloat(e.target.value);
+                valEl.innerText = params[paramKey] + unit;
+                if(paramKey === 'isCoherent' && params.isCoherent) {
+                    snapToCoherent();
+                }
+            });
+        };
+
+        bindSlider('lambda', 'lambda', ' nm');
+        bindSlider('d', 'd', ' mm');
+        bindSlider('phi', 'phi_offset', '°');
+        bindSlider('tau', 'tau_c', ' ns');
+
+        document.getElementById('mode-toggle').addEventListener('change', (e) => {
+            params.isCoherent = e.target.checked;
+            document.getElementById('val-mode').innerText = params.isCoherent ? 'Coherent' : 'Incoherent';
+            if(params.isCoherent) snapToCoherent();
+        });
+
+        function snapToCoherent() {
+            const k = 2 * Math.PI / (params.lambda * 0.0003);
+            const phi_base = params.phi_offset * Math.PI / 180;
+            for(let i=0; i<512; i++) {
+                let y = (i / 511) * 20 - 10;
+                let r1 = Math.sqrt(D*D + (y - params.d/2)**2);
+                let r2 = Math.sqrt(D*D + (y + params.d/2)**2);
+                avgIntensity[i] = 2 + 2 * Math.cos(k * (r2 - r1) + phi_base);
+            }
+        }
+
+        // Initialize
+        snapToCoherent();
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const t = clock.getElapsedTime();
+
+            // Coherence Logic
+            if (!params.isCoherent) {
+                if (t - lastJumpTime > params.tau_c) {
+                    phi_random = Math.random() * Math.PI * 2;
+                    lastJumpTime = t;
+                }
+            } else {
+                phi_random = 0;
+            }
+
+            const phi_total = (params.phi_offset * Math.PI / 180) + phi_random;
+            const k = 2 * Math.PI / (params.lambda * 0.0003);
+
+            // Update Sources
+            source1.position.set(0, params.d/2, 0);
+            source2.position.set(0, -params.d/2, 0);
+
+            // Update Shader
+            waveMat.uniforms.uTime.value = t;
+            waveMat.uniforms.uS1.value.set(0, params.d/2);
+            waveMat.uniforms.uS2.value.set(0, -params.d/2);
+            waveMat.uniforms.uK.value = k;
+            waveMat.uniforms.uPhi.value = phi_total;
+            waveMat.uniforms.uColor.value = waveLengthToRGB(params.lambda);
+
+            // Update Screen
+            updateScreenTexture(phi_total);
+
+            // Update Paths
+            if (isHovering) {
+                updatePathLine(path1, source1.position, new THREE.Vector3(D, targetY, 0), t, 0);
+                updatePathLine(path2, source2.position, new THREE.Vector3(D, targetY, 0), t, phi_total);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

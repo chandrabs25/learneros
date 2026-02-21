@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kinetic Energy & Degrees of Freedom Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            color: #1a1a2e;
+        }
+
+        #canvas-container {
+            width: 75vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #ui-panel {
+            width: 25vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            z-index: 10;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d9e6;
+            border-radius: 2px;
+        }
+
+        /* Custom slider colors based on physics component */
+        #v::-webkit-slider-thumb { background: #06D6A0; }
+        #omega::-webkit-slider-thumb { background: #7209B7; }
+        #freq::-webkit-slider-thumb { background: #FF3366; }
+
+        button {
+            background: linear-gradient(135deg, #4361EE, #7209B7);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(67, 97, 238, 0.3);
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(67, 97, 238, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid #06D6A0;
+            font-family: 'Roboto Mono', monospace;
+            z-index: 20;
+            min-width: 280px;
+        }
+
+        #formula-card h3 {
+            margin: 0 0 15px 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.1rem;
+            color: #1a1a2e;
+        }
+
+        .formula-main {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .energy-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+
+        .energy-row.total {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #e2e8f0;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .color-kt { color: #06D6A0; font-weight: 700; }
+        .color-kr { color: #7209B7; font-weight: 700; }
+        .color-kv { color: #FF3366; font-weight: 700; }
+        
+        .hint {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: -5px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <h3>Kinetic Energy Components</h3>
+            <div class="formula-main">
+                K<sub>total</sub> = K<sub>t</sub> + K<sub>r</sub> + K<sub>v</sub>
+            </div>
+            <div class="energy-row">
+                <span class="color-kt">K<sub>t</sub> (Trans):</span>
+                <span id="val-kt">0.00 J</span>
+            </div>
+            <div class="energy-row">
+                <span class="color-kr">K<sub>r</sub> (Rot):</span>
+                <span id="val-kr">0.00 J</span>
+            </div>
+            <div class="energy-row">
+                <span class="color-kv">K<sub>v</sub> (Vib):</span>
+                <span id="val-kv">0.00 J</span>
+            </div>
+            <div class="energy-row total">
+                <span>Total Energy:</span>
+                <span id="val-ktotal">0.00 J</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h2>Physics Controls</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Mass (per atom)</span>
+                <span class="val-display"><span id="m-val">2.0</span> kg</span>
+            </div>
+            <input type="range" id="m" min="1.0" max="10.0" step="0.5" value="2.0">
+            <div class="hint">Increases atom size and total inertia.</div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="color-kt">Translational Speed</span>
+                <span class="val-display"><span id="v-val">1.0</span> m/s</span>
+            </div>
+            <input type="range" id="v" min="0.0" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="color-kr">Angular Velocity</span>
+                <span class="val-display"><span id="omega-val">2.0</span> rad/s</span>
+            </div>
+            <input type="range" id="omega" min="0.0" max="10.0" step="0.5" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="color-kv">Vibration Freq</span>
+                <span class="val-display"><span id="freq-val">1.0</span> Hz</span>
+            </div>
+            <input type="range" id="freq" min="0.0" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Bond Length (Eq)</span>
+                <span class="val-display"><span id="r0-val">2.0</span> m</span>
+            </div>
+            <input type="range" id="r0" min="1.5" max="4.0" step="0.1" value="2.0">
+        </div>
+
+        <button id="btn-equipartition">Distribute Energy Equally</button>
+        <div class="hint" style="text-align: center;">Applies Equipartition Theorem (½kT per DoF) to balance average energies.</div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        let params = {
+            m: 2.0,
+            v: 1.0,
+            omega: 2.0,
+            freq: 1.0,
+            r0: 2.0,
+            A: 0.4 // Fixed vibration amplitude
+        };
+
+        // --- DOM Elements ---
+        const uiElements = {
+            m: document.getElementById('m'),
+            v: document.getElementById('v'),
+            omega: document.getElementById('omega'),
+            freq: document.getElementById('freq'),
+            r0: document.getElementById('r0'),
+            mVal: document.getElementById('m-val'),
+            vVal: document.getElementById('v-val'),
+            omegaVal: document.getElementById('omega-val'),
+            freqVal: document.getElementById('freq-val'),
+            r0Val: document.getElementById('r0-val'),
+            kt: document.getElementById('val-kt'),
+            kr: document.getElementById('val-kr'),
+            kv: document.getElementById('val-kv'),
+            ktotal: document.getElementById('val-ktotal')
+        };
+
+        // --- Event Listeners ---
+        function updateParams() {
+            params.m = parseFloat(uiElements.m.value);
+            params.v = parseFloat(uiElements.v.value);
+            params.omega = parseFloat(uiElements.omega.value);
+            params.freq = parseFloat(uiElements.freq.value);
+            params.r0 = parseFloat(uiElements.r0.value);
+
+            uiElements.mVal.innerText = params.m.toFixed(1);
+            uiElements.vVal.innerText = params.v.toFixed(1);
+            uiElements.omegaVal.innerText = params.omega.toFixed(1);
+            uiElements.freqVal.innerText = params.freq.toFixed(1);
+            uiElements.r0Val.innerText = params.r0.toFixed(1);
+
+            // Update visuals based on mass
+            const scale = Math.pow(params.m / 2.0, 1/3);
+            atomA.scale.set(scale, scale, scale);
+            atomB.scale.set(scale, scale, scale);
+        }
+
+        Object.keys(params).forEach(key => {
+            if(uiElements[key]) {
+                uiElements[key].addEventListener('input', updateParams);
+            }
+        });
+
+        document.getElementById('btn-equipartition').addEventListener('click', () => {
+            // Equipartition Theorem: Average energy is proportional to Degrees of Freedom
+            // Trans: 3 DoF -> 3 units of energy
+            // Rot: 2 DoF -> 2 units of energy
+            // Vib: 2 DoF (1 kin, 1 pot) -> 1 unit of kinetic energy on average
+            
+            const m = params.m;
+            const r0 = params.r0;
+            const A = params.A;
+            
+            // Calculate new values to achieve ratio 3 : 2 : 1 for average energies
+            // Kt = m * v^2 = 3 => v = sqrt(3/m)
+            let new_v = Math.sqrt(3.0 / m);
+            
+            // Kr = 0.25 * m * r0^2 * omega^2 = 2 => omega = sqrt(8 / (m * r0^2))
+            let new_omega = Math.sqrt(8.0 / (m * r0 * r0));
+            
+            // Kv_avg = 0.5 * m * pi^2 * f^2 * A^2 = 1 => f = sqrt(2 / m) / (pi * A)
+            let new_freq = Math.sqrt(2.0 / m) / (Math.PI * A);
+
+            // Clamp to slider maximums
+            new_v = Math.min(new_v, 5.0);
+            new_omega = Math.min(new_omega, 10.0);
+            new_freq = Math.min(new_freq, 5.0);
+
+            uiElements.v.value = new_v;
+            uiElements.omega.value = new_omega;
+            uiElements.freq.value = new_freq;
+            
+            updateParams();
+        });
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 8, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 15, 10);
+        scene.add(dirLight);
+
+        // --- Environment ---
+        const gridHelper = new THREE.GridHelper(60, 60, 0xd1d9e6, 0xd1d9e6);
+        gridHelper.position.y = -3;
+        scene.add(gridHelper);
+
+        // --- Molecule ---
+        const moleculeGroup = new THREE.Group();
+        scene.add(moleculeGroup);
+
+        const sphereGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        
+        const matA = new THREE.MeshPhongMaterial({ color: 0xFF3366, shininess: 100 });
+        const atomA = new THREE.Mesh(sphereGeo, matA);
+        moleculeGroup.add(atomA);
+
+        const matB = new THREE.MeshPhongMaterial({ color: 0x4361EE, shininess: 100 });
+        const atomB = new THREE.Mesh(sphereGeo, matB);
+        moleculeGroup.add(atomB);
+
+        const bondGeo = new THREE.CylinderGeometry(0.12, 0.12, 1, 16);
+        bondGeo.rotateZ(Math.PI / 2); // Align with X axis
+        const bondMat = new THREE.MeshPhysicalMaterial({ 
+            color: 0xffffff, 
+            transparent: true, 
+            opacity: 0.7,
+            transmission: 0.5,
+            roughness: 0.1
+        });
+        const bond = new THREE.Mesh(bondGeo, bondMat);
+        moleculeGroup.add(bond);
+
+        // --- Helpers (Vectors & Indicators) ---
+        const helperGroup = new THREE.Group();
+        scene.add(helperGroup);
+
+        // Translational Velocity Arrow (Green)
+        const velArrow = new THREE.ArrowHelper(
+            new THREE.Vector3(1, 0, 0), 
+            new THREE.Vector3(0, 0, 0), 
+            2, 
+            0x06D6A0, 
+            0.6, 
+            0.4
+        );
+        helperGroup.add(velArrow);
+
+        // Rotational Axis (Purple Dashed Line)
+        const axisGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, -4),
+            new THREE.Vector3(0, 0, 4)
+        ]);
+        const axisMat = new THREE.LineDashedMaterial({
+            color: 0x7209B7,
+            linewidth: 2,
+            scale: 1,
+            dashSize: 0.3,
+            gapSize: 0.2
+        });
+        const rotAxis = new THREE.Line(axisGeo, axisMat);
+        rotAxis.computeLineDistances();
+        helperGroup.add(rotAxis);
+
+        // Spin Indicator (Curved Arrow)
+        const spinGroup = new THREE.Group();
+        const torusGeo = new THREE.TorusGeometry(1.5, 0.04, 8, 32, Math.PI * 1.2);
+        const torusMat = new THREE.MeshBasicMaterial({ color: 0x7209B7 });
+        const torus = new THREE.Mesh(torusGeo, torusMat);
+        
+        const coneGeo = new THREE.ConeGeometry(0.15, 0.4, 16);
+        const cone = new THREE.Mesh(coneGeo, torusMat);
+        // Position cone at the end of the torus arc (angle = PI * 1.2)
+        const angle = Math.PI * 1.2;
+        cone.position.set(1.5 * Math.cos(angle), 1.5 * Math.sin(angle), 0);
+        cone.rotation.z = angle + Math.PI / 2; // Point along tangent
+
+        spinGroup.add(torus);
+        spinGroup.add(cone);
+        helperGroup.add(spinGroup);
+
+        // Trajectory Line
+        const MAX_POINTS = 150;
+        const trajGeo = new THREE.BufferGeometry();
+        const trajPositions = new Float32Array(MAX_POINTS * 3);
+        trajGeo.setAttribute('position', new THREE.BufferAttribute(trajPositions, 3));
+        const trajMat = new THREE.LineBasicMaterial({ color: 0x06D6A0, transparent: true, opacity: 0.5, linewidth: 2 });
+        const trajLine = new THREE.Line(trajGeo, trajMat);
+        scene.add(trajLine);
+        
+        let trajPoints = [];
+        let lastTrajTime = 0;
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = clock.getDelta();
+            time += dt;
+
+            // 1. Calculate instantaneous bond length (Vibration)
+            // r(t) = r0 + A * sin(2 * pi * f * t)
+            const r = params.r0 + params.A * Math.sin(2 * Math.PI * params.freq * time);
+
+            // Update atom positions relative to CoM
+            atomA.position.x = r / 2;
+            atomB.position.x = -r / 2;
+            
+            // Update bond visual
+            bond.scale.x = r;
+
+            // 2. Apply Rotation
+            // Rotation is around the Z axis
+            moleculeGroup.rotation.z += params.omega * dt;
+
+            // 3. Apply Translation
+            moleculeGroup.position.x += params.v * dt;
+
+            // Wrap around logic for continuous viewing
+            if (moleculeGroup.position.x > 15) {
+                moleculeGroup.position.x = -15;
+                trajPoints = []; // Clear trajectory
+            }
+
+            // 4. Update Helpers
+            helperGroup.position.copy(moleculeGroup.position);
+            
+            // Velocity arrow length
+            if (params.v > 0) {
+                velArrow.visible = true;
+                velArrow.setLength(params.v * 1.2 + 0.5, 0.6, 0.4);
+            } else {
+                velArrow.visible = false;
+            }
+
+            // Spin indicator visibility and rotation
+            if (params.omega > 0) {
+                spinGroup.visible = true;
+                // Slowly rotate the indicator to make it feel alive, or keep static
+                spinGroup.rotation.z = time * 2; 
+            } else {
+                spinGroup.visible = false;
+            }
+
+            // Update Trajectory
+            if (time - lastTrajTime > 0.05) {
+                trajPoints.push(moleculeGroup.position.clone());
+                if (trajPoints.length > MAX_POINTS) {
+                    trajPoints.shift();
+                }
+                
+                const positions = trajLine.geometry.attributes.position.array;
+                for (let i = 0; i < trajPoints.length; i++) {
+                    positions[i * 3] = trajPoints[i].x;
+                    positions[i * 3 + 1] = trajPoints[i].y;
+                    positions[i * 3 + 2] = trajPoints[i].z;
+                }
+                trajLine.geometry.setDrawRange(0, trajPoints.length);
+                trajLine.geometry.attributes.position.needsUpdate = true;
+                
+                lastTrajTime = time;
+            }
+
+            // 5. Physics Calculations for UI
+            // Kt = 1/2 * (2m) * v^2 = m * v^2
+            const Kt = params.m * Math.pow(params.v, 2);
+
+            // Kr = 1/2 * I * omega^2
+            // I = 2 * m * (r/2)^2 = 1/2 * m * r^2
+            const I = 0.5 * params.m * Math.pow(r, 2);
+            const Kr = 0.5 * I * Math.pow(params.omega, 2);
+
+            // Kv = 1/2 * mu * v_vib^2
+            // mu = (m*m)/(m+m) = m/2
+            // v_vib = dr/dt = 2*pi*f*A*cos(2*pi*f*t)
+            const mu = params.m / 2.0;
+            const v_vib = 2 * Math.PI * params.freq * params.A * Math.cos(2 * Math.PI * params.freq * time);
+            const Kv = 0.5 * mu * Math.pow(v_vib, 2);
+
+            const Ktotal = Kt + Kr + Kv;
+
+            // Update DOM
+            uiElements.kt.innerText = Kt.toFixed(2) + ' J';
+            uiElements.kr.innerText = Kr.toFixed(2) + ' J';
+            uiElements.kv.innerText = Kv.toFixed(2) + ' J';
+            uiElements.ktotal.innerText = Ktotal.toFixed(2) + ' J';
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            renderer.setSize(width, height);
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+        });
+
+        // Initialize and start
+        updateParams();
+        animate();
+
+    </script>
+</body>
+</html>

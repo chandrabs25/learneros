@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Force on a Moving Charge</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .glass-panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            min-width: 280px;
+        }
+
+        #controls {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin: 0 0 15px 0;
+            font-size: 18px;
+            font-weight: 700;
+            color: #111;
+        }
+
+        .math-display {
+            font-family: 'Roboto Mono', monospace;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .math-display div {
+            margin-bottom: 5px;
+        }
+        .math-display div:last-child {
+            margin-bottom: 0;
+        }
+
+        .val {
+            font-weight: 700;
+            color: #7209B7;
+        }
+
+        .control-group {
+            margin-bottom: 16px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+        }
+
+        input[type=range] {
+            width: 100%;
+            appearance: none;
+            background: transparent;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Custom slider colors */
+        #q::-webkit-slider-thumb { background: #FF3366; }
+        #Bz::-webkit-slider-thumb { background: #7209B7; }
+        #vx::-webkit-slider-thumb, #vz::-webkit-slider-thumb { background: #06D6A0; }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #111;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #333;
+        }
+
+        .legend {
+            margin-top: 15px;
+            font-size: 12px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .note {
+            font-size: 11px;
+            color: #64748b;
+            font-weight: normal;
+        }
+
+        /* Scrollbar styling for controls */
+        #controls::-webkit-scrollbar { width: 6px; }
+        #controls::-webkit-scrollbar-track { background: transparent; }
+        #controls::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>Lorentz Force</h2>
+        <div class="math-display">
+            <div><strong>F</strong> = q(<strong>v</strong> × <strong>B</strong>)</div>
+            <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 8px 0;">
+            <div>|F<sub>mag</sub>| = <span id="val-fmag" class="val">0.00</span> N</div>
+            <div>Radius (r) = <span id="val-r" class="val">0.00</span> m</div>
+            <div>Freq (f) = <span id="val-freq" class="val">0.00</span> Hz</div>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> + Charge</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> - Charge</div>
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> B-Field</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Velocity</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Force</div>
+        </div>
+    </div>
+
+    <div id="controls" class="glass-panel">
+        <h2>Parameters</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <label for="q">Charge (q) <span class="note">μC</span></label>
+                <span id="val-q" class="control-value">1.0</span>
+            </div>
+            <input type="range" id="q" min="-5" max="5" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="m">Mass (m) <span class="note">u</span></label>
+                <span id="val-m" class="control-value">1.0</span>
+            </div>
+            <input type="range" id="m" min="0.5" max="5" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="Bz">B-Field (B<sub>z</sub>) <span class="note">T</span></label>
+                <span id="val-Bz" class="control-value">1.0</span>
+            </div>
+            <input type="range" id="Bz" min="-2" max="2" step="0.1" value="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="vx">Initial V<sub>x</sub> <span class="note">m/s</span></label>
+                <span id="val-vx" class="control-value">5.0</span>
+            </div>
+            <input type="range" id="vx" min="-10" max="10" step="1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="vz">Initial V<sub>z</sub> (Pitch) <span class="note">m/s</span></label>
+                <span id="val-vz" class="control-value">0.0</span>
+            </div>
+            <input type="range" id="vz" min="-10" max="10" step="1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="timeScale">Time Scale</label>
+                <span id="val-timeScale" class="control-value">1.0</span>
+            </div>
+            <input type="range" id="timeScale" min="0" max="2" step="0.1" value="1">
+        </div>
+
+        <button id="btn-reset">Reset Particle</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        // --- Physics Parameters ---
+        const params = {
+            q: 1.0,
+            m: 1.0,
+            Bz: 1.0,
+            vx: 5.0,
+            vz: 0.0,
+            timeScale: 1.0
+        };
+
+        // State vectors
+        let position = new THREE.Vector3(0, 0, 0);
+        let velocity = new THREE.Vector3(params.vx, 0, params.vz);
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 15, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Visual Objects ---
+        
+        // Coordinate Grid
+        const gridHelper = new THREE.GridHelper(40, 40, 0xcccccc, 0xe2e8f0);
+        scene.add(gridHelper);
+        
+        const axesHelper = new THREE.AxesHelper(5);
+        scene.add(axesHelper);
+
+        // Particle
+        const particleGeo = new THREE.SphereGeometry(0.5, 32, 32);
+        const particleMat = new THREE.MeshPhongMaterial({ 
+            color: 0xFF3366, 
+            shininess: 100,
+            specular: 0x444444
+        });
+        const particle = new THREE.Mesh(particleGeo, particleMat);
+        scene.add(particle);
+
+        // Trail
+        const MAX_TRAIL_POINTS = 1000;
+        const trailGeo = new THREE.BufferGeometry();
+        const trailPositions = new Float32Array(MAX_TRAIL_POINTS * 3);
+        trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+        const trailMat = new THREE.LineBasicMaterial({ color: 0x94a3b8, linewidth: 2 });
+        const trail = new THREE.Line(trailGeo, trailMat);
+        scene.add(trail);
+        let trailCount = 0;
+
+        // Vectors (Arrows)
+        const vArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), position, 1, 0x06D6A0, 0.6, 0.4);
+        const fArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), position, 1, 0xF77F00, 0.6, 0.4);
+        scene.add(vArrow);
+        scene.add(fArrow);
+
+        // B-Field Grid
+        const bFieldGroup = new THREE.Group();
+        const bColor = 0x7209B7;
+        for(let x = -10; x <= 10; x += 5) {
+            for(let y = -10; y <= 10; y += 5) {
+                for(let z = -10; z <= 10; z += 5) {
+                    const arrow = new THREE.ArrowHelper(
+                        new THREE.Vector3(0, 0, 1), 
+                        new THREE.Vector3(x, y, z), 
+                        2, bColor, 0.4, 0.3
+                    );
+                    // Make arrows slightly transparent so they don't overwhelm the scene
+                    arrow.line.material.transparent = true;
+                    arrow.line.material.opacity = 0.3;
+                    arrow.cone.material.transparent = true;
+                    arrow.cone.material.opacity = 0.5;
+                    bFieldGroup.add(arrow);
+                }
+            }
+        }
+        scene.add(bFieldGroup);
+
+        function updateBFieldVisuals() {
+            const mag = Math.abs(params.Bz);
+            const dir = new THREE.Vector3(0, 0, Math.sign(params.Bz) || 1);
+            const len = Math.max(0.2, mag * 2);
+            
+            bFieldGroup.children.forEach(arrow => {
+                arrow.setDirection(dir);
+                arrow.setLength(len, len * 0.2, len * 0.15);
+                arrow.visible = mag > 0.01;
+            });
+        }
+        updateBFieldVisuals();
+
+        // --- UI Binding ---
+        function bindSlider(id) {
+            const el = document.getElementById(id);
+            const valEl = document.getElementById(`val-${id}`);
+            el.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value);
+                params[id] = val;
+                valEl.innerText = val.toFixed(1);
+                
+                if(id === 'q') {
+                    if(val > 0) particleMat.color.setHex(0xFF3366);
+                    else if(val < 0) particleMat.color.setHex(0x4361EE);
+                    else particleMat.color.setHex(0x94a3b8);
+                }
+                if(id === 'Bz') updateBFieldVisuals();
+            });
+        }
+
+        ['q', 'm', 'Bz', 'vx', 'vz', 'timeScale'].forEach(bindSlider);
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            position.set(0, 0, 0);
+            velocity.set(params.vx, 0, params.vz);
+            trailPositions.fill(0);
+            trailCount = 0;
+            trailGeo.setDrawRange(0, 0);
+            particle.position.copy(position);
+        });
+
+        // --- Physics Engine ---
+        const clock = new THREE.Clock();
+
+        function updateTrail(pos) {
+            // Shift array
+            for (let i = MAX_TRAIL_POINTS - 1; i > 0; i--) {
+                trailPositions[i * 3] = trailPositions[(i - 1) * 3];
+                trailPositions[i * 3 + 1] = trailPositions[(i - 1) * 3 + 1];
+                trailPositions[i * 3 + 2] = trailPositions[(i - 1) * 3 + 2];
+            }
+            // Add new point
+            trailPositions[0] = pos.x;
+            trailPositions[1] = pos.y;
+            trailPositions[2] = pos.z;
+            
+            trailCount = Math.min(trailCount + 1, MAX_TRAIL_POINTS);
+            trailGeo.setDrawRange(0, trailCount);
+            trailGeo.attributes.position.needsUpdate = true;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = Math.min(clock.getDelta(), 0.1); // Cap delta to prevent huge jumps
+            const dt = delta * params.timeScale;
+
+            if (dt > 0) {
+                const B = new THREE.Vector3(0, 0, params.Bz);
+                
+                // RK4 Integration for Velocity
+                // a = (q/m)(v x B)
+                const getAcc = (v) => new THREE.Vector3().crossVectors(v, B).multiplyScalar(params.q / params.m);
+
+                const initialSpeed = velocity.length();
+
+                const k1 = getAcc(velocity);
+                const k2 = getAcc(velocity.clone().add(k1.clone().multiplyScalar(dt / 2)));
+                const k3 = getAcc(velocity.clone().add(k2.clone().multiplyScalar(dt / 2)));
+                const k4 = getAcc(velocity.clone().add(k3.clone().multiplyScalar(dt)));
+
+                const dv = k1.add(k2.multiplyScalar(2)).add(k3.multiplyScalar(2)).add(k4).multiplyScalar(dt / 6);
+                velocity.add(dv);
+
+                // Enforce Work-Energy Theorem (Magnetic field does no work, speed must be strictly constant)
+                if (initialSpeed > 0) {
+                    velocity.normalize().multiplyScalar(initialSpeed);
+                }
+
+                // Update Position
+                position.add(velocity.clone().multiplyScalar(dt));
+                particle.position.copy(position);
+
+                // Update Trail
+                updateTrail(position);
+
+                // Update Vectors
+                if (velocity.lengthSq() > 0.01) {
+                    vArrow.position.copy(position);
+                    vArrow.setDirection(velocity.clone().normalize());
+                    vArrow.setLength(Math.min(velocity.length() * 0.5, 8), 0.6, 0.4);
+                    vArrow.visible = true;
+                } else {
+                    vArrow.visible = false;
+                }
+
+                const force = new THREE.Vector3().crossVectors(velocity, B).multiplyScalar(params.q);
+                if (force.lengthSq() > 0.01) {
+                    fArrow.position.copy(position);
+                    fArrow.setDirection(force.clone().normalize());
+                    fArrow.setLength(Math.min(force.length() * 0.2, 8), 0.6, 0.4);
+                    fArrow.visible = true;
+                } else {
+                    fArrow.visible = false;
+                }
+
+                // Update UI Math
+                const vPerp = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y);
+                let r = 0, f = 0;
+                const qB = Math.abs(params.q * params.Bz);
+                
+                if (qB > 0.0001) {
+                    r = (params.m * vPerp) / qB;
+                    f = qB / (2 * Math.PI * params.m);
+                }
+
+                document.getElementById('val-fmag').innerText = force.length().toFixed(2);
+                document.getElementById('val-r').innerText = (r > 999 || qB < 0.0001) ? '∞' : r.toFixed(2);
+                document.getElementById('val-freq').innerText = f.toFixed(2);
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start Loop
+        animate();
+    </script>
+</body>
+</html>

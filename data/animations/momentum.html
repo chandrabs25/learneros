@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1D Linear Momentum & Collisions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --color-m1: #FF3366;
+            --color-m2: #4361EE;
+            --color-v: #06D6A0;
+            --color-p: #7209B7;
+            --accent: #3b82f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Glassmorphic Control Panel */
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .control-group h2 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot.m1 { background: var(--color-m1); }
+        .dot.m2 { background: var(--color-m2); }
+
+        .slider-container {
+            margin-bottom: 12px;
+        }
+
+        .slider-container:last-child {
+            margin-bottom: 0;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        /* Specific slider colors */
+        #m1-slider::-webkit-slider-thumb { background: var(--color-m1); }
+        #m2-slider::-webkit-slider-thumb { background: var(--color-m2); }
+        #v1-slider::-webkit-slider-thumb { background: var(--color-v); }
+        #v2-slider::-webkit-slider-thumb { background: var(--color-v); }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: auto;
+        }
+
+        button {
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        #play-btn {
+            background: var(--accent);
+            color: white;
+            grid-column: span 2;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        #play-btn:hover { background: #2563eb; }
+
+        #reset-btn {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+        #reset-btn:hover { background: #cbd5e1; }
+
+        #slow-btn {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+        #slow-btn.active {
+            background: #f59e0b;
+            color: white;
+        }
+
+        /* Floating Info Card */
+        #info-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,1);
+            z-index: 10;
+            pointer-events: none;
+            min-width: 300px;
+        }
+
+        .info-row {
+            margin-bottom: 12px;
+        }
+        .info-row:last-child { margin-bottom: 0; }
+        
+        .info-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-main);
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .unit {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-color { width: 16px; height: 4px; border-radius: 2px; }
+
+        /* 3D Object Labels */
+        .sphere-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            z-index: 5;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="info-card">
+            <div class="info-row">
+                <div class="info-label">Total Momentum (P)</div>
+                <div class="info-value"><span id="readout-p">0.00</span> <span class="unit">kg·m/s</span></div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">Total Kinetic Energy (K)</div>
+                <div class="info-value"><span id="readout-k">0.00</span> <span class="unit">J</span></div>
+            </div>
+            <div class="info-row" id="energy-loss-row" style="display: none;">
+                <div class="info-label" style="color: #ef4444;">Energy Lost (ΔK)</div>
+                <div class="info-value" style="color: #ef4444;"><span id="readout-dk">0.00</span> <span class="unit">J</span></div>
+            </div>
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color" style="background: var(--color-v);"></div> Velocity (v)</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--color-p);"></div> Momentum (p)</div>
+            </div>
+        </div>
+        <div id="label-m1" class="sphere-label">m1</div>
+        <div id="label-m2" class="sphere-label">m2</div>
+    </div>
+
+    <div id="ui-panel">
+        <div>
+            <h1>Collision Lab</h1>
+            <div class="subtitle">1D Linear Momentum Physics</div>
+        </div>
+
+        <div class="control-group">
+            <h2><span class="dot m1"></span> Sphere A (Red)</h2>
+            <div class="slider-container">
+                <div class="slider-header">
+                    <span>Mass (m₁)</span>
+                    <span class="val-display"><span id="val-m1">2.0</span> kg</span>
+                </div>
+                <input type="range" id="m1-slider" min="0.5" max="10.0" step="0.1" value="2.0">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header">
+                    <span>Initial Velocity (v₁ᵢ)</span>
+                    <span class="val-display"><span id="val-v1">3.0</span> m/s</span>
+                </div>
+                <input type="range" id="v1-slider" min="-5.0" max="5.0" step="0.1" value="3.0">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h2><span class="dot m2"></span> Sphere B (Blue)</h2>
+            <div class="slider-container">
+                <div class="slider-header">
+                    <span>Mass (m₂)</span>
+                    <span class="val-display"><span id="val-m2">5.0</span> kg</span>
+                </div>
+                <input type="range" id="m2-slider" min="0.5" max="10.0" step="0.1" value="5.0">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header">
+                    <span>Initial Velocity (v₂ᵢ)</span>
+                    <span class="val-display"><span id="val-v2">-1.0</span> m/s</span>
+                </div>
+                <input type="range" id="v2-slider" min="-5.0" max="5.0" step="0.1" value="-1.0">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <h2>Environment</h2>
+            <div class="slider-container">
+                <div class="slider-header">
+                    <span>Restitution (e)</span>
+                    <span class="val-display" id="val-e">1.00</span>
+                </div>
+                <input type="range" id="e-slider" min="0.0" max="1.0" step="0.01" value="1.0">
+                <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-top: 4px;">
+                    <span>Inelastic (0)</span>
+                    <span>Elastic (1)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group">
+            <button id="play-btn">Play</button>
+            <button id="reset-btn">Reset</button>
+            <button id="slow-btn">Slow Mo</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics State ---
+        let state = {
+            m1: 2.0,
+            m2: 5.0,
+            v1_i: 3.0,
+            v2_i: -1.0,
+            v1: 3.0,
+            v2: -1.0,
+            x1: -6.0,
+            x2: 6.0,
+            e: 1.0,
+            r1: 1.0,
+            r2: 1.0,
+            playing: false,
+            slowMo: false,
+            initialK: 0,
+            hasCollided: false
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.Fog('#f0f4f8', 20, 60);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 8, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 15, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -20;
+        dirLight.shadow.camera.right = 20;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        scene.add(dirLight);
+
+        // --- Environment Objects ---
+        // Grid
+        const grid = new THREE.GridHelper(60, 60, 0xcbd5e1, 0xe2e8f0);
+        grid.position.y = -1.0;
+        scene.add(grid);
+
+        // Track
+        const trackGeo = new THREE.BoxGeometry(50, 0.5, 2);
+        const trackMat = new THREE.MeshStandardMaterial({ color: 0xd1d9e6, roughness: 0.8 });
+        const track = new THREE.Mesh(trackGeo, trackMat);
+        track.position.y = -0.25;
+        track.receiveShadow = true;
+        scene.add(track);
+
+        // --- Physics Objects ---
+        const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
+        
+        const mat1 = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.2, metalness: 0.1 });
+        const sphere1 = new THREE.Mesh(sphereGeo, mat1);
+        sphere1.castShadow = true;
+        scene.add(sphere1);
+
+        const mat2 = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.2, metalness: 0.1 });
+        const sphere2 = new THREE.Mesh(sphereGeo, mat2);
+        sphere2.castShadow = true;
+        scene.add(sphere2);
+
+        // --- Vectors (Arrows) ---
+        const colorV = 0x06D6A0;
+        const colorP = 0x7209B7;
+        
+        const arrowV1 = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 1, colorV, 0.6, 0.4);
+        const arrowP1 = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 1, colorP, 0.6, 0.4);
+        const arrowV2 = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 1, colorV, 0.6, 0.4);
+        const arrowP2 = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 1, colorP, 0.6, 0.4);
+
+        scene.add(arrowV1); scene.add(arrowP1);
+        scene.add(arrowV2); scene.add(arrowP2);
+
+        // Collision Effects Array
+        let collisionEffects = [];
+
+        // --- DOM Elements ---
+        const labelM1 = document.getElementById('label-m1');
+        const labelM2 = document.getElementById('label-m2');
+        const readoutP = document.getElementById('readout-p');
+        const readoutK = document.getElementById('readout-k');
+        const readoutDK = document.getElementById('readout-dk');
+        const energyLossRow = document.getElementById('energy-loss-row');
+
+        // UI Inputs
+        const inputs = {
+            m1: document.getElementById('m1-slider'),
+            m2: document.getElementById('m2-slider'),
+            v1: document.getElementById('v1-slider'),
+            v2: document.getElementById('v2-slider'),
+            e: document.getElementById('e-slider')
+        };
+
+        const displays = {
+            m1: document.getElementById('val-m1'),
+            m2: document.getElementById('val-m2'),
+            v1: document.getElementById('val-v1'),
+            v2: document.getElementById('val-v2'),
+            e: document.getElementById('val-e')
+        };
+
+        const btnPlay = document.getElementById('play-btn');
+        const btnReset = document.getElementById('reset-btn');
+        const btnSlow = document.getElementById('slow-btn');
+
+        // --- Helper Functions ---
+        function calculateRadius(mass) {
+            // r proportional to cube root of mass for constant density
+            return Math.cbrt(mass) * 0.6; 
+        }
+
+        function updateStateFromUI() {
+            state.m1 = parseFloat(inputs.m1.value);
+            state.m2 = parseFloat(inputs.m2.value);
+            state.e = parseFloat(inputs.e.value);
+            
+            displays.m1.innerText = state.m1.toFixed(1);
+            displays.m2.innerText = state.m2.toFixed(1);
+            displays.e.innerText = state.e.toFixed(2);
+
+            if (!state.playing && !state.hasCollided) {
+                state.v1_i = parseFloat(inputs.v1.value);
+                state.v2_i = parseFloat(inputs.v2.value);
+                state.v1 = state.v1_i;
+                state.v2 = state.v2_i;
+                displays.v1.innerText = state.v1_i.toFixed(1);
+                displays.v2.innerText = state.v2_i.toFixed(1);
+            }
+        }
+
+        function resetSimulation() {
+            state.playing = false;
+            state.hasCollided = false;
+            btnPlay.innerText = "Play";
+            btnPlay.style.background = "var(--accent)";
+            
+            updateStateFromUI();
+            
+            // Reset positions based on radii to ensure they start apart
+            state.r1 = calculateRadius(state.m1);
+            state.r2 = calculateRadius(state.m2);
+            
+            // Start them at fixed distances from center
+            state.x1 = -8.0;
+            state.x2 = 8.0;
+            
+            state.v1 = state.v1_i;
+            state.v2 = state.v2_i;
+
+            state.initialK = 0.5 * state.m1 * state.v1*state.v1 + 0.5 * state.m2 * state.v2*state.v2;
+            energyLossRow.style.display = 'none';
+
+            updateVisuals();
+        }
+
+        function createCollisionFlash(x) {
+            const geo = new THREE.RingGeometry(0.1, 0.5, 32);
+            const mat = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, 
+                side: THREE.DoubleSide, 
+                transparent: true, 
+                opacity: 1 
+            });
+            const ring = new THREE.Mesh(geo, mat);
+            ring.position.set(x, 0, 0);
+            ring.rotation.y = Math.PI / 2;
+            scene.add(ring);
+            collisionEffects.push({ mesh: ring, life: 1.0 });
+        }
+
+        // --- Core Physics Logic ---
+        function updatePhysics(dt) {
+            // Move spheres
+            state.x1 += state.v1 * dt;
+            state.x2 += state.v2 * dt;
+
+            // Collision Detection
+            const dist = Math.abs(state.x2 - state.x1);
+            const minDist = state.r1 + state.r2;
+
+            if (dist <= minDist) {
+                // Check if they are actually approaching each other
+                // (prevents getting stuck if overlap correction isn't perfect)
+                if ((state.x1 < state.x2 && state.v1 > state.v2) || 
+                    (state.x1 > state.x2 && state.v1 < state.v2)) {
+                    
+                    // 1. Calculate Final Velocities using provided formulas
+                    const m1 = state.m1;
+                    const m2 = state.m2;
+                    const u1 = state.v1;
+                    const u2 = state.v2;
+                    const e = state.e;
+
+                    const v1f = (m1 * u1 + m2 * u2 - m2 * e * (u1 - u2)) / (m1 + m2);
+                    const v2f = (m1 * u1 + m2 * u2 + m1 * e * (u1 - u2)) / (m1 + m2);
+
+                    state.v1 = v1f;
+                    state.v2 = v2f;
+                    state.hasCollided = true;
+
+                    // 2. Overlap Correction (Crucial for physical accuracy visually)
+                    const overlap = minDist - dist;
+                    // Move them apart proportionally to avoid changing center of mass position artificially
+                    // For simplicity in 1D, just push them apart equally or based on mass
+                    const totalMass = m1 + m2;
+                    const shift1 = overlap * (m2 / totalMass);
+                    const shift2 = overlap * (m1 / totalMass);
+
+                    if (state.x1 < state.x2) {
+                        state.x1 -= shift1;
+                        state.x2 += shift2;
+                    } else {
+                        state.x1 += shift1;
+                        state.x2 -= shift2;
+                    }
+
+                    // 3. Visual Effect
+                    createCollisionFlash((state.x1 + state.x2) / 2);
+
+                    // Show energy loss if inelastic
+                    if (e < 1.0) {
+                        energyLossRow.style.display = 'flex';
+                    }
+                }
+            }
+
+            // Boundary wrap/bounce (keep them in view for fun, though air tracks are finite)
+            // Let's just let them fly, user can reset.
+        }
+
+        function updateArrow(arrow, value, origin, yOffset, scale, colorHex) {
+            if (Math.abs(value) < 0.05) {
+                arrow.visible = false;
+                return;
+            }
+            arrow.visible = true;
+            const dir = Math.sign(value);
+            arrow.setDirection(new THREE.Vector3(dir, 0, 0));
+            
+            // Visual scaling
+            let length = Math.abs(value) * scale;
+            // Cap length so it doesn't look absurd
+            if (length > 8) length = 8; 
+            
+            arrow.setLength(length, 0.6, 0.4);
+            arrow.position.copy(origin);
+            arrow.position.y += yOffset;
+        }
+
+        function updateVisuals() {
+            // Radii
+            state.r1 = calculateRadius(state.m1);
+            state.r2 = calculateRadius(state.m2);
+            
+            sphere1.scale.setScalar(state.r1);
+            sphere2.scale.setScalar(state.r2);
+
+            // Positions (Y rests on track)
+            sphere1.position.set(state.x1, state.r1, 0);
+            sphere2.position.set(state.x2, state.r2, 0);
+
+            // Vectors
+            const p1 = state.m1 * state.v1;
+            const p2 = state.m2 * state.v2;
+
+            // Velocity arrows (Green, scale 1)
+            updateArrow(arrowV1, state.v1, sphere1.position, state.r1 + 0.5, 1.0, colorV);
+            updateArrow(arrowV2, state.v2, sphere2.position, state.r2 + 0.5, 1.0, colorV);
+
+            // Momentum arrows (Purple, scale 0.2, higher up)
+            updateArrow(arrowP1, p1, sphere1.position, state.r1 + 1.5, 0.2, colorP);
+            updateArrow(arrowP2, p2, sphere2.position, state.r2 + 1.5, 0.2, colorP);
+
+            // Update UI readouts if playing (to show post-collision values)
+            if (state.playing || state.hasCollided) {
+                displays.v1.innerText = state.v1.toFixed(2);
+                displays.v2.innerText = state.v2.toFixed(2);
+            }
+        }
+
+        function updateLabels() {
+            // Project 3D position to 2D screen space
+            const updateLabelPos = (mesh, label, radius) => {
+                const pos = mesh.position.clone();
+                pos.y += radius + 0.2; // slightly above
+                pos.project(camera);
+                
+                const x = (pos.x * .5 + .5) * container.clientWidth;
+                const y = (pos.y * -.5 + .5) * container.clientHeight;
+                
+                label.style.left = `${x}px`;
+                label.style.top = `${y}px`;
+            };
+
+            updateLabelPos(sphere1, labelM1, state.r1);
+            updateLabelPos(sphere2, labelM2, state.r2);
+
+            // Update Info Card Math
+            const pTotal = (state.m1 * state.v1) + (state.m2 * state.v2);
+            const kTotal = 0.5 * state.m1 * state.v1*state.v1 + 0.5 * state.m2 * state.v2*state.v2;
+            
+            readoutP.innerText = pTotal.toFixed(2);
+            readoutK.innerText = kTotal.toFixed(2);
+
+            if (state.hasCollided && state.e < 1.0) {
+                const dK = state.initialK - kTotal;
+                readoutDK.innerText = Math.max(0, dK).toFixed(2);
+            }
+        }
+
+        // --- Event Listeners ---
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', () => {
+                updateStateFromUI();
+                if (!state.playing) updateVisuals();
+            });
+        });
+
+        // Special handling for velocity sliders: only update initial state if not collided
+        inputs.v1.addEventListener('input', () => {
+            if (!state.hasCollided) {
+                state.v1_i = parseFloat(inputs.v1.value);
+                state.v1 = state.v1_i;
+                displays.v1.innerText = state.v1_i.toFixed(1);
+                if (!state.playing) updateVisuals();
+            }
+        });
+        
+        inputs.v2.addEventListener('input', () => {
+            if (!state.hasCollided) {
+                state.v2_i = parseFloat(inputs.v2.value);
+                state.v2 = state.v2_i;
+                displays.v2.innerText = state.v2_i.toFixed(1);
+                if (!state.playing) updateVisuals();
+            }
+        });
+
+        btnPlay.addEventListener('click', () => {
+            state.playing = !state.playing;
+            if (state.playing) {
+                btnPlay.innerText = "Pause";
+                btnPlay.style.background = "#ef4444"; // Red for pause
+                if (!state.hasCollided) {
+                    state.initialK = 0.5 * state.m1 * state.v1*state.v1 + 0.5 * state.m2 * state.v2*state.v2;
+                }
+            } else {
+                btnPlay.innerText = "Play";
+                btnPlay.style.background = "var(--accent)";
+            }
+        });
+
+        btnReset.addEventListener('click', resetSimulation);
+
+        btnSlow.addEventListener('click', () => {
+            state.slowMo = !state.slowMo;
+            btnSlow.classList.toggle('active');
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Main Loop ---
+        let lastTime = performance.now();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const now = performance.now();
+            let dt = (now - lastTime) / 1000;
+            lastTime = now;
+
+            // Cap dt to prevent tunneling on lag spikes
+            if (dt > 0.1) dt = 0.1;
+
+            if (state.playing) {
+                const timeStep = state.slowMo ? dt * 0.1 : dt;
+                updatePhysics(timeStep);
+            }
+
+            // Handle Collision Effects
+            for (let i = collisionEffects.length - 1; i >= 0; i--) {
+                let effect = collisionEffects[i];
+                effect.life -= dt * 2;
+                effect.mesh.scale.addScalar(dt * 10);
+                effect.mesh.material.opacity = effect.life;
+                
+                if (effect.life <= 0) {
+                    scene.remove(effect.mesh);
+                    collisionEffects.splice(i, 1);
+                }
+            }
+
+            updateVisuals();
+            updateLabels();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        resetSimulation();
+        animate();
+
+    </script>
+</body>
+</html>

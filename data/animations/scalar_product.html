@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scalar Product Visualization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #2D3436;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 75%;
+            height: 100%;
+        }
+
+        #control-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 22px;
+            color: #1e272e;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #D1D9E6;
+            border-radius: 3px;
+        }
+
+        #magA::-webkit-slider-thumb { border-color: #FF3366; }
+        #magB::-webkit-slider-thumb { border-color: #4361EE; }
+        #theta::-webkit-slider-thumb { border-color: #F77F00; }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 10px 5px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #7209B7;
+            cursor: pointer;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-left: 5px solid #FF3366;
+            z-index: 10;
+        }
+
+        .formula-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #636e72;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 18px;
+            color: #2d3436;
+            line-height: 1.5;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #06D6A0;
+            font-size: 22px;
+        }
+
+        .label-3d {
+            position: absolute;
+            color: white;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 13px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            font-family: 'Inter', sans-serif;
+            transition: opacity 0.2s;
+        }
+
+        #labelA { background: #FF3366; }
+        #labelB { background: #4361EE; }
+        #labelProj { background: #06D6A0; color: #1e272e; }
+        
+        .info-text {
+            font-size: 12px;
+            color: #636e72;
+            margin-top: auto;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-title" id="formula-header">Scalar Product</div>
+        <div class="math-text" id="formula-general">A · B = |A| |B| cos(θ)</div>
+        <div class="math-text" id="formula-calc" style="margin-top: 10px;"></div>
+    </div>
+
+    <div id="control-panel">
+        <h2>Parameters</h2>
+
+        <div class="control-group">
+            <label>
+                <span id="label-magA">Magnitude of A (|A|)</span>
+                <span class="val-display" id="val-magA">5.0</span>
+            </label>
+            <input type="range" id="magA" min="0" max="10" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span id="label-magB">Magnitude of B (|B|)</span>
+                <span class="val-display" id="val-magB">7.0</span>
+            </label>
+            <input type="range" id="magB" min="0" max="10" step="0.1" value="7">
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span>Angle (θ)</span>
+                <span class="val-display" id="val-theta">45°</span>
+            </label>
+            <input type="range" id="theta" min="0" max="180" step="1" value="45">
+        </div>
+
+        <div class="control-group">
+            <label>
+                <span>Orientation (φ)</span>
+                <span class="val-display" id="val-phi">0°</span>
+            </label>
+            <input type="range" id="phi" min="0" max="360" step="1" value="0">
+        </div>
+
+        <label class="toggle-container">
+            <input type="checkbox" id="fluxMode">
+            Enable Flux Mode
+        </label>
+
+        <div class="info-text">
+            <strong>Interactive 3D:</strong> Left-click to rotate, Right-click to pan, Scroll to zoom.
+        </div>
+    </div>
+
+    <div id="labelA" class="label-3d">A</div>
+    <div id="labelB" class="label-3d">B</div>
+    <div id="labelProj" class="label-3d">P</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(12, 8, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting & Environment ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        const gridHelper = new THREE.GridHelper(20, 20, 0xD1D9E6, 0xD1D9E6);
+        gridHelper.position.y = -0.01; // Slight offset to prevent z-fighting
+        scene.add(gridHelper);
+
+        // --- Colors ---
+        const colorA = 0xFF3366;
+        const colorB = 0x4361EE;
+        const colorProj = 0x06D6A0;
+        const colorArc = 0xF77F00;
+        const colorFlux = 0x7209B7;
+
+        // --- Objects ---
+        const origin = new THREE.Vector3(0, 0, 0);
+
+        // Vectors
+        const arrowA = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), origin, 1, colorA, 0.6, 0.3);
+        const arrowB = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), origin, 1, colorB, 0.6, 0.3);
+        scene.add(arrowA);
+        scene.add(arrowB);
+
+        // Projection Line (Dashed)
+        const dashMaterial = new THREE.LineDashedMaterial({ color: colorProj, dashSize: 0.2, gapSize: 0.1, linewidth: 2 });
+        const dashGeometry = new THREE.BufferGeometry().setFromPoints([origin, origin]);
+        const dashLine = new THREE.Line(dashGeometry, dashMaterial);
+        scene.add(dashLine);
+
+        // Projection Segment (Thick cylinder for visibility)
+        const projSegGeo = new THREE.CylinderGeometry(0.08, 0.08, 1, 16);
+        projSegGeo.translate(0, 0.5, 0); // Pivot at base
+        const projSegMat = new THREE.MeshBasicMaterial({ color: colorProj, transparent: true, opacity: 0.8 });
+        const projSegment = new THREE.Mesh(projSegGeo, projSegMat);
+        scene.add(projSegment);
+
+        // Angle Arc
+        const arcMaterial = new THREE.LineBasicMaterial({ color: colorArc, linewidth: 3 });
+        let arcLine = new THREE.Line(new THREE.BufferGeometry(), arcMaterial);
+        scene.add(arcLine);
+
+        // Flux Plane
+        const planeGeo = new THREE.PlaneGeometry(1, 1);
+        const planeMat = new THREE.MeshBasicMaterial({ color: colorFlux, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+        const fluxPlane = new THREE.Mesh(planeGeo, planeMat);
+        fluxPlane.visible = false;
+        scene.add(fluxPlane);
+
+        // Plane Border
+        const edges = new THREE.EdgesGeometry(planeGeo);
+        const borderMat = new THREE.LineBasicMaterial({ color: colorFlux, linewidth: 2 });
+        const planeBorder = new THREE.LineSegments(edges, borderMat);
+        fluxPlane.add(planeBorder);
+
+        // --- State Variables ---
+        let params = {
+            magA: 5.0,
+            magB: 7.0,
+            theta: 45,
+            phi: 0,
+            isFluxMode: false
+        };
+
+        // UI Elements
+        const inputs = {
+            magA: document.getElementById('magA'),
+            magB: document.getElementById('magB'),
+            theta: document.getElementById('theta'),
+            phi: document.getElementById('phi'),
+            fluxMode: document.getElementById('fluxMode')
+        };
+
+        const displays = {
+            magA: document.getElementById('val-magA'),
+            magB: document.getElementById('val-magB'),
+            theta: document.getElementById('val-theta'),
+            phi: document.getElementById('val-phi')
+        };
+
+        const htmlLabels = {
+            A: document.getElementById('labelA'),
+            B: document.getElementById('labelB'),
+            Proj: document.getElementById('labelProj')
+        };
+
+        // --- Logic & Update ---
+        function updateScene() {
+            // Read params
+            params.magA = parseFloat(inputs.magA.value);
+            params.magB = parseFloat(inputs.magB.value);
+            params.theta = parseFloat(inputs.theta.value);
+            params.phi = parseFloat(inputs.phi.value);
+            params.isFluxMode = inputs.fluxMode.checked;
+
+            // Update displays
+            displays.magA.innerText = params.magA.toFixed(1);
+            displays.magB.innerText = params.magB.toFixed(1);
+            displays.theta.innerText = params.theta + '°';
+            displays.phi.innerText = params.phi + '°';
+
+            const thetaRad = THREE.MathUtils.degToRad(params.theta);
+            const phiRad = THREE.MathUtils.degToRad(params.phi);
+            const axisY = new THREE.Vector3(0, 1, 0);
+
+            // Calculate Vector B
+            const vecB = new THREE.Vector3(params.magB, 0, 0);
+            vecB.applyAxisAngle(axisY, phiRad);
+            const dirB = vecB.clone().normalize();
+
+            // Calculate Vector A
+            const vecA = new THREE.Vector3(params.magA * Math.cos(thetaRad), params.magA * Math.sin(thetaRad), 0);
+            vecA.applyAxisAngle(axisY, phiRad);
+            const dirA = vecA.clone().normalize();
+
+            // Update Arrows
+            if (params.magA > 0) {
+                arrowA.setDirection(dirA);
+                arrowA.setLength(params.magA, Math.min(0.6, params.magA), Math.min(0.3, params.magA));
+                arrowA.visible = true;
+            } else {
+                arrowA.visible = false;
+            }
+
+            if (params.magB > 0) {
+                arrowB.setDirection(dirB);
+                arrowB.setLength(params.magB, Math.min(0.6, params.magB), Math.min(0.3, params.magB));
+                arrowB.visible = true;
+            } else {
+                arrowB.visible = false;
+            }
+
+            // Math Calculations
+            let dotProduct = params.magA * params.magB * Math.cos(thetaRad);
+            if (Math.abs(dotProduct) < 0.0001) dotProduct = 0; // Handle float precision at 90 deg
+            
+            let projLength = params.magA * Math.cos(thetaRad);
+            if (Math.abs(projLength) < 0.0001) projLength = 0;
+
+            // Projection Vector
+            const projVec = dirB.clone().multiplyScalar(projLength);
+
+            // Update Dashed Drop Line
+            dashGeometry.setFromPoints([vecA, projVec]);
+            dashLine.computeLineDistances();
+            dashLine.visible = (params.magA > 0 && params.magB > 0 && params.theta !== 0 && params.theta !== 180);
+
+            // Update Projection Segment
+            if (Math.abs(projLength) > 0.01 && params.magB > 0) {
+                projSegment.visible = true;
+                projSegment.scale.set(1, Math.abs(projLength), 1);
+                
+                // Align cylinder with B or -B
+                const alignDir = projLength > 0 ? dirB : dirB.clone().negate();
+                const quaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), alignDir);
+                projSegment.setRotationFromQuaternion(quaternion);
+                projSegment.position.copy(origin);
+            } else {
+                projSegment.visible = false;
+            }
+
+            // Update Angle Arc
+            if (params.magA > 0 && params.magB > 0 && params.theta > 0) {
+                const arcRadius = Math.min(params.magA, params.magB) * 0.25 + 0.5;
+                const curve = new THREE.EllipseCurve(0, 0, arcRadius, arcRadius, 0, thetaRad, false, 0);
+                const points2D = curve.getPoints(32);
+                const points3D = points2D.map(p => new THREE.Vector3(p.x, p.y, 0).applyAxisAngle(axisY, phiRad));
+                arcLine.geometry.setFromPoints(points3D);
+                arcLine.visible = true;
+            } else {
+                arcLine.visible = false;
+            }
+
+            // Update Flux Plane
+            if (params.isFluxMode && params.magB > 0) {
+                fluxPlane.visible = true;
+                // Area = magB, so side length = sqrt(magB)
+                const side = Math.sqrt(params.magB) * 1.5; // Scaled slightly for visual clarity
+                fluxPlane.scale.set(side, side, 1);
+                
+                // Orient plane perpendicular to B
+                const lookTarget = origin.clone().add(dirB);
+                fluxPlane.lookAt(lookTarget);
+            } else {
+                fluxPlane.visible = false;
+            }
+
+            // Update UI Text & Labels
+            updateUI(dotProduct, projLength);
+            
+            // Store vectors for label positioning in animation loop
+            window.currentVecA = vecA;
+            window.currentVecB = vecB;
+            window.currentProj = projVec;
+        }
+
+        function updateUI(dotProduct, projLength) {
+            const header = document.getElementById('formula-header');
+            const gen = document.getElementById('formula-general');
+            const calc = document.getElementById('formula-calc');
+            
+            const lblA = document.getElementById('label-magA');
+            const lblB = document.getElementById('label-magB');
+
+            let symA = 'A';
+            let symB = 'B';
+            let symRes = 'S';
+
+            if (params.isFluxMode) {
+                header.innerText = "Electric Flux";
+                gen.innerHTML = "Φ = E · n A = |E| |A| cos(θ)";
+                lblA.innerText = "Electric Field (|E|)";
+                lblB.innerText = "Area Magnitude (|A|)";
+                symA = 'E';
+                symB = 'n';
+                symRes = 'Φ';
+                htmlLabels.A.innerText = 'E';
+                htmlLabels.B.innerText = 'n (Normal)';
+                document.getElementById('formula-card').style.borderLeftColor = '#7209B7';
+            } else {
+                header.innerText = "Scalar Product";
+                gen.innerHTML = "A · B = |A| |B| cos(θ)";
+                lblA.innerText = "Magnitude of A (|A|)";
+                lblB.innerText = "Magnitude of B (|B|)";
+                htmlLabels.A.innerText = 'A';
+                htmlLabels.B.innerText = 'B';
+                document.getElementById('formula-card').style.borderLeftColor = '#FF3366';
+            }
+
+            const cosVal = Math.cos(THREE.MathUtils.degToRad(params.theta)).toFixed(3);
+            calc.innerHTML = `${params.magA.toFixed(1)} × ${params.magB.toFixed(1)} × (${cosVal}) = <span class="highlight">${dotProduct.toFixed(2)}</span>`;
+
+            htmlLabels.Proj.innerText = `|${symA}|cosθ = ${projLength.toFixed(1)}`;
+            htmlLabels.Proj.style.display = (Math.abs(projLength) > 0.01 && params.magB > 0) ? 'block' : 'none';
+            htmlLabels.A.style.display = params.magA > 0 ? 'block' : 'none';
+            htmlLabels.B.style.display = params.magB > 0 ? 'block' : 'none';
+        }
+
+        function updateLabels() {
+            if (!window.currentVecA) return;
+
+            const updatePos = (vec, element, offset = 0) => {
+                if (element.style.display === 'none') return;
+                const pos = vec.clone();
+                // Add slight offset along vector direction to push label past arrowhead
+                if (pos.length() > 0) {
+                    pos.add(pos.clone().normalize().multiplyScalar(offset));
+                }
+                pos.project(camera);
+                
+                const x = (pos.x * .5 + .5) * container.clientWidth;
+                const y = (pos.y * -.5 + .5) * container.clientHeight;
+                
+                // Hide if behind camera
+                if (pos.z > 1) {
+                    element.style.opacity = 0;
+                } else {
+                    element.style.opacity = 1;
+                    element.style.left = `${x}px`;
+                    element.style.top = `${y}px`;
+                }
+            };
+
+            updatePos(window.currentVecA, htmlLabels.A, 0.5);
+            updatePos(window.currentVecB, htmlLabels.B, 0.5);
+            
+            // Position projection label at the middle of the projection segment
+            if (window.currentProj) {
+                const midProj = window.currentProj.clone().multiplyScalar(0.5);
+                // Offset slightly down/right for readability
+                midProj.y -= 0.3;
+                updatePos(midProj, htmlLabels.Proj, 0);
+            }
+        }
+
+        // --- Event Listeners ---
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', updateScene);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+            updateLabels();
+        }
+
+        // Initialize
+        updateScene();
+        animate();
+
+    </script>
+</body>
+</html>

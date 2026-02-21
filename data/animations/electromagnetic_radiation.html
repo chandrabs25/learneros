@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electromagnetic Wave & Photon Visualization</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-e: #FF3366;
+            --primary-b: #7209B7;
+            --bg-light: #f0f4f8;
+            --bg-dark: #d9e2ec;
+            --text-main: #2D3436;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--bg-light), var(--bg-dark));
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            z-index: 10;
+        }
+
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            min-width: 250px;
+        }
+
+        h1, h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .formula-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            background: rgba(255,255,255,0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
+        }
+
+        .formula-row span.math {
+            font-weight: 700;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--primary-b);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary-e);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.1);
+            border-radius: 2px;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding-top: 10px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        /* Switch styling */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 46px;
+            height: 24px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--primary-e); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .color-box {
+            width: 12px; height: 12px; border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            #ui-panel { top: auto; bottom: 20px; right: 50%; transform: translateX(50%); width: 90%; max-width: 350px; padding: 15px;}
+            #formula-card { top: 10px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 350px; padding: 15px;}
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>Photon Physics</h2>
+        <div class="formula-row">
+            <span>Wavelength (λ)</span>
+            <span class="math" id="lbl-lambda" style="color: #F77F00;">550 nm</span>
+        </div>
+        <div class="formula-row">
+            <span>Frequency (f)</span>
+            <span class="math" id="lbl-freq">545.45 THz</span>
+        </div>
+        <div class="formula-row">
+            <span>Energy (E = hc/λ)</span>
+            <span class="math" id="lbl-energy">2.25 eV</span>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: var(--primary-e);"></div> E-Field (Y)</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--primary-b);"></div> B-Field (Z)</div>
+        </div>
+    </div>
+
+    <div id="ui-panel" class="glass-panel">
+        <h2>Wave Controls</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Wavelength (λ)</span>
+                <span class="val-display" id="val-wavelength">550 nm</span>
+            </div>
+            <input type="range" id="slider-wavelength" min="400" max="700" step="1" value="550">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Amplitude (E₀)</span>
+                <span class="val-display" id="val-amplitude">1.0</span>
+            </div>
+            <input type="range" id="slider-amplitude" min="0.5" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Simulation Speed</span>
+                <span class="val-display" id="val-speed">1.0x</span>
+            </div>
+            <input type="range" id="slider-speed" min="0" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="toggle-container">
+            <span>Photon Mode (Wave Packet)</span>
+            <label class="switch">
+                <input type="checkbox" id="toggle-packet">
+                <span class="slider"></span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        const state = {
+            wavelength: 550, // nm
+            amplitude: 1.0,
+            timeScale: 1.0,
+            isPacket: false,
+            time: 0
+        };
+
+        // --- Physics Constants for Visualization ---
+        const VISUAL_C = 15; // Visual speed of light
+        const DOMAIN_LENGTH = 40;
+        const NUM_POINTS = 600;
+        const ARROW_SPACING = 0.6;
+
+        // --- DOM Elements ---
+        const elLambda = document.getElementById('lbl-lambda');
+        const elFreq = document.getElementById('lbl-freq');
+        const elEnergy = document.getElementById('lbl-energy');
+        const valWavelength = document.getElementById('val-wavelength');
+        const valAmplitude = document.getElementById('val-amplitude');
+        const valSpeed = document.getElementById('val-speed');
+
+        // --- Utility: Wavelength to RGB ---
+        function nmToRGB(wavelength) {
+            let r, g, b;
+            if (wavelength >= 380 && wavelength < 440) {
+                r = -(wavelength - 440) / (440 - 380); g = 0.0; b = 1.0;
+            } else if (wavelength >= 440 && wavelength < 490) {
+                r = 0.0; g = (wavelength - 440) / (490 - 440); b = 1.0;
+            } else if (wavelength >= 490 && wavelength < 510) {
+                r = 0.0; g = 1.0; b = -(wavelength - 510) / (510 - 490);
+            } else if (wavelength >= 510 && wavelength < 580) {
+                r = (wavelength - 510) / (580 - 510); g = 1.0; b = 0.0;
+            } else if (wavelength >= 580 && wavelength < 645) {
+                r = 1.0; g = -(wavelength - 645) / (645 - 580); b = 0.0;
+            } else if (wavelength >= 645 && wavelength <= 780) {
+                r = 1.0; g = 0.0; b = 0.0;
+            } else {
+                r = 0.0; g = 0.0; b = 0.0;
+            }
+            let factor = 1.0;
+            if (wavelength >= 380 && wavelength < 420) factor = 0.3 + 0.7 * (wavelength - 380) / (420 - 380);
+            else if (wavelength >= 420 && wavelength <= 700) factor = 1.0;
+            else if (wavelength > 700 && wavelength <= 780) factor = 0.3 + 0.7 * (780 - wavelength) / (780 - 700);
+            return new THREE.Color(r * factor, g * factor, b * factor);
+        }
+
+        // --- Setup Three.js Scene ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Transparent background to show CSS gradient
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(-8, 8, 18);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(15, 0, 0);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Scene Objects ---
+
+        // 1. Propagation Axis (X-axis)
+        const axisMaterial = new THREE.LineDashedMaterial({ color: 0x2D3436, dashSize: 0.5, gapSize: 0.2 });
+        const axisGeometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-5, 0, 0), new THREE.Vector3(DOMAIN_LENGTH + 5, 0, 0)]);
+        const axisLine = new THREE.Line(axisGeometry, axisMaterial);
+        axisLine.computeLineDistances();
+        scene.add(axisLine);
+
+        // 2. Source Atom (Origin)
+        const atomGeometry = new THREE.SphereGeometry(0.6, 32, 32);
+        const atomMaterial = new THREE.MeshStandardMaterial({ 
+            color: nmToRGB(state.wavelength),
+            emissive: nmToRGB(state.wavelength),
+            emissiveIntensity: 0.5,
+            transparent: true,
+            opacity: 0.9
+        });
+        const atom = new THREE.Mesh(atomGeometry, atomMaterial);
+        atom.position.set(0, 0, 0);
+        scene.add(atom);
+
+        const atomGlowGeom = new THREE.SphereGeometry(1.0, 32, 32);
+        const atomGlowMat = new THREE.MeshBasicMaterial({
+            color: nmToRGB(state.wavelength),
+            transparent: true,
+            opacity: 0.2,
+            blending: THREE.AdditiveBlending
+        });
+        const atomGlow = new THREE.Mesh(atomGlowGeom, atomGlowMat);
+        scene.add(atomGlow);
+
+        // 3. Continuous Wave Lines (BufferGeometry)
+        const eLineMat = new THREE.LineBasicMaterial({ color: 0xFF3366, linewidth: 2 });
+        const bLineMat = new THREE.LineBasicMaterial({ color: 0x7209B7, linewidth: 2 });
+        
+        const eGeometry = new THREE.BufferGeometry();
+        const bGeometry = new THREE.BufferGeometry();
+        const ePositions = new Float32Array(NUM_POINTS * 3);
+        const bPositions = new Float32Array(NUM_POINTS * 3);
+        
+        eGeometry.setAttribute('position', new THREE.BufferAttribute(ePositions, 3));
+        bGeometry.setAttribute('position', new THREE.BufferAttribute(bPositions, 3));
+        
+        const eLine = new THREE.Line(eGeometry, eLineMat);
+        const bLine = new THREE.Line(bGeometry, bLineMat);
+        scene.add(eLine);
+        scene.add(bLine);
+
+        // 4. Field Vectors (ArrowHelpers)
+        const arrowsE = [];
+        const arrowsB = [];
+        const numArrows = Math.floor(DOMAIN_LENGTH / ARROW_SPACING);
+        
+        const colorE = 0xFF3366;
+        const colorB = 0x7209B7;
+
+        for (let i = 0; i <= numArrows; i++) {
+            let x = i * ARROW_SPACING;
+            
+            // E Arrow (Y-axis)
+            let dirE = new THREE.Vector3(0, 1, 0);
+            let arrowE = new THREE.ArrowHelper(dirE, new THREE.Vector3(x, 0, 0), 0.1, colorE, 0.2, 0.15);
+            scene.add(arrowE);
+            arrowsE.push({ helper: arrowE, x: x });
+
+            // B Arrow (Z-axis)
+            let dirB = new THREE.Vector3(0, 0, 1);
+            let arrowB = new THREE.ArrowHelper(dirB, new THREE.Vector3(x, 0, 0), 0.1, colorB, 0.2, 0.15);
+            scene.add(arrowB);
+            arrowsB.push({ helper: arrowB, x: x });
+        }
+
+        // --- Update Logic ---
+        function updatePhysics() {
+            // Map physical wavelength (400-700nm) to visual wavelength (4-7 units)
+            const visLambda = state.wavelength / 100;
+            const k = (2 * Math.PI) / visLambda;
+            const omega = k * VISUAL_C;
+            const phase = omega * state.time;
+
+            // Packet envelope center
+            // Loops from -10 to DOMAIN_LENGTH + 10
+            const packetX = (VISUAL_C * state.time) % (DOMAIN_LENGTH + 20) - 10; 
+            const sigma = visLambda * 1.2; // Width of the photon packet
+
+            // Update Continuous Lines
+            const ePos = eLine.geometry.attributes.position.array;
+            const bPos = bLine.geometry.attributes.position.array;
+
+            for (let i = 0; i < NUM_POINTS; i++) {
+                let x = (i / (NUM_POINTS - 1)) * DOMAIN_LENGTH;
+                
+                let envelope = 1.0;
+                if (state.isPacket) {
+                    envelope = Math.exp(-Math.pow(x - packetX, 2) / (2 * sigma * sigma));
+                }
+
+                // Physics: E_y = E_0 * sin(kx - wt), B_z = B_0 * sin(kx - wt)
+                // In vacuum, E and B are in phase.
+                let val = state.amplitude * envelope * Math.sin(k * x - phase);
+
+                ePos[i * 3] = x;
+                ePos[i * 3 + 1] = val;
+                ePos[i * 3 + 2] = 0;
+
+                bPos[i * 3] = x;
+                bPos[i * 3 + 1] = 0;
+                bPos[i * 3 + 2] = val; // Scaled visually to match E amplitude
+            }
+            eLine.geometry.attributes.position.needsUpdate = true;
+            bLine.geometry.attributes.position.needsUpdate = true;
+
+            // Update Arrows
+            for (let i = 0; i <= numArrows; i++) {
+                let x = arrowsE[i].x;
+                
+                let envelope = 1.0;
+                if (state.isPacket) {
+                    envelope = Math.exp(-Math.pow(x - packetX, 2) / (2 * sigma * sigma));
+                }
+
+                let val = state.amplitude * envelope * Math.sin(k * x - phase);
+                let absVal = Math.abs(val);
+
+                // Update E Arrow
+                if (absVal > 0.05) {
+                    arrowsE[i].helper.visible = true;
+                    arrowsE[i].helper.setLength(absVal, 0.2, 0.15);
+                    arrowsE[i].helper.setDirection(new THREE.Vector3(0, Math.sign(val), 0));
+                } else {
+                    arrowsE[i].helper.visible = false;
+                }
+
+                // Update B Arrow
+                if (absVal > 0.05) {
+                    arrowsB[i].helper.visible = true;
+                    arrowsB[i].helper.setLength(absVal, 0.2, 0.15);
+                    arrowsB[i].helper.setDirection(new THREE.Vector3(0, 0, Math.sign(val)));
+                } else {
+                    arrowsB[i].helper.visible = false;
+                }
+            }
+
+            // Update Atom Source
+            const atomColor = nmToRGB(state.wavelength);
+            atomMaterial.color = atomColor;
+            atomMaterial.emissive = atomColor;
+            atomGlowMat.color = atomColor;
+            elLambda.style.color = `rgb(${atomColor.r*255}, ${atomColor.g*255}, ${atomColor.b*255})`;
+
+            // Pulse atom based on frequency at origin (x=0)
+            let originVal = Math.sin(-phase);
+            let pulse = 1.0 + 0.2 * originVal;
+            if(state.isPacket) {
+                let originEnv = Math.exp(-Math.pow(0 - packetX, 2) / (2 * sigma * sigma));
+                pulse = 1.0 + 0.4 * originEnv * Math.abs(originVal);
+                atomMaterial.opacity = 0.3 + 0.7 * originEnv;
+                atomGlowMat.opacity = 0.1 + 0.4 * originEnv;
+            } else {
+                atomMaterial.opacity = 0.9;
+                atomGlowMat.opacity = 0.2 + 0.1 * originVal;
+            }
+            atom.scale.set(pulse, pulse, pulse);
+            atomGlow.scale.set(pulse*1.2, pulse*1.2, pulse*1.2);
+        }
+
+        function updateUI() {
+            // Calculate Physics values
+            // f = c / lambda. c = 3e8 m/s, lambda in nm (1e-9 m)
+            // f (THz) = (300,000 / lambda)
+            const f_THz = 300000 / state.wavelength;
+            
+            // E = 1240 / lambda (in eV)
+            const energy_eV = 1240 / state.wavelength;
+
+            elLambda.innerText = `${state.wavelength} nm`;
+            elFreq.innerText = `${f_THz.toFixed(2)} THz`;
+            elEnergy.innerText = `${energy_eV.toFixed(2)} eV`;
+
+            valWavelength.innerText = `${state.wavelength} nm`;
+            valAmplitude.innerText = state.amplitude.toFixed(1);
+            valSpeed.innerText = `${state.timeScale.toFixed(1)}x`;
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('slider-wavelength').addEventListener('input', (e) => {
+            state.wavelength = parseInt(e.target.value);
+            updateUI();
+        });
+
+        document.getElementById('slider-amplitude').addEventListener('input', (e) => {
+            state.amplitude = parseFloat(e.target.value);
+            updateUI();
+        });
+
+        document.getElementById('slider-speed').addEventListener('input', (e) => {
+            state.timeScale = parseFloat(e.target.value);
+            updateUI();
+        });
+
+        document.getElementById('toggle-packet').addEventListener('change', (e) => {
+            state.isPacket = e.target.checked;
+            // Reset time slightly to ensure packet starts off-screen
+            if(state.isPacket) state.time = 0; 
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            state.time += delta * state.timeScale;
+
+            updatePhysics();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updateUI();
+        animate();
+
+    </script>
+</body>
+</html>

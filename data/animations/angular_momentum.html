@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angular Momentum Interactive Lab</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 1);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --color-sun: #FFD166;
+            --color-planet: #4361EE;
+            --color-v: #06D6A0;
+            --color-l: #7209B7;
+            --color-grid: #D1D9E6;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphic Panels */
+        .glass-panel {
+            position: absolute;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        /* Control Panel (Right) */
+        #control-panel {
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+
+        #control-panel::-webkit-scrollbar { width: 6px; }
+        #control-panel::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0 0 15px 0;
+            font-weight: 700;
+            color: var(--text-main);
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--color-planet);
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--color-planet);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus { outline: none; }
+
+        /* Specific slider colors */
+        #slider-mass::-webkit-slider-thumb { background: var(--color-planet); }
+        #slider-radius::-webkit-slider-thumb { background: #f59e0b; }
+        #slider-eccentricity::-webkit-slider-thumb { background: #ef4444; }
+        #slider-omega::-webkit-slider-thumb { background: var(--color-v); }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-top: 15px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .checkbox-group input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            accent-color: var(--color-planet);
+            cursor: pointer;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: var(--text-main);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover { background: #334155; }
+
+        /* Formula Card (Top Left) */
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .math-equation {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem;
+            text-align: center;
+            background: var(--bg-color);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .math-equation span.vec-l { color: var(--color-l); }
+        .math-equation span.vec-r { color: var(--color-planet); }
+        .math-equation span.vec-p { color: var(--color-v); }
+
+        .live-data {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 8px 15px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .live-data .label { font-weight: 700; text-align: right; }
+        .live-data .val { text-align: left; }
+        
+        .c-l { color: var(--color-l); }
+        .c-r { color: var(--color-planet); }
+        .c-v { color: var(--color-v); }
+
+        /* 3D Labels */
+        .vector-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 14px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+            z-index: 5;
+            transition: opacity 0.2s;
+        }
+
+        #label-r { color: var(--color-planet); }
+        #label-v { color: var(--color-v); }
+        #label-l { color: var(--color-l); }
+
+        .hidden { opacity: 0 !important; }
+
+        /* Instructions */
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.6);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <div class="formula-title">Angular Momentum</div>
+        <div class="math-equation">
+            <span class="vec-l">L</span> = <span class="vec-r">r</span> &times; (m<span class="vec-p">v</span>)
+        </div>
+        <div class="live-data">
+            <div class="label c-l">|L| =</div><div class="val c-l" id="val-l">0.00 kg·m²/s</div>
+            <div class="label c-r">|r| =</div><div class="val c-r" id="val-r">0.00 m</div>
+            <div class="label c-v">|v| =</div><div class="val c-v" id="val-v">0.00 m/s</div>
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <h1>Physics Controls</h1>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Mass (m)</span>
+                <span class="val-display" id="disp-mass">1.0 kg</span>
+            </div>
+            <input type="range" id="slider-mass" min="0.5" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Semi-major Axis (a)</span>
+                <span class="val-display" id="disp-radius" style="color:#f59e0b">5.0 m</span>
+            </div>
+            <input type="range" id="slider-radius" min="2.0" max="10.0" step="0.5" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Eccentricity (e)</span>
+                <span class="val-display" id="disp-eccentricity" style="color:#ef4444">0.00</span>
+            </div>
+            <input type="range" id="slider-eccentricity" min="0.0" max="0.8" step="0.05" value="0.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Base Ang. Vel. (&omega;)</span>
+                <span class="val-display" id="disp-omega" style="color:var(--color-v)">1.0 rad/s</span>
+            </div>
+            <input type="range" id="slider-omega" min="0.1" max="3.0" step="0.1" value="1.0">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="toggle-vectors" checked>
+            Show Vector Components
+        </label>
+
+        <button id="btn-reset">Reset to Circular Orbit</button>
+    </div>
+
+    <div id="label-r" class="vector-label">r</div>
+    <div id="label-v" class="vector-label">v</div>
+    <div id="label-l" class="vector-label">L</div>
+
+    <div id="instructions">Left Click: Rotate | Right Click: Pan | Scroll: Zoom</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, -15, 12);
+        camera.up.set(0, 0, 1); // Z is up
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 50;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xFFD166, 1.5, 50);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        dirLight.position.set(10, 10, 20);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // --- Objects ---
+        // Grid (XY Plane)
+        const gridHelper = new THREE.GridHelper(40, 40, 0xD1D9E6, 0xe2e8f0);
+        gridHelper.rotation.x = Math.PI / 2;
+        gridHelper.position.z = -0.01; // Slightly below to prevent z-fighting
+        scene.add(gridHelper);
+
+        // Sun (Pivot)
+        const sunGeo = new THREE.SphereGeometry(0.8, 32, 32);
+        const sunMat = new THREE.MeshStandardMaterial({ 
+            color: 0xFFD166, 
+            emissive: 0xFFaa00, 
+            emissiveIntensity: 0.4,
+            roughness: 0.2
+        });
+        const sun = new THREE.Mesh(sunGeo, sunMat);
+        scene.add(sun);
+
+        // Sun Glow
+        const glowGeo = new THREE.SphereGeometry(1.2, 32, 32);
+        const glowMat = new THREE.MeshBasicMaterial({
+            color: 0xFFD166,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.BackSide
+        });
+        const sunGlow = new THREE.Mesh(glowGeo, glowMat);
+        scene.add(sunGlow);
+
+        // Planet
+        const planetGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        const planetMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4361EE,
+            roughness: 0.4,
+            metalness: 0.1
+        });
+        const planet = new THREE.Mesh(planetGeo, planetMat);
+        planet.castShadow = true;
+        scene.add(planet);
+
+        // Orbit Path
+        const pathMat = new THREE.LineBasicMaterial({ color: 0x4361EE, transparent: true, opacity: 0.4 });
+        const pathGeo = new THREE.BufferGeometry();
+        const orbitPath = new THREE.LineLoop(pathGeo, pathMat);
+        scene.add(orbitPath);
+
+        // Vectors (ArrowHelpers)
+        const origin = new THREE.Vector3(0, 0, 0);
+        const rColor = 0x4361EE; // Blue
+        const vColor = 0x06D6A0; // Green
+        const lColor = 0x7209B7; // Purple
+
+        const rArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), origin, 1, rColor, 0.4, 0.3);
+        const vArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), origin, 1, vColor, 0.4, 0.3);
+        const lArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,1), origin, 1, lColor, 0.6, 0.4);
+        
+        // Make lines thicker visually by adding a cylinder to L vector for emphasis
+        const lCylGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
+        lCylGeo.translate(0, 0.5, 0);
+        const lCylMat = new THREE.MeshBasicMaterial({color: lColor});
+        const lCyl = new THREE.Mesh(lCylGeo, lCylMat);
+        lCyl.rotation.x = Math.PI / 2; // point along Z
+        scene.add(lCyl);
+
+        scene.add(rArrow);
+        scene.add(vArrow);
+        scene.add(lArrow);
+
+        // --- Physics State ---
+        let state = {
+            m: 1.0,
+            a: 5.0,
+            e: 0.0,
+            omega: 1.0,
+            theta: 0.0,
+            showVectors: true
+        };
+
+        // --- UI Elements ---
+        const ui = {
+            mass: document.getElementById('slider-mass'),
+            radius: document.getElementById('slider-radius'),
+            ecc: document.getElementById('slider-eccentricity'),
+            omega: document.getElementById('slider-omega'),
+            toggle: document.getElementById('toggle-vectors'),
+            reset: document.getElementById('btn-reset'),
+            dMass: document.getElementById('disp-mass'),
+            dRadius: document.getElementById('disp-radius'),
+            dEcc: document.getElementById('disp-eccentricity'),
+            dOmega: document.getElementById('disp-omega'),
+            vL: document.getElementById('val-l'),
+            vR: document.getElementById('val-r'),
+            vV: document.getElementById('val-v'),
+            lblR: document.getElementById('label-r'),
+            lblV: document.getElementById('label-v'),
+            lblL: document.getElementById('label-l')
+        };
+
+        // --- Functions ---
+
+        function updateOrbitPath() {
+            const points = [];
+            const segments = 128;
+            const p = state.a * (1 - state.e * state.e);
+            for (let i = 0; i <= segments; i++) {
+                const t = (i / segments) * Math.PI * 2;
+                const r = p / (1 + state.e * Math.cos(t));
+                points.push(new THREE.Vector3(r * Math.cos(t), r * Math.sin(t), 0));
+            }
+            pathGeo.setFromPoints(points);
+        }
+
+        function updateUI() {
+            state.m = parseFloat(ui.mass.value);
+            state.a = parseFloat(ui.radius.value);
+            state.e = parseFloat(ui.ecc.value);
+            state.omega = parseFloat(ui.omega.value);
+            state.showVectors = ui.toggle.checked;
+
+            ui.dMass.innerText = state.m.toFixed(1) + ' kg';
+            ui.dRadius.innerText = state.a.toFixed(1) + ' m';
+            ui.dEcc.innerText = state.e.toFixed(2);
+            ui.dOmega.innerText = state.omega.toFixed(1) + ' rad/s';
+
+            // Visual scaling based on mass
+            planet.scale.setScalar(Math.pow(state.m, 1/3));
+
+            updateOrbitPath();
+        }
+
+        // Event Listeners
+        ui.mass.addEventListener('input', updateUI);
+        ui.radius.addEventListener('input', updateUI);
+        ui.ecc.addEventListener('input', updateUI);
+        ui.omega.addEventListener('input', updateUI);
+        ui.toggle.addEventListener('change', () => {
+            state.showVectors = ui.toggle.checked;
+            const display = state.showVectors ? '' : 'none';
+            rArrow.visible = state.showVectors;
+            vArrow.visible = state.showVectors;
+            lArrow.visible = state.showVectors;
+            lCyl.visible = state.showVectors;
+            
+            if(!state.showVectors) {
+                ui.lblR.classList.add('hidden');
+                ui.lblV.classList.add('hidden');
+                ui.lblL.classList.add('hidden');
+            }
+        });
+
+        ui.reset.addEventListener('click', () => {
+            ui.ecc.value = 0;
+            ui.radius.value = 5.0;
+            updateUI();
+        });
+
+        // Project 3D position to 2D screen coordinates for HTML labels
+        function updateLabelPosition(label, position3D) {
+            if (!state.showVectors) return;
+            
+            const vector = position3D.clone();
+            vector.project(camera);
+
+            // Check if behind camera
+            if (vector.z > 1) {
+                label.classList.add('hidden');
+                return;
+            }
+
+            const x = (vector.x * .5 + .5) * window.innerWidth;
+            const y = (vector.y * -.5 + .5) * window.innerHeight;
+
+            label.style.left = `${x}px`;
+            label.style.top = `${y}px`;
+            label.classList.remove('hidden');
+        }
+
+        // --- Main Animation Loop ---
+        const clock = new THREE.Clock();
+        
+        // Visual scale factors for vectors so they fit on screen
+        const V_SCALE = 0.5; 
+        const L_SCALE = 0.1;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Cap dt to prevent huge jumps if tab is inactive
+            const dt = Math.min(clock.getDelta(), 0.05); 
+
+            // Physics Calculations
+            // p = semi-latus rectum
+            const p = state.a * (1 - state.e * state.e);
+            
+            // Base Angular Momentum (constant for the orbit)
+            // L = m * r^2 * d(theta)/dt. 
+            // We define L based on user's omega at a circular orbit equivalent
+            const L_mag = state.m * state.a * state.a * state.omega * Math.sqrt(1 - state.e * state.e);
+
+            // Current radius based on angle theta
+            const r_mag = p / (1 + state.e * Math.cos(state.theta));
+            
+            // Conservation of Angular Momentum: d(theta)/dt = L / (m * r^2)
+            const theta_dot = L_mag / (state.m * r_mag * r_mag);
+            
+            // Time evolution
+            state.theta += theta_dot * dt;
+
+            // Cartesian coordinates
+            const x = r_mag * Math.cos(state.theta);
+            const y = r_mag * Math.sin(state.theta);
+            
+            planet.position.set(x, y, 0);
+
+            // Velocity components derived analytically to ensure exact L conservation
+            const vx = -(L_mag / (state.m * p)) * Math.sin(state.theta);
+            const vy = (L_mag / (state.m * p)) * (state.e + Math.cos(state.theta));
+            const v_mag = Math.sqrt(vx*vx + vy*vy);
+
+            // Update Vectors
+            if (state.showVectors) {
+                // Position Vector (r)
+                const rDir = new THREE.Vector3(x, y, 0).normalize();
+                rArrow.setDirection(rDir);
+                rArrow.setLength(r_mag, 0.4, 0.3);
+
+                // Velocity Vector (v)
+                vArrow.position.set(x, y, 0);
+                const vDir = new THREE.Vector3(vx, vy, 0).normalize();
+                const vLenVisual = v_mag * V_SCALE;
+                vArrow.setDirection(vDir);
+                vArrow.setLength(vLenVisual, 0.4, 0.3);
+
+                // Angular Momentum Vector (L)
+                // Right hand rule: r x v. Since motion is CCW in XY, L is in +Z
+                const lDir = new THREE.Vector3(0, 0, 1);
+                const lLenVisual = L_mag * L_SCALE;
+                lArrow.setDirection(lDir);
+                lArrow.setLength(lLenVisual, 0.6, 0.4);
+                
+                lCyl.scale.set(1, lLenVisual, 1);
+                lCyl.position.set(0, 0, lLenVisual/2);
+
+                // Update HTML Labels
+                updateLabelPosition(ui.lblR, new THREE.Vector3(x/2, y/2, 0));
+                updateLabelPosition(ui.lblV, new THREE.Vector3(x + vx*V_SCALE*1.1, y + vy*V_SCALE*1.1, 0));
+                updateLabelPosition(ui.lblL, new THREE.Vector3(0, 0, lLenVisual + 0.5));
+            }
+
+            // Update Live Data Panel
+            ui.vL.innerText = L_mag.toFixed(2) + ' kg·m²/s';
+            ui.vR.innerText = r_mag.toFixed(2) + ' m';
+            ui.vV.innerText = v_mag.toFixed(2) + ' m/s';
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize
+        updateUI();
+        animate();
+
+    </script>
+</body>
+</html>

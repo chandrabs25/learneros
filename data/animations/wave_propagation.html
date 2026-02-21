@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Wave Propagation Laboratory</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            width: 25%;
+            min-width: 280px;
+            max-width: 350px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            z-index: 10;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        #ui-panel h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #4a5568;
+        }
+
+        .control-group span.val {
+            color: #4361EE;
+            font-weight: 700;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            background: rgba(255, 255, 255, 0.9);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: #2d3748;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        select:focus {
+            border-color: #4361EE;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        
+        /* Specific slider colors */
+        #A::-webkit-slider-thumb { background: #FF3366; }
+        #f::-webkit-slider-thumb { background: #4361EE; }
+        #lambda::-webkit-slider-thumb { background: #06D6A0; }
+        #df::-webkit-slider-thumb { background: #7209B7; }
+        #theta::-webkit-slider-thumb { background: #F77F00; }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.05);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #formula-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1rem;
+            color: #1a202c;
+        }
+
+        .math-line {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.95rem;
+            margin-bottom: 5px;
+            color: #2d3748;
+            font-weight: 600;
+        }
+
+        .math-highlight {
+            color: #4361EE;
+        }
+
+        /* 3D Labels */
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .vector-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+            transition: opacity 0.2s;
+        }
+
+        #label-e { color: #FF3366; border: 1px solid #FF3366; }
+        #label-b { color: #7209B7; border: 1px solid #7209B7; }
+        #label-v { color: #06D6A0; border: 1px solid #06D6A0; }
+
+        /* Scrollbar styling for panel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="labels-container">
+        <div id="label-e" class="vector-label">E-Field</div>
+        <div id="label-b" class="vector-label">B-Field</div>
+        <div id="label-v" class="vector-label">v</div>
+    </div>
+
+    <div id="formula-card">
+        <h3>Wave Properties</h3>
+        <div class="math-line">v = f &lambda; = <span id="val-v" class="math-highlight">4.00</span> m/s</div>
+        <div class="math-line">&phi; = kx - &omega;t</div>
+        <div id="beats-formula" style="display: none;">
+            <div class="math-line" style="margin-top: 8px; color: #7209B7;">f<sub>b</sub> = |f<sub>2</sub> - f<sub>1</sub>| = <span id="val-fb">0.20</span> Hz</div>
+            <div class="math-line">v<sub>group</sub> = &Delta;&omega; / &Delta;k</div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h2>Control Panel</h2>
+        
+        <div class="control-group">
+            <label for="mode">Simulation Mode</label>
+            <select id="mode">
+                <option value="traveling">Traveling Wave (Transverse)</option>
+                <option value="beats">Beats (Superposition)</option>
+                <option value="em">Electromagnetic Wave</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label for="A">Amplitude (A) <span class="val" id="val-A" style="color:#FF3366">1.0 m</span></label>
+            <input type="range" id="A" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label for="f">Frequency (f) <span class="val" id="val-f" style="color:#4361EE">1.0 Hz</span></label>
+            <input type="range" id="f" min="0.5" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label for="lambda">Wavelength (&lambda;) <span class="val" id="val-lambda" style="color:#06D6A0">4.0 m</span></label>
+            <input type="range" id="lambda" min="1.0" max="10.0" step="0.5" value="4.0">
+        </div>
+
+        <div class="control-group" id="group-df" style="display: none;">
+            <label for="df">Freq Delta (&Delta;f) <span class="val" id="val-df" style="color:#7209B7">0.20 Hz</span></label>
+            <input type="range" id="df" min="0.1" max="1.0" step="0.05" value="0.2">
+        </div>
+
+        <div class="control-group" id="group-theta" style="display: none;">
+            <label for="theta">Polarization Angle (&theta;) <span class="val" id="val-theta" style="color:#F77F00">0&deg;</span></label>
+            <input type="range" id="theta" min="0" max="360" step="5" value="0">
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(12, 8, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(10, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+
+        // --- Grid & Axes ---
+        const gridHelper = new THREE.GridHelper(40, 40, 0xd1d9e6, 0xd1d9e6);
+        gridHelper.position.set(10, 0, 0);
+        scene.add(gridHelper);
+
+        // Velocity Vector (Green)
+        const vDir = new THREE.Vector3(1, 0, 0);
+        const vOrigin = new THREE.Vector3(0, 0, 0);
+        const velocityArrow = new THREE.ArrowHelper(vDir, vOrigin, 3, 0x06D6A0, 0.6, 0.4);
+        scene.add(velocityArrow);
+
+        // --- Wave Geometry (Particles & Line) ---
+        const numPoints = 200;
+        const xRange = 25;
+        const dx = xRange / (numPoints - 1);
+
+        // Particles (InstancedMesh for performance)
+        const sphereGeo = new THREE.SphereGeometry(0.06, 16, 16);
+        const sphereMat = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.2, metalness: 0.1 });
+        const particles = new THREE.InstancedMesh(sphereGeo, sphereMat, numPoints);
+        const dummy = new THREE.Object3D();
+        scene.add(particles);
+
+        // Connecting Line
+        const lineGeo = new THREE.BufferGeometry();
+        const linePositions = new Float32Array(numPoints * 3);
+        lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x4361EE, linewidth: 2 });
+        const waveLine = new THREE.Line(lineGeo, lineMat);
+        scene.add(waveLine);
+
+        // --- Phase Tracker (Gold Sphere) ---
+        const trackerGeo = new THREE.SphereGeometry(0.18, 32, 32);
+        const trackerMat = new THREE.MeshStandardMaterial({ 
+            color: 0xFFD700, 
+            emissive: 0xFFD700, 
+            emissiveIntensity: 0.4,
+            roughness: 0.1,
+            metalness: 0.8
+        });
+        const phaseTracker = new THREE.Mesh(trackerGeo, trackerMat);
+        scene.add(phaseTracker);
+        
+        const trackerLight = new THREE.PointLight(0xFFD700, 1, 5);
+        phaseTracker.add(trackerLight);
+
+        // --- EM Wave Components (Arrows) ---
+        const emGroup = new THREE.Group();
+        scene.add(emGroup);
+        emGroup.visible = false;
+
+        const numArrows = 50; // Arrow every 0.5 units
+        const eArrows = [];
+        const bArrows = [];
+        
+        for(let i=0; i<numArrows; i++) {
+            let eArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, 0xFF3366, 0.3, 0.2);
+            let bArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 1, 0x7209B7, 0.3, 0.2);
+            eArrows.push(eArrow);
+            bArrows.push(bArrow);
+            emGroup.add(eArrow);
+            emGroup.add(bArrow);
+        }
+
+        // --- Beats Envelope (Dashed Line) ---
+        const envGroup = new THREE.Group();
+        scene.add(envGroup);
+        envGroup.visible = false;
+
+        const envGeoTop = new THREE.BufferGeometry();
+        const envGeoBot = new THREE.BufferGeometry();
+        const envPosTop = new Float32Array(numPoints * 3);
+        const envPosBot = new Float32Array(numPoints * 3);
+        envGeoTop.setAttribute('position', new THREE.BufferAttribute(envPosTop, 3));
+        envGeoBot.setAttribute('position', new THREE.BufferAttribute(envPosBot, 3));
+        
+        const envMat = new THREE.LineDashedMaterial({
+            color: 0x8898aa,
+            linewidth: 1,
+            scale: 1,
+            dashSize: 0.3,
+            gapSize: 0.2,
+        });
+
+        const envLineTop = new THREE.Line(envGeoTop, envMat);
+        const envLineBot = new THREE.Line(envGeoBot, envMat);
+        envGroup.add(envLineTop);
+        envGroup.add(envLineBot);
+
+        // --- UI Elements & State ---
+        const ui = {
+            mode: document.getElementById('mode'),
+            A: document.getElementById('A'),
+            f: document.getElementById('f'),
+            lambda: document.getElementById('lambda'),
+            df: document.getElementById('df'),
+            theta: document.getElementById('theta')
+        };
+
+        const vals = {
+            A: document.getElementById('val-A'),
+            f: document.getElementById('val-f'),
+            lambda: document.getElementById('val-lambda'),
+            df: document.getElementById('val-df'),
+            theta: document.getElementById('val-theta'),
+            v: document.getElementById('val-v'),
+            fb: document.getElementById('val-fb')
+        };
+
+        const groups = {
+            df: document.getElementById('group-df'),
+            theta: document.getElementById('group-theta'),
+            beatsFormula: document.getElementById('beats-formula')
+        };
+
+        const labels = {
+            e: document.getElementById('label-e'),
+            b: document.getElementById('label-b'),
+            v: document.getElementById('label-v')
+        };
+
+        // Colors
+        const colorBlue = new THREE.Color(0x4361EE);
+        const colorRed = new THREE.Color(0xFF3366);
+        const colorPurple = new THREE.Color(0x7209B7);
+
+        function updateUI() {
+            vals.A.innerText = parseFloat(ui.A.value).toFixed(1) + ' m';
+            vals.f.innerText = parseFloat(ui.f.value).toFixed(1) + ' Hz';
+            vals.lambda.innerText = parseFloat(ui.lambda.value).toFixed(1) + ' m';
+            vals.df.innerText = parseFloat(ui.df.value).toFixed(2) + ' Hz';
+            vals.theta.innerText = ui.theta.value + '°';
+
+            let f = parseFloat(ui.f.value);
+            let lambda = parseFloat(ui.lambda.value);
+            vals.v.innerText = (f * lambda).toFixed(2);
+            vals.fb.innerText = parseFloat(ui.df.value).toFixed(2);
+
+            const mode = ui.mode.value;
+            
+            // Visibility toggles
+            groups.df.style.display = mode === 'beats' ? 'block' : 'none';
+            groups.theta.style.display = mode === 'em' ? 'block' : 'none';
+            groups.beatsFormula.style.display = mode === 'beats' ? 'block' : 'none';
+            
+            emGroup.visible = mode === 'em';
+            envGroup.visible = mode === 'beats';
+            labels.e.style.display = mode === 'em' ? 'block' : 'none';
+            labels.b.style.display = mode === 'em' ? 'block' : 'none';
+            labels.v.style.display = 'block';
+
+            // Color updates
+            if (mode === 'traveling') {
+                sphereMat.color = colorBlue;
+                lineMat.color = colorBlue;
+            } else if (mode === 'beats') {
+                sphereMat.color = colorPurple;
+                lineMat.color = colorPurple;
+            } else if (mode === 'em') {
+                sphereMat.color = colorRed; // E-field color
+                lineMat.color = colorRed;
+            }
+        }
+
+        // Add listeners
+        Object.values(ui).forEach(el => el.addEventListener('input', updateUI));
+        updateUI();
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const t = clock.getElapsedTime();
+            
+            // Get Parameters
+            const mode = ui.mode.value;
+            const A = parseFloat(ui.A.value);
+            const f = parseFloat(ui.f.value);
+            const lambda = parseFloat(ui.lambda.value);
+            const df = parseFloat(ui.df.value);
+            const thetaRad = parseFloat(ui.theta.value) * Math.PI / 180;
+
+            // Base Physics
+            const k = 2 * Math.PI / lambda;
+            const omega = 2 * Math.PI * f;
+            const v = f * lambda;
+
+            // Beats Physics (Constant medium velocity based on defaults to show dispersionless medium)
+            const v_med = 1.0 * 4.0; // default f * default lambda
+            const f1 = f;
+            const f2 = f + df;
+            const k1 = 2 * Math.PI * f1 / v_med;
+            const k2 = 2 * Math.PI * f2 / v_med;
+            const w1 = 2 * Math.PI * f1;
+            const w2 = 2 * Math.PI * f2;
+
+            // Update Particles and Line
+            for (let i = 0; i < numPoints; i++) {
+                const x = i * dx;
+                let y = 0, z = 0;
+
+                if (mode === 'traveling') {
+                    y = A * Math.sin(k * x - omega * t);
+                } else if (mode === 'beats') {
+                    y = A * Math.sin(k1 * x - w1 * t) + A * Math.sin(k2 * x - w2 * t);
+                } else if (mode === 'em') {
+                    // E-field displacement
+                    const E_mag = A * Math.sin(k * x - omega * t);
+                    y = E_mag * Math.cos(thetaRad);
+                    z = E_mag * Math.sin(thetaRad);
+                }
+
+                dummy.position.set(x, y, z);
+                dummy.updateMatrix();
+                particles.setMatrixAt(i, dummy.matrix);
+
+                linePositions[i * 3] = x;
+                linePositions[i * 3 + 1] = y;
+                linePositions[i * 3 + 2] = z;
+            }
+            particles.instanceMatrix.needsUpdate = true;
+            waveLine.geometry.attributes.position.needsUpdate = true;
+
+            // Update Phase Tracker
+            let x_tracker = 0;
+            if (mode === 'traveling' || mode === 'em') {
+                // Track a specific crest phase: kx - wt = pi/2 => x = (pi/2 + wt)/k
+                x_tracker = ((Math.PI / 2 + omega * t) / k) % xRange;
+            } else if (mode === 'beats') {
+                // Track carrier wave crest
+                const k_avg = (k1 + k2) / 2;
+                const w_avg = (w1 + w2) / 2;
+                x_tracker = ((Math.PI / 2 + w_avg * t) / k_avg) % xRange;
+            }
+            if (x_tracker < 0) x_tracker += xRange;
+
+            let y_tracker = 0, z_tracker = 0;
+            if (mode === 'traveling') {
+                y_tracker = A * Math.sin(k * x_tracker - omega * t);
+            } else if (mode === 'beats') {
+                y_tracker = A * Math.sin(k1 * x_tracker - w1 * t) + A * Math.sin(k2 * x_tracker - w2 * t);
+            } else if (mode === 'em') {
+                const E_mag = A * Math.sin(k * x_tracker - omega * t);
+                y_tracker = E_mag * Math.cos(thetaRad);
+                z_tracker = E_mag * Math.sin(thetaRad);
+            }
+            phaseTracker.position.set(x_tracker, y_tracker, z_tracker);
+
+            // Update EM Arrows
+            if (mode === 'em') {
+                const dirE_base = new THREE.Vector3(0, Math.cos(thetaRad), Math.sin(thetaRad));
+                const dirB_base = new THREE.Vector3(0, -Math.sin(thetaRad), Math.cos(thetaRad));
+
+                for (let i = 0; i < numArrows; i++) {
+                    const x = i * (xRange / (numArrows - 1));
+                    const mag = A * Math.sin(k * x - omega * t);
+                    
+                    let len = Math.abs(mag);
+                    if (len < 0.001) len = 0.001; // Avoid zero length errors
+
+                    let dirE = dirE_base.clone();
+                    let dirB = dirB_base.clone();
+                    if (mag < 0) {
+                        dirE.negate();
+                        dirB.negate();
+                    }
+
+                    eArrows[i].position.set(x, 0, 0);
+                    eArrows[i].setDirection(dirE);
+                    eArrows[i].setLength(len, len * 0.25, len * 0.25);
+
+                    bArrows[i].position.set(x, 0, 0);
+                    bArrows[i].setDirection(dirB);
+                    bArrows[i].setLength(len, len * 0.25, len * 0.25);
+                }
+            }
+
+            // Update Beats Envelope
+            if (mode === 'beats') {
+                const dk_half = (k2 - k1) / 2;
+                const dw_half = (w2 - w1) / 2;
+                for (let i = 0; i < numPoints; i++) {
+                    const x = i * dx;
+                    const envMag = Math.abs(2 * A * Math.cos(dk_half * x - dw_half * t));
+                    
+                    envPosTop[i * 3] = x;
+                    envPosTop[i * 3 + 1] = envMag;
+                    envPosTop[i * 3 + 2] = 0;
+
+                    envPosBot[i * 3] = x;
+                    envPosBot[i * 3 + 1] = -envMag;
+                    envPosBot[i * 3 + 2] = 0;
+                }
+                envLineTop.geometry.attributes.position.needsUpdate = true;
+                envLineBot.geometry.attributes.position.needsUpdate = true;
+                envLineTop.computeLineDistances();
+                envLineBot.computeLineDistances();
+            }
+
+            // Update HTML Labels (Projection)
+            // Velocity Label
+            const vPos = new THREE.Vector3(1.5, 0.5, 0);
+            vPos.project(camera);
+            labels.v.style.left = `${(vPos.x * 0.5 + 0.5) * window.innerWidth}px`;
+            labels.v.style.top = `${-(vPos.y * 0.5 - 0.5) * window.innerHeight}px`;
+
+            // EM Labels
+            if (mode === 'em') {
+                const centerIdx = Math.floor(numArrows / 2);
+                
+                const eArrow = eArrows[centerIdx];
+                const eTip = new THREE.Vector3().copy(eArrow.position);
+                eTip.add(eArrow.direction.clone().multiplyScalar(eArrow.length + 0.2));
+                eTip.project(camera);
+                labels.e.style.left = `${(eTip.x * 0.5 + 0.5) * window.innerWidth}px`;
+                labels.e.style.top = `${-(eTip.y * 0.5 - 0.5) * window.innerHeight}px`;
+
+                const bArrow = bArrows[centerIdx];
+                const bTip = new THREE.Vector3().copy(bArrow.position);
+                bTip.add(bArrow.direction.clone().multiplyScalar(bArrow.length + 0.2));
+                bTip.project(camera);
+                labels.b.style.left = `${(bTip.x * 0.5 + 0.5) * window.innerWidth}px`;
+                labels.b.style.top = `${-(bTip.y * 0.5 - 0.5) * window.innerHeight}px`;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        animate();
+    </script>
+</body>
+</html>

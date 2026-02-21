@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Cross Product Interactive Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2d3748;
+            --color-v: #06D6A0;
+            --color-b: #7209B7;
+            --color-f: #FF3366;
+            --font-ui: 'Inter', sans-serif;
+            --font-math: 'Roboto Mono', monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: var(--font-ui);
+            color: var(--text-main);
+            display: flex;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 75vw;
+            height: 100vh;
+        }
+
+        #control-panel {
+            width: 25vw;
+            height: 100vh;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 700;
+            color: #1a202c;
+            border-bottom: 2px solid rgba(0,0,0,0.1);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.8);
+        }
+
+        .control-group h2 {
+            font-size: 1rem;
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .slider-container {
+            margin-bottom: 12px;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .slider-val {
+            font-family: var(--font-math);
+            color: #4a5568;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #4a5568;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* Custom thumb colors based on group */
+        #group-v input[type=range]::-webkit-slider-thumb { border-color: var(--color-v); }
+        #group-b input[type=range]::-webkit-slider-thumb { border-color: var(--color-b); }
+        #group-q input[type=range]::-webkit-slider-thumb { border-color: #e2e8f0; background: #4a5568; }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,1);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .formula-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .math-text {
+            font-family: var(--font-math);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            white-space: pre;
+        }
+
+        .vector-label {
+            position: absolute;
+            font-family: var(--font-math);
+            font-weight: 700;
+            font-size: 1.2rem;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+            z-index: 4;
+        }
+
+        .instruction {
+            font-size: 0.8rem;
+            color: #718096;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">
+                <span style="color: var(--color-f)">F</span> = q(<span style="color: var(--color-v)">v</span> × <span style="color: var(--color-b)">B</span>)
+            </div>
+            <div class="math-text" id="live-math"></div>
+        </div>
+        <div id="label-v" class="vector-label" style="color: var(--color-v);">v</div>
+        <div id="label-B" class="vector-label" style="color: var(--color-b);">B</div>
+        <div id="label-F" class="vector-label" style="color: var(--color-f);">F</div>
+    </div>
+
+    <div id="control-panel">
+        <h1>Vector Parameters</h1>
+
+        <div class="control-group" id="group-v">
+            <h2><span class="dot" style="background: var(--color-v);"></span> Vector v (Velocity)</h2>
+            
+            <div class="slider-container">
+                <div class="slider-header"><span>Magnitude |v|</span><span class="slider-val" id="val-magA">3.0</span></div>
+                <input type="range" id="magA" min="0.5" max="5.0" step="0.1" value="3.0">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><span>Theta θ (Azimuth)</span><span class="slider-val" id="val-thetaA">0°</span></div>
+                <input type="range" id="thetaA" min="0" max="360" step="1" value="0">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><span>Phi φ (Elevation)</span><span class="slider-val" id="val-phiA">0°</span></div>
+                <input type="range" id="phiA" min="-90" max="90" step="1" value="0">
+            </div>
+        </div>
+
+        <div class="control-group" id="group-b">
+            <h2><span class="dot" style="background: var(--color-b);"></span> Vector B (Magnetic Field)</h2>
+            
+            <div class="slider-container">
+                <div class="slider-header"><span>Magnitude |B|</span><span class="slider-val" id="val-magB">3.0</span></div>
+                <input type="range" id="magB" min="0.5" max="5.0" step="0.1" value="3.0">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><span>Theta θ (Azimuth)</span><span class="slider-val" id="val-thetaB">90°</span></div>
+                <input type="range" id="thetaB" min="0" max="360" step="1" value="90">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><span>Phi φ (Elevation)</span><span class="slider-val" id="val-phiB">0°</span></div>
+                <input type="range" id="phiB" min="-90" max="90" step="1" value="0">
+            </div>
+        </div>
+
+        <div class="control-group" id="group-q">
+            <h2><span class="dot" style="background: #4a5568;"></span> Particle Charge</h2>
+            <div class="slider-container">
+                <div class="slider-header"><span>Charge q</span><span class="slider-val" id="val-charge">1.0 C</span></div>
+                <input type="range" id="charge" min="-2" max="2" step="0.1" value="1.0">
+            </div>
+        </div>
+
+        <div class="instruction">
+            Left Click + Drag to Rotate<br>
+            Scroll to Zoom<br>
+            Right Click + Drag to Pan
+        </div>
+    </div>
+
+    <script>
+        // --- Setup Three.js Scene ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(8, 6, 10);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        scene.add(dirLight);
+
+        // --- Environment ---
+        const gridHelper = new THREE.GridHelper(20, 20, 0xd1d9e6, 0xe2e8f0);
+        gridHelper.position.y = -0.01; // Slightly below origin to prevent z-fighting
+        scene.add(gridHelper);
+
+        const axesHelper = new THREE.AxesHelper(1);
+        scene.add(axesHelper);
+
+        // --- Vector Objects ---
+        const colorV = 0x06D6A0;
+        const colorB = 0x7209B7;
+        const colorF = 0xFF3366;
+
+        function createThickArrow(colorHex) {
+            const group = new THREE.Group();
+            const material = new THREE.MeshPhongMaterial({ color: colorHex, shininess: 80 });
+            
+            // Shaft points along Z initially
+            const shaftGeo = new THREE.CylinderGeometry(0.06, 0.06, 1, 16);
+            shaftGeo.translate(0, 0.5, 0);
+            shaftGeo.rotateX(Math.PI / 2);
+            const shaft = new THREE.Mesh(shaftGeo, material);
+            shaft.castShadow = true;
+            
+            // Head points along Z
+            const headGeo = new THREE.ConeGeometry(0.18, 0.4, 16);
+            headGeo.translate(0, 0.2, 0);
+            headGeo.rotateX(Math.PI / 2);
+            const head = new THREE.Mesh(headGeo, material);
+            head.castShadow = true;
+            
+            group.add(shaft);
+            group.add(head);
+            scene.add(group);
+            
+            return { group, shaft, head };
+        }
+
+        const arrowV = createThickArrow(colorV);
+        const arrowB = createThickArrow(colorB);
+        const arrowF = createThickArrow(colorF);
+
+        // Span Plane
+        const planeGeo = new THREE.BufferGeometry();
+        const planeMat = new THREE.MeshBasicMaterial({ 
+            color: 0x4361EE, 
+            transparent: true, 
+            opacity: 0.2, 
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const spanPlane = new THREE.Mesh(planeGeo, planeMat);
+        scene.add(spanPlane);
+
+        // Angle Arc
+        const arcGeo = new THREE.BufferGeometry();
+        const arcMat = new THREE.LineBasicMaterial({ color: 0x4a5568, linewidth: 2 });
+        const angleArc = new THREE.Line(arcGeo, arcMat);
+        scene.add(angleArc);
+
+        // --- State Variables ---
+        const vecV = new THREE.Vector3();
+        const vecB = new THREE.Vector3();
+        const vecF = new THREE.Vector3();
+        const VISUAL_SCALE_F = 0.15; // Scale down Force vector for visualization
+
+        // --- Update Logic ---
+        function updateArrowTransform(arrowObj, vector, visualScale) {
+            const length = vector.length() * visualScale;
+            if (length < 0.05) {
+                arrowObj.group.visible = false;
+                return;
+            }
+            arrowObj.group.visible = true;
+            
+            const headLength = Math.min(0.4, length * 0.5);
+            const shaftLength = length - headLength;
+            
+            arrowObj.shaft.scale.set(1, 1, shaftLength);
+            arrowObj.head.position.set(0, 0, shaftLength);
+            arrowObj.head.scale.set(1, 1, headLength / 0.4);
+            
+            const target = vector.clone().normalize().add(arrowObj.group.position);
+            arrowObj.group.lookAt(target);
+        }
+
+        function updatePhysics() {
+            // Read UI
+            const magA = parseFloat(document.getElementById('magA').value);
+            const thetaA = parseFloat(document.getElementById('thetaA').value) * Math.PI / 180;
+            const phiA = parseFloat(document.getElementById('phiA').value) * Math.PI / 180;
+            
+            const magB_val = parseFloat(document.getElementById('magB').value);
+            const thetaB = parseFloat(document.getElementById('thetaB').value) * Math.PI / 180;
+            const phiB = parseFloat(document.getElementById('phiB').value) * Math.PI / 180;
+            
+            const q = parseFloat(document.getElementById('charge').value);
+
+            // Calculate Cartesian Components
+            // Using standard physics spherical coords mapped to Three.js (Y is up)
+            // x = r * cos(phi) * cos(theta)
+            // y = r * sin(phi)
+            // z = r * cos(phi) * sin(theta)
+            vecV.set(
+                magA * Math.cos(phiA) * Math.cos(thetaA),
+                magA * Math.sin(phiA),
+                magA * Math.cos(phiA) * Math.sin(thetaA)
+            );
+
+            vecB.set(
+                magB_val * Math.cos(phiB) * Math.cos(thetaB),
+                magB_val * Math.sin(phiB),
+                magB_val * Math.cos(phiB) * Math.sin(thetaB)
+            );
+
+            // Cross Product: F = q(v x B)
+            vecF.crossVectors(vecV, vecB).multiplyScalar(q);
+
+            // Update 3D Arrows
+            updateArrowTransform(arrowV, vecV, 1.0);
+            updateArrowTransform(arrowB, vecB, 1.0);
+            updateArrowTransform(arrowF, vecF, VISUAL_SCALE_F);
+
+            // Update Span Plane
+            const vertices = new Float32Array([
+                0, 0, 0,
+                vecV.x, vecV.y, vecV.z,
+                vecB.x, vecB.y, vecB.z,
+                
+                vecV.x, vecV.y, vecV.z,
+                vecV.x + vecB.x, vecV.y + vecB.y, vecV.z + vecB.z,
+                vecB.x, vecB.y, vecB.z
+            ]);
+            planeGeo.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            planeGeo.computeVertexNormals();
+
+            // Update Angle Arc
+            const angle = vecV.angleTo(vecB);
+            const radius = Math.min(vecV.length(), vecB.length()) * 0.4;
+            const arcPoints = [];
+            
+            if (angle > 0.01 && radius > 0.1) {
+                const axis = new THREE.Vector3().crossVectors(vecV, vecB).normalize();
+                if (axis.lengthSq() > 0.001) {
+                    const startVec = vecV.clone().normalize().multiplyScalar(radius);
+                    for (let i = 0; i <= 30; i++) {
+                        const t = i / 30;
+                        const p = startVec.clone().applyAxisAngle(axis, angle * t);
+                        arcPoints.push(p.x, p.y, p.z);
+                    }
+                }
+            }
+            
+            if (arcPoints.length > 0) {
+                arcGeo.setAttribute('position', new THREE.Float32BufferAttribute(arcPoints, 3));
+                angleArc.visible = true;
+            } else {
+                angleArc.visible = false;
+            }
+
+            // Update Math Text
+            const fMagStr = vecF.length().toFixed(2);
+            document.getElementById('live-math').innerHTML = 
+                `v = [${vecV.x.toFixed(1)}, ${vecV.y.toFixed(1)}, ${vecV.z.toFixed(1)}]\n` +
+                `B = [${vecB.x.toFixed(1)}, ${vecB.y.toFixed(1)}, ${vecB.z.toFixed(1)}]\n` +
+                `q = ${q.toFixed(1)}\n` +
+                `------------------------\n` +
+                `<span style="color:var(--color-f)">F</span> = [${vecF.x.toFixed(1)}, ${vecF.y.toFixed(1)}, ${vecF.z.toFixed(1)}]\n` +
+                `|<span style="color:var(--color-f)">F</span>| = ${fMagStr}`;
+        }
+
+        // --- HTML Labels Update ---
+        function updateLabels() {
+            const updateLabel = (id, vector, scaleFactor) => {
+                const el = document.getElementById(id);
+                if (vector.length() < 0.05) {
+                    el.style.display = 'none';
+                    return;
+                }
+                el.style.display = 'block';
+                
+                // Project 3D position to 2D screen
+                const pos = vector.clone().multiplyScalar(scaleFactor).project(camera);
+                
+                const x = (pos.x * 0.5 + 0.5) * container.clientWidth;
+                const y = (pos.y * -0.5 + 0.5) * container.clientHeight;
+                
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+            };
+
+            updateLabel('label-v', vecV, 1.1);
+            updateLabel('label-B', vecB, 1.1);
+            updateLabel('label-F', vecF, VISUAL_SCALE_F * 1.1);
+        }
+
+        // --- Event Listeners ---
+        const inputs = ['magA', 'thetaA', 'phiA', 'magB', 'thetaB', 'phiB', 'charge'];
+        inputs.forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', (e) => {
+                let val = e.target.value;
+                if(id.includes('theta') || id.includes('phi')) val += '°';
+                if(id === 'charge') val += ' C';
+                document.getElementById(`val-${id}`).innerText = val;
+                updatePhysics();
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

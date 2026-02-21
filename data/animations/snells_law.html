@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snell's Law & Ray Optics Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2B2D42;
+            --text-muted: #6c757d;
+            --accent-red: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-purple: #7209B7;
+            --border-color: rgba(209, 217, 230, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Sidebar Controls */
+        #sidebar {
+            width: 25%;
+            min-width: 300px;
+            max-width: 400px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid var(--border-color);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-purple);
+            background: rgba(114, 9, 183, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+        }
+
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+            height: 6px;
+            border-radius: 3px;
+            background-color: #e2e8f0;
+            margin-top: 8px;
+        }
+        input[type=range]:focus { outline: none; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+        
+        #n1-slider::-webkit-slider-thumb { background: var(--accent-purple); box-shadow: 0 2px 6px rgba(114, 9, 183, 0.4); }
+        #theta-slider::-webkit-slider-thumb { background: var(--accent-red); box-shadow: 0 2px 6px rgba(255, 51, 102, 0.4); }
+
+        /* Main Viewport */
+        #viewport {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Formula Overlay */
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+        }
+
+        .math-eq {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .math-sub {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .highlight-n1 { color: var(--accent-purple); font-weight: bold; }
+        .highlight-n2 { color: var(--accent-blue); font-weight: bold; }
+        .highlight-theta { color: var(--accent-red); font-weight: bold; }
+        
+        #tir-warning {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: var(--accent-red);
+            display: none;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h1>Ray Optics Simulator</h1>
+        <p class="subtitle">Interactive Snell's Law Visualization</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="mode-select">Interface Mode</label>
+            </div>
+            <select id="mode-select">
+                <option value="plane">Plane Interface</option>
+                <option value="spherical">Spherical Surface</option>
+                <option value="prism">Triangular Prism</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Index of Refraction 1 (n₁)</label>
+                <span class="value-display" id="n1-val">1.00</span>
+            </div>
+            <input type="range" id="n1-slider" min="1.0" max="2.4" step="0.01" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Index of Refraction 2 (n₂)</label>
+                <span class="value-display" id="n2-val">1.50</span>
+            </div>
+            <input type="range" id="n2-slider" min="1.0" max="2.4" step="0.01" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Angle of Incidence (θ₁)</label>
+                <span class="value-display" id="theta-val">30.0°</span>
+            </div>
+            <input type="range" id="theta-slider" min="0" max="89.5" step="0.5" value="30">
+        </div>
+
+        <div class="control-group hidden" id="group-radius">
+            <div class="control-header">
+                <label>Radius of Curvature (R)</label>
+                <span class="value-display" id="radius-val">5.0 m</span>
+            </div>
+            <input type="range" id="radius-slider" min="2.5" max="10" step="0.1" value="5">
+        </div>
+
+        <div class="control-group hidden" id="group-prism">
+            <div class="control-header">
+                <label>Prism Apex Angle (A)</label>
+                <span class="value-display" id="prism-val">60°</span>
+            </div>
+            <input type="range" id="prism-slider" min="30" max="75" step="1" value="60">
+        </div>
+    </div>
+
+    <div id="viewport">
+        <div id="formula-card">
+            <div class="math-eq">
+                <span class="highlight-n1">n₁</span> sin(<span class="highlight-theta">θ₁</span>) = <span class="highlight-n2">n₂</span> sin(θ₂)
+            </div>
+            <div class="math-sub" id="calc-text">
+                1.00 × sin(30.0°) = 1.50 × sin(19.5°)
+            </div>
+            <div id="tir-warning">TOTAL INTERNAL REFLECTION</div>
+        </div>
+        <div id="canvas-container"></div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- 1. Setup Scene, Camera, Renderer ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 0, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enablePan = false;
+
+        // --- 2. Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // --- 3. Texture Generation for Ray Flow ---
+        function createFlowTexture(colorHex) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = colorHex;
+            ctx.fillRect(0, 0, 64, 128);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.fillRect(0, 0, 64, 32); // Create a stripe
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(1, 5);
+            return tex;
+        }
+
+        const texRed = createFlowTexture('#FF3366');
+        const texBlue = createFlowTexture('#4361EE');
+        const texPink = createFlowTexture('#F72585');
+
+        // --- 4. Materials ---
+        const matMed1 = new THREE.MeshPhysicalMaterial({
+            color: 0x90e0ef, transparent: true, opacity: 0.1, roughness: 0.1, transmission: 0.9
+        });
+        const matMed2 = new THREE.MeshPhysicalMaterial({
+            color: 0x00b4d8, transparent: true, opacity: 0.25, roughness: 0.1, transmission: 0.9
+        });
+        const matPrism = new THREE.MeshPhysicalMaterial({
+            color: 0x4cc9f0, transparent: true, opacity: 0.3, roughness: 0, transmission: 1.0, side: THREE.DoubleSide
+        });
+
+        const matRayInc = new THREE.MeshBasicMaterial({ map: texRed });
+        const matRayRefract = new THREE.MeshBasicMaterial({ map: texBlue });
+        const matRayReflect = new THREE.MeshBasicMaterial({ map: texPink, transparent: true, opacity: 0.6 });
+        const matNormal = new THREE.LineDashedMaterial({ color: 0x2B2D42, dashSize: 0.5, gapSize: 0.3, linewidth: 2 });
+
+        // --- 5. Geometries & Meshes ---
+        // Media
+        const geoPlaneTop = new THREE.BoxGeometry(40, 20, 10);
+        const meshPlaneTop = new THREE.Mesh(geoPlaneTop, matMed1);
+        meshPlaneTop.position.y = 10;
+        scene.add(meshPlaneTop);
+
+        const geoPlaneBot = new THREE.BoxGeometry(40, 20, 10);
+        const meshPlaneBot = new THREE.Mesh(geoPlaneBot, matMed2);
+        meshPlaneBot.position.y = -10;
+        scene.add(meshPlaneBot);
+
+        const geoSphere = new THREE.SphereGeometry(1, 64, 64);
+        const meshSphere = new THREE.Mesh(geoSphere, matMed2);
+        scene.add(meshSphere);
+
+        let meshPrism = new THREE.Mesh(new THREE.BufferGeometry(), matPrism);
+        scene.add(meshPrism);
+
+        // Rays (Cylinders)
+        const rayRadius = 0.08;
+        const cylGeo = new THREE.CylinderGeometry(rayRadius, rayRadius, 1, 16);
+        cylGeo.translate(0, 0.5, 0); // Pivot at base
+
+        const rayInc = new THREE.Mesh(cylGeo, matRayInc);
+        const rayRefract1 = new THREE.Mesh(cylGeo, matRayRefract);
+        const rayReflect1 = new THREE.Mesh(cylGeo, matRayReflect);
+        const rayRefract2 = new THREE.Mesh(cylGeo, matRayRefract); // For prism emergence
+        const rayReflect2 = new THREE.Mesh(cylGeo, matRayReflect); // For prism internal reflection
+        
+        scene.add(rayInc, rayRefract1, rayReflect1, rayRefract2, rayReflect2);
+
+        // Normals (Lines)
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,0)]);
+        const normal1 = new THREE.Line(lineGeo, matNormal);
+        const normal2 = new THREE.Line(lineGeo, matNormal);
+        normal1.computeLineDistances(); normal2.computeLineDistances();
+        scene.add(normal1, normal2);
+
+        // Points of Incidence (Glowing Spheres)
+        const pointGeo = new THREE.SphereGeometry(0.15, 16, 16);
+        const pointMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const poi1 = new THREE.Mesh(pointGeo, pointMat);
+        const poi2 = new THREE.Mesh(pointGeo, pointMat);
+        scene.add(poi1, poi2);
+
+        // --- 6. Math Helpers ---
+        const Z_AXIS = new THREE.Vector3(0, 0, 1);
+
+        // Vector Snell's Law
+        function refract(v_in, n_out, ni, nt) {
+            const r = ni / nt;
+            const c = -n_out.dot(v_in);
+            const radicand = 1.0 - r * r * (1.0 - c * c);
+            if (radicand < 0) return null; // TIR
+            const v_out = v_in.clone().multiplyScalar(r).add(n_out.clone().multiplyScalar(r * c - Math.sqrt(radicand)));
+            return v_out.normalize();
+        }
+
+        function reflect(v_in, n_out) {
+            return v_in.clone().sub(n_out.clone().multiplyScalar(2 * v_in.dot(n_out))).normalize();
+        }
+
+        function updateCylinder(mesh, start, end) {
+            const dir = new THREE.Vector3().subVectors(end, start);
+            const len = dir.length();
+            if (len < 0.001) { mesh.visible = false; return; }
+            mesh.visible = true;
+            mesh.position.copy(start);
+            mesh.scale.set(1, len, 1);
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+        }
+
+        function updateLine(line, start, end) {
+            const positions = line.geometry.attributes.position.array;
+            positions[0] = start.x; positions[1] = start.y; positions[2] = start.z;
+            positions[3] = end.x;   positions[4] = end.y;   positions[5] = end.z;
+            line.geometry.attributes.position.needsUpdate = true;
+            line.computeLineDistances();
+            line.visible = true;
+        }
+
+        // --- 7. Main Physics & Update Logic ---
+        const UI = {
+            mode: document.getElementById('mode-select'),
+            n1: document.getElementById('n1-slider'),
+            n2: document.getElementById('n2-slider'),
+            theta: document.getElementById('theta-slider'),
+            radius: document.getElementById('radius-slider'),
+            prism: document.getElementById('prism-slider'),
+            n1Val: document.getElementById('n1-val'),
+            n2Val: document.getElementById('n2-val'),
+            thetaVal: document.getElementById('theta-val'),
+            radiusVal: document.getElementById('radius-val'),
+            prismVal: document.getElementById('prism-val'),
+            calcText: document.getElementById('calc-text'),
+            tirWarn: document.getElementById('tir-warning'),
+            grpRadius: document.getElementById('group-radius'),
+            grpPrism: document.getElementById('group-prism')
+        };
+
+        function buildPrismGeometry(A_deg) {
+            const A = A_deg * Math.PI / 180;
+            const h = 3; // Half height
+            const w = 2 * h * Math.tan(A / 2); // Half width at base
+            
+            const shape = new THREE.Shape();
+            shape.moveTo(0, h);
+            shape.lineTo(-w, -h);
+            shape.lineTo(w, -h);
+            shape.lineTo(0, h);
+
+            const extrudeSettings = { depth: 4, bevelEnabled: false };
+            const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geo.translate(0, 0, -2); // Center Z
+            
+            meshPrism.geometry.dispose();
+            meshPrism.geometry = geo;
+            return { w, h, A };
+        }
+
+        function updateScene() {
+            const mode = UI.mode.value;
+            const n1 = parseFloat(UI.n1.value);
+            const n2 = parseFloat(UI.n2.value);
+            const theta_i_deg = parseFloat(UI.theta.value);
+            const theta_i = theta_i_deg * Math.PI / 180;
+            const R = parseFloat(UI.radius.value);
+            const prismA_deg = parseFloat(UI.prism.value);
+
+            // Update UI Text
+            UI.n1Val.innerText = n1.toFixed(2);
+            UI.n2Val.innerText = n2.toFixed(2);
+            UI.thetaVal.innerText = theta_i_deg.toFixed(1) + '°';
+            UI.radiusVal.innerText = R.toFixed(1) + ' m';
+            UI.prismVal.innerText = prismA_deg + '°';
+
+            // Update Material Opacity based on density
+            matMed1.opacity = 0.05 + (n1 - 1.0) * 0.1;
+            matMed2.opacity = 0.15 + (n2 - 1.0) * 0.1;
+
+            // Reset visibility
+            meshPlaneTop.visible = false; meshPlaneBot.visible = false;
+            meshSphere.visible = false; meshPrism.visible = false;
+            rayRefract2.visible = false; rayReflect2.visible = false;
+            normal2.visible = false; poi2.visible = false;
+            UI.tirWarn.style.display = 'none';
+
+            let P1, N1_out, V_in, V_refract1, V_reflect1;
+            const L = 15; // Ray length
+
+            if (mode === 'plane') {
+                UI.grpRadius.classList.add('hidden'); UI.grpPrism.classList.add('hidden');
+                meshPlaneTop.visible = true; meshPlaneBot.visible = true;
+                
+                P1 = new THREE.Vector3(0, 0, 0);
+                N1_out = new THREE.Vector3(0, 1, 0); // Points into Med 1
+                
+                // V_in comes from top left, hits P1
+                V_in = N1_out.clone().multiplyScalar(-1).applyAxisAngle(Z_AXIS, theta_i);
+                
+                V_refract1 = refract(V_in, N1_out, n1, n2);
+                V_reflect1 = reflect(V_in, N1_out);
+
+                updateLine(normal1, new THREE.Vector3(0, -4, 0), new THREE.Vector3(0, 4, 0));
+
+            } else if (mode === 'spherical') {
+                UI.grpRadius.classList.remove('hidden'); UI.grpPrism.classList.add('hidden');
+                meshPlaneTop.visible = true; meshSphere.visible = true;
+                
+                const C = new THREE.Vector3(0, -R, 0);
+                meshSphere.geometry.dispose();
+                meshSphere.geometry = new THREE.SphereGeometry(R, 64, 64);
+                meshSphere.position.copy(C);
+
+                const xp = -2; // Fixed incidence x
+                const yp = Math.sqrt(R*R - xp*xp) - R;
+                P1 = new THREE.Vector3(xp, yp, 0);
+                
+                N1_out = P1.clone().sub(C).normalize(); // Points out of sphere into Med 1
+                
+                V_in = N1_out.clone().multiplyScalar(-1).applyAxisAngle(Z_AXIS, theta_i);
+                
+                V_refract1 = refract(V_in, N1_out, n1, n2);
+                V_reflect1 = reflect(V_in, N1_out);
+
+                updateLine(normal1, P1.clone().sub(N1_out.clone().multiplyScalar(4)), P1.clone().add(N1_out.clone().multiplyScalar(4)));
+
+            } else if (mode === 'prism') {
+                UI.grpRadius.classList.add('hidden'); UI.grpPrism.classList.remove('hidden');
+                meshPrism.visible = true;
+                
+                const { w, h, A } = buildPrismGeometry(prismA_deg);
+                
+                // Left face line: from (-w, -h) to (0, h)
+                // x(y) = (y - h) * (-w / -2h) = (y - h) * (w / 2h)
+                const yp = 0;
+                const xp = (yp - h) * (w / (2*h));
+                P1 = new THREE.Vector3(xp, yp, 0);
+                
+                // Normal to left face: Face vector is (w, 2h, 0). Normal is (-2h, w, 0)
+                N1_out = new THREE.Vector3(-2*h, w, 0).normalize();
+                
+                V_in = N1_out.clone().multiplyScalar(-1).applyAxisAngle(Z_AXIS, theta_i);
+                
+                V_refract1 = refract(V_in, N1_out, n1, n2); // n2 is prism index
+                V_reflect1 = reflect(V_in, N1_out);
+
+                updateLine(normal1, P1.clone().sub(N1_out.clone().multiplyScalar(3)), P1.clone().add(N1_out.clone().multiplyScalar(3)));
+
+                if (V_refract1) {
+                    // Find intersection with right face: (0, h) to (w, -h)
+                    // Normal N2_out = (2h, w, 0).normalize()
+                    const N2_out = new THREE.Vector3(2*h, w, 0).normalize();
+                    const P_apex = new THREE.Vector3(0, h, 0);
+                    
+                    // t = (P_apex - P1) dot N2_out / (V_refract1 dot N2_out)
+                    const t = P_apex.clone().sub(P1).dot(N2_out) / V_refract1.dot(N2_out);
+                    
+                    if (t > 0) {
+                        const P2 = P1.clone().add(V_refract1.clone().multiplyScalar(t));
+                        poi2.position.copy(P2);
+                        poi2.visible = true;
+                        normal2.visible = true;
+                        updateLine(normal2, P2.clone().sub(N2_out.clone().multiplyScalar(3)), P2.clone().add(N2_out.clone().multiplyScalar(3)));
+
+                        // Refract at second face: ray is in n2, going to n1. Normal pointing back into n2 is -N2_out
+                        const V_refract2 = refract(V_refract1, N2_out.clone().multiplyScalar(-1), n2, n1);
+                        
+                        if (V_refract2) {
+                            updateCylinder(rayRefract2, P2, P2.clone().add(V_refract2.multiplyScalar(L)));
+                        } else {
+                            // TIR at second face
+                            const V_refl2 = reflect(V_refract1, N2_out.clone().multiplyScalar(-1));
+                            updateCylinder(rayReflect2, P2, P2.clone().add(V_refl2.multiplyScalar(L)));
+                            UI.tirWarn.style.display = 'block';
+                        }
+                        
+                        // Update internal ray
+                        updateCylinder(rayRefract1, P1, P2);
+                    }
+                }
+            }
+
+            // Apply transforms for Interface 1
+            poi1.position.copy(P1);
+            const startInc = P1.clone().sub(V_in.clone().multiplyScalar(L));
+            updateCylinder(rayInc, startInc, P1);
+
+            if (V_refract1 && mode !== 'prism') {
+                updateCylinder(rayRefract1, P1, P1.clone().add(V_refract1.multiplyScalar(L)));
+                rayReflect1.visible = true;
+                updateCylinder(rayReflect1, P1, P1.clone().add(V_reflect1.multiplyScalar(L)));
+                // Dim reflection if not TIR
+                matRayReflect.opacity = 0.15;
+            } else if (!V_refract1) {
+                // TIR at first interface
+                rayRefract1.visible = false;
+                rayReflect1.visible = true;
+                updateCylinder(rayReflect1, P1, P1.clone().add(V_reflect1.multiplyScalar(L)));
+                matRayReflect.opacity = 0.8; // Bright reflection
+                UI.tirWarn.style.display = 'block';
+            }
+
+            // Update Formula Text
+            if (V_refract1) {
+                // Calculate theta_2 relative to normal
+                const cos_theta2 = Math.abs(V_refract1.dot(N1_out));
+                const theta2_deg = Math.acos(cos_theta2) * 180 / Math.PI;
+                UI.calcText.innerHTML = `${n1.toFixed(2)} × sin(${theta_i_deg.toFixed(1)}°) = ${n2.toFixed(2)} × sin(${theta2_deg.toFixed(1)}°)`;
+            } else {
+                UI.calcText.innerHTML = `${n1.toFixed(2)} × sin(${theta_i_deg.toFixed(1)}°) > ${n2.toFixed(2)} (No real solution)`;
+            }
+        }
+
+        // --- 8. Event Listeners ---
+        Object.values(UI).forEach(el => {
+            if (el.tagName === 'INPUT' || el.tagName === 'SELECT') {
+                el.addEventListener('input', updateScene);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- 9. Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            // Animate ray flow
+            texRed.offset.y -= 0.03;
+            texBlue.offset.y -= 0.03;
+            texPink.offset.y -= 0.03;
+
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        updateScene();
+        animate();
+
+    </script>
+</body>
+</html>
