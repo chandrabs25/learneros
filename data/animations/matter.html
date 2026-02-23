@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Nature of Matter: Molecular Visualization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;600&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title { font-size: 22px; font-weight: 700; fill: #333; text-anchor: middle; }
+        .subtitle { font-size: 16px; font-weight: 600; fill: #555; text-anchor: middle; }
+        .label { font-size: 14px; fill: #333; text-anchor: middle; }
+        .formula { font-family: 'Roboto Mono', monospace; font-weight: 600; }
+        .legend-text { font-size: 12px; fill: #555; }
+        .arrow-text { font-size: 12px; font-weight: 600; fill: #F77F00; text-anchor: middle; }
+        .energy-text { font-size: 12px; font-weight: 600; fill: #333; text-anchor: middle; letter-spacing: 1px; }
+
+        /* Scene Transitions */
+        .scene-1 {
+            animation: fadeScene1 20s infinite;
+        }
+        .scene-2 {
+            animation: fadeScene2 20s infinite;
+            opacity: 0;
+        }
+
+        @keyframes fadeScene1 {
+            0%, 42% { opacity: 1; pointer-events: auto; }
+            48%, 94% { opacity: 0; pointer-events: none; }
+            100% { opacity: 1; pointer-events: auto; }
+        }
+
+        @keyframes fadeScene2 {
+            0%, 42% { opacity: 0; pointer-events: none; }
+            48%, 94% { opacity: 1; pointer-events: auto; }
+            100% { opacity: 0; pointer-events: none; }
+        }
+
+        /* Particle Animations */
+        .vibrate {
+            animation: vibrate 0.15s infinite linear;
+        }
+
+        @keyframes vibrate {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(1px, 0.5px); }
+            50% { transform: translate(-0.5px, -1px); }
+            75% { transform: translate(-1px, 0.5px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* Liquid Animations */
+        .liquid-1 { animation: liq1 4s infinite ease-in-out; }
+        .liquid-2 { animation: liq2 5s infinite ease-in-out; }
+        .liquid-3 { animation: liq3 4.5s infinite ease-in-out; }
+        .liquid-4 { animation: liq4 5.5s infinite ease-in-out; }
+
+        @keyframes liq1 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(12px, -8px) rotate(25deg); }
+        }
+        @keyframes liq2 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-10px, 10px) rotate(-20deg); }
+        }
+        @keyframes liq3 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(8px, 12px) rotate(15deg); }
+        }
+        @keyframes liq4 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-12px, -10px) rotate(-15deg); }
+        }
+
+        /* Gas Animations */
+        .gas-1 { animation: gas1 4s infinite linear; }
+        .gas-2 { animation: gas2 5s infinite linear; }
+        .gas-3 { animation: gas3 4.5s infinite linear; }
+        .gas-4 { animation: gas4 5.5s infinite linear; }
+        .gas-5 { animation: gas5 6s infinite linear; }
+
+        @keyframes gas1 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(70px, -100px) rotate(144deg); }
+            40% { transform: translate(-60px, -50px) rotate(288deg); }
+            60% { transform: translate(50px, 100px) rotate(432deg); }
+            80% { transform: translate(-70px, 80px) rotate(576deg); }
+            100% { transform: translate(0, 0) rotate(720deg); }
+        }
+        @keyframes gas2 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-70px, 100px) rotate(-180deg); }
+            50% { transform: translate(60px, 50px) rotate(-360deg); }
+            75% { transform: translate(-50px, -100px) rotate(-540deg); }
+            100% { transform: translate(0, 0) rotate(-720deg); }
+        }
+        @keyframes gas3 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(50px, 80px) rotate(120deg); }
+            40% { transform: translate(-70px, -100px) rotate(240deg); }
+            60% { transform: translate(60px, -50px) rotate(360deg); }
+            80% { transform: translate(-40px, 90px) rotate(480deg); }
+            100% { transform: translate(0, 0) rotate(600deg); }
+        }
+        @keyframes gas4 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(-60px, -90px) rotate(-150deg); }
+            50% { transform: translate(70px, 80px) rotate(-300deg); }
+            75% { transform: translate(-50px, 100px) rotate(-450deg); }
+            100% { transform: translate(0, 0) rotate(-600deg); }
+        }
+        @keyframes gas5 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            20% { transform: translate(80px, 0px) rotate(180deg); }
+            40% { transform: translate(-40px, 110px) rotate(360deg); }
+            60% { transform: translate(-60px, -90px) rotate(540deg); }
+            80% { transform: translate(30px, -100px) rotate(720deg); }
+            100% { transform: translate(0, 0) rotate(900deg); }
+        }
+
+        /* Floating Animations (Scene 2) */
+        .float-1 { animation: float1 6s infinite ease-in-out; }
+        .float-2 { animation: float2 7s infinite ease-in-out; }
+        .float-3 { animation: float3 6.5s infinite ease-in-out; }
+        .float-4 { animation: float4 7.5s infinite ease-in-out; }
+
+        @keyframes float1 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(15px, -15px) rotate(30deg); }
+        }
+        @keyframes float2 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-15px, 15px) rotate(-30deg); }
+        }
+        @keyframes float3 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(15px, 15px) rotate(20deg); }
+        }
+        @keyframes float4 {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-15px, -15px) rotate(-20deg); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <title>Animated diagram showing the states of matter and chemical classification at a molecular level.</title>
+        <desc>Visualizes solid, liquid, and gas phases of water, alongside elements, compounds, and mixtures using molecular models.</desc>
+
+        <defs>
+            <!-- Water Molecule (Bent geometry ~104.5 deg) -->
+            <g id="water">
+                <line x1="0" y1="0" x2="-8" y2="6" stroke="#333333" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="0" y1="0" x2="8" y2="6" stroke="#333333" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="0" cy="0" r="8" fill="#FF4444"/>
+                <circle cx="-8" cy="6" r="5" fill="#CCCCCC"/>
+                <circle cx="8" cy="6" r="5" fill="#CCCCCC"/>
+            </g>
+
+            <!-- Oxygen Molecule (Double bond) -->
+            <g id="oxygen">
+                <line x1="-8" y1="-3" x2="8" y2="-3" stroke="#555555" stroke-width="2.5"/>
+                <line x1="-8" y1="3" x2="8" y2="3" stroke="#555555" stroke-width="2.5"/>
+                <circle cx="-9" cy="0" r="8" fill="#FF4444"/>
+                <circle cx="9" cy="0" r="8" fill="#FF4444"/>
+            </g>
+
+            <!-- Argon Atom -->
+            <g id="argon">
+                <circle cx="0" cy="0" r="10" fill="#44CCFF"/>
+            </g>
+
+            <!-- Sodium Ion -->
+            <g id="na-ion">
+                <circle cx="0" cy="0" r="6" fill="#7B2CBF"/>
+            </g>
+
+            <!-- Chloride Ion -->
+            <g id="cl-ion">
+                <circle cx="0" cy="0" r="9" fill="#44CC44"/>
+            </g>
+
+            <!-- Energy Gradient -->
+            <linearGradient id="energyGrad" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stop-color="#4444FF"/>
+                <stop offset="50%" stop-color="#44CC44"/>
+                <stop offset="100%" stop-color="#FF4444"/>
+            </linearGradient>
+
+            <!-- Arrowhead -->
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00"/>
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#ffffff"/>
+
+        <!-- Main Title -->
+        <text x="400" y="40" class="title">The Nature of Matter: Molecular Visualization</text>
+
+        <!-- ========================================== -->
+        <!-- SCENE 1: PHYSICAL STATES                   -->
+        <!-- ========================================== -->
+        <g class="scene-1">
+            <text x="400" y="75" class="subtitle">Phase 1: Physical States of Matter</text>
+
+            <!-- Energy Bar -->
+            <rect x="30" y="120" width="12" height="250" fill="url(#energyGrad)" rx="6"/>
+            <text x="-245" y="20" class="energy-text" transform="rotate(-90)">ENERGY</text>
+            <polygon points="36,110 30,120 42,120" fill="#FF4444"/>
+
+            <!-- Container 1: Solid -->
+            <rect x="80" y="120" width="180" height="250" rx="10" fill="#f8f9fa" stroke="#E9ECEF" stroke-width="3"/>
+            <text x="170" y="400" class="label">Solid (<tspan class="formula">H<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O<tspan baseline-shift="sub" font-size="0.75em">(s)</tspan></tspan>)</text>
+            
+            <g class="vibrate">
+                <!-- Hexagonal Lattice (Ice) -->
+                <!-- Row 1 -->
+                <use href="#water" x="110" y="340"/><use href="#water" x="134" y="340"/><use href="#water" x="158" y="340"/>
+                <use href="#water" x="182" y="340"/><use href="#water" x="206" y="340"/><use href="#water" x="230" y="340"/>
+                <!-- Row 2 -->
+                <use href="#water" x="122" y="320"/><use href="#water" x="146" y="320"/><use href="#water" x="170" y="320"/>
+                <use href="#water" x="194" y="320"/><use href="#water" x="218" y="320"/>
+                <!-- Row 3 -->
+                <use href="#water" x="110" y="300"/><use href="#water" x="134" y="300"/><use href="#water" x="158" y="300"/>
+                <use href="#water" x="182" y="300"/><use href="#water" x="206" y="300"/><use href="#water" x="230" y="300"/>
+                <!-- Row 4 -->
+                <use href="#water" x="122" y="280"/><use href="#water" x="146" y="280"/><use href="#water" x="170" y="280"/>
+                <use href="#water" x="194" y="280"/><use href="#water" x="218" y="280"/>
+                <!-- Row 5 -->
+                <use href="#water" x="110" y="260"/><use href="#water" x="134" y="260"/><use href="#water" x="158" y="260"/>
+                <use href="#water" x="182" y="260"/><use href="#water" x="206" y="260"/><use href="#water" x="230" y="260"/>
+            </g>
+
+            <!-- Transition Arrow 1 -->
+            <path d="M 265 245 L 300 245" stroke="#F77F00" stroke-width="3" marker-end="url(#arrowhead)"/>
+            <text x="285" y="235" class="arrow-text">Melting</text>
+
+            <!-- Container 2: Liquid -->
+            <rect x="310" y="120" width="180" height="250" rx="10" fill="#f8f9fa" stroke="#E9ECEF" stroke-width="3"/>
+            <text x="400" y="400" class="label">Liquid (<tspan class="formula">H<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O<tspan baseline-shift="sub" font-size="0.75em">(l)</tspan></tspan>)</text>
+            
+            <!-- Randomly packed, flowing -->
+            <g transform="translate(340, 350)"><use href="#water" class="liquid-1"/></g>
+            <g transform="translate(365, 355)"><use href="#water" class="liquid-2"/></g>
+            <g transform="translate(390, 345)"><use href="#water" class="liquid-3"/></g>
+            <g transform="translate(415, 355)"><use href="#water" class="liquid-4"/></g>
+            <g transform="translate(440, 345)"><use href="#water" class="liquid-1"/></g>
+            <g transform="translate(465, 355)"><use href="#water" class="liquid-2"/></g>
+            
+            <g transform="translate(330, 330)"><use href="#water" class="liquid-3"/></g>
+            <g transform="translate(355, 325)"><use href="#water" class="liquid-4"/></g>
+            <g transform="translate(380, 335)"><use href="#water" class="liquid-1"/></g>
+            <g transform="translate(405, 325)"><use href="#water" class="liquid-2"/></g>
+            <g transform="translate(430, 335)"><use href="#water" class="liquid-3"/></g>
+            <g transform="translate(455, 325)"><use href="#water" class="liquid-4"/></g>
+            <g transform="translate(475, 335)"><use href="#water" class="liquid-1"/></g>
+
+            <g transform="translate(345, 305)"><use href="#water" class="liquid-2"/></g>
+            <g transform="translate(370, 310)"><use href="#water" class="liquid-3"/></g>
+            <g transform="translate(395, 295)"><use href="#water" class="liquid-4"/></g>
+            <g transform="translate(420, 310)"><use href="#water" class="liquid-1"/></g>
+            <g transform="translate(445, 295)"><use href="#water" class="liquid-2"/></g>
+            <g transform="translate(465, 310)"><use href="#water" class="liquid-3"/></g>
+
+            <!-- Transition Arrow 2 -->
+            <path d="M 495 245 L 530 245" stroke="#F77F00" stroke-width="3" marker-end="url(#arrowhead)"/>
+            <text x="515" y="235" class="arrow-text">Boiling</text>
+
+            <!-- Container 3: Gas -->
+            <rect x="540" y="120" width="180" height="250" rx="10" fill="#f8f9fa" stroke="#E9ECEF" stroke-width="3"/>
+            <text x="630" y="400" class="label">Gas (<tspan class="formula">H<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O<tspan baseline-shift="sub" font-size="0.75em">(g)</tspan></tspan>)</text>
+            
+            <!-- Fast moving particles -->
+            <g transform="translate(630, 245)"><use href="#water" class="gas-1"/></g>
+            <g transform="translate(630, 245)"><use href="#water" class="gas-2"/></g>
+            <g transform="translate(630, 245)"><use href="#water" class="gas-3"/></g>
+            <g transform="translate(630, 245)"><use href="#water" class="gas-4"/></g>
+            <g transform="translate(630, 245)"><use href="#water" class="gas-5"/></g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- SCENE 2: CHEMICAL CLASSIFICATION           -->
+        <!-- ========================================== -->
+        <g class="scene-2">
+            <text x="400" y="75" class="subtitle">Phase 2: Chemical Classification of Matter</text>
+
+            <!-- Container 1: Element -->
+            <rect x="50" y="120" width="150" height="250" rx="10" fill="#f8f9fa" stroke="#E9ECEF" stroke-width="3"/>
+            <text x="125" y="400" class="label">Pure Element</text>
+            <text x="125" y="420" class="label formula" fill="#666">O<tspan baseline-shift="sub" font-size="0.75em">2</tspan></text>
+            
+            <g transform="translate(80, 150)"><use href="#oxygen" class="float-1"/></g>
+            <g transform="translate(160, 180)"><use href="#oxygen" class="float-2"/></g>
+            <g transform="translate(100, 220)"><use href="#oxygen" class="float-3"/></g>
+            <g transform="translate(150, 260)"><use href="#oxygen" class="float-4"/></g>
+            <g transform="translate(90, 300)"><use href="#oxygen" class="float-1"/></g>
+            <g transform="translate(170, 330)"><use href="#oxygen" class="float-2"/></g>
+            <g transform="translate(125, 190)"><use href="#oxygen" class="float-3"/></g>
+            <g transform="translate(130, 290)"><use href="#oxygen" class="float-4"/></g>
+
+            <!-- Container 2: Compound -->
+            <rect x="230" y="120" width="150" height="250" rx="10" fill="#f8f9fa" stroke="#E9ECEF" stroke-width="3"/>
+            <text x="305" y="400" class="label">Pure Compound</text>
+            <text x="305" y="420" class="label formula" fill="#666">H<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O</text>
+            
+            <g transform="translate(260, 160)"><use href="#water" class="float-2"/></g>
+            <g transform="translate(340, 190)"><use href="#water" class="float-3"/></g>
+            <g transform="translate(280, 230)"><use href="#water" class="float-4"/></g>
+            <g transform="translate(330, 270)"><use href="#water" class="float-1"/></g>
+            <g transform="translate(270, 310)"><use href="#water" class="float-2"/></g>
+            <g transform="translate(350, 340)"><use href="#water" class="float-3"/></g>
+            <g transform="translate(305, 200)"><use href="#water" class="float-4"/></g>
+            <g transform="translate(310, 300)"><use href="#water" class="float-1"/></g>
+
+            <!-- Container 3: Homogeneous Mixture -->
+            <rect x="410" y="120" width="150" height="250" rx="10" fill="#f8f9fa" stroke="#E9ECEF" stroke-width="3"/>
+            <text x="485" y="400" class="label">Homogeneous Mix</text>
+            <text x="485" y="420" class="label formula" fill="#666">Ar + H<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O</text>
+            
+            <g transform="translate(440, 160)"><use href="#argon" class="float-3"/></g>
+            <g transform="translate(520, 230)"><use href="#argon" class="float-1"/></g>
+            <g transform="translate(450, 300)"><use href="#argon" class="float-4"/></g>
+            <g transform="translate(530, 340)"><use href="#argon" class="float-2"/></g>
+            
+            <g transform="translate(520, 170)"><use href="#water" class="float-2"/></g>
+            <g transform="translate(440, 240)"><use href="#water" class="float-3"/></g>
+            <g transform="translate(530, 290)"><use href="#water" class="float-1"/></g>
+            <g transform="translate(460, 350)"><use href="#water" class="float-4"/></g>
+            <g transform="translate(485, 200)"><use href="#water" class="float-2"/></g>
+            <g transform="translate(490, 270)"><use href="#water" class="float-3"/></g>
+
+            <!-- Container 4: Heterogeneous Mixture -->
+            <rect x="590" y="120" width="150" height="250" rx="10" fill="#f8f9fa" stroke="#E9ECEF" stroke-width="3"/>
+            <text x="665" y="400" class="label">Heterogeneous Mix</text>
+            <text x="665" y="420" class="label formula" fill="#666">NaCl + H<tspan baseline-shift="sub" font-size="0.75em">2</tspan>O</text>
+            
+            <!-- NaCl Lattice at bottom -->
+            <g class="vibrate">
+                <!-- Row 1 -->
+                <use href="#cl-ion" x="610" y="355"/><use href="#na-ion" x="626" y="355"/>
+                <use href="#cl-ion" x="642" y="355"/><use href="#na-ion" x="658" y="355"/>
+                <use href="#cl-ion" x="674" y="355"/><use href="#na-ion" x="690" y="355"/>
+                <use href="#cl-ion" x="706" y="355"/><use href="#na-ion" x="722" y="355"/>
+                <!-- Row 2 -->
+                <use href="#na-ion" x="610" y="339"/><use href="#cl-ion" x="626" y="339"/>
+                <use href="#na-ion" x="642" y="339"/><use href="#cl-ion" x="658" y="339"/>
+                <use href="#na-ion" x="674" y="339"/><use href="#cl-ion" x="690" y="339"/>
+                <use href="#na-ion" x="706" y="339"/><use href="#cl-ion" x="722" y="339"/>
+                <!-- Row 3 -->
+                <use href="#cl-ion" x="610" y="323"/><use href="#na-ion" x="626" y="323"/>
+                <use href="#cl-ion" x="642" y="323"/><use href="#na-ion" x="658" y="323"/>
+                <use href="#cl-ion" x="674" y="323"/><use href="#na-ion" x="690" y="323"/>
+                <use href="#cl-ion" x="706" y="323"/><use href="#na-ion" x="722" y="323"/>
+            </g>
+
+            <!-- Water floating above -->
+            <g transform="translate(620, 170)"><use href="#water" class="float-4"/></g>
+            <g transform="translate(700, 190)"><use href="#water" class="float-1"/></g>
+            <g transform="translate(640, 230)"><use href="#water" class="float-2"/></g>
+            <g transform="translate(690, 260)"><use href="#water" class="float-3"/></g>
+            <g transform="translate(665, 200)"><use href="#water" class="float-1"/></g>
+            <g transform="translate(670, 150)"><use href="#water" class="float-2"/></g>
+            <g transform="translate(620, 270)"><use href="#water" class="float-4"/></g>
+            <g transform="translate(710, 290)"><use href="#water" class="float-3"/></g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- LEGEND                                     -->
+        <!-- ========================================== -->
+        <g transform="translate(100, 465)">
+            <circle cx="0" cy="0" r="6" fill="#FF4444"/>
+            <text x="12" y="4" class="legend-text">Oxygen (O)</text>
+
+            <circle cx="110" cy="0" r="6" fill="#CCCCCC"/>
+            <text x="122" y="4" class="legend-text">Hydrogen (H)</text>
+
+            <circle cx="230" cy="0" r="6" fill="#44CCFF"/>
+            <text x="242" y="4" class="legend-text">Argon (Ar)</text>
+
+            <circle cx="340" cy="0" r="6" fill="#7B2CBF"/>
+            <text x="352" y="4" class="legend-text">Sodium (Na⁺)</text>
+
+            <circle cx="460" cy="0" r="6" fill="#44CC44"/>
+            <text x="472" y="4" class="legend-text">Chlorine (Cl⁻)</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

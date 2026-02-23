@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uniform Circular Motion as SHM Projection</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #212529;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #ced4da;
+        }
+
+        button {
+            font-family: 'Inter', sans-serif;
+            background-color: #4361EE;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #3651d4;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            cursor: pointer;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            user-select: none;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Uniform Circular Motion as SHM Projection</h1>
+        <div class="controls">
+            <button id="playPauseBtn">Pause</button>
+            <label>
+                Angular Velocity (&omega;):
+                <input type="range" id="omegaSlider" min="0.2" max="2.0" step="0.1" value="0.785">
+            </label>
+        </div>
+    </header>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Uniform Circular Motion and Simple Harmonic Motion</title>
+            <desc>An animated diagram showing a particle in uniform circular motion and its projection on the x-axis demonstrating simple harmonic motion.</desc>
+
+            <defs>
+                <!-- Arrowheads for vectors -->
+                <marker id="arrow-blue" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#4361EE" />
+                </marker>
+                <marker id="arrow-green" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#06D6A0" />
+                </marker>
+                <marker id="arrow-red" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF3366" />
+                </marker>
+                <marker id="arrow-black" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#212529" />
+                </marker>
+            </defs>
+
+            <!-- Background -->
+            <rect width="800" height="500" fill="#ffffff" />
+
+            <!-- ================= STATIC ELEMENTS ================= -->
+            
+            <!-- Main Axes -->
+            <line x1="40" y1="280" x2="440" y2="280" stroke="#212529" stroke-width="2" marker-start="url(#arrow-black)" marker-end="url(#arrow-black)" />
+            <line x1="240" y1="100" x2="240" y2="460" stroke="#ced4da" stroke-width="1" stroke-dasharray="5,5" />
+            
+            <!-- Reference Circle -->
+            <circle cx="240" cy="280" r="140" fill="none" stroke="#ced4da" stroke-width="2" stroke-dasharray="6,6" />
+            
+            <!-- Main Axis Labels -->
+            <text x="450" y="285" font-size="14" font-style="italic" fill="#212529">x</text>
+            <text x="100" y="305" font-size="12" text-anchor="middle" fill="#495057">x = -A</text>
+            <text x="240" y="305" font-size="12" text-anchor="middle" fill="#495057">x = 0</text>
+            <text x="380" y="305" font-size="12" text-anchor="middle" fill="#495057">x = +A</text>
+
+            <!-- Chart Axes -->
+            <line x1="520" y1="280" x2="770" y2="280" stroke="#ced4da" stroke-width="1" stroke-dasharray="4,4" />
+            <line x1="520" y1="140" x2="770" y2="140" stroke="#e9ecef" stroke-width="1" />
+            <line x1="520" y1="420" x2="770" y2="420" stroke="#e9ecef" stroke-width="1" />
+            <line x1="520" y1="120" x2="520" y2="440" stroke="#212529" stroke-width="2" marker-start="url(#arrow-black)" marker-end="url(#arrow-black)" />
+            <line x1="520" y1="280" x2="770" y2="280" stroke="#212529" stroke-width="2" marker-end="url(#arrow-black)" />
+            
+            <!-- Chart Labels -->
+            <text x="520" y="105" font-size="14" font-style="italic" text-anchor="middle" fill="#212529">x</text>
+            <text x="775" y="285" font-size="14" font-style="italic" fill="#212529">t</text>
+            <text x="510" y="144" font-size="11" text-anchor="end" fill="#6c757d">+A</text>
+            <text x="510" y="424" font-size="11" text-anchor="end" fill="#6c757d">-A</text>
+            <text x="510" y="284" font-size="11" text-anchor="end" fill="#6c757d">0</text>
+
+            <!-- ================= DYNAMIC ELEMENTS ================= -->
+            
+            <!-- Projection Line (Dashed) -->
+            <line id="proj-line" x1="240" y1="280" x2="240" y2="280" stroke="#6c757d" stroke-width="1.5" stroke-dasharray="4,4" />
+
+            <!-- Radius Vector (A) -->
+            <line id="radius-vec" x1="240" y1="280" x2="240" y2="140" stroke="#4361EE" stroke-width="3" marker-end="url(#arrow-blue)" />
+            
+            <!-- Velocity Vector (v) -->
+            <line id="vel-vec" x1="240" y1="140" x2="180" y2="140" stroke="#06D6A0" stroke-width="3" marker-end="url(#arrow-green)" />
+            
+            <!-- Centripetal Acceleration Vector (a_c) -->
+            <line id="acc-vec" x1="240" y1="140" x2="240" y2="200" stroke="#FF3366" stroke-width="3" marker-end="url(#arrow-red)" />
+
+            <!-- Rotating Particle (P) -->
+            <circle id="particle-p" cx="240" cy="140" r="7" fill="#4361EE" />
+            
+            <!-- Projection Particle (P') -->
+            <circle id="particle-p-prime" cx="240" cy="280" r="7" fill="#FF3366" />
+
+            <!-- Wave Trace Path -->
+            <path id="wave-trace" d="" fill="none" stroke="#FF3366" stroke-width="2.5" stroke-linejoin="round" />
+
+            <!-- Vector Labels -->
+            <text id="label-A" x="0" y="0" fill="#4361EE" font-weight="600" font-size="14" font-style="italic">A</text>
+            <text id="label-v" x="0" y="0" fill="#06D6A0" font-weight="600" font-size="14" font-style="italic">v</text>
+            <text id="label-a" x="0" y="0" fill="#FF3366" font-weight="600" font-size="14" font-style="italic">a<tspan baseline-shift="sub" font-size="10">c</tspan></text>
+
+            <!-- ================= UI PANELS ================= -->
+            
+            <!-- Dynamic Variables Panel -->
+            <rect x="520" y="20" width="240" height="70" fill="#f8f9fa" stroke="#ced4da" stroke-width="1" rx="6" />
+            <text id="text-theta" x="535" y="45" class="math" font-size="14" fill="#212529">θ = ωt + φ = 0.0°</text>
+            <text id="text-x" x="535" y="70" class="math" font-size="14" fill="#212529">x = A cos(θ) = 0.0</text>
+
+            <!-- Legend -->
+            <rect x="20" y="20" width="190" height="115" fill="#f8f9fa" stroke="#ced4da" stroke-width="1" rx="6" />
+            <text x="115" y="40" font-size="12" font-weight="600" text-anchor="middle" fill="#212529">Legend</text>
+            
+            <circle cx="35" cy="60" r="5" fill="#4361EE" />
+            <text x="50" y="64" font-size="11" fill="#495057">Particle P / Radius (<tspan font-style="italic">A</tspan>)</text>
+            
+            <line x1="30" y1="80" x2="40" y2="80" stroke="#06D6A0" stroke-width="3" marker-end="url(#arrow-green)" />
+            <text x="50" y="84" font-size="11" fill="#495057">Velocity (<tspan font-style="italic">v</tspan>)</text>
+            
+            <line x1="30" y1="100" x2="40" y2="100" stroke="#FF3366" stroke-width="3" marker-end="url(#arrow-red)" />
+            <text x="50" y="104" font-size="11" fill="#495057">Centripetal Accel (<tspan font-style="italic">a</tspan><tspan baseline-shift="sub" font-size="8">c</tspan>)</text>
+            
+            <circle cx="35" cy="120" r="5" fill="#FF3366" />
+            <text x="50" y="124" font-size="11" fill="#495057">SHM Projection (P')</text>
+
+        </svg>
+    </div>
+
+    <script>
+        // Physics Constants & State
+        const cx = 240;          // Center X of reference circle
+        const cy = 280;          // Center Y of reference circle
+        const R = 140;           // Radius (Amplitude A)
+        const vLen = 60;         // Visual length of velocity vector
+        const aLen = 60;         // Visual length of acceleration vector
+        
+        let theta = Math.PI / 4; // Initial phase (45 degrees)
+        let omega = 0.785;       // Angular velocity (rad/s)
+        let isPlaying = true;
+        let lastTime = performance.now();
+        
+        // Wave Trace History
+        const history = [];
+        const maxHistory = 120;  // Number of points to keep
+        const dx = 2;            // X-distance between points on the chart
+
+        // DOM Elements
+        const elRadius = document.getElementById('radius-vec');
+        const elVel = document.getElementById('vel-vec');
+        const elAcc = document.getElementById('acc-vec');
+        const elP = document.getElementById('particle-p');
+        const elProjLine = document.getElementById('proj-line');
+        const elPPrime = document.getElementById('particle-p-prime');
+        const elWave = document.getElementById('wave-trace');
+        
+        const elLabelA = document.getElementById('label-A');
+        const elLabelV = document.getElementById('label-v');
+        const elLabelAcc = document.getElementById('label-a');
+        
+        const elTextTheta = document.getElementById('text-theta');
+        const elTextX = document.getElementById('text-x');
+        
+        const btnPlayPause = document.getElementById('playPauseBtn');
+        const sliderOmega = document.getElementById('omegaSlider');
+
+        // Animation Loop
+        function update(time) {
+            if (!isPlaying) {
+                lastTime = time;
+                requestAnimationFrame(update);
+                return;
+            }
+
+            // Calculate Delta Time (in seconds)
+            const dt = (time - lastTime) / 1000;
+            lastTime = time;
+            
+            // Update Angle (Uniform Circular Motion)
+            theta += omega * dt;
+            if (theta > 2 * Math.PI) theta -= 2 * Math.PI;
+
+            // Calculate Particle P Position
+            // Note: In SVG, Y increases downwards, so we subtract sin(theta)
+            const px = cx + R * Math.cos(theta);
+            const py = cy - R * Math.sin(theta);
+
+            // 1. Update Particle P and Radius Vector
+            elP.setAttribute('cx', px);
+            elP.setAttribute('cy', py);
+            elRadius.setAttribute('x2', px);
+            elRadius.setAttribute('y2', py);
+
+            // 2. Update Velocity Vector (Tangential)
+            // Direction is theta + 90 degrees.
+            const vx = px - vLen * Math.sin(theta);
+            const vy = py - vLen * Math.cos(theta);
+            elVel.setAttribute('x1', px);
+            elVel.setAttribute('y1', py);
+            elVel.setAttribute('x2', vx);
+            elVel.setAttribute('y2', vy);
+
+            // 3. Update Acceleration Vector (Centripetal, towards center)
+            // Direction is theta + 180 degrees.
+            const ax = px - aLen * Math.cos(theta);
+            const ay = py + aLen * Math.sin(theta);
+            elAcc.setAttribute('x1', px);
+            elAcc.setAttribute('y1', py);
+            elAcc.setAttribute('x2', ax);
+            elAcc.setAttribute('y2', ay);
+
+            // 4. Update Projection (SHM)
+            elProjLine.setAttribute('x1', px);
+            elProjLine.setAttribute('y1', py);
+            elProjLine.setAttribute('x2', px);
+            elProjLine.setAttribute('y2', cy);
+            elPPrime.setAttribute('cx', px);
+
+            // 5. Update Vector Labels (Offset slightly from vector ends)
+            elLabelA.setAttribute('x', cx + (R/2) * Math.cos(theta) - 10);
+            elLabelA.setAttribute('y', cy - (R/2) * Math.sin(theta) - 10);
+            
+            elLabelV.setAttribute('x', vx + 10 * Math.sign(vx - px));
+            elLabelV.setAttribute('y', vy + 10 * Math.sign(vy - py));
+
+            elLabelAcc.setAttribute('x', ax + 10 * Math.sign(ax - px));
+            elLabelAcc.setAttribute('y', ay + 10 * Math.sign(ay - py));
+
+            // 6. Update Wave Trace (Strip Chart)
+            // Store the current displacement from center
+            history.unshift(px - cx);
+            if (history.length > maxHistory) history.pop();
+            
+            let pathD = "";
+            for (let i = 0; i < history.length; i++) {
+                const chartX = 520 + i * dx;
+                // Map the horizontal displacement to the vertical axis of the chart
+                // Center of chart is at Y=280. Positive X displacement goes UP (smaller Y).
+                const chartY = 280 - history[i]; 
+                
+                if (i === 0) {
+                    pathD += `M ${chartX} ${chartY} `;
+                } else {
+                    pathD += `L ${chartX} ${chartY} `;
+                }
+            }
+            elWave.setAttribute('d', pathD);
+
+            // 7. Update Dynamic Text Panel
+            const deg = (theta * 180 / Math.PI).toFixed(1);
+            const xVal = (px - cx).toFixed(1);
+            elTextTheta.textContent = `θ = ωt + φ = ${deg}°`;
+            elTextX.textContent = `x = A cos(θ) = ${xVal}`;
+
+            // Loop
+            requestAnimationFrame(update);
+        }
+
+        // Start Animation
+        requestAnimationFrame(update);
+
+        // Event Listeners for Controls
+        btnPlayPause.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            btnPlayPause.textContent = isPlaying ? "Pause" : "Play";
+            btnPlayPause.style.backgroundColor = isPlaying ? "#4361EE" : "#06D6A0";
+            if (isPlaying) lastTime = performance.now();
+        });
+
+        sliderOmega.addEventListener('input', (e) => {
+            omega = parseFloat(e.target.value);
+        });
+
+    </script>
+</body>
+</html>

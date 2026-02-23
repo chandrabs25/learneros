@@ -38,9 +38,14 @@ class Settings(BaseSettings):
 
     # Firebase (path to service account JSON)
     FIREBASE_SERVICE_ACCOUNT: str = ""
+    FIREBASE_SERVICE_ACCOUNT_JSON: str = ""
 
     # Frontend URL (for CORS)
     FRONTEND_URL: str = "http://localhost:3000"
+
+    # Optional public R2 base URL for animation assets.
+    # Example: https://pub-xxxxxxxx.r2.dev/animations
+    ANIMATIONS_R2_PUBLIC_BASE_URL: str = ""
 
     @property
     def cors_origins(self) -> list[str]:

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparative Circulatory Physiology</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title { font-size: 20px; font-weight: 700; fill: #2C3E50; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #2C3E50; }
+        .panel-header { font-size: 16px; font-weight: 600; fill: #2C3E50; }
+        .label { font-size: 11px; font-weight: 600; fill: #2C3E50; }
+        .label-desc { font-size: 10px; font-weight: 400; fill: #2C3E50; }
+        .mono { font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 500; }
+        .italic { font-style: italic; }
+
+        /* Animations */
+        .human-heart {
+            animation: heartbeat 1s infinite;
+            transform-origin: 180px 150px;
+        }
+
+        @keyframes heartbeat {
+            0%, 20%, 40%, 100% { transform: scale(1); }
+            10%, 30% { transform: scale(1.04); }
+        }
+
+        /* 12-second master loop for hormonal axis */
+        .anf-particle {
+            animation: anf-path 12s infinite;
+            opacity: 0;
+        }
+        @keyframes anf-path {
+            0%, 16% { opacity: 0; transform: translate(160px, 110px); }
+            18% { opacity: 1; transform: translate(160px, 110px); }
+            25% { transform: translate(200px, 180px); }
+            33% { transform: translate(160px, 235px); opacity: 1; }
+            35%, 100% { transform: translate(160px, 235px); opacity: 0; }
+        }
+
+        .vaso-vessel {
+            animation: vaso-dilate 12s infinite;
+        }
+        @keyframes vaso-dilate {
+            0%, 30%, 60%, 100% { stroke-width: 4px; stroke: #E74C3C; }
+            35%, 55% { stroke-width: 9px; stroke: #FF6B6B; }
+        }
+
+        .epo-particle {
+            animation: epo-path 12s infinite;
+            opacity: 0;
+        }
+        @keyframes epo-path {
+            0%, 50% { opacity: 0; transform: translate(120px, 330px); }
+            52% { opacity: 1; transform: translate(120px, 330px); }
+            58% { transform: translate(120px, 420px); }
+            62% { transform: translate(200px, 430px); }
+            66% { transform: translate(280px, 380px); opacity: 1; }
+            68%, 100% { transform: translate(280px, 380px); opacity: 0; }
+        }
+
+        .rbc-particle {
+            animation: rbc-path 12s infinite;
+            opacity: 0;
+        }
+        @keyframes rbc-path {
+            0%, 66% { opacity: 0; transform: translate(280px, 350px) scale(0); }
+            68% { opacity: 1; transform: translate(280px, 350px) scale(1); }
+            75% { transform: translate(280px, 420px) scale(1); }
+            83% { transform: translate(200px, 430px) scale(1); }
+            91% { transform: translate(160px, 150px) scale(1); opacity: 1; }
+            93%, 100% { transform: translate(160px, 150px) scale(1); opacity: 0; }
+        }
+
+        .jg-glow {
+            animation: jg-pulse 12s infinite;
+        }
+        @keyframes jg-pulse {
+            0%, 48%, 70%, 100% { fill: #FFD700; stroke-width: 1px; }
+            50%, 60% { fill: #FFF; stroke-width: 3px; stroke: #F39C12; }
+        }
+
+        /* Arthropod 3-second loop */
+        .arthropod-heart {
+            animation: peristalsis 1.5s infinite alternate;
+            transform-origin: 580px 200px;
+        }
+        @keyframes peristalsis {
+            0% { transform: scaleY(1); }
+            100% { transform: scaleY(0.85); }
+        }
+
+        .hemo-particle {
+            animation: hemo-circ 3s linear infinite;
+            opacity: 0;
+        }
+        .hp1 { animation-delay: 0s; }
+        .hp2 { animation-delay: 0.75s; }
+        .hp3 { animation-delay: 1.5s; }
+        .hp4 { animation-delay: 2.25s; }
+
+        @keyframes hemo-circ {
+            0% { transform: translate(550px, 300px); opacity: 0; }
+            10% { opacity: 1; }
+            30% { transform: translate(525px, 210px); }
+            60% { transform: translate(680px, 200px); }
+            80% { transform: translate(720px, 220px); }
+            90% { transform: translate(550px, 300px); opacity: 1; }
+            100% { transform: translate(550px, 300px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" aria-label="Comparative Circulatory Physiology Diagram">
+        <defs>
+            <!-- Shadows -->
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.15" />
+            </filter>
+            <filter id="light-shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.1" />
+            </filter>
+
+            <!-- Gradients -->
+            <linearGradient id="kidney-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F39C12" />
+                <stop offset="100%" stop-color="#D68910" />
+            </linearGradient>
+            <linearGradient id="bone-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#FFF8DC" />
+                <stop offset="100%" stop-color="#F5F5DC" />
+            </linearGradient>
+            <radialGradient id="hemocoel-grad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#E8F4FD" stop-opacity="0.8" />
+                <stop offset="100%" stop-color="#D4E6F1" stop-opacity="0.4" />
+            </radialGradient>
+
+            <!-- Markers -->
+            <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 Z" fill="#E74C3C" />
+            </marker>
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 Z" fill="#3498DB" />
+            </marker>
+            <marker id="arrow-ostia" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 Z" fill="#2C3E50" />
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="800" height="500" fill="#f8f9fa" />
+
+        <!-- Title Section -->
+        <text x="400" y="35" class="title" text-anchor="middle">Comparative Circulatory Physiology</text>
+        <text x="400" y="55" class="subtitle" text-anchor="middle">Human Hormonal Regulation vs. Arthropod Open Systems</text>
+        <line x1="400" y1="80" x2="400" y2="460" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="6,6" />
+
+        <!-- ========================================== -->
+        <!-- PANEL A: HUMAN CLOSED SYSTEM & HORMONES    -->
+        <!-- ========================================== -->
+        <g id="panel-a">
+            <text x="200" y="90" class="panel-header" text-anchor="middle">Closed System &amp; Hormonal Axis</text>
+
+            <!-- Blood Vessels (Paths) -->
+            <!-- Veins (Blue) -->
+            <path d="M 120 370 C 120 450, 160 450, 160 150" fill="none" stroke="#3498DB" stroke-width="4" marker-mid="url(#arrow-blue)" />
+            <path d="M 280 380 C 280 450, 160 450, 160 150" fill="none" stroke="#3498DB" stroke-width="4" />
+            
+            <!-- Arteries (Red) -->
+            <path d="M 200 180 C 200 220, 280 220, 280 320" fill="none" stroke="#E74C3C" stroke-width="4" />
+            <!-- Vasodilating Artery -->
+            <path class="vaso-vessel" d="M 200 180 C 200 250, 120 250, 120 330" fill="none" stroke="#E74C3C" stroke-width="4" />
+
+            <!-- Bone Marrow -->
+            <g filter="url(#shadow)">
+                <path d="M 250 320 Q 240 310 250 300 Q 260 310 270 320 L 290 320 Q 300 310 310 300 Q 320 310 310 320 L 310 380 Q 320 390 310 400 Q 300 390 290 380 L 270 380 Q 260 390 250 400 Q 240 390 250 380 Z" fill="url(#bone-grad)" stroke="#D2B48C" stroke-width="2" />
+                <ellipse cx="280" cy="350" rx="15" ry="25" fill="#CD5C5C" opacity="0.8" />
+            </g>
+
+            <!-- Kidney -->
+            <g filter="url(#shadow)">
+                <path d="M 100 310 C 140 310, 150 350, 150 350 C 150 350, 140 390, 100 390 C 80 390, 90 350, 90 350 C 90 350, 80 310, 100 310 Z" fill="url(#kidney-grad)" stroke="#E67E22" stroke-width="2" />
+                <!-- Ureter -->
+                <path d="M 135 345 Q 150 380 140 420" fill="none" stroke="#F1C40F" stroke-width="3" />
+                <!-- JG Cells -->
+                <circle cx="120" cy="330" r="6" class="jg-glow" fill="#FFD700" stroke="#E74C3C" stroke-width="1" />
+            </g>
+
+            <!-- Human Heart -->
+            <g class="human-heart" filter="url(#shadow)">
+                <!-- Right Side (Venous) -->
+                <path d="M 180 120 Q 160 100 145 120 Q 140 140 150 150 L 180 150 Z" fill="#3498DB" />
+                <path d="M 150 150 Q 140 180 180 210 L 180 150 Z" fill="#2980B9" />
+                <!-- Left Side (Arterial) -->
+                <path d="M 180 120 Q 200 100 215 120 Q 220 140 210 150 L 180 150 Z" fill="#E74C3C" />
+                <path d="M 210 150 Q 220 180 180 210 L 180 150 Z" fill="#C0392B" />
+                <!-- Septum/Valves Lines -->
+                <line x1="180" y1="115" x2="180" y2="205" stroke="#2C3E50" stroke-width="2" opacity="0.5" />
+                <line x1="148" y1="150" x2="212" y2="150" stroke="#2C3E50" stroke-width="2" opacity="0.5" />
+            </g>
+
+            <!-- Animated Particles -->
+            <!-- ANF -->
+            <g class="anf-particle">
+                <circle cx="0" cy="0" r="5" fill="#98D8C8" filter="url(#light-shadow)" />
+                <circle cx="0" cy="0" r="8" fill="#98D8C8" opacity="0.4" />
+            </g>
+            <!-- EPO -->
+            <g class="epo-particle">
+                <circle cx="0" cy="0" r="5" fill="#FFA07A" filter="url(#light-shadow)" />
+                <circle cx="0" cy="0" r="8" fill="#FFA07A" opacity="0.4" />
+            </g>
+            <!-- RBC -->
+            <g class="rbc-particle">
+                <ellipse cx="0" cy="0" rx="7" ry="5" fill="#E74C3C" stroke="#C0392B" stroke-width="1" filter="url(#light-shadow)" />
+                <circle cx="0" cy="0" r="2" fill="#C0392B" opacity="0.5" />
+            </g>
+
+            <!-- Labels Panel A -->
+            <!-- ANF Label -->
+            <rect x="25" y="195" width="130" height="40" rx="4" fill="rgba(255,255,255,0.85)" stroke="#BDC3C7" stroke-width="1" />
+            <text x="30" y="210" class="label"><tspan class="mono" fill="#16A085">ANF</tspan> Secretion</text>
+            <text x="30" y="225" class="label-desc">Causes Vasodilation</text>
+            <path d="M 155 215 L 180 235" fill="none" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2" />
+
+            <!-- JG Cells Label -->
+            <rect x="20" y="275" width="110" height="40" rx="4" fill="rgba(255,255,255,0.85)" stroke="#BDC3C7" stroke-width="1" />
+            <text x="25" y="290" class="label">JG Cells</text>
+            <text x="25" y="305" class="label-desc"><tspan class="mono" fill="#D35400">EPO</tspan> Source</text>
+            <path d="M 130 295 L 120 320" fill="none" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2" />
+
+            <!-- Erythropoiesis Label -->
+            <rect x="300" y="280" width="90" height="40" rx="4" fill="rgba(255,255,255,0.85)" stroke="#BDC3C7" stroke-width="1" />
+            <text x="305" y="295" class="label">Bone Marrow</text>
+            <text x="305" y="310" class="label-desc">Erythropoiesis</text>
+            <path d="M 300 300 L 280 320" fill="none" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2" />
+        </g>
+
+        <!-- ========================================== -->
+        <!-- PANEL B: ARTHROPOD OPEN SYSTEM             -->
+        <!-- ========================================== -->
+        <g id="panel-b">
+            <text x="600" y="90" class="panel-header" text-anchor="middle">Open Circulatory System</text>
+
+            <!-- Hemocoel (Body Cavity) -->
+            <path d="M 450 250 C 450 130, 700 160, 730 230 C 750 250, 750 250, 730 270 C 700 340, 450 370, 450 250 Z" fill="url(#hemocoel-grad)" stroke="#2C3E50" stroke-width="2" filter="url(#shadow)" />
+            
+            <!-- Abdominal Segmentation Lines (Subtle) -->
+            <path d="M 480 165 Q 470 250 480 335 M 520 170 Q 510 250 520 330 M 560 175 Q 550 250 560 325 M 600 180 Q 590 250 600 320 M 640 185 Q 630 250 640 315" fill="none" stroke="#BDC3C7" stroke-width="1" opacity="0.6" />
+
+            <!-- Alary Muscles -->
+            <g fill="#CD5C5C" opacity="0.6">
+                <polygon points="490,210 530,210 510,240" />
+                <polygon points="525,210 565,210 545,240" />
+                <polygon points="560,210 600,210 580,240" />
+                <polygon points="595,210 635,210 615,240" />
+                <polygon points="630,210 670,210 650,240" />
+                <!-- Dorsal muscles -->
+                <polygon points="490,190 530,190 510,160" />
+                <polygon points="525,190 565,190 545,160" />
+                <polygon points="560,190 600,190 580,160" />
+                <polygon points="595,190 635,190 615,160" />
+                <polygon points="630,190 670,190 650,160" />
+            </g>
+
+            <!-- Dorsal Tubular Heart -->
+            <g class="arthropod-heart" filter="url(#light-shadow)">
+                <polygon points="490,190 530,196 530,204 490,210" fill="#F39C12" stroke="#D35400" stroke-width="1" />
+                <polygon points="525,190 565,196 565,204 525,210" fill="#F39C12" stroke="#D35400" stroke-width="1" />
+                <polygon points="560,190 600,196 600,204 560,210" fill="#F39C12" stroke="#D35400" stroke-width="1" />
+                <polygon points="595,190 635,196 635,204 595,210" fill="#F39C12" stroke="#D35400" stroke-width="1" />
+                <polygon points="630,190 670,196 670,204 630,210" fill="#F39C12" stroke="#D35400" stroke-width="1" />
+                <!-- Anterior Aorta -->
+                <polygon points="665,196 710,196 710,204 665,204" fill="#F39C12" stroke="#D35400" stroke-width="1" />
+            </g>
+
+            <!-- Ostia Flow Arrows -->
+            <path d="M 520 225 L 525 212" fill="none" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow-ostia)" />
+            <path d="M 555 225 L 560 212" fill="none" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow-ostia)" />
+            <path d="M 590 225 L 595 212" fill="none" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow-ostia)" />
+            <path d="M 625 225 L 630 212" fill="none" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow-ostia)" />
+
+            <!-- Animated Hemolymph Particles -->
+            <circle cx="0" cy="0" r="4" fill="#3498DB" class="hemo-particle hp1" />
+            <circle cx="0" cy="0" r="4" fill="#3498DB" class="hemo-particle hp2" />
+            <circle cx="0" cy="0" r="4" fill="#3498DB" class="hemo-particle hp3" />
+            <circle cx="0" cy="0" r="4" fill="#3498DB" class="hemo-particle hp4" />
+
+            <!-- Labels Panel B -->
+            <rect x="430" y="110" width="130" height="40" rx="4" fill="rgba(255,255,255,0.85)" stroke="#BDC3C7" stroke-width="1" />
+            <text x="435" y="125" class="label">Dorsal Tubular Heart</text>
+            <text x="435" y="140" class="label-desc">Pumps anteriorly</text>
+            <path d="M 500 150 L 510 185" fill="none" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2" />
+
+            <rect x="640" y="110" width="100" height="40" rx="4" fill="rgba(255,255,255,0.85)" stroke="#BDC3C7" stroke-width="1" />
+            <text x="645" y="125" class="label">Hemocoel</text>
+            <text x="645" y="140" class="label-desc">Bathes organs</text>
+            <path d="M 690 150 L 690 180" fill="none" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2" />
+
+            <rect x="520" y="260" width="100" height="40" rx="4" fill="rgba(255,255,255,0.85)" stroke="#BDC3C7" stroke-width="1" />
+            <text x="525" y="275" class="label">Ostia (Valves)</text>
+            <text x="525" y="290" class="label-desc">Hemolymph entry</text>
+            <path d="M 560 260 L 555 230" fill="none" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2" />
+
+            <text x="740" y="370" class="label-desc italic" text-anchor="end">Model: Periplaneta americana</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- LEGEND                                     -->
+        <!-- ========================================== -->
+        <g id="legend" transform="translate(20, 450)">
+            <rect x="0" y="0" width="760" height="35" rx="6" fill="#FFFFFF" stroke="#E0E0E0" stroke-width="1" filter="url(#light-shadow)" />
+            
+            <circle cx="20" cy="17.5" r="5" fill="#E74C3C" />
+            <text x="30" y="21" class="label-desc">Arterial Blood / RBCs</text>
+
+            <circle cx="160" cy="17.5" r="5" fill="#3498DB" />
+            <text x="170" y="21" class="label-desc">Venous / Hemolymph</text>
+
+            <circle cx="310" cy="17.5" r="5" fill="#98D8C8" />
+            <text x="320" y="21" class="label-desc"><tspan class="mono">ANF</tspan> (Atrial Natriuretic Factor)</text>
+
+            <circle cx="510" cy="17.5" r="5" fill="#FFA07A" />
+            <text x="520" y="21" class="label-desc"><tspan class="mono">EPO</tspan> (Erythropoietin)</text>
+
+            <rect x="640" y="12.5" width="10" height="10" fill="#CD5C5C" />
+            <text x="655" y="21" class="label-desc">Alary Muscles</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation of Wave Propagation and Group Velocity</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-radius: 12px;
+            display: block;
+        }
+
+        .formula-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 13px;
+            fill: #212529;
+        }
+
+        .btn {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn rect {
+            fill: #e9ecef;
+            stroke: #ced4da;
+            stroke-width: 1.5;
+            transition: fill 0.2s ease;
+        }
+
+        .btn:hover rect {
+            fill: #dee2e6;
+        }
+
+        .btn text {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            fill: #495057;
+            user-select: none;
+            pointer-events: none;
+        }
+
+        .label {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            paint-order: stroke;
+            stroke: #ffffff;
+            stroke-width: 4px;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animation showing phase vs group velocity in wave beats">
+        <title>Animation of Wave Propagation and Group Velocity</title>
+        <desc>Shows two sine waves of different frequencies combining to form beats, illustrating the difference between phase and group velocity.</desc>
+
+        <defs>
+            <linearGradient id="beatGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7209B7" />
+                <stop offset="100%" stop-color="#FF3366" />
+            </linearGradient>
+
+            <marker id="arrowGreen" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#06D6A0" />
+            </marker>
+
+            <marker id="arrowRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF3366" />
+            </marker>
+        </defs>
+
+        <!-- Grid Lines -->
+        <line x1="0" y1="110" x2="800" y2="110" stroke="#e9ecef" stroke-width="1.5" stroke-dasharray="6,6" />
+        <line x1="0" y1="230" x2="800" y2="230" stroke="#e9ecef" stroke-width="1.5" stroke-dasharray="6,6" />
+        <line x1="0" y1="390" x2="800" y2="390" stroke="#e9ecef" stroke-width="1.5" stroke-dasharray="6,6" />
+
+        <!-- Titles and Axis Labels -->
+        <text x="30" y="40" font-size="20" font-weight="700" fill="#212529">Wave Propagation: Phase vs. Group Velocity</text>
+        
+        <text x="30" y="75" font-size="14" font-weight="600" fill="#4361EE">Component Wave 1 (ψ₁)</text>
+        <text x="30" y="195" font-size="14" font-weight="600" fill="#00B4D8">Component Wave 2 (ψ₂)</text>
+        <text x="30" y="315" font-size="14" font-weight="600" fill="#7209B7">Superposition (Beats) Ψ = ψ₁ + ψ₂</text>
+
+        <!-- Formula Box -->
+        <rect x="630" y="395" width="140" height="85" rx="6" fill="#f8f9fa" stroke="#ced4da" stroke-width="1" />
+        <g transform="translate(645, 410)" class="formula-text">
+            <!-- v_p formula -->
+            <text x="0" y="15">v<tspan dy="4" font-size="10">p</tspan><tspan dy="-4"> = </tspan></text>
+            <text x="32" y="8">ω</text>
+            <line x1="29" y1="12" x2="43" y2="12" stroke="#212529" stroke-width="1.5"/>
+            <text x="32" y="24">k</text>
+
+            <!-- v_g formula -->
+            <text x="0" y="50">v<tspan dy="4" font-size="10">g</tspan><tspan dy="-4"> = </tspan></text>
+            <text x="32" y="43">dω</text>
+            <line x1="29" y1="47" x2="52" y2="47" stroke="#212529" stroke-width="1.5"/>
+            <text x="32" y="59">dk</text>
+        </g>
+
+        <!-- Interactive Play/Pause Button -->
+        <g id="playPauseBtn" class="btn" transform="translate(690, 20)">
+            <rect width="80" height="30" rx="6" />
+            <text x="40" y="20" text-anchor="middle" id="btnLabel">Pause</text>
+        </g>
+
+        <!-- Wave Paths -->
+        <path id="wave1" fill="none" stroke="#4361EE" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        <path id="wave2" fill="none" stroke="#00B4D8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+        
+        <!-- Envelope Guides -->
+        <path id="envTop" fill="none" stroke="#adb5bd" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6" />
+        <path id="envBot" fill="none" stroke="#adb5bd" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6" />
+        
+        <path id="wave3" fill="none" stroke="url(#beatGrad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+
+        <!-- Component Trackers -->
+        <circle id="dot1" r="5" fill="#4361EE" />
+        <circle id="dot2" r="5" fill="#00B4D8" />
+
+        <!-- Phase & Group Trackers -->
+        <g id="phaseTracker">
+            <circle r="6" fill="#FF3366" />
+            <line x1="0" y1="0" x2="40" y2="0" stroke="#FF3366" stroke-width="2.5" marker-end="url(#arrowRed)" />
+            <text x="20" y="-12" class="label" fill="#FF3366" text-anchor="middle">v_p (Phase)</text>
+        </g>
+
+        <g id="groupTracker">
+            <circle r="6" fill="#06D6A0" />
+            <line x1="0" y1="0" x2="20" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrowGreen)" />
+            <text x="10" y="24" class="label" fill="#06D6A0" text-anchor="middle">v_g (Group)</text>
+        </g>
+
+    </svg>
+</div>
+
+<script>
+    // Physics Parameters
+    const A = 25; // Amplitude of component waves
+    const y1_center = 110;
+    const y2_center = 230;
+    const y3_center = 390;
+    const width = 800;
+
+    // Wavenumbers and Frequencies
+    // Chosen to perfectly loop within 800px and show distinct phase vs group velocities
+    const k_avg = 2 * Math.PI / 20;      // Carrier wavelength = 20px
+    const dk = 2 * Math.PI / 400;        // Envelope wavelength = 400px (2 beats per 800px)
+    
+    const k1 = k_avg + dk / 2;
+    const k2 = k_avg - dk / 2;
+
+    const v_p = 60; // Phase velocity (speed of carrier)
+    const v_g = 15; // Group velocity (speed of envelope)
+
+    const w_avg = v_p * k_avg;
+    const dw = v_g * dk;
+
+    const w1 = w_avg + dw / 2;
+    const w2 = w_avg - dw / 2;
+
+    // Animation State
+    let t = 0;
+    let isPlaying = true;
+    let lastTime = performance.now();
+
+    // DOM Elements
+    const wave1Path = document.getElementById('wave1');
+    const wave2Path = document.getElementById('wave2');
+    const wave3Path = document.getElementById('wave3');
+    const envTopPath = document.getElementById('envTop');
+    const envBotPath = document.getElementById('envBot');
+    
+    const dot1 = document.getElementById('dot1');
+    const dot2 = document.getElementById('dot2');
+    const phaseTracker = document.getElementById('phaseTracker');
+    const groupTracker = document.getElementById('groupTracker');
+
+    function draw() {
+        const now = performance.now();
+        const dt = (now - lastTime) / 1000;
+        lastTime = now;
+        
+        if (isPlaying) {
+            t += dt;
+        }
+
+        // Generate SVG Paths
+        let d1 = `M 0 ${y1_center} `;
+        let d2 = `M 0 ${y2_center} `;
+        let d3 = `M 0 ${y3_center} `;
+        let denvTop = `M 0 ${y3_center} `;
+        let denvBot = `M 0 ${y3_center} `;
+
+        // Calculate wave points
+        for (let x = 0; x <= width; x += 2) {
+            const y1 = A * Math.sin(k1 * x - w1 * t);
+            const y2 = A * Math.sin(k2 * x - w2 * t);
+            const y3 = y1 + y2;
+            
+            // Envelope equation: 2A * cos(Δk*x/2 - Δω*t/2)
+            const env = 2 * A * Math.cos(dk * x / 2 - dw * t / 2);
+
+            d1 += `L ${x} ${y1_center - y1} `;
+            d2 += `L ${x} ${y2_center - y2} `;
+            d3 += `L ${x} ${y3_center - y3} `;
+            denvTop += `L ${x} ${y3_center - Math.abs(env)} `;
+            denvBot += `L ${x} ${y3_center + Math.abs(env)} `;
+        }
+
+        // Update paths
+        wave1Path.setAttribute('d', d1);
+        wave2Path.setAttribute('d', d2);
+        wave3Path.setAttribute('d', d3);
+        envTopPath.setAttribute('d', denvTop);
+        envBotPath.setAttribute('d', denvBot);
+
+        // --- Update Trackers ---
+
+        // 1. Component 1 Tracker (tracks a crest)
+        let x_comp1 = (Math.PI/2 + w1 * t) / k1;
+        x_comp1 = ((x_comp1 % width) + width) % width;
+        dot1.setAttribute('cx', x_comp1);
+        dot1.setAttribute('cy', y1_center - A);
+
+        // 2. Component 2 Tracker (tracks a crest)
+        let x_comp2 = (Math.PI/2 + w2 * t) / k2;
+        x_comp2 = ((x_comp2 % width) + width) % width;
+        dot2.setAttribute('cx', x_comp2);
+        dot2.setAttribute('cy', y2_center - A);
+
+        // 3. Phase Tracker (Red Dot) - Tracks a specific crest of the carrier wave
+        let x_phase = (Math.PI/2 + w_avg * t) / k_avg;
+        x_phase = ((x_phase % width) + width) % width;
+        
+        // Calculate exact Y position on the resultant wave
+        const y_phase_val = A * Math.sin(k1 * x_phase - w1 * t) + A * Math.sin(k2 * x_phase - w2 * t);
+        phaseTracker.setAttribute('transform', `translate(${x_phase}, ${y3_center - y_phase_val})`);
+
+        // 4. Group Tracker (Green Dot) - Tracks the peak of the envelope
+        let x_group = (dw * t) / dk;
+        x_group = ((x_group % width) + width) % width;
+        
+        // The envelope peak is always at maximum amplitude (2A)
+        groupTracker.setAttribute('transform', `translate(${x_group}, ${y3_center - 2 * A})`);
+
+        requestAnimationFrame(draw);
+    }
+
+    // Interactivity
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const btnLabel = document.getElementById('btnLabel');
+
+    playPauseBtn.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        btnLabel.textContent = isPlaying ? "Pause" : "Play";
+        if (isPlaying) {
+            lastTime = performance.now();
+        }
+    });
+
+    // Start Animation
+    requestAnimationFrame(draw);
+</script>
+
+</body>
+</html>

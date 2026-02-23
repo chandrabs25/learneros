@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Photoelectric Effect: Work Function</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+            padding: 20px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background-color: #4361EE;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #3651D4;
+        }
+
+        button.secondary {
+            background-color: #6C757D;
+        }
+
+        button.secondary:hover {
+            background-color: #5A6268;
+        }
+
+        .svg-wrapper {
+            width: 100%;
+            height: auto;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- Animation Pausing --- */
+        body.paused * {
+            animation-play-state: paused !important;
+        }
+
+        /* --- CSS Animations (8s Loop) --- */
+        
+        /* High Energy Phase (0% - 50%) */
+        .anim-photon-high {
+            animation: photonHigh 8s infinite;
+        }
+        @keyframes photonHigh {
+            0% { transform: translate(50px, 90px) rotate(45deg); opacity: 0; animation-timing-function: ease-in; }
+            2.5% { opacity: 1; }
+            12.5% { transform: translate(170px, 210px) rotate(45deg); opacity: 1; }
+            12.51%, 100% { opacity: 0; }
+        }
+
+        .anim-hnu-high-line {
+            transform-origin: 600px 350px;
+            animation: hnuHighLine 8s infinite;
+        }
+        @keyframes hnuHighLine {
+            0%, 12.5% { transform: scaleY(0); opacity: 0; animation-timing-function: ease-out; }
+            12.51% { opacity: 1; transform: scaleY(0); }
+            18.75%, 43.75% { transform: scaleY(1); opacity: 1; }
+            43.76%, 100% { opacity: 0; }
+        }
+
+        .anim-hnu-high-head {
+            animation: hnuHighHead 8s infinite;
+        }
+        @keyframes hnuHighHead {
+            0%, 12.5% { transform: translateY(0); opacity: 0; animation-timing-function: ease-out; }
+            12.51% { opacity: 1; transform: translateY(0); }
+            18.75%, 43.75% { transform: translateY(-300px); opacity: 1; }
+            43.76%, 100% { opacity: 0; }
+        }
+
+        .anim-electron-high {
+            animation: electronHigh 8s infinite;
+        }
+        @keyframes electronHigh {
+            0%, 18.75% { transform: translate(210px, 250px); opacity: 0; animation-timing-function: ease-out; }
+            18.76% { opacity: 1; }
+            31.25%, 43.75% { transform: translate(330px, 50px); opacity: 1; }
+            43.76%, 100% { opacity: 0; }
+        }
+
+        .anim-kmax-line {
+            transform-origin: 640px 150px;
+            animation: kmaxLine 8s infinite;
+        }
+        @keyframes kmaxLine {
+            0%, 18.75% { transform: scaleY(0); opacity: 0; animation-timing-function: ease-out; }
+            18.76% { opacity: 1; transform: scaleY(0); }
+            31.25%, 43.75% { transform: scaleY(1); opacity: 1; }
+            43.76%, 100% { opacity: 0; }
+        }
+
+        .anim-kmax-head {
+            animation: kmaxHead 8s infinite;
+        }
+        @keyframes kmaxHead {
+            0%, 18.75% { transform: translateY(0); opacity: 0; animation-timing-function: ease-out; }
+            18.76% { opacity: 1; transform: translateY(0); }
+            31.25%, 43.75% { transform: translateY(-100px); opacity: 1; }
+            43.76%, 100% { opacity: 0; }
+        }
+
+        /* Low Energy Phase (50% - 100%) */
+        .anim-photon-low {
+            animation: photonLow 8s infinite;
+        }
+        @keyframes photonLow {
+            0%, 50% { opacity: 0; }
+            50.01% { transform: translate(50px, 90px) rotate(45deg); opacity: 0; animation-timing-function: ease-in; }
+            52.5% { opacity: 1; }
+            62.5% { transform: translate(170px, 210px) rotate(45deg); opacity: 1; }
+            62.51%, 100% { opacity: 0; }
+        }
+
+        .anim-hnu-low-line {
+            transform-origin: 600px 350px;
+            animation: hnuLowLine 8s infinite;
+        }
+        @keyframes hnuLowLine {
+            0%, 62.5% { transform: scaleY(0); opacity: 0; animation-timing-function: ease-out; }
+            62.51% { opacity: 1; transform: scaleY(0); }
+            68.75%, 93.75% { transform: scaleY(1); opacity: 1; }
+            93.76%, 100% { opacity: 0; }
+        }
+
+        .anim-hnu-low-head {
+            animation: hnuLowHead 8s infinite;
+        }
+        @keyframes hnuLowHead {
+            0%, 62.5% { transform: translateY(0); opacity: 0; animation-timing-function: ease-out; }
+            62.51% { opacity: 1; transform: translateY(0); }
+            68.75%, 93.75% { transform: translateY(-150px); opacity: 1; }
+            93.76%, 100% { opacity: 0; }
+        }
+
+        .anim-electron-low {
+            animation: electronLow 8s infinite;
+        }
+        @keyframes electronLow {
+            0%, 62.5% { opacity: 0; transform: translate(210px, 250px); }
+            62.51% { opacity: 1; transform: translate(210px, 250px); }
+            64% { transform: translate(213px, 247px); }
+            65.5% { transform: translate(207px, 253px); }
+            67% { transform: translate(212px, 248px); }
+            68.5% { transform: translate(210px, 250px); }
+            93.75% { opacity: 1; transform: translate(210px, 250px); }
+            93.76%, 100% { opacity: 0; }
+        }
+
+        .anim-red-x {
+            transform-origin: 210px 220px;
+            animation: redX 8s infinite;
+        }
+        @keyframes redX {
+            0%, 68.75% { opacity: 0; transform: scale(0); }
+            70% { opacity: 1; transform: scale(1.2); }
+            72%, 93.75% { opacity: 1; transform: scale(1); }
+            93.76%, 100% { opacity: 0; }
+        }
+
+        /* Static Target Electron Visibility */
+        .anim-target-static {
+            animation: targetStatic 8s infinite;
+        }
+        @keyframes targetStatic {
+            0%, 12.5% { opacity: 1; }
+            12.51%, 43.75% { opacity: 0; }
+            43.76%, 62.5% { opacity: 1; }
+            62.51%, 93.75% { opacity: 0; }
+            93.76%, 100% { opacity: 1; }
+        }
+
+        /* Dynamic Text Labels */
+        .anim-text-hnu-high { animation: textHnuHigh 8s infinite; }
+        @keyframes textHnuHigh {
+            0%, 12.5% { opacity: 0; }
+            12.51%, 43.75% { opacity: 1; }
+            43.76%, 100% { opacity: 0; }
+        }
+
+        .anim-text-kmax { animation: textKmax 8s infinite; }
+        @keyframes textKmax {
+            0%, 18.75% { opacity: 0; }
+            18.76%, 43.75% { opacity: 1; }
+            43.76%, 100% { opacity: 0; }
+        }
+
+        .anim-text-hnu-low { animation: textHnuLow 8s infinite; }
+        @keyframes textHnuLow {
+            0%, 62.5% { opacity: 0; }
+            62.51%, 93.75% { opacity: 1; }
+            93.76%, 100% { opacity: 0; }
+        }
+        
+        /* Phase Indicators */
+        .phase-indicator {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .anim-phase-high { animation: phaseHigh 8s infinite; }
+        @keyframes phaseHigh {
+            0%, 45% { opacity: 1; }
+            45.01%, 100% { opacity: 0; }
+        }
+        .anim-phase-low { animation: phaseLow 8s infinite; }
+        @keyframes phaseLow {
+            0%, 49.99% { opacity: 0; }
+            50%, 95% { opacity: 1; }
+            95.01%, 100% { opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="controls">
+            <button id="playPauseBtn">Pause Animation</button>
+            <button id="restartBtn" class="secondary">Restart</button>
+        </div>
+
+        <div class="svg-wrapper" id="svg-container">
+            <svg id="main-svg" viewBox="0 0 800 550" aria-label="An animation showing a photon hitting a metal surface and ejecting an electron if the photon energy exceeds the work function." role="img">
+                <title>The Photoelectric Effect and Work Function</title>
+                
+                <defs>
+                    <!-- Metal Gradient -->
+                    <linearGradient id="metalGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#DEE2E6" />
+                        <stop offset="100%" stop-color="#ADB5BD" />
+                    </linearGradient>
+
+                    <!-- Glow Filter for Surface and Photons -->
+                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                    </filter>
+
+                    <!-- Velocity Vector Arrowhead -->
+                    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#06D6A0" />
+                    </marker>
+                </defs>
+
+                <!-- ================= BACKGROUND & TITLES ================= -->
+                <rect width="100%" height="100%" fill="#ffffff" rx="12" />
+                
+                <text x="400" y="40" font-family="Inter" font-size="24" font-weight="600" text-anchor="middle" fill="#212529">
+                    The Photoelectric Effect: Work Function (Φ₀)
+                </text>
+
+                <!-- Phase Indicators -->
+                <text x="400" y="70" text-anchor="middle" fill="#F77F00" class="phase-indicator anim-phase-high">
+                    Phase 1: High Energy Photon (hν > Φ₀) → Emission
+                </text>
+                <text x="400" y="70" text-anchor="middle" fill="#D95030" class="phase-indicator anim-phase-low">
+                    Phase 2: Low Energy Photon (hν < Φ₀) → No Emission
+                </text>
+
+                <!-- ================= LEFT PANE: PHYSICAL PROCESS ================= -->
+                <g id="physical-process">
+                    <!-- Metal Block -->
+                    <rect x="50" y="250" width="350" height="200" fill="url(#metalGrad)" rx="8" />
+                    
+                    <!-- Surface Barrier (Glowing Red Line) -->
+                    <line x1="50" y1="250" x2="400" y2="250" stroke="#FF3366" stroke-width="4" filter="url(#glow)" />
+                    <text x="40" y="350" transform="rotate(-90, 40, 350)" font-family="Inter" font-size="14" font-weight="600" fill="#FF3366" text-anchor="middle">
+                        Metal Surface Barrier
+                    </text>
+
+                    <!-- Lattice Ions (Silver) -->
+                    <g fill="#CED4DA">
+                        <!-- Row 1 -->
+                        <circle cx="90" cy="290" r="12" />
+                        <circle cx="150" cy="290" r="12" />
+                        <circle cx="210" cy="290" r="12" />
+                        <circle cx="270" cy="290" r="12" />
+                        <circle cx="330" cy="290" r="12" />
+                        <!-- Row 2 -->
+                        <circle cx="90" cy="350" r="12" />
+                        <circle cx="150" cy="350" r="12" />
+                        <circle cx="210" cy="350" r="12" />
+                        <circle cx="270" cy="350" r="12" />
+                        <circle cx="330" cy="350" r="12" />
+                        <!-- Row 3 -->
+                        <circle cx="90" cy="410" r="12" />
+                        <circle cx="150" cy="410" r="12" />
+                        <circle cx="210" cy="410" r="12" />
+                        <circle cx="270" cy="410" r="12" />
+                        <circle cx="330" cy="410" r="12" />
+                    </g>
+
+                    <!-- Background Electrons (Blue) -->
+                    <g fill="#4361EE">
+                        <circle cx="120" cy="320" r="6" />
+                        <circle cx="240" cy="380" r="6" />
+                        <circle cx="180" cy="420" r="6" />
+                        <circle cx="300" cy="300" r="6" />
+                        <circle cx="100" cy="380" r="6" />
+                        <circle cx="320" cy="390" r="6" />
+                    </g>
+
+                    <!-- Target Electron (Static State) -->
+                    <circle cx="210" cy="250" r="7" fill="#4361EE" class="anim-target-static" />
+
+                    <!-- High Energy Photon (Animated) -->
+                    <g class="anim-photon-high" filter="url(#glow)">
+                        <path d="M -50 0 Q -40 -15 -30 0 T -10 0 T 10 0 T 30 0 T 50 0" fill="none" stroke="#F77F00" stroke-width="4" stroke-linecap="round" />
+                        <polygon points="45,-5 55,0 45,5" fill="#F77F00" />
+                    </g>
+
+                    <!-- Ejected Electron High Energy (Animated) -->
+                    <g class="anim-electron-high">
+                        <circle cx="0" cy="0" r="7" fill="#4361EE" />
+                        <line x1="0" y1="0" x2="36" y2="-60" stroke="#06D6A0" stroke-width="3" marker-end="url(#arrow-green)" />
+                        <text x="45" y="-65" font-family="Roboto Mono" font-size="16" font-weight="700" fill="#06D6A0">v<tspan dy="4" font-size="12">max</tspan></text>
+                    </g>
+
+                    <!-- Low Energy Photon (Animated) -->
+                    <g class="anim-photon-low" filter="url(#glow)">
+                        <!-- Longer wavelength -->
+                        <path d="M -60 0 Q -45 -20 -30 0 T 0 0 T 30 0 T 60 0" fill="none" stroke="#D95030" stroke-width="4" stroke-linecap="round" />
+                        <polygon points="55,-5 65,0 55,5" fill="#D95030" />
+                    </g>
+
+                    <!-- Jiggling Electron Low Energy (Animated) -->
+                    <circle cx="0" cy="0" r="7" fill="#4361EE" class="anim-electron-low" />
+
+                    <!-- Red X for No Emission (Animated) -->
+                    <g class="anim-red-x" stroke="#FF3366" stroke-width="5" stroke-linecap="round">
+                        <line x1="195" y1="205" x2="225" y2="235" />
+                        <line x1="225" y1="205" x2="195" y2="235" />
+                    </g>
+                </g>
+
+                <!-- ================= RIGHT PANE: ENERGY DIAGRAM ================= -->
+                <g id="energy-diagram">
+                    <!-- Axes and Levels -->
+                    <line x1="480" y1="50" x2="480" y2="400" stroke="#7209B7" stroke-width="3" />
+                    <line x1="480" y1="400" x2="720" y2="400" stroke="#7209B7" stroke-width="3" />
+                    
+                    <!-- Vacuum Level -->
+                    <line x1="480" y1="150" x2="720" y2="150" stroke="#7209B7" stroke-width="2" stroke-dasharray="6,6" />
+                    <text x="725" y="155" font-family="Inter" font-size="13" fill="#6C757D">Vacuum Level (E=0)</text>
+
+                    <!-- Bound State Level -->
+                    <line x1="480" y1="350" x2="720" y2="350" stroke="#7209B7" stroke-width="2" stroke-dasharray="6,6" />
+                    <text x="725" y="355" font-family="Inter" font-size="13" fill="#6C757D">Bound Electron State</text>
+                    <text x="470" y="240" transform="rotate(-90, 470, 240)" font-family="Inter" font-size="14" font-weight="600" fill="#7209B7" text-anchor="middle">Energy</text>
+
+                    <!-- Work Function Arrow (Static Red) -->
+                    <line x1="520" y1="350" x2="520" y2="150" stroke="#FF3366" stroke-width="3" />
+                    <polygon points="515,160 525,160 520,150" fill="#FF3366" />
+                    <polygon points="515,340 525,340 520,350" fill="#FF3366" />
+                    <text x="500" y="255" font-family="Roboto Mono" font-size="18" font-weight="700" fill="#FF3366">Φ₀</text>
+
+                    <!-- High Energy hν Arrow (Animated Orange) -->
+                    <line x1="580" y1="350" x2="580" y2="50" stroke="#F77F00" stroke-width="3" class="anim-hnu-high-line" />
+                    <g class="anim-hnu-high-head">
+                        <polygon points="575,350 585,350 580,340" fill="#F77F00" />
+                    </g>
+                    <text x="590" y="200" font-family="Roboto Mono" font-size="18" font-weight="700" fill="#F77F00" class="anim-text-hnu-high">hν</text>
+
+                    <!-- Kinetic Energy Arrow (Animated Green) -->
+                    <line x1="640" y1="150" x2="640" y2="50" stroke="#06D6A0" stroke-width="3" class="anim-kmax-line" />
+                    <g class="anim-kmax-head">
+                        <polygon points="635,150 645,150 640,140" fill="#06D6A0" />
+                    </g>
+                    <text x="650" y="105" font-family="Roboto Mono" font-size="18" font-weight="700" fill="#06D6A0" class="anim-text-kmax">K<tspan dy="4" font-size="12">max</tspan></text>
+
+                    <!-- Low Energy hν Arrow (Animated Dark Orange) -->
+                    <line x1="580" y1="350" x2="580" y2="200" stroke="#D95030" stroke-width="3" class="anim-hnu-low-line" />
+                    <g class="anim-hnu-low-head">
+                        <polygon points="575,350 585,350 580,340" fill="#D95030" />
+                    </g>
+                    <text x="590" y="280" font-family="Roboto Mono" font-size="18" font-weight="700" fill="#D95030" class="anim-text-hnu-low">hν</text>
+                </g>
+
+                <!-- ================= BOTTOM: EQUATION & LEGEND ================= -->
+                
+                <!-- Einstein's Photoelectric Equation -->
+                <rect x="250" y="480" width="300" height="50" fill="#f8f9fa" rx="8" stroke="#DEE2E6" stroke-width="2" />
+                <text x="400" y="512" font-family="Roboto Mono" font-size="22" font-weight="700" text-anchor="middle" fill="#212529">
+                    <tspan fill="#06D6A0">K</tspan><tspan fill="#06D6A0" dy="5" font-size="14">max</tspan><tspan dy="-5"> = </tspan><tspan fill="#F77F00">hν</tspan> - <tspan fill="#FF3366">Φ</tspan><tspan fill="#FF3366" dy="5" font-size="14">0</tspan>
+                </text>
+
+                <!-- Legend -->
+                <g font-family="Inter" font-size="12" fill="#495057">
+                    <circle cx="40" cy="505" r="5" fill="#F77F00" />
+                    <text x="52" y="509">Photon Energy (hν)</text>
+                    
+                    <circle cx="170" cy="505" r="5" fill="#4361EE" />
+                    <text x="182" y="509">Electron</text>
+                    
+                    <rect x="600" y="500" width="10" height="10" fill="#FF3366" rx="2" />
+                    <text x="618" y="509">Work Function (Φ₀)</text>
+                    
+                    <rect x="600" y="520" width="10" height="10" fill="#06D6A0" rx="2" />
+                    <text x="618" y="529">Kinetic Energy (K_max)</text>
+                </g>
+
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const container = document.getElementById('svg-container');
+        let isPlaying = true;
+
+        playPauseBtn.addEventListener('click', () => {
+            if (isPlaying) {
+                document.body.classList.add('paused');
+                playPauseBtn.textContent = 'Play Animation';
+            } else {
+                document.body.classList.remove('paused');
+                playPauseBtn.textContent = 'Pause Animation';
+            }
+            isPlaying = !isPlaying;
+        });
+
+        restartBtn.addEventListener('click', () => {
+            // Force reflow to restart CSS animations
+            const content = container.innerHTML;
+            container.innerHTML = content;
+            if (!isPlaying) {
+                document.body.classList.remove('paused');
+                playPauseBtn.textContent = 'Pause Animation';
+                isPlaying = true;
+            }
+        });
+    </script>
+</body>
+</html>

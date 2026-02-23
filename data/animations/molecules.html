@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Formation & Properties</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            max-width: 1200px;
+            max-height: 750px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Typography */
+        .title { font-size: 24px; font-weight: 600; fill: #333333; }
+        .subtitle { font-size: 14px; fill: #666666; }
+        .mono { font-family: 'Roboto Mono', monospace; }
+        .atom-text { font-size: 18px; font-weight: 600; fill: #333333; text-anchor: middle; dominant-baseline: central; }
+        .atom-text-light { fill: #ffffff; }
+        
+        /* Animations */
+        .left-h-group { animation: moveLeftH 12s ease-in-out infinite; }
+        .right-h-group { animation: moveRightH 12s ease-in-out infinite; }
+        .e-left-o { animation: moveLeftE 12s ease-in-out infinite; }
+        .e-right-o { animation: moveRightE 12s ease-in-out infinite; }
+        .bond { 
+            stroke-dasharray: 100; 
+            stroke-dashoffset: 100; 
+            animation: drawBond 12s ease-in-out infinite; 
+        }
+        .molecule-center { 
+            transform-origin: 400px 250px; 
+            animation: vibrateAndRotate 12s ease-in-out infinite; 
+        }
+        
+        /* Visibility Animations */
+        .label-phase1 { animation: showPhase1 12s infinite; }
+        .label-phase2 { animation: showPhase2 12s infinite; }
+        .label-phase3 { animation: showPhase3 12s infinite; }
+        .label-phase4 { animation: showPhase4 12s infinite; }
+        
+        .angle-indicator { animation: showPhase3Onward 12s infinite; }
+        .dipole-group { animation: showPhase4 12s infinite; }
+        .reactivity-group { animation: showPhase4 12s infinite; }
+        .h-bond { animation: showPhase4 12s infinite; }
+        .fade-screen { animation: fadeScreen 12s infinite; }
+
+        /* Keyframes */
+        @keyframes moveLeftH {
+            0% { transform: translate(-180px, -120px); }
+            10% { transform: translate(-180px, -125px); }
+            20% { transform: translate(-180px, -120px); }
+            30%, 100% { transform: translate(0, 0); }
+        }
+
+        @keyframes moveRightH {
+            0% { transform: translate(180px, -120px); }
+            10% { transform: translate(180px, -125px); }
+            20% { transform: translate(180px, -120px); }
+            30%, 100% { transform: translate(0, 0); }
+        }
+
+        @keyframes moveLeftE {
+            0%, 20% { transform: translate(20px, -15px); }
+            30%, 100% { transform: translate(0, 0); }
+        }
+
+        @keyframes moveRightE {
+            0%, 20% { transform: translate(-20px, -15px); }
+            30%, 100% { transform: translate(0, 0); }
+        }
+
+        @keyframes drawBond {
+            0%, 25% { stroke-dashoffset: 100; opacity: 0; }
+            30% { opacity: 1; stroke-dashoffset: 100; }
+            35%, 100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+
+        @keyframes vibrateAndRotate {
+            0%, 40% { transform: scale(1) rotate(0deg); }
+            /* Vibration (Symmetric Stretch) */
+            42% { transform: scale(1.03) rotate(0deg); }
+            44% { transform: scale(0.97) rotate(0deg); }
+            46% { transform: scale(1.03) rotate(0deg); }
+            48% { transform: scale(0.97) rotate(0deg); }
+            50% { transform: scale(1.03) rotate(0deg); }
+            52% { transform: scale(0.97) rotate(0deg); }
+            54% { transform: scale(1.03) rotate(0deg); }
+            56% { transform: scale(0.97) rotate(0deg); }
+            58% { transform: scale(1.03) rotate(0deg); }
+            60% { transform: scale(0.97) rotate(0deg); }
+            62% { transform: scale(1) rotate(0deg); }
+            65% { transform: scale(1) rotate(0deg); }
+            /* Rotation */
+            75%, 90% { transform: scale(1) rotate(360deg); }
+            95%, 100% { transform: scale(1) rotate(360deg); }
+        }
+
+        @keyframes showPhase1 {
+            0%, 20% { opacity: 1; transform: translateY(0); }
+            25%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes showPhase2 {
+            0%, 25% { opacity: 0; transform: translateY(10px); }
+            30%, 40% { opacity: 1; transform: translateY(0); }
+            45%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes showPhase3 {
+            0%, 40% { opacity: 0; transform: translateY(10px); }
+            45%, 60% { opacity: 1; transform: translateY(0); }
+            65%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes showPhase4 {
+            0%, 65% { opacity: 0; transform: translateY(10px); }
+            70%, 90% { opacity: 1; transform: translateY(0); }
+            95%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes showPhase3Onward {
+            0%, 40% { opacity: 0; }
+            45%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeScreen {
+            0%, 90% { opacity: 0; }
+            94%, 98% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" aria-label="Chemical bonding and molecular properties diagram" role="img">
+    <title>Animation showing the formation of a water molecule from hydrogen and oxygen atoms.</title>
+    
+    <defs>
+        <!-- Gradients for 3D sphere effect -->
+        <radialGradient id="gradO" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#ff8888"/>
+            <stop offset="100%" stop-color="#FF4444"/>
+        </radialGradient>
+        
+        <radialGradient id="gradH" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#CCCCCC"/>
+        </radialGradient>
+
+        <radialGradient id="gradE" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#ffffaa"/>
+            <stop offset="100%" stop-color="#FFCC00"/>
+        </radialGradient>
+
+        <!-- Arrow Markers -->
+        <marker id="arrowOrange" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+        </marker>
+        <marker id="arrowPurple" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7" />
+        </marker>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#f8f9fa" />
+
+    <!-- Static UI: Title & Legend -->
+    <text x="400" y="40" class="title" text-anchor="middle">The Formation and Properties of a Water Molecule</text>
+    
+    <g transform="translate(180, 70)" class="subtitle">
+        <circle cx="0" cy="0" r="6" fill="url(#gradO)" />
+        <text x="12" y="4">Oxygen (O)</text>
+        
+        <circle cx="100" cy="0" r="6" fill="url(#gradH)" />
+        <text x="112" y="4">Hydrogen (H)</text>
+        
+        <circle cx="210" cy="0" r="4" fill="url(#gradE)" />
+        <text x="220" y="4">Valence Electron</text>
+        
+        <line x1="340" y1="0" x2="360" y2="0" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowOrange)" />
+        <text x="370" y="4">Dipole Moment</text>
+    </g>
+
+    <!-- Dynamic Text Labels (Centered at bottom) -->
+    <g transform="translate(400, 460)" text-anchor="middle" font-size="18" font-weight="600">
+        <text class="label-phase1" fill="#333">Phase 1: Individual Atoms</text>
+        <text class="label-phase2" fill="#7209B7">Chemical Property: Formation of new identity</text>
+        <text class="label-phase3" fill="#FF4444">
+            Molecule: H<tspan class="mono" font-size="14" dy="5">2</tspan><tspan class="mono" dy="-5">O</tspan> (Vibrational Energy)
+        </text>
+        <text class="label-phase4" fill="#F77F00">Physical Property: Discrete unit movement &amp; Reactivity</text>
+    </g>
+
+    <!-- Main Animation Container -->
+    <g class="molecule-center">
+        
+        <!-- Hydrogen Bonding Potential (Phase 4) -->
+        <g class="h-bond">
+            <line x1="400" y1="210" x2="400" y2="130" stroke="#7209B7" stroke-width="3" stroke-dasharray="6,6" opacity="0.6" />
+            <text x="410" y="150" fill="#7209B7" font-size="12" font-weight="600" opacity="0.8">H-Bonding</text>
+            
+            <line x1="479" y1="311" x2="549" y2="361" stroke="#7209B7" stroke-width="3" stroke-dasharray="6,6" opacity="0.6" />
+            <line x1="321" y1="311" x2="251" y2="361" stroke="#7209B7" stroke-width="3" stroke-dasharray="6,6" opacity="0.6" />
+        </g>
+
+        <!-- Dipole Moment Arrow (Phase 4) -->
+        <g class="dipole-group">
+            <line x1="400" y1="315" x2="400" y2="170" stroke="#F77F00" stroke-width="4" marker-end="url(#arrowOrange)" />
+            <line x1="385" y1="300" x2="415" y2="300" stroke="#F77F00" stroke-width="4" />
+            <text x="415" y="185" fill="#F77F00" font-size="14" font-weight="600">Dipole</text>
+        </g>
+
+        <!-- Reactivity Icon (Phase 4) -->
+        <g class="reactivity-group">
+            <path d="M 430 265 L 445 275 L 435 285 L 455 295" stroke="#FF4444" stroke-width="3" fill="none" />
+            <path d="M 465 260 L 445 275" stroke="#FF4444" stroke-width="2" marker-start="url(#arrowPurple)" />
+            <text x="475" y="255" fill="#7209B7" font-size="12" font-weight="600">Reactive Site</text>
+        </g>
+
+        <!-- Sigma Bonds -->
+        <line x1="400" y1="250" x2="321" y2="311" stroke="#333333" stroke-width="6" stroke-linecap="round" class="bond" />
+        <line x1="400" y1="250" x2="479" y2="311" stroke="#333333" stroke-width="6" stroke-linecap="round" class="bond" />
+
+        <!-- Bond Angle Indicator (Phase 3+) -->
+        <g class="angle-indicator">
+            <path d="M 365 277 Q 400 300 435 277" fill="none" stroke="#7209B7" stroke-width="2" />
+            <text x="400" y="315" class="mono" font-size="14" fill="#7209B7" text-anchor="middle">104.5°</text>
+        </g>
+
+        <!-- Oxygen Atom (Central) -->
+        <g class="o-group">
+            <circle cx="400" cy="250" r="40" fill="url(#gradO)" />
+            <text x="400" y="250" class="atom-text atom-text-light" font-size="24">O</text>
+            
+            <!-- Oxygen Lone Pairs (Fixed relative to O) -->
+            <circle cx="380" cy="215" r="4" fill="url(#gradE)" />
+            <circle cx="420" cy="215" r="4" fill="url(#gradE)" />
+            <circle cx="365" cy="240" r="4" fill="url(#gradE)" />
+            <circle cx="435" cy="240" r="4" fill="url(#gradE)" />
+
+            <!-- Oxygen Bonding Electrons (Animate to meet H electrons) -->
+            <circle cx="355" cy="285" r="4" fill="url(#gradE)" class="e-left-o" />
+            <circle cx="445" cy="285" r="4" fill="url(#gradE)" class="e-right-o" />
+        </g>
+
+        <!-- Left Hydrogen Group -->
+        <g class="left-h-group">
+            <circle cx="321" cy="311" r="20" fill="url(#gradH)" />
+            <text x="321" y="311" class="atom-text">H</text>
+            <!-- H's Valence Electron -->
+            <circle cx="345" cy="292" r="4" fill="url(#gradE)" />
+        </g>
+
+        <!-- Right Hydrogen Group -->
+        <g class="right-h-group">
+            <circle cx="479" cy="311" r="20" fill="url(#gradH)" />
+            <text x="479" y="311" class="atom-text">H</text>
+            <!-- H's Valence Electron -->
+            <circle cx="455" cy="292" r="4" fill="url(#gradE)" />
+        </g>
+
+    </g>
+
+    <!-- Reset Fade Screen -->
+    <rect width="100%" height="100%" fill="#f8f9fa" class="fade-screen" pointer-events="none" />
+
+</svg>
+
+</body>
+</html>

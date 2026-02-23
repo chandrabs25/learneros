@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work: The Transfer of Energy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            display: block;
+        }
+        text {
+            fill: #212529;
+        }
+        .math {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .bold {
+            font-weight: 700;
+        }
+        .semibold {
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+        <defs>
+            <marker id="arrow-red" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+                <path d="M 0 0 L 14 7 L 0 14 z" fill="#FF3366" />
+            </marker>
+            <marker id="arrow-green" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto" markerUnits="userSpaceOnUse">
+                <path d="M 0 0 L 14 7 L 0 14 z" fill="#06D6A0" />
+            </marker>
+        </defs>
+
+        <!-- Static UI & Background -->
+        <text x="400" y="35" text-anchor="middle" font-size="24" class="bold">Work: The Transfer of Energy</text>
+        <text x="400" y="65" text-anchor="middle" font-size="18" class="math">W = F · d = |F| |d| cos(θ)</text>
+
+        <!-- Legend -->
+        <rect x="610" y="15" width="175" height="75" fill="#f8f9fa" stroke="#DEE2E6" stroke-width="1.5" rx="6" />
+        <line x1="620" y1="30" x2="640" y2="30" stroke="#FF3366" stroke-width="3" marker-end="url(#arrow-red)" />
+        <text x="655" y="34" font-size="12">Force (F)</text>
+        <line x1="620" y1="50" x2="640" y2="50" stroke="#06D6A0" stroke-width="3" stroke-dasharray="4,2" marker-end="url(#arrow-green)" />
+        <text x="655" y="54" font-size="12">Displacement (d)</text>
+        <rect x="620" y="65" width="16" height="12" fill="#FF3366" rx="2" />
+        <text x="655" y="75" font-size="12">Kinetic Energy (K)</text>
+
+        <!-- Surface and Grid -->
+        <line x1="40" y1="360" x2="660" y2="360" stroke="#DEE2E6" stroke-width="4" stroke-linecap="round" />
+        <line x1="140" y1="360" x2="140" y2="368" stroke="#ADB5BD" stroke-width="2" />
+        <text x="140" y="382" text-anchor="middle" font-size="12" fill="#ADB5BD" class="math">x=0</text>
+        <line x1="540" y1="360" x2="540" y2="368" stroke="#ADB5BD" stroke-width="2" />
+        <text x="540" y="382" text-anchor="middle" font-size="12" fill="#ADB5BD" class="math">x=d</text>
+
+        <!-- Energy Gauge Outline -->
+        <rect x="720" y="130" width="30" height="200" fill="#f8f9fa" stroke="#212529" stroke-width="2" rx="4" />
+        <text x="735" y="115" text-anchor="middle" font-size="16" class="bold">K</text>
+        <text x="735" y="350" text-anchor="middle" font-size="14" class="math bold">ΔK = W</text>
+
+        <!-- Dynamic Elements Group (Fades during transitions) -->
+        <g id="dynamic-scene">
+            <!-- Block -->
+            <rect id="block" x="100" y="300" width="80" height="60" rx="6" fill="#6C757D" />
+            <circle id="block-center" cx="140" cy="330" r="4" fill="#212529" />
+
+            <!-- Displacement Vector -->
+            <line id="vec-d" x1="140" y1="395" x2="140" y2="395" stroke="#06D6A0" stroke-width="4" stroke-dasharray="6,4" marker-end="url(#arrow-green)" />
+            <text id="label-d" x="140" y="415" text-anchor="middle" font-size="16" class="math bold" fill="#06D6A0">d</text>
+
+            <!-- Angle Reference & Arc -->
+            <line id="ref-line" x1="140" y1="330" x2="200" y2="330" stroke="#212529" stroke-width="1.5" stroke-dasharray="4,4" />
+            <path id="angle-arc" d="" fill="none" stroke="#212529" stroke-width="2" />
+            <text id="label-theta" x="190" y="325" font-size="14" class="math">θ</text>
+
+            <!-- Force Vector -->
+            <line id="vec-f" x1="140" y1="330" x2="240" y2="330" stroke="#FF3366" stroke-width="4" marker-end="url(#arrow-red)" />
+            <text id="label-f" x="250" y="325" font-size="16" class="math bold" fill="#FF3366">F</text>
+
+            <!-- Energy Gauge Fill -->
+            <rect id="k-fill" x="722" y="328" width="26" height="0" fill="#FF3366" rx="2" />
+
+            <!-- Real-time Readout -->
+            <text id="readout-title" x="350" y="435" text-anchor="middle" font-size="18" class="bold" fill="#4361EE">Scenario</text>
+            <text id="readout-w" x="350" y="460" text-anchor="middle" font-size="16" class="math"></text>
+            <text id="readout-k" x="350" y="485" text-anchor="middle" font-size="16" class="math"></text>
+        </g>
+    </svg>
+</div>
+
+<script>
+    // Physics Constants
+    const F = 100;          // Force magnitude (N)
+    const m = 1;            // Mass (kg)
+    const d_max = 400;      // Total displacement distance (m)
+    
+    // Calculate exact time to move d_max under Scenario A acceleration to sync animations
+    const a_A = (F * Math.cos(30 * Math.PI / 180)) / m;
+    const t_move = Math.sqrt((2 * d_max) / a_A); // ~3.039 seconds
+    const t_total = 5.5; // Total scenario time including pause
+
+    // Scenario Definitions
+    const scenarios = [
+        {
+            id: 'A',
+            theta: 30,
+            title: "Scenario A: Positive Work (0° ≤ θ < 90°)",
+            v0: 0,
+            a: (F * Math.cos(30 * Math.PI / 180)) / m,
+            color: "#FF3366"
+        },
+        {
+            id: 'B',
+            theta: 90,
+            title: "Scenario B: Zero Work (θ = 90°)",
+            v0: d_max / t_move,
+            a: 0,
+            color: "#6C757D"
+        },
+        {
+            id: 'C',
+            theta: 150,
+            title: "Scenario C: Negative Work (90° < θ ≤ 180°)",
+            v0: Math.sqrt(-2 * ((F * Math.cos(150 * Math.PI / 180)) / m) * d_max),
+            a: (F * Math.cos(150 * Math.PI / 180)) / m,
+            color: "#4361EE"
+        }
+    ];
+
+    // DOM Elements
+    const scene = document.getElementById('dynamic-scene');
+    const block = document.getElementById('block');
+    const blockCenter = document.getElementById('block-center');
+    const vecF = document.getElementById('vec-f');
+    const vecD = document.getElementById('vec-d');
+    const refLine = document.getElementById('ref-line');
+    const angleArc = document.getElementById('angle-arc');
+    const labelF = document.getElementById('label-f');
+    const labelD = document.getElementById('label-d');
+    const labelTheta = document.getElementById('label-theta');
+    const kFill = document.getElementById('k-fill');
+    const readoutTitle = document.getElementById('readout-title');
+    const readoutW = document.getElementById('readout-w');
+    const readoutK = document.getElementById('readout-k');
+
+    let currentScenario = 0;
+    let startTime = null;
+
+    // Max Kinetic Energy for gauge scaling
+    const max_v = scenarios[2].v0; 
+    const max_k = 0.5 * m * max_v * max_v; // ~34641 J
+
+    function updateFrame(timestamp) {
+        if (!startTime) startTime = timestamp;
+        let elapsed = (timestamp - startTime) / 1000;
+
+        // Handle Scenario Loop & Transitions
+        if (elapsed > t_total) {
+            currentScenario = (currentScenario + 1) % scenarios.length;
+            startTime = timestamp;
+            elapsed = 0;
+        }
+
+        // Fade out during the last 0.5 seconds of the pause
+        if (elapsed > t_total - 0.5) {
+            scene.style.opacity = Math.max(0, (t_total - elapsed) / 0.5);
+        } else {
+            scene.style.opacity = 1;
+        }
+
+        const s = scenarios[currentScenario];
+        const t = Math.min(elapsed, t_move); // Cap movement at t_move
+
+        // Kinematics
+        const x_offset = s.v0 * t + 0.5 * s.a * t * t;
+        const v = s.v0 + s.a * t;
+        
+        // Energies & Work
+        const k_current = 0.5 * m * v * v;
+        const k_initial = 0.5 * m * s.v0 * s.v0;
+        const w_current = F * x_offset * Math.cos(s.theta * Math.PI / 180);
+
+        // Visual Coordinates
+        const cx = 140 + x_offset;
+        const cy = 330;
+        const rad = s.theta * Math.PI / 180;
+
+        // Update Block
+        block.setAttribute('x', 100 + x_offset);
+        blockCenter.setAttribute('cx', cx);
+
+        // Update Force Vector
+        const fx = cx + 100 * Math.cos(rad);
+        const fy = cy - 100 * Math.sin(rad);
+        vecF.setAttribute('x1', cx);
+        vecF.setAttribute('y1', cy);
+        vecF.setAttribute('x2', fx);
+        vecF.setAttribute('y2', fy);
+
+        // Update Displacement Vector
+        if (x_offset > 5) {
+            vecD.setAttribute('x2', cx);
+            vecD.style.display = 'block';
+            labelD.setAttribute('x', 140 + x_offset / 2);
+            labelD.style.display = 'block';
+        } else {
+            vecD.style.display = 'none';
+            labelD.style.display = 'none';
+        }
+
+        // Update Angle Arc & Reference Line
+        refLine.setAttribute('x1', cx);
+        refLine.setAttribute('x2', cx + 60);
+        
+        if (s.theta > 0) {
+            const arcStartX = cx + 40;
+            const arcStartY = cy;
+            const arcEndX = cx + 40 * Math.cos(rad);
+            const arcEndY = cy - 40 * Math.sin(rad);
+            angleArc.setAttribute('d', `M ${arcStartX} ${arcStartY} A 40 40 0 0 0 ${arcEndX} ${arcEndY}`);
+            angleArc.style.display = 'block';
+            
+            labelTheta.setAttribute('x', cx + 50 * Math.cos(rad/2));
+            labelTheta.setAttribute('y', cy - 50 * Math.sin(rad/2) + 5);
+            labelTheta.style.display = 'block';
+        } else {
+            angleArc.style.display = 'none';
+            labelTheta.style.display = 'none';
+        }
+
+        // Update Labels Position
+        labelF.setAttribute('x', fx + 15 * Math.cos(rad));
+        labelF.setAttribute('y', fy - 15 * Math.sin(rad) + 5);
+
+        // Update Energy Gauge
+        const gaugeHeight = (k_current / max_k) * 196; // 196 max height to fit inside 200px box
+        kFill.setAttribute('height', gaugeHeight);
+        kFill.setAttribute('y', 328 - gaugeHeight);
+
+        // Update Readout Text
+        readoutTitle.textContent = s.title;
+        readoutTitle.setAttribute('fill', s.color);
+        
+        const d_display = Math.round(x_offset);
+        const w_display = Math.round(w_current);
+        readoutW.textContent = `W = 100 N × ${d_display} m × cos(${s.theta}°) = ${w_display} J`;
+        
+        const k_display = Math.round(k_current);
+        const ki_display = Math.round(k_initial);
+        const delta_k = k_display - ki_display;
+        readoutK.textContent = `ΔK = K_f - K_i = ${k_display} - ${ki_display} = ${delta_k} J`;
+
+        requestAnimationFrame(updateFrame);
+    }
+
+    // Start Animation
+    requestAnimationFrame(updateFrame);
+</script>
+
+</body>
+</html>

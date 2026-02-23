@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Cross Product: Magnetic Force</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #212529;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            color: #111;
+        }
+
+        p {
+            font-size: 1rem;
+            color: #495057;
+            margin: 0;
+            max-width: 600px;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            user-select: none;
+        }
+
+        .formula-box {
+            fill: rgba(255, 255, 255, 0.9);
+            stroke: #dee2e6;
+            stroke-width: 1;
+            rx: 8;
+        }
+
+        .legend-box {
+            fill: rgba(255, 255, 255, 0.9);
+            stroke: #dee2e6;
+            stroke-width: 1;
+            rx: 8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Vector Cross Product: Magnetic Force</h1>
+        <p>Demonstrating the Lorentz Force equation <strong>F = q(v × B)</strong>. The resultant force is always perpendicular to both velocity and the magnetic field.</p>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" id="physics-diagram">
+            <defs>
+                <!-- Drop Shadow Filter -->
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.15" />
+                </filter>
+                
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+
+                <!-- Arrowheads -->
+                <marker id="arrow-v" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#06D6A0" />
+                </marker>
+                <marker id="arrow-B" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7" />
+                </marker>
+                <marker id="arrow-F" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF3366" />
+                </marker>
+                <marker id="arrow-curl" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+                </marker>
+            </defs>
+
+            <!-- Coordinate Axes (Faint) -->
+            <g id="axes" stroke="#ced4da" stroke-width="1" stroke-dasharray="4 4">
+                <line id="axis-x" x1="400" y1="350" x2="400" y2="350" />
+                <line id="axis-y" x1="400" y1="350" x2="400" y2="50" />
+                <line id="axis-z" x1="400" y1="350" x2="400" y2="350" />
+            </g>
+
+            <!-- The Plane -->
+            <path id="plane" fill="rgba(233, 236, 239, 0.5)" stroke="#adb5bd" stroke-width="2" stroke-dasharray="6 6" />
+
+            <!-- Angle Arc -->
+            <path id="angle-arc" fill="rgba(6, 214, 160, 0.1)" stroke="#06D6A0" stroke-width="2" />
+            <text id="angle-label" class="math-text" fill="#495057" font-size="14" font-weight="bold">θ</text>
+
+            <!-- Right Angle Markers -->
+            <path id="ra-B" fill="rgba(114, 9, 183, 0.1)" stroke="#7209B7" stroke-width="1.5" opacity="0" />
+            <path id="ra-v" fill="rgba(6, 214, 160, 0.1)" stroke="#06D6A0" stroke-width="1.5" opacity="0" />
+
+            <!-- Vectors -->
+            <line id="vec-B" stroke="#7209B7" stroke-width="5" marker-end="url(#arrow-B)" filter="url(#shadow)" />
+            <line id="vec-v" stroke="#06D6A0" stroke-width="5" marker-end="url(#arrow-v)" filter="url(#shadow)" />
+            <line id="vec-F" stroke="#FF3366" stroke-width="6" marker-end="url(#arrow-F)" filter="url(#shadow)" />
+
+            <!-- Labels -->
+            <text id="label-B" class="label" fill="#7209B7">B</text>
+            <text id="label-v" class="label" fill="#06D6A0">v</text>
+            <text id="label-F" class="label" fill="#FF3366">F</text>
+
+            <!-- Right Hand Rule Graphic -->
+            <g id="right-hand" style="opacity: 0; transition: opacity 0.2s ease-in-out;">
+                <!-- Stylized Hand Silhouette -->
+                <path d="M 400 350 L 400 240 C 400 230 415 230 415 240 L 415 320 C 430 310 445 315 450 330 L 460 335 C 470 345 460 365 445 380 L 410 410 C 385 425 360 410 350 385 L 335 345 C 330 330 345 320 355 330 L 385 360 L 385 350 Z" 
+                      fill="rgba(255, 255, 255, 0.85)" stroke="#F77F00" stroke-width="2.5" filter="url(#shadow)"/>
+                
+                <!-- Curling Arrow -->
+                <path id="curl-arrow" fill="none" stroke="#F77F00" stroke-width="4" marker-end="url(#arrow-curl)" stroke-dasharray="4 4" filter="url(#glow)"/>
+                <text id="rhr-text" x="430" y="280" class="label" fill="#F77F00" font-size="14" font-weight="700" filter="url(#glow)">Right-Hand Rule</text>
+            </g>
+
+            <!-- UI Overlay: Formula -->
+            <g transform="translate(520, 20)">
+                <rect class="formula-box" width="260" height="80" filter="url(#shadow)" />
+                <text x="15" y="30" class="label" fill="#212529" font-size="14">Magnitude Calculation:</text>
+                <text x="15" y="55" class="math-text" fill="#FF3366" font-size="15" font-weight="700">|F| = qvB sin(<tspan id="val-deg">0</tspan>°)</text>
+                <text x="15" y="75" class="math-text" fill="#495057" font-size="14">|F| = <tspan id="val-sin">0.00</tspan> qvB</text>
+            </g>
+
+            <!-- UI Overlay: Legend -->
+            <g transform="translate(20, 380)">
+                <rect class="legend-box" width="200" height="100" filter="url(#shadow)" />
+                <circle cx="30" cy="25" r="6" fill="#06D6A0" />
+                <text x="45" y="30" class="label" fill="#495057" font-size="13">Velocity (v)</text>
+                
+                <circle cx="30" cy="50" r="6" fill="#7209B7" />
+                <text x="45" y="55" class="label" fill="#495057" font-size="13">Magnetic Field (B)</text>
+                
+                <circle cx="30" cy="75" r="6" fill="#FF3366" />
+                <text x="45" y="80" class="label" fill="#495057" font-size="13">Magnetic Force (F)</text>
+            </g>
+        </svg>
+    </div>
+
+    <script>
+        // 3D to 2D Isometric Projection Logic
+        const originX = 400;
+        const originY = 350;
+        const angleX = 25 * Math.PI / 180;
+        const angleZ = 25 * Math.PI / 180;
+
+        function project(x, y, z) {
+            const u = x * Math.cos(angleX) - z * Math.cos(angleZ);
+            const v = -y + x * Math.sin(angleX) + z * Math.sin(angleZ);
+            return { u: originX + u, v: originY + v };
+        }
+
+        // Vector Lengths
+        const L_B = 180;
+        const L_v = 180;
+        const L_F_max = 220;
+
+        // DOM Elements
+        const elVecB = document.getElementById('vec-B');
+        const elVecV = document.getElementById('vec-v');
+        const elVecF = document.getElementById('vec-F');
+        const elPlane = document.getElementById('plane');
+        const elArc = document.getElementById('angle-arc');
+        const elAngleLabel = document.getElementById('angle-label');
+        const elRaB = document.getElementById('ra-B');
+        const elRaV = document.getElementById('ra-v');
+        
+        const elLabelB = document.getElementById('label-B');
+        const elLabelV = document.getElementById('label-v');
+        const elLabelF = document.getElementById('label-F');
+        
+        const elValDeg = document.getElementById('val-deg');
+        const elValSin = document.getElementById('val-sin');
+        const elRightHand = document.getElementById('right-hand');
+        const elCurlArrow = document.getElementById('curl-arrow');
+
+        // Draw Static Axes
+        const pAxisX = project(250, 0, 0);
+        const pAxisZ = project(0, 0, 250);
+        document.getElementById('axis-x').setAttribute('x2', pAxisX.u);
+        document.getElementById('axis-x').setAttribute('y2', pAxisX.v);
+        document.getElementById('axis-z').setAttribute('x2', pAxisZ.u);
+        document.getElementById('axis-z').setAttribute('y2', pAxisZ.v);
+
+        // Easing function
+        function easeInOutSine(x) {
+            return -(Math.cos(Math.PI * x) - 1) / 2;
+        }
+
+        // Animation Loop
+        let startTime = null;
+        const DURATION = 8000; // 8 seconds total loop
+
+        function animate(time) {
+            if (!startTime) startTime = time;
+            let elapsed = (time - startTime) % DURATION;
+            let phaseTime = elapsed / 1000; // seconds
+
+            let theta = 0;
+            let handOpacity = 0;
+            let pulseScale = 1;
+
+            // Phase Logic
+            if (phaseTime < 1) {
+                // Hold at 0
+                theta = 0;
+            } else if (phaseTime < 4) {
+                // Sweep 0 to 90
+                let t = (phaseTime - 1) / 3;
+                theta = easeInOutSine(t) * (Math.PI / 2);
+            } else if (phaseTime < 6.5) {
+                // Hold at 90, show hand, pulse
+                theta = Math.PI / 2;
+                
+                // Hand fade in/out
+                if (phaseTime < 4.5) {
+                    handOpacity = (phaseTime - 4) * 2;
+                } else if (phaseTime > 6) {
+                    handOpacity = 1 - (phaseTime - 6) * 2;
+                } else {
+                    handOpacity = 1;
+                }
+
+                // Pulse F vector
+                pulseScale = 1 + 0.08 * Math.sin((phaseTime - 4) * Math.PI * 4);
+            } else {
+                // Sweep 90 back to 0
+                let t = (phaseTime - 6.5) / 1.5;
+                theta = (1 - easeInOutSine(t)) * (Math.PI / 2);
+            }
+
+            updateScene(theta, handOpacity, pulseScale);
+            requestAnimationFrame(animate);
+        }
+
+        function updateScene(theta, handOpacity, pulseScale) {
+            // 3D Coordinates
+            const Bx = L_B, By = 0, Bz = 0;
+            const vx = L_v * Math.cos(theta), vy = 0, vz = L_v * Math.sin(theta);
+            const Fx = 0, Fy = L_F_max * Math.sin(theta) * pulseScale, Fz = 0;
+
+            // 2D Projections
+            const pOrigin = project(0, 0, 0);
+            const pB = project(Bx, By, Bz);
+            const pv = project(vx, vy, vz);
+            const pF = project(Fx, Fy, Fz);
+            const pPlane = project(vx + Bx, 0, vz + Bz);
+
+            // Update Vectors
+            elVecB.setAttribute('d', `M ${pOrigin.u},${pOrigin.v} L ${pB.u},${pB.v}`);
+            elVecV.setAttribute('d', `M ${pOrigin.u},${pOrigin.v} L ${pv.u},${pv.v}`);
+            
+            if (Math.sin(theta) > 0.02) {
+                elVecF.setAttribute('d', `M ${pOrigin.u},${pOrigin.v} L ${pF.u},${pF.v}`);
+                elVecF.style.display = 'block';
+            } else {
+                elVecF.style.display = 'none';
+            }
+
+            // Update Plane
+            elPlane.setAttribute('d', `M ${pOrigin.u},${pOrigin.v} L ${pB.u},${pB.v} L ${pPlane.u},${pPlane.v} L ${pv.u},${pv.v} Z`);
+
+            // Update Angle Arc
+            if (theta > 0.05) {
+                let arcD = `M ${project(40, 0, 0).u},${project(40, 0, 0).v}`;
+                for(let i=1; i<=15; i++) {
+                    let a = theta * (i/15);
+                    let p = project(40 * Math.cos(a), 0, 40 * Math.sin(a));
+                    arcD += ` L ${p.u},${p.v}`;
+                }
+                // Close shape to origin for fill
+                arcD += ` L ${pOrigin.u},${pOrigin.v} Z`;
+                elArc.setAttribute('d', arcD);
+                elArc.style.display = 'block';
+
+                // Angle Label Position
+                let pLabel = project(55 * Math.cos(theta/2), 0, 55 * Math.sin(theta/2));
+                elAngleLabel.setAttribute('x', pLabel.u - 5);
+                elAngleLabel.setAttribute('y', pLabel.v + 5);
+                elAngleLabel.style.display = 'block';
+            } else {
+                elArc.style.display = 'none';
+                elAngleLabel.style.display = 'none';
+            }
+
+            // Update Right Angles
+            if (Math.sin(theta) > 0.1) {
+                // B and F
+                let pRA1_1 = project(20, 0, 0);
+                let pRA1_2 = project(20, 20, 0);
+                let pRA1_3 = project(0, 20, 0);
+                elRaB.setAttribute('d', `M ${pRA1_1.u},${pRA1_1.v} L ${pRA1_2.u},${pRA1_2.v} L ${pRA1_3.u},${pRA1_3.v}`);
+                
+                // v and F
+                let pRA2_1 = project(20*Math.cos(theta), 0, 20*Math.sin(theta));
+                let pRA2_2 = project(20*Math.cos(theta), 20, 20*Math.sin(theta));
+                let pRA2_3 = project(0, 20, 0);
+                elRaV.setAttribute('d', `M ${pRA2_1.u},${pRA2_1.v} L ${pRA2_2.u},${pRA2_2.v} L ${pRA2_3.u},${pRA2_3.v}`);
+
+                elRaB.style.opacity = Math.min(1, Math.sin(theta) * 2);
+                elRaV.style.opacity = Math.min(1, Math.sin(theta) * 2);
+            } else {
+                elRaB.style.opacity = 0;
+                elRaV.style.opacity = 0;
+            }
+
+            // Update Labels
+            elLabelB.setAttribute('x', pB.u + 10);
+            elLabelB.setAttribute('y', pB.v + 10);
+            elLabelV.setAttribute('x', pv.u - 25);
+            elLabelV.setAttribute('y', pv.v + 20);
+            elLabelF.setAttribute('x', pF.u + 10);
+            elLabelF.setAttribute('y', pF.v - 10);
+
+            // Update Formula
+            let deg = (theta * 180 / Math.PI).toFixed(0);
+            let sinVal = Math.sin(theta).toFixed(2);
+            elValDeg.textContent = deg.padStart(2, '0');
+            elValSin.textContent = sinVal;
+
+            // Update Right Hand Graphic
+            elRightHand.style.opacity = Math.max(0, Math.min(1, handOpacity));
+            
+            // Dynamic Curl Arrow for Hand
+            if (handOpacity > 0) {
+                let pStart = project(100 * Math.cos(theta), 0, 100 * Math.sin(theta));
+                let pEnd = project(100, 0, 0);
+                let pMid = project(120 * Math.cos(theta/2), 0, 120 * Math.sin(theta/2));
+                elCurlArrow.setAttribute('d', `M ${pStart.u},${pStart.v} Q ${pMid.u},${pMid.v + 30} ${pEnd.u},${pEnd.v}`);
+            }
+        }
+
+        // Start Animation
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>

@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work-Energy Theorem Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            display: block;
+        }
+
+        * {
+            animation-play-state: var(--play-state, running) !important;
+        }
+
+        /* CSS Animations */
+        .anim-block {
+            animation: moveBlock 10s infinite;
+        }
+
+        .anim-v-line {
+            transform-origin: 0 0;
+            animation: scaleV 10s infinite;
+        }
+
+        .anim-v-head {
+            animation: moveVHead 10s infinite;
+        }
+
+        .anim-v-group {
+            animation: fadeV 10s infinite;
+        }
+
+        .anim-k-bar {
+            animation: scaleK 10s infinite;
+        }
+
+        .anim-force {
+            animation: showF 10s infinite;
+        }
+
+        .anim-friction {
+            animation: showf 10s infinite;
+        }
+
+        .anim-pos-work {
+            animation: drawPosWork 10s infinite;
+        }
+
+        .anim-neg-work {
+            animation: drawNegWork 10s infinite;
+        }
+
+        /* Keyframes */
+        @keyframes moveBlock {
+            0% { transform: translateX(50px); animation-timing-function: cubic-bezier(0.333, 0, 0.667, 0.333); opacity: 1; }
+            40% { transform: translateX(316.67px); animation-timing-function: linear; opacity: 1; }
+            50% { transform: translateX(450px); animation-timing-function: cubic-bezier(0.333, 0.667, 0.667, 1); opacity: 1; }
+            80% { transform: translateX(650px); opacity: 1; }
+            90% { transform: translateX(650px); opacity: 1; }
+            95% { transform: translateX(650px); opacity: 0; }
+            96% { transform: translateX(50px); opacity: 0; }
+            100% { transform: translateX(50px); opacity: 1; }
+        }
+
+        @keyframes scaleV {
+            0% { transform: scaleX(0); animation-timing-function: linear; }
+            40% { transform: scaleX(1); animation-timing-function: linear; }
+            50% { transform: scaleX(1); animation-timing-function: linear; }
+            80% { transform: scaleX(0); }
+            100% { transform: scaleX(0); }
+        }
+
+        @keyframes moveVHead {
+            0% { transform: translateX(0px); animation-timing-function: linear; }
+            40% { transform: translateX(100px); animation-timing-function: linear; }
+            50% { transform: translateX(100px); animation-timing-function: linear; }
+            80% { transform: translateX(0px); }
+            100% { transform: translateX(0px); }
+        }
+
+        @keyframes fadeV {
+            0% { opacity: 0; }
+            1% { opacity: 1; }
+            79% { opacity: 1; }
+            80% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes scaleK {
+            0% { transform: scaleY(0); animation-timing-function: cubic-bezier(0.333, 0, 0.667, 0.333); }
+            40% { transform: scaleY(1); animation-timing-function: linear; }
+            50% { transform: scaleY(1); animation-timing-function: cubic-bezier(0.333, 0.667, 0.667, 1); }
+            80% { transform: scaleY(0); }
+            100% { transform: scaleY(0); }
+        }
+
+        @keyframes showF {
+            0% { opacity: 1; }
+            39.9% { opacity: 1; }
+            40% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes showf {
+            0% { opacity: 0; }
+            49.9% { opacity: 0; }
+            50% { opacity: 1; }
+            79.9% { opacity: 1; }
+            80% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes drawPosWork {
+            0% { stroke-dashoffset: 266.67; animation-timing-function: cubic-bezier(0.333, 0, 0.667, 0.333); opacity: 1; }
+            40% { stroke-dashoffset: 0; opacity: 1; }
+            90% { stroke-dashoffset: 0; opacity: 1; }
+            95% { stroke-dashoffset: 0; opacity: 0; }
+            96% { stroke-dashoffset: 266.67; opacity: 0; }
+            100% { stroke-dashoffset: 266.67; opacity: 1; }
+        }
+
+        @keyframes drawNegWork {
+            0% { stroke-dashoffset: 200; opacity: 1; }
+            50% { stroke-dashoffset: 200; animation-timing-function: cubic-bezier(0.333, 0.667, 0.667, 1); opacity: 1; }
+            80% { stroke-dashoffset: 0; opacity: 1; }
+            90% { stroke-dashoffset: 0; opacity: 1; }
+            95% { stroke-dashoffset: 0; opacity: 0; }
+            96% { stroke-dashoffset: 200; opacity: 0; }
+            100% { stroke-dashoffset: 200; opacity: 1; }
+        }
+
+        .play-btn:hover rect {
+            fill: #4A4E69;
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Arrowheads -->
+            <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF3366" />
+            </marker>
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#4361EE" />
+            </marker>
+            
+            <!-- Friction Hatch Pattern -->
+            <pattern id="hatch" width="10" height="10" patternTransform="rotate(45 0 0)" patternUnits="userSpaceOnUse">
+                <line x1="0" y1="0" x2="0" y2="10" stroke="#4361EE" stroke-width="2" opacity="0.3"/>
+            </pattern>
+        </defs>
+
+        <!-- Title & Equations -->
+        <text x="400" y="40" font-size="24" font-weight="bold" text-anchor="middle" fill="#2B2D42">Work-Energy Theorem</text>
+        <text x="400" y="70" font-size="16" text-anchor="middle" fill="#4A4E69" font-weight="600">
+            ΔK = W<tspan dy="3" font-size="12">net</tspan><tspan dy="-3"> = ∫ F<tspan dy="3" font-size="12">net</tspan><tspan dy="-3"> dx</tspan>
+        </text>
+
+        <!-- Legend -->
+        <g transform="translate(20, 20)" font-size="12" fill="#4A4E69">
+            <rect x="0" y="0" width="12" height="12" fill="#FF3366" rx="2"/>
+            <text x="18" y="10">Kinetic Energy (K) / Force</text>
+            
+            <rect x="0" y="20" width="12" height="12" fill="#7209B7" rx="2"/>
+            <text x="18" y="30">Net Work (W_net)</text>
+            
+            <rect x="0" y="40" width="12" height="12" fill="#06D6A0" rx="2"/>
+            <text x="18" y="50">Velocity (v) / Positive Work</text>
+            
+            <rect x="0" y="60" width="12" height="12" fill="#4361EE" rx="2"/>
+            <text x="18" y="70">Friction (f_k) / Negative Work</text>
+        </g>
+
+        <!-- Environment: Floor & Friction Zone -->
+        <line x1="20" y1="350" x2="780" y2="350" stroke="#2B2D42" stroke-width="4" stroke-linecap="round"/>
+        
+        <rect x="450" y="350" width="200" height="12" fill="url(#hatch)"/>
+        <text x="550" y="380" fill="#4361EE" font-size="12" font-weight="600" text-anchor="middle">Rough Surface (Friction)</text>
+
+        <!-- Floor Ticks & Labels -->
+        <g fill="#2B2D42" font-size="12" text-anchor="middle" font-family="Roboto Mono">
+            <line x1="50" y1="350" x2="50" y2="360" stroke="#2B2D42" stroke-width="2"/>
+            <text x="50" y="375">x=0m</text>
+
+            <line x1="316.67" y1="350" x2="316.67" y2="360" stroke="#2B2D42" stroke-width="2"/>
+            <text x="316.67" y="375">x=8m</text>
+
+            <line x1="450" y1="350" x2="450" y2="360" stroke="#2B2D42" stroke-width="2"/>
+            <text x="450" y="375">x=12m</text>
+
+            <line x1="650" y1="350" x2="650" y2="360" stroke="#2B2D42" stroke-width="2"/>
+            <text x="650" y="375">x=18m</text>
+        </g>
+
+        <!-- Work Accumulation Indicators (Paths under floor) -->
+        <line x1="50" y1="354" x2="316.67" y2="354" stroke="#06D6A0" stroke-width="4" class="anim-pos-work" stroke-dasharray="266.67" stroke-dashoffset="266.67"/>
+        <line x1="450" y1="354" x2="650" y2="354" stroke="#4361EE" stroke-width="4" class="anim-neg-work" stroke-dasharray="200" stroke-dashoffset="200"/>
+
+        <!-- Gauges (Energy & Net Work) -->
+        <g transform="translate(640, 120)">
+            <!-- Kinetic Energy Gauge -->
+            <text x="20" y="-15" text-anchor="middle" font-weight="bold" fill="#FF3366">K</text>
+            <rect x="0" y="0" width="40" height="120" fill="#f8f9fa" stroke="#2B2D42" stroke-width="2" rx="4"/>
+            <rect x="0" y="0" width="40" height="120" fill="#FF3366" rx="3" class="anim-k-bar" id="k-bar-fill" style="transform-origin: 0 120px;"/>
+            <text x="20" y="140" text-anchor="middle" font-family="Roboto Mono" font-size="14" fill="#FF3366"><tspan id="k-val">0.0</tspan> J</text>
+
+            <!-- Net Work Gauge -->
+            <text x="80" y="-15" text-anchor="middle" font-weight="bold" fill="#7209B7">W<tspan dy="3" font-size="10">net</tspan></text>
+            <rect x="60" y="0" width="40" height="120" fill="#f8f9fa" stroke="#2B2D42" stroke-width="2" rx="4"/>
+            <rect x="60" y="0" width="40" height="120" fill="#7209B7" rx="3" class="anim-k-bar" style="transform-origin: 0 120px;"/>
+            <text x="80" y="140" text-anchor="middle" font-family="Roboto Mono" font-size="14" fill="#7209B7"><tspan id="w-val">0.0</tspan> J</text>
+
+            <!-- Equivalence Symbol -->
+            <text x="50" y="65" text-anchor="middle" font-size="20" font-weight="bold" fill="#2B2D42">=</text>
+        </g>
+
+        <!-- The Moving Block System -->
+        <g class="anim-block" transform="translateX(50px)">
+            <!-- Block Body -->
+            <rect x="-30" y="310" width="60" height="40" rx="4" fill="#4A4E69"/>
+            <text x="0" y="335" fill="white" font-size="14" font-weight="bold" text-anchor="middle">2kg</text>
+
+            <!-- Velocity Vector (Green) -->
+            <g transform="translate(0, 290)">
+                <g class="anim-v-group">
+                    <line x1="0" y1="0" x2="100" y2="0" stroke="#06D6A0" stroke-width="4" vector-effect="non-scaling-stroke" class="anim-v-line"/>
+                    <polygon points="0,-6 12,0 0,6" fill="#06D6A0" class="anim-v-head"/>
+                </g>
+                <text x="0" y="-15" fill="#06D6A0" font-size="14" font-weight="bold" text-anchor="start">
+                    v = <tspan id="v-val" font-family="Roboto Mono">0.0</tspan> m/s
+                </text>
+            </g>
+
+            <!-- External Force Vector (Red) -->
+            <g class="anim-force" transform="translate(30, 330)">
+                <line x1="0" y1="0" x2="50" y2="0" stroke="#FF3366" stroke-width="4" marker-end="url(#arrow-red)"/>
+                <text x="25" y="-10" fill="#FF3366" font-size="14" font-weight="bold" text-anchor="middle">F<tspan dy="3" font-size="10">ext</tspan></text>
+            </g>
+
+            <!-- Friction Force Vector (Blue) -->
+            <g class="anim-friction" transform="translate(-30, 330)">
+                <line x1="0" y1="0" x2="-50" y2="0" stroke="#4361EE" stroke-width="4" marker-end="url(#arrow-blue)"/>
+                <text x="-25" y="-10" fill="#4361EE" font-size="14" font-weight="bold" text-anchor="middle">f<tspan dy="3" font-size="10">k</tspan></text>
+            </g>
+        </g>
+
+        <!-- Play/Pause Button -->
+        <g id="play-btn" class="play-btn" cursor="pointer" transform="translate(20, 440)">
+            <rect width="90" height="36" rx="18" fill="#2B2D42" transition="fill 0.2s"/>
+            <text x="45" y="23" fill="white" font-size="14" font-weight="bold" text-anchor="middle" id="play-text">Pause</text>
+        </g>
+    </svg>
+</div>
+
+<script>
+    // Minimal JS for dynamic text updates and play/pause interactivity
+    const kBar = document.getElementById('k-bar-fill');
+    const vText = document.getElementById('v-val');
+    const kText = document.getElementById('k-val');
+    const wText = document.getElementById('w-val');
+    const playBtn = document.getElementById('play-btn');
+    const playText = document.getElementById('play-text');
+    
+    let isPlaying = true;
+
+    // Toggle Play/Pause
+    playBtn.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        document.body.style.setProperty('--play-state', isPlaying ? 'running' : 'paused');
+        playText.textContent = isPlaying ? 'Pause' : 'Play';
+    });
+
+    // Update dynamic text based on CSS animation state
+    function updateLabels() {
+        if (isPlaying) {
+            const style = window.getComputedStyle(kBar);
+            const matrix = style.transform;
+            let scaleY = 0;
+            
+            if (matrix !== 'none' && matrix) {
+                const values = matrix.match(/matrix\((.+)\)/);
+                if (values) {
+                    scaleY = parseFloat(values[1].split(',')[3]);
+                }
+            }
+            
+            // Clamp scaleY to avoid floating point anomalies
+            scaleY = Math.max(0, Math.min(1, scaleY));
+            
+            // Physics scaling: Max K = 16.0 J. K = 0.5 * m * v^2. m = 2.0 kg.
+            // Therefore K = v^2, and v = sqrt(K).
+            const k = scaleY * 16.0;
+            const v = Math.sqrt(k);
+            
+            vText.textContent = v.toFixed(1);
+            kText.textContent = k.toFixed(1);
+            wText.textContent = k.toFixed(1);
+        }
+        requestAnimationFrame(updateLabels);
+    }
+    
+    // Start loop
+    requestAnimationFrame(updateLabels);
+</script>
+
+</body>
+</html>

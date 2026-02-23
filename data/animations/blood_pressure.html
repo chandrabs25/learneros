@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hemodynamics & Pathophysiology of Hypertension</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* --- Animations --- */
+        
+        /* Heart Pulse */
+        .heart {
+            transform-origin: 120px 250px;
+            animation: heartPulse 10s linear infinite;
+        }
+        @keyframes heartPulse {
+            0%, 10%, 25%, 35%, 50%, 60%, 75%, 85%, 100% { transform: scale(1); }
+            5%, 30% { transform: scale(1.2); }
+            55%, 80% { transform: scale(1.25); } /* Stronger pulse in HTN */
+        }
+
+        /* Artery Wall Expansion */
+        .artery-top {
+            animation: expandTop 10s linear infinite;
+        }
+        .artery-bottom {
+            animation: expandBottom 10s linear infinite;
+        }
+        @keyframes expandTop {
+            0%, 10%, 25%, 35%, 50%, 60%, 75%, 85%, 100% { transform: translateY(0); }
+            5%, 30% { transform: translateY(-4px); }
+            55%, 80% { transform: translateY(-2px); } /* Stiffer in HTN */
+        }
+        @keyframes expandBottom {
+            0%, 10%, 25%, 35%, 50%, 60%, 75%, 85%, 100% { transform: translateY(0); }
+            5%, 30% { transform: translateY(4px); }
+            55%, 80% { transform: translateY(2px); }
+        }
+
+        /* Artery Vibration (HTN Stress) */
+        .artery-group {
+            animation: arteryVibrate 10s linear infinite;
+        }
+        @keyframes arteryVibrate {
+            0%, 50%, 60%, 75%, 85%, 100% { transform: translateY(0); }
+            52%, 56%, 77%, 81% { transform: translateY(-1px); }
+            54%, 58%, 79%, 83% { transform: translateY(1px); }
+        }
+
+        /* Plaque Growth */
+        .plaque-top {
+            transform-origin: 400px 215px;
+            animation: plaqueGrow 10s linear infinite;
+        }
+        .plaque-bottom {
+            transform-origin: 400px 285px;
+            animation: plaqueGrow 10s linear infinite;
+        }
+        .plaque-label {
+            animation: plaqueGrow 10s linear infinite;
+        }
+        @keyframes plaqueGrow {
+            0%, 45% { transform: scaleY(0); opacity: 0; }
+            50%, 95% { transform: scaleY(1); opacity: 1; }
+            100% { transform: scaleY(0); opacity: 0; }
+        }
+
+        /* RBC Flow (X-axis) */
+        .rbc-flow {
+            animation: rbcMove 10s linear infinite;
+        }
+        @keyframes rbcMove {
+            0% { transform: translateX(0); }
+            5% { transform: translateX(100px); }
+            25% { transform: translateX(150px); }
+            30% { transform: translateX(250px); }
+            50% { transform: translateX(300px); }
+            55% { transform: translateX(400px); }
+            75% { transform: translateX(450px); }
+            80% { transform: translateX(550px); }
+            100% { transform: translateX(600px); }
+        }
+
+        /* RBC Turbulence (Y-axis during HTN) */
+        .rbc-turbulence {
+            animation: rbcTurbulence 10s linear infinite;
+        }
+        @keyframes rbcTurbulence {
+            0%, 50%, 60%, 75%, 85%, 100% { transform: translateY(0); }
+            52%, 56%, 77%, 81% { transform: translateY(-3px); }
+            54%, 58%, 79%, 83% { transform: translateY(3px); }
+        }
+
+        /* Gauge Needle Swing */
+        .needle {
+            transform-origin: 680px 220px;
+            animation: needleSwing 10s linear infinite;
+        }
+        @keyframes needleSwing {
+            0%, 10%, 25%, 35%, 50% { transform: rotate(-45deg); } /* 80 mmHg */
+            5%, 30% { transform: rotate(45deg); } /* 120 mmHg */
+            55%, 80% { transform: rotate(110deg); } /* 150 mmHg */
+            60%, 75%, 85% { transform: rotate(-10deg); } /* 95 mmHg */
+            100% { transform: rotate(-45deg); } /* Return to 80 */
+        }
+
+        /* Digital Readout Toggles */
+        .readout-normal { animation: fadeNormal 10s linear infinite; }
+        .readout-htn { animation: fadeHTN 10s linear infinite; }
+        @keyframes fadeNormal {
+            0%, 45% { opacity: 1; }
+            50%, 95% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        @keyframes fadeHTN {
+            0%, 45% { opacity: 0; }
+            50%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Dynamic Labels */
+        .label-systole { animation: flashSystole 10s linear infinite; }
+        .label-diastole { animation: flashDiastole 10s linear infinite; }
+        @keyframes flashSystole {
+            0%, 2%, 8%, 27%, 33%, 52%, 58%, 77%, 83%, 100% { opacity: 0; }
+            3%, 7%, 28%, 32%, 53%, 57%, 78%, 82% { opacity: 1; }
+        }
+        @keyframes flashDiastole {
+            0%, 12%, 27%, 37%, 52%, 62%, 77%, 87%, 100% { opacity: 0; }
+            15%, 25%, 40%, 50%, 65%, 75%, 90%, 98% { opacity: 1; }
+        }
+
+        /* Phase Indicators */
+        .phase-normal { animation: fadeNormal 10s linear infinite; }
+        .phase-htn { animation: fadeHTN 10s linear infinite; }
+
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated diagram showing hemodynamics of normal blood pressure versus hypertension">
+        <title>Hemodynamics: Systole, Diastole, and Hypertension</title>
+        <desc>An animated cross-section of an artery showing red blood cells flowing. The heart pumps, expanding the artery and spiking pressure on a gauge. In the second phase, atherosclerotic plaque narrows the artery, causing turbulent flow and high blood pressure (hypertension).</desc>
+
+        <defs>
+            <!-- Drop Shadow Filter -->
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.1"/>
+            </filter>
+
+            <!-- Single RBC -->
+            <g id="rbc">
+                <ellipse cx="0" cy="0" rx="10" ry="7" fill="#E74C3C" />
+                <ellipse cx="0" cy="0" rx="5" ry="3.5" fill="#C0392B" />
+            </g>
+
+            <!-- RBC Cluster (150px wide repeating pattern) -->
+            <g id="rbc-cluster">
+                <use href="#rbc" x="20" y="235" />
+                <use href="#rbc" x="60" y="255" />
+                <use href="#rbc" x="100" y="270" />
+                <use href="#rbc" x="130" y="240" />
+                <use href="#rbc" x="80" y="265" />
+                <use href="#rbc" x="40" y="275" />
+                <use href="#rbc" x="110" y="225" />
+                <use href="#rbc" x="145" y="260" />
+            </g>
+
+            <!-- Clip Path for Lumen -->
+            <clipPath id="lumen-clip">
+                <rect x="250" y="150" width="300" height="200" />
+            </clipPath>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Header / Titles -->
+        <text x="400" y="40" font-family="'Inter', sans-serif" font-size="22" font-weight="700" text-anchor="middle" fill="#2C3E50">Blood Pressure Dynamics & Pathophysiology</text>
+        <text x="400" y="65" font-family="'Inter', sans-serif" font-size="14" text-anchor="middle" fill="#7f8c8d">Comparing Normal Cardiac Cycle with Atherosclerosis & Hypertension</text>
+
+        <!-- Dynamic State Labels -->
+        <text x="400" y="110" font-family="'Inter', sans-serif" font-size="18" font-weight="700" text-anchor="middle" fill="#E74C3C" class="label-systole">Systolic Pressure (Pumping)</text>
+        <text x="400" y="110" font-family="'Inter', sans-serif" font-size="18" font-weight="700" text-anchor="middle" fill="#3498DB" class="label-diastole">Diastolic Pressure (Resting)</text>
+
+        <!-- Phase Indicator Box -->
+        <g transform="translate(300, 430)">
+            <rect x="0" y="0" width="200" height="40" rx="20" fill="#ffffff" stroke="#e0e0e0" stroke-width="2" filter="url(#shadow)" />
+            <text x="100" y="25" font-family="'Inter', sans-serif" font-size="14" font-weight="700" text-anchor="middle" fill="#4A90D9" class="phase-normal">PHASE: NORMAL</text>
+            <text x="100" y="25" font-family="'Inter', sans-serif" font-size="14" font-weight="700" text-anchor="middle" fill="#E74C3C" class="phase-htn">PHASE: HYPERTENSION</text>
+        </g>
+
+        <!-- ==================== LEFT: HEART ==================== -->
+        <g class="heart" filter="url(#shadow)">
+            <!-- Stylized Heart Path -->
+            <path d="M 120 230 C 100 210, 60 225, 60 255 C 60 285, 120 320, 120 335 C 120 320, 180 285, 180 255 C 180 225, 140 210, 120 230 Z" fill="#E74C3C" />
+            <path d="M 100 240 C 90 240, 80 250, 80 260" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.5" />
+        </g>
+        <text x="120" y="365" font-family="'Inter', sans-serif" font-size="14" font-weight="600" text-anchor="middle" fill="#2C3E50">Cardiac Pump</text>
+
+        <!-- Flow Arrows -->
+        <path d="M 195 250 L 235 250" stroke="#bdc3c7" stroke-width="4" stroke-linecap="round" stroke-dasharray="4 4" />
+        <polygon points="235,245 245,250 235,255" fill="#bdc3c7" />
+
+        <path d="M 565 250 L 605 250" stroke="#bdc3c7" stroke-width="4" stroke-linecap="round" stroke-dasharray="4 4" />
+        <polygon points="605,245 615,250 605,255" fill="#bdc3c7" />
+
+        <!-- ==================== CENTER: ARTERY ==================== -->
+        <g class="artery-group" filter="url(#shadow)">
+            
+            <!-- Top Wall -->
+            <g class="artery-top">
+                <rect x="250" y="180" width="300" height="30" rx="4" fill="#F39C12" stroke="#D68910" stroke-width="2" />
+                <rect x="250" y="210" width="300" height="5" fill="#4A90D9" />
+                <!-- Top Plaque -->
+                <path class="plaque-top" d="M 330 215 C 350 245, 370 255, 400 255 C 430 255, 450 245, 470 215 Z" fill="#F1C40F" stroke="#D4AC0D" stroke-width="2" />
+            </g>
+
+            <!-- Bottom Wall -->
+            <g class="artery-bottom">
+                <rect x="250" y="290" width="300" height="30" rx="4" fill="#F39C12" stroke="#D68910" stroke-width="2" />
+                <rect x="250" y="285" width="300" height="5" fill="#4A90D9" />
+                <!-- Bottom Plaque -->
+                <path class="plaque-bottom" d="M 340 285 C 360 255, 380 245, 410 245 C 440 245, 460 255, 480 285 Z" fill="#F1C40F" stroke="#D4AC0D" stroke-width="2" />
+            </g>
+
+            <!-- RBC Flow inside Lumen -->
+            <g clip-path="url(#lumen-clip)">
+                <g class="rbc-turbulence">
+                    <g class="rbc-flow">
+                        <!-- Instantiate RBC clusters from far left to cover the movement -->
+                        <use href="#rbc-cluster" x="-450" />
+                        <use href="#rbc-cluster" x="-300" />
+                        <use href="#rbc-cluster" x="-150" />
+                        <use href="#rbc-cluster" x="0" />
+                        <use href="#rbc-cluster" x="150" />
+                        <use href="#rbc-cluster" x="300" />
+                        <use href="#rbc-cluster" x="450" />
+                    </g>
+                </g>
+            </g>
+        </g>
+
+        <!-- Artery Labels -->
+        <line x1="330" y1="175" x2="330" y2="150" stroke="#F39C12" stroke-width="2" />
+        <text x="330" y="140" font-family="'Inter', sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#D68910">Tunica Media (Smooth Muscle)</text>
+
+        <line x1="480" y1="205" x2="480" y2="175" stroke="#4A90D9" stroke-width="2" />
+        <text x="480" y="165" font-family="'Inter', sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#2980B9">Endothelium</text>
+
+        <line x1="280" y1="250" x2="240" y2="210" stroke="#2C3E50" stroke-width="2" />
+        <text x="235" y="200" font-family="'Inter', sans-serif" font-size="14" font-weight="600" text-anchor="end" fill="#2C3E50">Lumen</text>
+
+        <g class="plaque-label">
+            <line x1="400" y1="325" x2="400" y2="295" stroke="#D4AC0D" stroke-width="2" />
+            <text x="400" y="345" font-family="'Inter', sans-serif" font-size="14" font-weight="700" text-anchor="middle" fill="#D4AC0D">Atherosclerotic Plaque (CAD)</text>
+        </g>
+
+
+        <!-- ==================== RIGHT: SPHYGMOMANOMETER ==================== -->
+        <g transform="translate(0, -10)">
+            <text x="680" y="130" font-family="'Inter', sans-serif" font-size="14" font-weight="600" text-anchor="middle" fill="#2C3E50">Sphygmomanometer</text>
+            
+            <g filter="url(#shadow)">
+                <!-- Gauge Body -->
+                <circle cx="680" cy="220" r="65" fill="#ffffff" stroke="#bdc3c7" stroke-width="4" />
+                <circle cx="680" cy="220" r="55" fill="#f8f9fa" stroke="#2C3E50" stroke-width="4" stroke-dasharray="2 15.27" />
+                
+                <!-- Gauge Glass Glare -->
+                <path d="M 630 190 A 50 50 0 0 1 730 190 A 70 70 0 0 0 630 190 Z" fill="#ffffff" opacity="0.6" />
+
+                <!-- Color Zones -->
+                <path d="M 625 220 A 55 55 0 0 1 680 165" fill="none" stroke="#2ECC71" stroke-width="6" opacity="0.5" /> <!-- Normal -->
+                <path d="M 680 165 A 55 55 0 0 1 735 220" fill="none" stroke="#E74C3C" stroke-width="6" opacity="0.5" /> <!-- High -->
+
+                <!-- Needle -->
+                <g class="needle">
+                    <line x1="680" y1="220" x2="680" y2="170" stroke="#E74C3C" stroke-width="4" stroke-linecap="round" />
+                    <polygon points="676,175 684,175 680,160" fill="#E74C3C" />
+                </g>
+                
+                <!-- Center Pin -->
+                <circle cx="680" cy="220" r="8" fill="#2C3E50" />
+                <circle cx="680" cy="220" r="3" fill="#ffffff" />
+            </g>
+
+            <!-- Digital Readout Box -->
+            <g filter="url(#shadow)">
+                <rect x="620" y="300" width="120" height="50" rx="6" fill="#2C3E50" />
+                <rect x="625" y="305" width="110" height="40" rx="4" fill="#1a252f" />
+                
+                <!-- Normal Text -->
+                <text x="680" y="332" font-family="'Roboto Mono', monospace" font-size="22" font-weight="700" text-anchor="middle" fill="#2ECC71" class="readout-normal">120/80</text>
+                
+                <!-- HTN Text -->
+                <text x="680" y="332" font-family="'Roboto Mono', monospace" font-size="22" font-weight="700" text-anchor="middle" fill="#E74C3C" class="readout-htn">150/95</text>
+            </g>
+            <text x="680" y="370" font-family="'Roboto Mono', monospace" font-size="14" font-weight="500" text-anchor="middle" fill="#7f8c8d">mmHg</text>
+        </g>
+
+        <!-- ==================== LEGEND ==================== -->
+        <g transform="translate(20, 400)">
+            <rect x="0" y="0" width="180" height="80" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)" />
+            <text x="10" y="20" font-family="'Inter', sans-serif" font-size="12" font-weight="700" fill="#2C3E50">Legend</text>
+            
+            <circle cx="15" cy="35" r="5" fill="#E74C3C" />
+            <text x="28" y="39" font-family="'Inter', sans-serif" font-size="11" fill="#2C3E50">Oxygenated RBCs</text>
+            
+            <rect x="10" y="48" width="10" height="10" rx="2" fill="#F39C12" />
+            <text x="28" y="57" font-family="'Inter', sans-serif" font-size="11" fill="#2C3E50">Smooth Muscle</text>
+            
+            <rect x="10" y="63" width="10" height="10" rx="2" fill="#F1C40F" />
+            <text x="28" y="72" font-family="'Inter', sans-serif" font-size="11" fill="#2C3E50">Atherosclerosis</text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

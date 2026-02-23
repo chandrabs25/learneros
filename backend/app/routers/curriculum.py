@@ -14,6 +14,7 @@ import time
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import get_optional_user
+from app.config import settings
 from app.database import read_query
 
 router = APIRouter(prefix="/api", tags=["curriculum"])
@@ -215,11 +216,13 @@ async def list_section_concepts(section_id: str):
     Fetches:
       1. Concepts the section directly REQUIRES.
       2. Concepts from sections this section REQUIRES (one hop).
-    Only returns concepts that have a matching animation file.
+    Returns concepts that have a matching local animation file, or all
+    concept assets when R2 animation hosting is configured.
     """
     from pathlib import Path
 
     animations_dir = Path(__file__).resolve().parent.parent.parent.parent / "data" / "animations"
+    use_r2_assets = bool(settings.ANIMATIONS_R2_PUBLIC_BASE_URL)
 
     key = f"section_concepts|{section_id}"
     cached = _cache_get(key)
@@ -245,9 +248,10 @@ async def list_section_concepts(section_id: str):
         concept_key = row["id"].replace("concept:", "")
         if concept_key in seen_keys:
             continue
-        animation_file = animations_dir / f"{concept_key}.html"
-        if not animation_file.exists():
-            continue
+        if not use_r2_assets:
+            animation_file = animations_dir / f"{concept_key}.html"
+            if not animation_file.exists():
+                continue
         seen_keys.add(concept_key)
         result.append({
             "id": f"concept:{concept_key}",

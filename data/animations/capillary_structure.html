@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capillary Exchange and Lymph Formation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            box-sizing: border-box;
+        }
+        .diagram-container {
+            width: 100%;
+            max-width: 1200px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            overflow: hidden;
+            position: relative;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* Continuous Flow Animations */
+        @keyframes flow-linear {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(1100px); }
+        }
+        @keyframes rbc-squeeze {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15, 0.85); }
+        }
+        
+        .flow-fast { animation: flow-linear 7s linear infinite; }
+        .flow-med { animation: flow-linear 9s linear infinite; }
+        .flow-slow { animation: flow-linear 11s linear infinite; }
+        .rbc-shape { animation: rbc-squeeze 2s ease-in-out infinite; }
+
+        /* Exchange Animations (Relative to Wrapper) */
+        @keyframes filter-top {
+            0% { transform: translate(-60px, 0); opacity: 0; }
+            10% { transform: translate(-30px, 0); opacity: 1; }
+            20% { transform: translate(0, 0); }
+            35% { transform: translate(0, -60px); } /* Through cleft */
+            60% { transform: translate(40px, -110px); opacity: 1; } /* Interstitium */
+            90% { transform: translate(80px, -130px); opacity: 0; }
+            100% { transform: translate(80px, -130px); opacity: 0; }
+        }
+
+        @keyframes filter-bot {
+            0% { transform: translate(-60px, 0); opacity: 0; }
+            10% { transform: translate(-30px, 0); opacity: 1; }
+            20% { transform: translate(0, 0); }
+            35% { transform: translate(0, 60px); } /* Through cleft */
+            60% { transform: translate(50px, 120px); opacity: 1; } /* Interstitium */
+            90% { transform: translate(90px, 140px); opacity: 0; }
+            100% { transform: translate(90px, 140px); opacity: 0; }
+        }
+
+        @keyframes reabsorb-top {
+            0% { transform: translate(-80px, -120px); opacity: 0; }
+            20% { transform: translate(-40px, -90px); opacity: 1; }
+            40% { transform: translate(0, -60px); } /* At cleft */
+            55% { transform: translate(0, 0); } /* In lumen */
+            85% { transform: translate(150px, 0); opacity: 1; }
+            100% { transform: translate(250px, 0); opacity: 0; }
+        }
+
+        @keyframes reabsorb-bot {
+            0% { transform: translate(-80px, 120px); opacity: 0; }
+            20% { transform: translate(-40px, 90px); opacity: 1; }
+            40% { transform: translate(0, 60px); } /* At cleft */
+            55% { transform: translate(0, 0); } /* In lumen */
+            85% { transform: translate(150px, 0); opacity: 1; }
+            100% { transform: translate(250px, 0); opacity: 0; }
+        }
+
+        @keyframes lymph-uptake {
+            0% { transform: translate(-100px, -60px); opacity: 0; }
+            20% { transform: translate(-50px, -30px); opacity: 1; }
+            40% { transform: translate(0, 0); } /* At flap */
+            55% { transform: translate(60px, 10px); } /* Inside lymph */
+            85% { transform: translate(250px, 10px); opacity: 1; }
+            100% { transform: translate(350px, 10px); opacity: 0; }
+        }
+
+        /* Lymphatic Flap Valves */
+        @keyframes swing-top {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-18deg); }
+        }
+        @keyframes swing-bot {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(18deg); }
+        }
+
+        .anim-filter-t { animation: filter-top 6s ease-in-out infinite; }
+        .anim-filter-b { animation: filter-bot 6s ease-in-out infinite; }
+        .anim-reabsorb-t { animation: reabsorb-top 6s ease-in-out infinite; }
+        .anim-reabsorb-b { animation: reabsorb-bot 6s ease-in-out infinite; }
+        .anim-lymph { animation: lymph-uptake 7s ease-in-out infinite; }
+        
+        .flap-top { animation: swing-top 3.5s ease-in-out infinite; transform-origin: 600px 415px; }
+        .flap-bot { animation: swing-bot 3.5s ease-in-out infinite; transform-origin: 600px 505px; }
+
+        /* Delays */
+        .d-0 { animation-delay: 0s; }
+        .d-1 { animation-delay: -1.2s; }
+        .d-2 { animation-delay: -2.4s; }
+        .d-3 { animation-delay: -3.6s; }
+        .d-4 { animation-delay: -4.8s; }
+        
+        .text-title { font-size: 26px; font-weight: 700; fill: #2C3E50; }
+        .text-subtitle { font-size: 14px; font-weight: 400; fill: #7F8C8D; }
+        .text-label { font-size: 13px; font-weight: 600; fill: #2C3E50; }
+        .text-pressure { font-family: 'Roboto Mono', monospace; font-size: 12px; fill: #E74C3C; }
+        .text-pressure.blue { fill: #3498DB; }
+        .text-small { font-size: 11px; font-weight: 400; fill: #7F8C8D; }
+    </style>
+</head>
+<body>
+
+<div class="diagram-container">
+    <svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet">
+        <defs>
+            <!-- Gradients -->
+            <linearGradient id="lumen-grad" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stop-color="#E74C3C" stop-opacity="0.15"/>
+                <stop offset="50%" stop-color="#E8F4FD" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#3498DB" stop-opacity="0.15"/>
+            </linearGradient>
+            
+            <radialGradient id="rbc-grad" cx="50%" cy="50%" r="50%">
+                <stop offset="40%" stop-color="#922B21"/>
+                <stop offset="100%" stop-color="#C0392B"/>
+            </radialGradient>
+
+            <radialGradient id="tissue-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#F8C471"/>
+                <stop offset="100%" stop-color="#F39C12"/>
+            </radialGradient>
+
+            <!-- Drop Shadow -->
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.1"/>
+            </filter>
+
+            <!-- Arrow Markers -->
+            <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#E74C3C" />
+            </marker>
+            <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#3498DB" />
+            </marker>
+            <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2ECC71" />
+            </marker>
+
+            <!-- Reusable Elements -->
+            <g id="rbc">
+                <g class="rbc-shape">
+                    <ellipse cx="0" cy="0" rx="18" ry="12" fill="url(#rbc-grad)" stroke="#A93226" stroke-width="1"/>
+                </g>
+            </g>
+
+            <g id="protein">
+                <path d="M 0 -12 L 10 -6 L 10 6 L 0 12 L -10 6 L -10 -6 Z" fill="#98D8C8" stroke="#73C6B6" stroke-width="2"/>
+                <circle cx="0" cy="0" r="3" fill="#73C6B6"/>
+            </g>
+
+            <g id="solute">
+                <circle cx="0" cy="0" r="4" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1"/>
+            </g>
+
+            <g id="water">
+                <circle cx="0" cy="0" r="3" fill="#3498DB" opacity="0.8"/>
+            </g>
+
+            <g id="nucleus">
+                <ellipse cx="0" cy="0" rx="14" ry="6" fill="#2C3E50"/>
+            </g>
+        </defs>
+
+        <!-- Background grid/interstitium -->
+        <rect width="1000" height="600" fill="#f8f9fa"/>
+
+        <!-- TITLE & LEGEND -->
+        <text x="500" y="40" text-anchor="middle" class="text-title">Capillary Exchange and Lymph Formation</text>
+        <text x="500" y="65" text-anchor="middle" class="text-subtitle">Continuous capillary bed showing filtration, reabsorption, and lymphatic drainage</text>
+
+        <g transform="translate(150, 550)">
+            <rect x="0" y="0" width="700" height="30" rx="15" fill="#ffffff" stroke="#E5E7EB" stroke-width="1"/>
+            <g transform="translate(20, 15)">
+                <ellipse cx="0" cy="0" rx="8" ry="5" fill="url(#rbc-grad)"/>
+                <text x="15" y="4" class="text-small">Erythrocyte (RBC)</text>
+            </g>
+            <g transform="translate(150, 15)">
+                <path d="M 0 -6 L 5 -3 L 5 3 L 0 6 L -5 3 L -5 -3 Z" fill="#98D8C8"/>
+                <text x="12" y="4" class="text-small">Plasma Protein</text>
+            </g>
+            <g transform="translate(280, 15)">
+                <circle cx="0" cy="0" r="4" fill="#F1C40F"/>
+                <text x="10" y="4" class="text-small">Solutes (Glucose, Ions)</text>
+            </g>
+            <g transform="translate(430, 15)">
+                <circle cx="0" cy="0" r="3" fill="#3498DB"/>
+                <text x="10" y="4" class="text-small">Water</text>
+            </g>
+            <g transform="translate(510, 15)">
+                <rect x="0" y="-5" width="10" height="10" fill="#F39C12" rx="2"/>
+                <text x="16" y="4" class="text-small">Tissue Cell</text>
+            </g>
+            <g transform="translate(610, 15)">
+                <rect x="0" y="-5" width="10" height="10" fill="#2ECC71" rx="2"/>
+                <text x="16" y="4" class="text-small">Lymphatic</text>
+            </g>
+        </g>
+
+        <!-- TISSUE CELLS (Top) -->
+        <g filter="url(#shadow)">
+            <path d="M 60 80 Q 120 60 160 100 T 150 160 Q 100 190 60 150 T 30 110 Z" fill="url(#tissue-grad)" stroke="#D68910" stroke-width="2"/>
+            <ellipse cx="100" cy="125" rx="10" ry="10" fill="#A04000" opacity="0.6"/>
+
+            <path d="M 240 70 Q 300 50 340 90 T 360 160 Q 300 180 250 150 T 210 110 Z" fill="url(#tissue-grad)" stroke="#D68910" stroke-width="2"/>
+            <ellipse cx="285" cy="120" rx="12" ry="9" fill="#A04000" opacity="0.6"/>
+
+            <path d="M 440 80 Q 490 60 540 100 T 550 170 Q 480 190 430 160 T 400 120 Z" fill="url(#tissue-grad)" stroke="#D68910" stroke-width="2"/>
+            <ellipse cx="480" cy="130" rx="11" ry="11" fill="#A04000" opacity="0.6"/>
+
+            <path d="M 640 75 Q 700 55 750 95 T 760 165 Q 690 185 640 155 T 600 115 Z" fill="url(#tissue-grad)" stroke="#D68910" stroke-width="2"/>
+            <ellipse cx="680" cy="125" rx="10" ry="12" fill="#A04000" opacity="0.6"/>
+
+            <path d="M 830 85 Q 890 65 930 105 T 940 175 Q 870 195 820 165 T 790 125 Z" fill="url(#tissue-grad)" stroke="#D68910" stroke-width="2"/>
+            <ellipse cx="870" cy="135" rx="12" ry="10" fill="#A04000" opacity="0.6"/>
+        </g>
+
+        <!-- TISSUE CELLS (Bottom Left) -->
+        <g filter="url(#shadow)">
+            <path d="M 80 430 Q 140 410 180 450 T 170 520 Q 120 550 80 510 T 50 470 Z" fill="url(#tissue-grad)" stroke="#D68910" stroke-width="2"/>
+            <ellipse cx="120" cy="480" rx="11" ry="11" fill="#A04000" opacity="0.6"/>
+
+            <path d="M 270 440 Q 330 420 370 460 T 380 530 Q 320 550 270 520 T 230 480 Z" fill="url(#tissue-grad)" stroke="#D68910" stroke-width="2"/>
+            <ellipse cx="310" cy="490" rx="12" ry="9" fill="#A04000" opacity="0.6"/>
+
+            <path d="M 440 450 Q 480 430 510 460 T 500 510 Q 450 530 420 500 T 400 470 Z" fill="url(#tissue-grad)" stroke="#D68910" stroke-width="2"/>
+            <ellipse cx="460" cy="485" rx="9" ry="9" fill="#A04000" opacity="0.6"/>
+        </g>
+
+        <!-- LYMPHATIC CAPILLARY (Bottom Right) -->
+        <g filter="url(#shadow)">
+            <!-- Lymph Lumen -->
+            <path d="M 540 420 Q 480 460 540 500 L 980 500 L 980 420 Z" fill="#D5F5E3" opacity="0.6"/>
+            
+            <!-- Endothelial Cells (Overlapping) -->
+            <path d="M 540 410 Q 460 460 540 510 L 550 500 Q 480 460 550 420 Z" fill="#2ECC71" stroke="#27AE60" stroke-width="1"/>
+            <path d="M 590 415 L 980 415 L 980 405 L 590 405 Z" fill="#2ECC71" stroke="#27AE60" stroke-width="1"/>
+            <path d="M 590 505 L 980 505 L 980 515 L 590 515 Z" fill="#2ECC71" stroke="#27AE60" stroke-width="1"/>
+            
+            <!-- Swinging Flaps -->
+            <g class="flap-top">
+                <path d="M 530 405 L 600 425 L 605 415 L 540 395 Z" fill="#2ECC71" stroke="#27AE60" stroke-width="1"/>
+            </g>
+            <g class="flap-bot">
+                <path d="M 530 515 L 600 495 L 605 505 L 540 525 Z" fill="#2ECC71" stroke="#27AE60" stroke-width="1"/>
+            </g>
+
+            <!-- Nuclei in Lymphatic -->
+            <ellipse cx="510" cy="460" rx="8" ry="4" fill="#1E8449" transform="rotate(90 510 460)"/>
+            <ellipse cx="700" cy="410" rx="10" ry="4" fill="#1E8449"/>
+            <ellipse cx="700" cy="510" rx="10" ry="4" fill="#1E8449"/>
+            <ellipse cx="850" cy="410" rx="10" ry="4" fill="#1E8449"/>
+            <ellipse cx="850" cy="510" rx="10" ry="4" fill="#1E8449"/>
+        </g>
+
+        <!-- BLOOD CAPILLARY -->
+        <!-- Lumen Background -->
+        <rect x="0" y="250" width="1000" height="100" fill="url(#lumen-grad)"/>
+
+        <!-- Endothelial Wall (Top) -->
+        <g fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" filter="url(#shadow)">
+            <rect x="-20" y="230" width="180" height="20" rx="6"/>
+            <rect x="165" y="230" width="120" height="20" rx="6"/>
+            <rect x="290" y="230" width="120" height="20" rx="6"/>
+            <rect x="415" y="230" width="120" height="20" rx="6"/>
+            <rect x="540" y="230" width="120" height="20" rx="6"/>
+            <rect x="665" y="230" width="120" height="20" rx="6"/>
+            <rect x="790" y="230" width="230" height="20" rx="6"/>
+        </g>
+        <!-- Nuclei (Top) -->
+        <g>
+            <use href="#nucleus" x="70" y="240"/>
+            <use href="#nucleus" x="225" y="240"/>
+            <use href="#nucleus" x="350" y="240"/>
+            <use href="#nucleus" x="475" y="240"/>
+            <use href="#nucleus" x="600" y="240"/>
+            <use href="#nucleus" x="725" y="240"/>
+            <use href="#nucleus" x="900" y="240"/>
+        </g>
+
+        <!-- Endothelial Wall (Bottom) -->
+        <g fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" filter="url(#shadow)">
+            <rect x="-20" y="350" width="180" height="20" rx="6"/>
+            <rect x="165" y="350" width="120" height="20" rx="6"/>
+            <rect x="290" y="350" width="120" height="20" rx="6"/>
+            <rect x="415" y="350" width="120" height="20" rx="6"/>
+            <rect x="540" y="350" width="120" height="20" rx="6"/>
+            <rect x="665" y="350" width="120" height="20" rx="6"/>
+            <rect x="790" y="350" width="230" height="20" rx="6"/>
+        </g>
+        <!-- Nuclei (Bottom) -->
+        <g>
+            <use href="#nucleus" x="70" y="360"/>
+            <use href="#nucleus" x="225" y="360"/>
+            <use href="#nucleus" x="350" y="360"/>
+            <use href="#nucleus" x="475" y="360"/>
+            <use href="#nucleus" x="600" y="360"/>
+            <use href="#nucleus" x="725" y="360"/>
+            <use href="#nucleus" x="900" y="360"/>
+        </g>
+
+        <!-- FLOWING ELEMENTS (RBCs & Proteins) -->
+        <!-- RBCs -->
+        <g transform="translate(0, 270)"><use href="#rbc" class="flow-fast d-0"/></g>
+        <g transform="translate(0, 300)"><use href="#rbc" class="flow-med d-2"/></g>
+        <g transform="translate(0, 330)"><use href="#rbc" class="flow-slow d-1"/></g>
+        <g transform="translate(0, 285)"><use href="#rbc" class="flow-med d-4"/></g>
+        <g transform="translate(0, 315)"><use href="#rbc" class="flow-fast d-3"/></g>
+        <g transform="translate(0, 265)"><use href="#rbc" class="flow-slow d-0"/></g>
+        <g transform="translate(0, 335)"><use href="#rbc" class="flow-fast d-2"/></g>
+
+        <!-- Proteins -->
+        <g transform="translate(0, 290)"><use href="#protein" class="flow-slow d-0"/></g>
+        <g transform="translate(0, 320)"><use href="#protein" class="flow-med d-3"/></g>
+        <g transform="translate(0, 275)"><use href="#protein" class="flow-slow d-2"/></g>
+        <g transform="translate(0, 310)"><use href="#protein" class="flow-fast d-4"/></g>
+
+        <!-- EXCHANGING ELEMENTS (Solutes & Water) -->
+        <!-- Filtration Top (Cleft 1: X=162.5, Y=240) -->
+        <g transform="translate(162, 280)">
+            <use href="#solute" class="anim-filter-t d-0"/>
+            <use href="#water" class="anim-filter-t d-1"/>
+            <use href="#solute" class="anim-filter-t d-2"/>
+            <use href="#water" class="anim-filter-t d-3"/>
+        </g>
+        <!-- Filtration Top (Cleft 2: X=287.5, Y=240) -->
+        <g transform="translate(287, 280)">
+            <use href="#water" class="anim-filter-t d-2"/>
+            <use href="#solute" class="anim-filter-t d-4"/>
+        </g>
+
+        <!-- Filtration Bottom (Cleft 1: X=162.5, Y=360) -->
+        <g transform="translate(162, 320)">
+            <use href="#solute" class="anim-filter-b d-1"/>
+            <use href="#water" class="anim-filter-b d-2"/>
+            <use href="#solute" class="anim-filter-b d-4"/>
+        </g>
+        <!-- Filtration Bottom (Cleft 2: X=287.5, Y=360) -->
+        <g transform="translate(287, 320)">
+            <use href="#water" class="anim-filter-b d-0"/>
+            <use href="#solute" class="anim-filter-b d-3"/>
+        </g>
+
+        <!-- Reabsorption Top (Cleft 5: X=662.5, Y=240) -->
+        <g transform="translate(662, 240)">
+            <use href="#solute" class="anim-reabsorb-t d-0"/>
+            <use href="#water" class="anim-reabsorb-t d-2"/>
+            <use href="#solute" class="anim-reabsorb-t d-3"/>
+            <use href="#water" class="anim-reabsorb-t d-4"/>
+        </g>
+
+        <!-- Reabsorption Bottom (Cleft 4: X=537.5, Y=360) -->
+        <g transform="translate(537, 360)">
+            <use href="#water" class="anim-reabsorb-b d-1"/>
+            <use href="#solute" class="anim-reabsorb-b d-4"/>
+        </g>
+
+        <!-- Lymphatic Uptake (Flap: X=560, Y=460) -->
+        <g transform="translate(560, 460)">
+            <use href="#water" class="anim-lymph d-0"/>
+            <use href="#solute" class="anim-lymph d-1"/>
+            <use href="#water" class="anim-lymph d-2"/>
+            <use href="#solute" class="anim-lymph d-3"/>
+            <use href="#water" class="anim-lymph d-4"/>
+        </g>
+
+        <!-- LABELS & ANNOTATIONS -->
+        <!-- Arteriole / Venule Ends -->
+        <g transform="translate(50, 210)">
+            <text x="0" y="0" class="text-label" fill="#E74C3C">Arteriole End</text>
+            <text x="0" y="15" class="text-pressure">BHP: ~35 mmHg</text>
+            <text x="0" y="30" class="text-pressure">BOP: ~26 mmHg</text>
+        </g>
+        <g transform="translate(830, 210)">
+            <text x="0" y="0" class="text-label" fill="#3498DB">Venule End</text>
+            <text x="0" y="15" class="text-pressure blue">BHP: ~16 mmHg</text>
+            <text x="0" y="30" class="text-pressure blue">BOP: ~26 mmHg</text>
+        </g>
+
+        <!-- Process Arrows & Text -->
+        <!-- Filtration -->
+        <g transform="translate(220, 180)">
+            <path d="M 0 60 L 0 10" stroke="#E74C3C" stroke-width="2" marker-end="url(#arrow-red)"/>
+            <text x="10" y="25" class="text-label" fill="#E74C3C">Filtration</text>
+            <text x="10" y="40" class="text-small">NFP = +9 mmHg</text>
+        </g>
+
+        <!-- Reabsorption -->
+        <g transform="translate(730, 180)">
+            <path d="M 0 10 L 0 60" stroke="#3498DB" stroke-width="2" marker-end="url(#arrow-blue)"/>
+            <text x="10" y="25" class="text-label" fill="#3498DB">Reabsorption</text>
+            <text x="10" y="40" class="text-small">NFP = -10 mmHg</text>
+        </g>
+
+        <!-- Lymphatic Drainage -->
+        <g transform="translate(430, 460)">
+            <path d="M 0 0 L 60 0" stroke="#2ECC71" stroke-width="2" marker-end="url(#arrow-green)"/>
+            <text x="-10" y="-15" class="text-label" fill="#27AE60" text-anchor="end">Lymphatic Uptake</text>
+            <text x="-10" y="0" class="text-small" text-anchor="end">Excess fluid ~3L/day</text>
+        </g>
+
+        <!-- Structural Labels -->
+        <g transform="translate(400, 200)">
+            <line x1="0" y1="0" x2="15" y2="30" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2"/>
+            <text x="-5" y="-5" class="text-small" text-anchor="end">Intercellular Cleft</text>
+        </g>
+
+        <g transform="translate(480, 390)">
+            <line x1="0" y1="0" x2="0" y2="-20" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2"/>
+            <text x="0" y="-25" class="text-small" text-anchor="middle">Endothelial Cell</text>
+        </g>
+
+        <g transform="translate(680, 550)">
+            <line x1="-30" y1="-10" x2="-80" y2="-40" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2"/>
+            <text x="0" y="0" class="text-label" fill="#27AE60">Lymphatic Capillary</text>
+            <text x="0" y="15" class="text-small">(Blind-ended vessel)</text>
+        </g>
+
+        <g transform="translate(350, 390)">
+            <text x="0" y="0" class="text-small" fill="#F39C12" font-weight="600">Interstitial Fluid</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

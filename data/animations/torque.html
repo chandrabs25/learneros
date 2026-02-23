@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torque and Restoring Force in a Simple Pendulum</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital,wght@0,400;0,600;1,400&display=swap');
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            padding: 30px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 26px;
+            color: #212529;
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-weight: 700;
+        }
+
+        .visualization {
+            position: relative;
+            width: 100%;
+            background: #f8f9fa;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 16px 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border: 1px solid #dee2e6;
+            font-size: 15px;
+            backdrop-filter: blur(4px);
+        }
+
+        .readouts {
+            top: 24px;
+            right: 24px;
+            min-width: 180px;
+        }
+
+        .readouts .title {
+            margin-bottom: 12px;
+            font-weight: 700;
+            color: #343a40;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 13px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 6px;
+        }
+
+        .readouts .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-family: 'Roboto Mono', monospace;
+            color: #495057;
+        }
+
+        .readouts .data-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .readouts .val {
+            font-weight: 600;
+            color: #212529;
+        }
+
+        .legend {
+            bottom: 24px;
+            left: 24px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            color: #495057;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .color-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 600;
+            font-style: italic;
+        }
+
+        /* SVG Text Styles */
+        .svg-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 16px;
+            text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff;
+        }
+
+        .svg-math {
+            font-family: 'Roboto Mono', monospace;
+            font-style: italic;
+            font-weight: 600;
+            font-size: 16px;
+            text-shadow: 2px 2px 0 #f8f9fa, -2px -2px 0 #f8f9fa, 2px -2px 0 #f8f9fa, -2px 2px 0 #f8f9fa;
+        }
+
+        /* Animations */
+        @keyframes swing {
+            0%, 100% { transform: rotate(-30deg); }
+            50% { transform: rotate(30deg); }
+        }
+
+        @keyframes counter-swing {
+            0%, 100% { transform: rotate(30deg); }
+            50% { transform: rotate(-30deg); }
+        }
+
+        #pendulum {
+            transform-origin: 400px 50px;
+            animation: swing 4s ease-in-out infinite;
+            will-change: transform;
+        }
+
+        #gravity-group {
+            transform-origin: 400px 350px;
+            animation: counter-swing 4s ease-in-out infinite;
+            will-change: transform;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Torque and Restoring Force in a Simple Pendulum</h1>
+    
+    <div class="visualization">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of a simple pendulum showing torque and restoring forces">
+            <defs>
+                <!-- Arrowhead Markers -->
+                <marker id="arrow-red" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF3366" />
+                </marker>
+                <marker id="arrow-blue" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#4361EE" />
+                </marker>
+                <marker id="arrow-green" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#06D6A0" />
+                </marker>
+                <marker id="arrow-cyan" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#00B4D8" />
+                </marker>
+                <marker id="arrow-purple" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7" />
+                </marker>
+
+                <!-- Bob Gradient -->
+                <radialGradient id="bob-grad" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#adb5bd" />
+                    <stop offset="100%" stop-color="#495057" />
+                </radialGradient>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#f8f9fa" />
+
+            <!-- Static Reference Lines -->
+            <line x1="400" y1="50" x2="400" y2="460" stroke="#CED4DA" stroke-width="2" stroke-dasharray="8,6" />
+
+            <!-- Dynamic Geometric Constructions (Updated via JS) -->
+            <line id="lever-arm" x1="400" y1="50" x2="400" y2="50" stroke="#00B4D8" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-cyan)" />
+            <line id="line-of-action" x1="400" y1="50" x2="400" y2="350" stroke="#00B4D8" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6" />
+            <text id="lever-label" x="400" y="40" fill="#00B4D8" class="svg-math" text-anchor="middle">r_⊥</text>
+
+            <!-- Angle Indicator -->
+            <path id="angle-arc" d="" fill="none" stroke="#6C757D" stroke-width="2" />
+            <text id="angle-label" x="400" y="150" fill="#495057" class="svg-math" text-anchor="middle">θ</text>
+
+            <!-- Torque Indicator -->
+            <path id="torque-arc" d="" fill="none" stroke="#7209B7" stroke-width="3" marker-end="url(#arrow-purple)" transition="opacity 0.1s" />
+            <text id="torque-label" x="400" y="50" fill="#7209B7" class="svg-math" text-anchor="middle">τ&#x20D7;</text>
+
+            <!-- Pendulum System (Animated via CSS) -->
+            <g id="pendulum">
+                <!-- String -->
+                <line x1="400" y1="50" x2="400" y2="350" stroke="#6C757D" stroke-width="3" />
+                
+                <!-- Tension Vector -->
+                <line x1="400" y1="350" x2="400" y2="180" stroke="#4361EE" stroke-width="4" marker-end="url(#arrow-blue)" />
+                <text x="412" y="260" fill="#4361EE" class="svg-math">T&#x20D7;</text>
+
+                <!-- Tangential Restoring Force Vector -->
+                <line id="force-tan" x1="400" y1="350" x2="400" y2="350" stroke="#06D6A0" stroke-width="4" marker-end="url(#arrow-green)" />
+                <text id="force-tan-label" x="400" y="380" fill="#06D6A0" class="svg-math" text-anchor="middle">F_τ</text>
+
+                <!-- Pendulum Bob -->
+                <circle cx="400" cy="350" r="22" fill="url(#bob-grad)" stroke="#343a40" stroke-width="2" />
+
+                <!-- Gravity Vector (Counter-rotated via CSS to stay vertical) -->
+                <g id="gravity-group">
+                    <line x1="400" y1="350" x2="400" y2="480" stroke="#FF3366" stroke-width="4" marker-end="url(#arrow-red)" />
+                    <text x="412" y="450" fill="#FF3366" class="svg-math">mg&#x20D7;</text>
+                </g>
+            </g>
+
+            <!-- Pivot Point -->
+            <circle cx="400" cy="50" r="8" fill="#343a40" />
+            <circle cx="400" cy="50" r="3" fill="#f8f9fa" />
+            <text x="418" y="55" fill="#495057" class="svg-label">Fixed Axis (O)</text>
+        </svg>
+
+        <!-- Live Readouts Panel -->
+        <div class="panel readouts">
+            <div class="title">Live Physics Data</div>
+            <div class="data-row">
+                <span>Angle (θ):</span>
+                <span class="val" id="theta-readout">0.0°</span>
+            </div>
+            <div class="data-row">
+                <span>Torque (τ):</span>
+                <span class="val"><span id="torque-readout">0.00</span> <span style="font-size: 12px; color: #6c757d;">mgL</span></span>
+            </div>
+        </div>
+
+        <!-- Legend Panel -->
+        <div class="panel legend">
+            <div class="legend-item">
+                <div class="color-box" style="background: #FF3366;"></div>
+                <span>Weight (<span class="math">m\vec{g}</span>)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #4361EE;"></div>
+                <span>Tension (<span class="math">\vec{T}</span>)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #06D6A0;"></div>
+                <span>Restoring Force (<span class="math">F_\tau = -mg \sin\theta</span>)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #00B4D8;"></div>
+                <span>Lever Arm (<span class="math">r_\perp = L \sin\theta</span>)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #7209B7;"></div>
+                <span>Torque (<span class="math">\vec{\tau} = \vec{r} \times \vec{F}</span>)</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Physics Constants & SVG Elements
+    const L = 300; // Pendulum length in pixels
+    const maxForceLength = 160; // Max visual length for tangential force
+    
+    const pendulum = document.getElementById('pendulum');
+    const forceTan = document.getElementById('force-tan');
+    const forceTanLabel = document.getElementById('force-tan-label');
+    const leverArm = document.getElementById('lever-arm');
+    const lineOfAction = document.getElementById('line-of-action');
+    const leverLabel = document.getElementById('lever-label');
+    const angleArc = document.getElementById('angle-arc');
+    const angleLabel = document.getElementById('angle-label');
+    const torqueArc = document.getElementById('torque-arc');
+    const torqueLabel = document.getElementById('torque-label');
+    
+    const thetaReadout = document.getElementById('theta-readout');
+    const torqueReadout = document.getElementById('torque-readout');
+
+    // Animation Loop to sync dynamic geometric properties with CSS animation
+    function syncPhysics() {
+        const style = window.getComputedStyle(pendulum);
+        
+        if (style.transform !== 'none') {
+            // Extract rotation angle from CSS transform matrix
+            const matrix = new DOMMatrixReadOnly(style.transform);
+            const theta = Math.atan2(matrix.b, matrix.a); // Angle in radians
+            
+            // 1. Tangential Restoring Force (Local coordinates inside pendulum group)
+            // F_tau = -mg * sin(theta). Points perpendicularly to string.
+            const fTanLength = -maxForceLength * Math.sin(theta);
+            forceTan.setAttribute('x2', 400 + fTanLength);
+            
+            // Position tangential force label
+            forceTanLabel.setAttribute('x', 400 + fTanLength + (fTanLength > 0 ? 20 : -20));
+
+            // 2. Lever Arm & Line of Action (Global coordinates)
+            // Lever arm is horizontal distance from pivot to bob's vertical line of action
+            const bobX = 400 + L * Math.sin(theta);
+            const bobY = 50 + L * Math.cos(theta);
+            
+            leverArm.setAttribute('x2', bobX);
+            lineOfAction.setAttribute('x1', bobX);
+            lineOfAction.setAttribute('x2', bobX);
+            lineOfAction.setAttribute('y2', bobY);
+            
+            // Position lever arm label
+            leverLabel.setAttribute('x', 400 + (bobX - 400) / 2);
+            leverLabel.setAttribute('y', 40);
+
+            // 3. Angle Arc (θ)
+            const aRadius = 140;
+            const aEndX = 400 + aRadius * Math.sin(theta);
+            const aEndY = 50 + aRadius * Math.cos(theta);
+            
+            if (Math.abs(theta) > 0.02) {
+                const sweep = theta > 0 ? 1 : 0;
+                angleArc.setAttribute('d', `M 400 ${50 + aRadius} A ${aRadius} ${aRadius} 0 0 ${sweep} ${aEndX} ${aEndY}`);
+                
+                // Position angle label
+                const midTheta = theta / 2;
+                angleLabel.setAttribute('x', 400 + (aRadius + 20) * Math.sin(midTheta));
+                angleLabel.setAttribute('y', 50 + (aRadius + 20) * Math.cos(midTheta));
+                angleLabel.style.opacity = 1;
+            } else {
+                angleArc.setAttribute('d', '');
+                angleLabel.style.opacity = 0;
+            }
+
+            // 4. Torque Indicator Arc
+            const tRadius = 75;
+            const tStartX = 400 + tRadius * Math.sin(theta);
+            const tStartY = 50 + tRadius * Math.cos(theta);
+            
+            if (Math.abs(theta) > 0.05) {
+                // Draw arc pointing towards equilibrium (0 degrees)
+                const tSweep = theta > 0 ? 0 : 1;
+                torqueArc.setAttribute('d', `M ${tStartX} ${tStartY} A ${tRadius} ${tRadius} 0 0 ${tSweep} 400 ${50 + tRadius}`);
+                
+                // Opacity scales with torque magnitude
+                const torqueMag = Math.abs(Math.sin(theta));
+                torqueArc.style.opacity = Math.min(1, torqueMag * 3);
+                torqueLabel.style.opacity = Math.min(1, torqueMag * 3);
+                
+                // Position torque label
+                torqueLabel.setAttribute('x', 400 + (tRadius + 25) * Math.sin(theta / 2));
+                torqueLabel.setAttribute('y', 50 + (tRadius + 25) * Math.cos(theta / 2));
+            } else {
+                torqueArc.setAttribute('d', '');
+                torqueLabel.style.opacity = 0;
+            }
+
+            // 5. Update Live Readouts
+            const degrees = (theta * 180 / Math.PI).toFixed(1);
+            const torqueValue = Math.abs(Math.sin(theta)).toFixed(2);
+            
+            // Add sign to angle for clarity
+            thetaReadout.textContent = (theta > 0 ? '+' : '') + degrees + '°';
+            torqueReadout.textContent = torqueValue;
+        }
+        
+        requestAnimationFrame(syncPhysics);
+    }
+
+    // Start the synchronization loop
+    requestAnimationFrame(syncPhysics);
+</script>
+
+</body>
+</html>

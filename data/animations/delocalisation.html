@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Architecture of Aromaticity</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 5px;
+            font-weight: 700;
+            font-size: 28px;
+            color: #222;
+        }
+        p.subtitle {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #555;
+            font-size: 16px;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* Animations */
+        .kekule-a { animation: fadeKekuleA 12s infinite; }
+        .kekule-b { animation: fadeKekuleB 12s infinite; }
+        .arrow-set-1 { animation: flashArrows1 12s infinite; }
+        .arrow-set-2 { animation: flashArrows2 12s infinite; }
+        
+        .orbital {
+            transform-origin: 0 0;
+            animation: orbitalGrow 12s infinite;
+        }
+        
+        .torus { animation: torusForm 12s infinite; }
+        .draw-mask { animation: drawMask 12s infinite; }
+        
+        .label-phase1 { animation: showPhase1 12s infinite; }
+        .label-phase2 { animation: showPhase2 12s infinite; }
+        .label-phase3 { animation: showPhase3 12s infinite; }
+
+        @keyframes fadeKekuleA {
+            0%, 9% { opacity: 1; }
+            10%, 19% { opacity: 0; }
+            20%, 29% { opacity: 1; }
+            30%, 100% { opacity: 0; }
+        }
+        @keyframes fadeKekuleB {
+            0%, 9% { opacity: 0; }
+            10%, 19% { opacity: 1; }
+            20%, 29% { opacity: 0; }
+            30%, 100% { opacity: 0; }
+        }
+        @keyframes flashArrows1 {
+            0%, 7% { opacity: 0; }
+            8%, 9% { opacity: 1; }
+            10%, 100% { opacity: 0; }
+        }
+        @keyframes flashArrows2 {
+            0%, 17% { opacity: 0; }
+            18%, 19% { opacity: 1; }
+            20%, 100% { opacity: 0; }
+        }
+        @keyframes orbitalGrow {
+            0%, 30% { opacity: 0; transform: scaleY(0); }
+            35%, 58% { opacity: 1; transform: scaleY(1); }
+            62%, 100% { opacity: 0; transform: scaleY(1.15); }
+        }
+        @keyframes torusForm {
+            0%, 58% { opacity: 0; transform: scale(0.9); }
+            64% { opacity: 0.85; transform: scale(1.02); }
+            78% { opacity: 0.85; transform: scale(0.98); }
+            92% { opacity: 0.85; transform: scale(1); }
+            96%, 100% { opacity: 0; transform: scale(1.05); }
+        }
+        @keyframes drawMask {
+            0%, 60% { stroke-dashoffset: 300; }
+            65%, 95% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 300; }
+        }
+        @keyframes showPhase1 {
+            0%, 28% { opacity: 1; }
+            32%, 100% { opacity: 0; }
+        }
+        @keyframes showPhase2 {
+            0%, 30% { opacity: 0; }
+            34%, 58% { opacity: 1; }
+            62%, 100% { opacity: 0; }
+        }
+        @keyframes showPhase3 {
+            0%, 60% { opacity: 0; }
+            64%, 94% { opacity: 1; }
+            97%, 100% { opacity: 0; }
+        }
+        
+        /* Static pulsing for side molecules */
+        .static-torus {
+            animation: pulseTorus 4s ease-in-out infinite alternate;
+        }
+        @keyframes pulseTorus {
+            0% { transform: scale(0.98); opacity: 0.6; }
+            100% { transform: scale(1.02); opacity: 0.8; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>The Architecture of Aromaticity: &pi;-Electron Delocalisation</h1>
+    <p class="subtitle">Visualizing the transition from localized Kekulé structures to a continuous resonance hybrid.</p>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+            <title>Aromaticity and Pi-Electron Delocalisation</title>
+            <desc>An animated diagram showing the transition of Benzene from localized double bonds to overlapping p-orbitals, and finally to a delocalized pi-electron cloud. Cyclopentadienyl anion and Cycloheptatrienyl cation are also shown to illustrate Hückel's rule.</desc>
+
+            <defs>
+                <!-- Arrowhead for electron flow -->
+                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                    <polygon points="0 0, 8 3, 0 6" fill="#F77F00" />
+                </marker>
+
+                <!-- Glow filter for pi-cloud -->
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="5" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+
+                <!-- Single pz orbital -->
+                <g id="pz-orbital">
+                    <path d="M 0,0 C 14,-15 14,-50 0,-50 C -14,-50 -14,-15 0,0" fill="#4444FF" opacity="0.65"/>
+                    <path d="M 0,0 C 14,15 14,50 0,50 C -14,50 -14,15 0,0" fill="#FF4444" opacity="0.65"/>
+                </g>
+
+                <!-- Mask for animating the dashed resonance circle -->
+                <mask id="circle-mask">
+                    <ellipse cx="0" cy="0" rx="55" ry="22" fill="none" stroke="white" stroke-width="10" stroke-dasharray="300" class="draw-mask" />
+                </mask>
+            </defs>
+
+            <!-- BACKGROUND -->
+            <rect width="100%" height="100%" fill="#ffffff" />
+
+            <!-- ========================================== -->
+            <!-- LEFT: CYCLOPENTADIENYL ANION (Static)      -->
+            <!-- ========================================== -->
+            <g transform="translate(200, 300)">
+                <!-- Pi Cloud Torus -->
+                <g class="static-torus">
+                    <ellipse cx="0" cy="-20" rx="45" ry="15" fill="none" stroke="#7209B7" stroke-width="12" filter="url(#glow)"/>
+                    <ellipse cx="0" cy="20" rx="45" ry="15" fill="none" stroke="#7209B7" stroke-width="12" filter="url(#glow)"/>
+                </g>
+
+                <!-- Sigma Bonds -->
+                <polygon points="0,-30 71,-9 44,24 -44,24 -71,-9" fill="none" stroke="#404040" stroke-width="3"/>
+                
+                <!-- C-H Bonds -->
+                <line x1="0" y1="-30" x2="0" y2="-48" stroke="#404040" stroke-width="3"/>
+                <line x1="71" y1="-9" x2="114" y2="-15" stroke="#404040" stroke-width="3"/>
+                <line x1="44" y1="24" x2="71" y2="39" stroke="#404040" stroke-width="3"/>
+                <line x1="-44" y1="24" x2="-71" y2="39" stroke="#404040" stroke-width="3"/>
+                <line x1="-71" y1="-9" x2="-114" y2="-15" stroke="#404040" stroke-width="3"/>
+
+                <!-- Resonance Circle -->
+                <ellipse cx="0" cy="-2" rx="30" ry="12" fill="none" stroke="#404040" stroke-width="2" stroke-dasharray="5,5"/>
+                <text x="0" y="3" text-anchor="middle" font-family="Inter" font-weight="bold" font-size="16" fill="#FF4444">-</text>
+
+                <!-- Atoms -->
+                <circle cx="0" cy="-30" r="6" fill="#404040"/>
+                <circle cx="71" cy="-9" r="6" fill="#404040"/>
+                <circle cx="44" cy="24" r="6" fill="#404040"/>
+                <circle cx="-44" cy="24" r="6" fill="#404040"/>
+                <circle cx="-71" cy="-9" r="6" fill="#404040"/>
+
+                <circle cx="0" cy="-48" r="4" fill="#CCCCCC"/>
+                <circle cx="114" cy="-15" r="4" fill="#CCCCCC"/>
+                <circle cx="71" cy="39" r="4" fill="#CCCCCC"/>
+                <circle cx="-71" cy="39" r="4" fill="#CCCCCC"/>
+                <circle cx="-114" cy="-15" r="4" fill="#CCCCCC"/>
+            </g>
+
+            <!-- Labels for Anion -->
+            <text x="200" y="460" text-anchor="middle" font-family="Inter" font-weight="600" font-size="15" fill="#333">Cyclopentadienyl Anion</text>
+            <text x="200" y="485" text-anchor="middle" font-family="Roboto Mono" font-size="15" fill="#555">[C<tspan baseline-shift="sub" font-size="11">5</tspan>H<tspan baseline-shift="sub" font-size="11">5</tspan>]<tspan baseline-shift="super" font-size="11">-</tspan></text>
+
+
+            <!-- ========================================== -->
+            <!-- RIGHT: CYCLOHEPTATRIENYL CATION (Static)   -->
+            <!-- ========================================== -->
+            <g transform="translate(800, 300)">
+                <!-- Pi Cloud Torus -->
+                <g class="static-torus">
+                    <ellipse cx="0" cy="-20" rx="60" ry="18" fill="none" stroke="#7209B7" stroke-width="14" filter="url(#glow)"/>
+                    <ellipse cx="0" cy="20" rx="60" ry="18" fill="none" stroke="#7209B7" stroke-width="14" filter="url(#glow)"/>
+                </g>
+
+                <!-- Sigma Bonds -->
+                <polygon points="0,-34 66,-21 83,8 37,31 -37,31 -83,8 -66,-21" fill="none" stroke="#404040" stroke-width="3"/>
+                
+                <!-- C-H Bonds -->
+                <line x1="0" y1="-34" x2="0" y2="-52" stroke="#404040" stroke-width="3"/>
+                <line x1="66" y1="-21" x2="102" y2="-32" stroke="#404040" stroke-width="3"/>
+                <line x1="83" y1="8" x2="127" y2="12" stroke="#404040" stroke-width="3"/>
+                <line x1="37" y1="31" x2="56" y2="47" stroke="#404040" stroke-width="3"/>
+                <line x1="-37" y1="31" x2="-56" y2="47" stroke="#404040" stroke-width="3"/>
+                <line x1="-83" y1="8" x2="-127" y2="12" stroke="#404040" stroke-width="3"/>
+                <line x1="-66" y1="-21" x2="-102" y2="-32" stroke="#404040" stroke-width="3"/>
+
+                <!-- Resonance Circle -->
+                <ellipse cx="0" cy="-2" rx="45" ry="16" fill="none" stroke="#404040" stroke-width="2" stroke-dasharray="5,5"/>
+                <text x="0" y="4" text-anchor="middle" font-family="Inter" font-weight="bold" font-size="16" fill="#4444FF">+</text>
+
+                <!-- Atoms -->
+                <circle cx="0" cy="-34" r="6" fill="#404040"/>
+                <circle cx="66" cy="-21" r="6" fill="#404040"/>
+                <circle cx="83" cy="8" r="6" fill="#404040"/>
+                <circle cx="37" cy="31" r="6" fill="#404040"/>
+                <circle cx="-37" cy="31" r="6" fill="#404040"/>
+                <circle cx="-83" cy="8" r="6" fill="#404040"/>
+                <circle cx="-66" cy="-21" r="6" fill="#404040"/>
+
+                <circle cx="0" cy="-52" r="4" fill="#CCCCCC"/>
+                <circle cx="102" cy="-32" r="4" fill="#CCCCCC"/>
+                <circle cx="127" cy="12" r="4" fill="#CCCCCC"/>
+                <circle cx="56" cy="47" r="4" fill="#CCCCCC"/>
+                <circle cx="-56" cy="47" r="4" fill="#CCCCCC"/>
+                <circle cx="-127" cy="12" r="4" fill="#CCCCCC"/>
+                <circle cx="-102" cy="-32" r="4" fill="#CCCCCC"/>
+            </g>
+
+            <!-- Labels for Cation -->
+            <text x="800" y="460" text-anchor="middle" font-family="Inter" font-weight="600" font-size="15" fill="#333">Cycloheptatrienyl Cation</text>
+            <text x="800" y="485" text-anchor="middle" font-family="Roboto Mono" font-size="15" fill="#555">[C<tspan baseline-shift="sub" font-size="11">7</tspan>H<tspan baseline-shift="sub" font-size="11">7</tspan>]<tspan baseline-shift="super" font-size="11">+</tspan></text>
+
+
+            <!-- ========================================== -->
+            <!-- CENTER: BENZENE (Animated)                 -->
+            <!-- ========================================== -->
+            <g transform="translate(500, 300)">
+                
+                <!-- Animated Pi Cloud Torus (Phase 3) -->
+                <g class="torus">
+                    <ellipse cx="0" cy="-25" rx="75" ry="25" fill="none" stroke="#7209B7" stroke-width="18" filter="url(#glow)"/>
+                    <ellipse cx="0" cy="25" rx="75" ry="25" fill="none" stroke="#7209B7" stroke-width="18" filter="url(#glow)"/>
+                </g>
+
+                <!-- Sigma Bonds -->
+                <polygon points="78,18 0,36 -78,18 -78,-18 0,-36 78,-18" fill="none" stroke="#404040" stroke-width="3"/>
+                
+                <!-- C-H Bonds -->
+                <line x1="78" y1="18" x2="121" y2="28" stroke="#404040" stroke-width="3"/>
+                <line x1="0" y1="36" x2="0" y2="56" stroke="#404040" stroke-width="3"/>
+                <line x1="-78" y1="18" x2="-121" y2="28" stroke="#404040" stroke-width="3"/>
+                <line x1="-78" y1="-18" x2="-121" y2="-28" stroke="#404040" stroke-width="3"/>
+                <line x1="0" y1="-36" x2="0" y2="-56" stroke="#404040" stroke-width="3"/>
+                <line x1="78" y1="-18" x2="121" y2="-28" stroke="#404040" stroke-width="3"/>
+
+                <!-- Kekulé Double Bonds Set A (Phase 1) -->
+                <g class="kekule-a" stroke="#555555" stroke-width="4">
+                    <line x1="62" y1="14" x2="0" y2="29" />
+                    <line x1="-62" y1="14" x2="-62" y2="-14" />
+                    <line x1="0" y1="-29" x2="62" y2="-14" />
+                </g>
+
+                <!-- Kekulé Double Bonds Set B (Phase 1) -->
+                <g class="kekule-b" stroke="#555555" stroke-width="4">
+                    <line x1="0" y1="29" x2="-62" y2="14" />
+                    <line x1="-62" y1="-14" x2="0" y2="-29" />
+                    <line x1="62" y1="-14" x2="62" y2="14" />
+                </g>
+
+                <!-- Electron Flow Arrows Set 1 (A -> B) -->
+                <g class="arrow-set-1" fill="none" stroke="#F77F00" stroke-width="3">
+                    <path d="M 39,27 Q 0,55 -35,27" marker-end="url(#arrowhead)"/>
+                    <path d="M -78,0 Q -90,-30 -43,-27" marker-end="url(#arrowhead)"/>
+                    <path d="M 39,-27 Q 90,-30 78,-4" marker-end="url(#arrowhead)"/>
+                </g>
+
+                <!-- Electron Flow Arrows Set 2 (B -> A) -->
+                <g class="arrow-set-2" fill="none" stroke="#F77F00" stroke-width="3">
+                    <path d="M -39,27 Q -80,30 -78,4" marker-end="url(#arrowhead)"/>
+                    <path d="M -35,-27 Q 0,-55 35,-27" marker-end="url(#arrowhead)"/>
+                    <path d="M 78,0 Q 90,30 43,27" marker-end="url(#arrowhead)"/>
+                </g>
+
+                <!-- Animated Resonance Circle (Phase 3) -->
+                <ellipse cx="0" cy="0" rx="55" ry="22" fill="none" stroke="#404040" stroke-width="2.5" stroke-dasharray="6,6" mask="url(#circle-mask)"/>
+
+                <!-- Animated pz Orbitals (Phase 2) -->
+                <g transform="translate(78, 18)"><use href="#pz-orbital" class="orbital" /></g>
+                <g transform="translate(0, 36)"><use href="#pz-orbital" class="orbital" /></g>
+                <g transform="translate(-78, 18)"><use href="#pz-orbital" class="orbital" /></g>
+                <g transform="translate(-78, -18)"><use href="#pz-orbital" class="orbital" /></g>
+                <g transform="translate(0, -36)"><use href="#pz-orbital" class="orbital" /></g>
+                <g transform="translate(78, -18)"><use href="#pz-orbital" class="orbital" /></g>
+
+                <!-- Atoms -->
+                <circle cx="78" cy="18" r="6" fill="#404040"/>
+                <circle cx="0" cy="36" r="6" fill="#404040"/>
+                <circle cx="-78" cy="18" r="6" fill="#404040"/>
+                <circle cx="-78" cy="-18" r="6" fill="#404040"/>
+                <circle cx="0" cy="-36" r="6" fill="#404040"/>
+                <circle cx="78" cy="-18" r="6" fill="#404040"/>
+
+                <circle cx="121" cy="28" r="4" fill="#CCCCCC"/>
+                <circle cx="0" cy="56" r="4" fill="#CCCCCC"/>
+                <circle cx="-121" cy="28" r="4" fill="#CCCCCC"/>
+                <circle cx="-121" cy="-28" r="4" fill="#CCCCCC"/>
+                <circle cx="0" cy="-56" r="4" fill="#CCCCCC"/>
+                <circle cx="121" cy="-28" r="4" fill="#CCCCCC"/>
+            </g>
+
+            <!-- Dynamic Labels for Benzene -->
+            <text x="500" y="445" text-anchor="middle" font-family="Inter" font-weight="700" font-size="18" fill="#F77F00" class="label-phase1">Localized Kekulé Structures</text>
+            <text x="500" y="445" text-anchor="middle" font-family="Inter" font-weight="700" font-size="18" fill="#4444FF" class="label-phase2">Parallel pz Orbitals Overlapping</text>
+            <text x="500" y="445" text-anchor="middle" font-family="Inter" font-weight="700" font-size="18" fill="#7209B7" class="label-phase3">Continuous &pi; Electron Cloud</text>
+
+            <text x="500" y="475" text-anchor="middle" font-family="Inter" font-weight="600" font-size="16" fill="#333">Benzene</text>
+            <text x="500" y="500" text-anchor="middle" font-family="Roboto Mono" font-size="16" fill="#555">C<tspan baseline-shift="sub" font-size="12">6</tspan>H<tspan baseline-shift="sub" font-size="12">6</tspan></text>
+            
+            <text x="500" y="525" text-anchor="middle" font-family="Inter" font-size="14" fill="#7209B7" font-weight="bold" class="label-phase3">Hückel's Rule: (4n + 2)&pi; electrons (n=1)</text>
+
+            <!-- ========================================== -->
+            <!-- LEGEND                                     -->
+            <!-- ========================================== -->
+            <g transform="translate(150, 550)">
+                <rect x="0" y="0" width="700" height="40" rx="8" fill="#ffffff" stroke="#e0e0e0" stroke-width="1"/>
+                
+                <!-- Carbon -->
+                <circle cx="30" cy="20" r="6" fill="#404040"/>
+                <text x="45" y="24" font-family="Inter" font-size="13" fill="#333">Carbon</text>
+                
+                <!-- Hydrogen -->
+                <circle cx="115" cy="20" r="4" fill="#CCCCCC"/>
+                <text x="125" y="24" font-family="Inter" font-size="13" fill="#333">Hydrogen</text>
+                
+                <!-- Sigma Bond -->
+                <line x1="205" y1="20" x2="225" y2="20" stroke="#404040" stroke-width="3"/>
+                <text x="235" y="24" font-family="Inter" font-size="13" fill="#333">&sigma;-Bond</text>
+                
+                <!-- pz Orbital -->
+                <path d="M 315,20 C 320,15 320,8 315,8 C 310,8 310,15 315,20" fill="#4444FF" opacity="0.7"/>
+                <path d="M 315,20 C 320,25 320,32 315,32 C 310,32 310,25 315,20" fill="#FF4444" opacity="0.7"/>
+                <text x="330" y="24" font-family="Inter" font-size="13" fill="#333">p<tspan baseline-shift="sub" font-size="10">z</tspan> Orbital</text>
+                
+                <!-- Pi Cloud -->
+                <line x1="415" y1="20" x2="435" y2="20" stroke="#7209B7" stroke-width="6" opacity="0.8"/>
+                <text x="445" y="24" font-family="Inter" font-size="13" fill="#333">&pi;-Cloud</text>
+                
+                <!-- Electron Flow -->
+                <path d="M 525,22 Q 535,10 545,22" fill="none" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowhead)"/>
+                <text x="560" y="24" font-family="Inter" font-size="13" fill="#333">Electron Flow</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

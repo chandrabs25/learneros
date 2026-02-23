@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Van der Waals Forces: London Dispersion</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* Typography */
+        .title { font-size: 24px; font-weight: 600; fill: #222; text-anchor: middle; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #666; text-anchor: middle; }
+        .formula { font-size: 18px; font-weight: 600; fill: #333; text-anchor: middle; }
+        .state-label { font-size: 14px; font-weight: 600; text-anchor: middle; }
+        .sym-label { fill: #6c757d; }
+        .inst-label { fill: #d90429; }
+        .ind-label { fill: #d90429; }
+        .attraction-label { font-size: 14px; font-weight: 600; fill: #F77F00; text-anchor: middle; }
+        .attraction-sub { font-size: 12px; font-weight: 600; fill: #F77F00; text-anchor: middle; opacity: 0.8; }
+        .legend-text { font-size: 12px; font-weight: 400; fill: #444; }
+        
+        .delta {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.9);
+        }
+        .delta-minus { fill: #FF4444; }
+        .delta-plus { fill: #4444FF; }
+
+        /* Animations */
+        .molecule-A { animation: floatA 4s ease-in-out infinite; }
+        .molecule-B { animation: floatB 4s ease-in-out infinite; }
+
+        .cloud-group-A { animation: shiftA 8s ease-in-out infinite; }
+        .polar-A { animation: fadePolarA 8s ease-in-out infinite; }
+        .neutral-A { animation: fadeNeutralA 8s ease-in-out infinite; }
+        
+        .cloud-group-B { animation: shiftB 8s ease-in-out infinite; }
+        .polar-B { animation: fadePolarB 8s ease-in-out infinite; }
+        .neutral-B { animation: fadeNeutralB 8s ease-in-out infinite; }
+
+        .attraction-group { animation: fadeAttraction 8s ease-in-out infinite; }
+        .pulse-line { animation: dashPulse 1s linear infinite; }
+
+        /* Keyframes based on 8s loop */
+        /* 0-2s: Neutral, 2-4s: A shifts, 4-5s: B shifts, 5-7s: Attraction, 7-8s: Dissipate */
+
+        @keyframes floatA {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-6px); }
+        }
+        @keyframes floatB {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(6px); }
+        }
+
+        @keyframes shiftA {
+            0%, 25% { transform: translateX(0); }
+            35%, 87.5% { transform: translateX(-30px); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes fadePolarA {
+            0%, 25% { opacity: 0; }
+            35%, 87.5% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes fadeNeutralA {
+            0%, 25% { opacity: 1; }
+            35%, 87.5% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes shiftB {
+            0%, 50% { transform: translateX(0); }
+            62.5%, 87.5% { transform: translateX(-30px); }
+            100% { transform: translateX(0); }
+        }
+        @keyframes fadePolarB {
+            0%, 50% { opacity: 0; }
+            62.5%, 87.5% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes fadeNeutralB {
+            0%, 50% { opacity: 1; }
+            62.5%, 87.5% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes fadeAttraction {
+            0%, 62.5% { opacity: 0; }
+            68.75%, 87.5% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes dashPulse {
+            to { stroke-dashoffset: -14; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="svg-container">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+            <title>Van der Waals Forces: London Dispersion in Alkanes</title>
+            <desc>Animation showing two methane molecules transitioning from a symmetrical non-polar state to forming instantaneous and induced dipoles, resulting in a weak electrostatic attraction known as London Dispersion Forces.</desc>
+
+            <defs>
+                <!-- Cloud Blur Filter -->
+                <filter id="blur" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="12" />
+                </filter>
+
+                <!-- Drop Shadow for Molecules -->
+                <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.15" />
+                </filter>
+
+                <!-- Neutral Electron Cloud Gradient -->
+                <radialGradient id="neutralGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="30%" stop-color="rgba(173, 216, 230, 0.4)" />
+                    <stop offset="70%" stop-color="rgba(173, 216, 230, 0.15)" />
+                    <stop offset="100%" stop-color="rgba(173, 216, 230, 0)" />
+                </radialGradient>
+
+                <!-- Polarized Electron Cloud Gradient (Left: Red/δ-, Right: Blue/δ+) -->
+                <linearGradient id="polarGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="rgba(255, 68, 68, 0.55)" />
+                    <stop offset="40%" stop-color="rgba(200, 150, 200, 0.1)" />
+                    <stop offset="60%" stop-color="rgba(200, 150, 200, 0.1)" />
+                    <stop offset="100%" stop-color="rgba(68, 68, 255, 0.55)" />
+                </linearGradient>
+            </defs>
+
+            <!-- Header -->
+            <text x="400" y="40" class="title">Van der Waals Forces: London Dispersion in Alkanes</text>
+            <text x="400" y="65" class="subtitle">Transient fluctuations in electron distribution create temporary, weak intermolecular attractions.</text>
+
+            <!-- Intermolecular Attraction (Rendered behind molecules) -->
+            <g class="attraction-group">
+                <line x1="315" y1="235" x2="425" y2="235" stroke="#F77F00" stroke-width="3" stroke-dasharray="8 6" class="pulse-line" />
+                <line x1="315" y1="250" x2="425" y2="250" stroke="#F77F00" stroke-width="3" stroke-dasharray="8 6" class="pulse-line" />
+                <line x1="315" y1="265" x2="425" y2="265" stroke="#F77F00" stroke-width="3" stroke-dasharray="8 6" class="pulse-line" />
+                
+                <text x="370" y="200" class="attraction-label">Weak Electrostatic Attraction</text>
+                <text x="370" y="295" class="attraction-sub">London Dispersion Force</text>
+            </g>
+
+            <!-- Molecule A (Left) -->
+            <g class="molecule-A">
+                <g transform="translate(250, 250)">
+                    <!-- Electron Clouds -->
+                    <g class="cloud-group-A">
+                        <circle cx="0" cy="0" r="85" fill="url(#neutralGrad)" filter="url(#blur)" class="neutral-A" />
+                        <circle cx="0" cy="0" r="85" fill="url(#polarGrad)" filter="url(#blur)" class="polar-A" />
+                        
+                        <!-- Dipole Indicators (Move with the cloud) -->
+                        <text class="delta delta-minus polar-A" x="-95" y="8">δ<tspan baseline-shift="super" font-size="0.7em">-</tspan></text>
+                        <text class="delta delta-plus polar-A" x="75" y="8">δ<tspan baseline-shift="super" font-size="0.7em">+</tspan></text>
+                    </g>
+
+                    <!-- Molecular Structure (Static relative to molecule center) -->
+                    <g class="structure" filter="url(#drop-shadow)">
+                        <!-- Bonds -->
+                        <line x1="0" y1="0" x2="0" y2="-60" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="0" y1="0" x2="-52" y2="30" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="0" y1="0" x2="52" y2="30" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                        <!-- Wedge Bond (pointing forward) -->
+                        <polygon points="0,0 -6,35 6,35" fill="#333"/>
+
+                        <!-- Atoms -->
+                        <circle cx="0" cy="-60" r="10" fill="#CCCCCC" />
+                        <circle cx="-52" cy="30" r="10" fill="#CCCCCC" />
+                        <circle cx="52" cy="30" r="10" fill="#CCCCCC" />
+                        <circle cx="0" cy="35" r="10" fill="#CCCCCC" />
+                        <circle cx="0" cy="0" r="14" fill="#404040" />
+                    </g>
+
+                    <!-- Dynamic State Labels -->
+                    <text class="state-label sym-label neutral-A" x="0" y="-115">Symmetrical Electron Cloud</text>
+                    <text class="state-label inst-label polar-A" x="0" y="-115">Instantaneous Dipole</text>
+                    
+                    <!-- Chemical Formula -->
+                    <text class="formula" x="0" y="95">CH₄</text>
+                </g>
+            </g>
+
+            <!-- Molecule B (Right) -->
+            <g class="molecule-B">
+                <g transform="translate(550, 250)">
+                    <!-- Electron Clouds -->
+                    <g class="cloud-group-B">
+                        <circle cx="0" cy="0" r="85" fill="url(#neutralGrad)" filter="url(#blur)" class="neutral-B" />
+                        <circle cx="0" cy="0" r="85" fill="url(#polarGrad)" filter="url(#blur)" class="polar-B" />
+                        
+                        <!-- Dipole Indicators -->
+                        <text class="delta delta-minus polar-B" x="-95" y="8">δ<tspan baseline-shift="super" font-size="0.7em">-</tspan></text>
+                        <text class="delta delta-plus polar-B" x="75" y="8">δ<tspan baseline-shift="super" font-size="0.7em">+</tspan></text>
+                    </g>
+
+                    <!-- Molecular Structure -->
+                    <g class="structure" filter="url(#drop-shadow)">
+                        <!-- Bonds -->
+                        <line x1="0" y1="0" x2="0" y2="-60" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="0" y1="0" x2="-52" y2="30" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                        <line x1="0" y1="0" x2="52" y2="30" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                        <!-- Wedge Bond -->
+                        <polygon points="0,0 -6,35 6,35" fill="#333"/>
+
+                        <!-- Atoms -->
+                        <circle cx="0" cy="-60" r="10" fill="#CCCCCC" />
+                        <circle cx="-52" cy="30" r="10" fill="#CCCCCC" />
+                        <circle cx="52" cy="30" r="10" fill="#CCCCCC" />
+                        <circle cx="0" cy="35" r="10" fill="#CCCCCC" />
+                        <circle cx="0" cy="0" r="14" fill="#404040" />
+                    </g>
+
+                    <!-- Dynamic State Labels -->
+                    <text class="state-label sym-label neutral-B" x="0" y="-115">Symmetrical Electron Cloud</text>
+                    <text class="state-label ind-label polar-B" x="0" y="-115">Induced Dipole</text>
+                    
+                    <!-- Chemical Formula -->
+                    <text class="formula" x="0" y="95">CH₄</text>
+                </g>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(100, 430)">
+                <rect x="0" y="0" width="600" height="46" rx="8" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" />
+                
+                <!-- Carbon -->
+                <circle cx="30" cy="23" r="6" fill="#404040" />
+                <text x="45" y="27" class="legend-text">Carbon</text>
+                
+                <!-- Hydrogen -->
+                <circle cx="115" cy="23" r="6" fill="#CCCCCC" />
+                <text x="130" y="27" class="legend-text">Hydrogen</text>
+                
+                <!-- Delta Minus -->
+                <circle cx="215" cy="23" r="6" fill="#FF4444" />
+                <text x="230" y="27" class="legend-text">Electron Rich (δ⁻)</text>
+                
+                <!-- Delta Plus -->
+                <circle cx="365" cy="23" r="6" fill="#4444FF" />
+                <text x="380" y="27" class="legend-text">Electron Poor (δ⁺)</text>
+                
+                <!-- Dispersion Force -->
+                <line x1="510" y1="23" x2="535" y2="23" stroke="#F77F00" stroke-width="2" stroke-dasharray="4 3" />
+                <text x="545" y="27" class="legend-text">Dispersion Force</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

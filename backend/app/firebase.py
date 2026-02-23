@@ -6,6 +6,7 @@ the initialized Firebase app for token verification.
 
 import firebase_admin
 from firebase_admin import credentials, auth
+import json
 
 from app.config import settings
 
@@ -16,7 +17,10 @@ def get_firebase_app() -> firebase_admin.App:
     """Initialize Firebase Admin SDK (singleton)."""
     global _firebase_app
     if _firebase_app is None:
-        if settings.FIREBASE_SERVICE_ACCOUNT:
+        if settings.FIREBASE_SERVICE_ACCOUNT_JSON:
+            cred_data = json.loads(settings.FIREBASE_SERVICE_ACCOUNT_JSON)
+            cred = credentials.Certificate(cred_data)
+        elif settings.FIREBASE_SERVICE_ACCOUNT:
             cred = credentials.Certificate(settings.FIREBASE_SERVICE_ACCOUNT)
         else:
             # Fall back to Application Default Credentials (for Cloud environments)

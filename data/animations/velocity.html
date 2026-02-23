@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Velocity: Magnitude and Direction</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital,wght@0,400;0,600;1,400&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .math-italic {
+            font-family: 'Roboto Mono', monospace;
+            font-style: italic;
+        }
+
+        .label-bg {
+            fill: rgba(248, 249, 250, 0.8);
+        }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" aria-label="Animated diagram showing velocity vectors in linear motion and gas kinetics.">
+        <defs>
+            <!-- Grid Pattern -->
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e9ecef" stroke-width="1"/>
+            </pattern>
+
+            <!-- Arrow Markers -->
+            <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#06D6A0" />
+            </marker>
+            <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF3366" />
+            </marker>
+            <marker id="arrow-axis" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#adb5bd" />
+            </marker>
+        </defs>
+
+        <!-- Main Title -->
+        <text x="400" y="40" text-anchor="middle" font-size="24" font-weight="700" fill="#212529">Velocity: Magnitude and Direction</text>
+
+        <!-- ========================================== -->
+        <!-- PANEL A: MACROSCOPIC MOTION                -->
+        <!-- ========================================== -->
+        <g id="panel-a">
+            <text x="200" y="80" text-anchor="middle" font-size="16" font-weight="600" fill="#495057">Macroscopic: Motion in a Plane</text>
+            
+            <!-- Grid Background -->
+            <rect x="20" y="100" width="360" height="340" fill="url(#grid)" rx="8" />
+
+            <!-- Coordinate Axes -->
+            <line x1="40" y1="420" x2="100" y2="420" stroke="#adb5bd" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            <line x1="40" y1="420" x2="40" y2="360" stroke="#adb5bd" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            <text x="105" y="424" font-size="14" fill="#6c757d" class="math-italic">x</text>
+            <text x="36" y="350" font-size="14" fill="#6c757d" class="math-italic">y</text>
+
+            <!-- Static Formulas -->
+            <text x="140" y="465" font-size="13" fill="#495057" class="math">
+                v<tspan dy="4" font-size="0.75em">x</tspan><tspan dy="-4"> = |v| cos(θ)</tspan>
+            </text>
+            <text x="280" y="465" font-size="13" fill="#495057" class="math">
+                v<tspan dy="4" font-size="0.75em">y</tspan><tspan dy="-4"> = |v| sin(θ)</tspan>
+            </text>
+
+            <!-- The Curved Path -->
+            <path id="macro-path" d="M 80 320 C 120 440, 320 400, 280 220 C 240 40, 40 120, 80 320 Z" fill="none" stroke="#adb5bd" stroke-width="2" stroke-dasharray="6,6" />
+
+            <!-- Dynamic Elements (Updated via JS) -->
+            <g id="macro-dynamic">
+                <!-- Velocity Components (Tip-to-Tail) -->
+                <line id="vec-vx" stroke="#06D6A0" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow-green)" />
+                <line id="vec-vy" stroke="#06D6A0" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow-green)" />
+                
+                <!-- Main Velocity Vector -->
+                <line id="vec-v" stroke="#06D6A0" stroke-width="3" marker-end="url(#arrow-green)" />
+
+                <!-- Moving Particle -->
+                <circle id="macro-particle" r="6" fill="#212529" />
+
+                <!-- Vector Labels -->
+                <rect id="bg-vx" width="20" height="16" class="label-bg" rx="2" />
+                <text id="label-vx" font-size="13" font-weight="600" fill="#06D6A0" class="math-italic">
+                    v<tspan dy="4" font-size="0.75em">x</tspan>
+                </text>
+
+                <rect id="bg-vy" width="20" height="16" class="label-bg" rx="2" />
+                <text id="label-vy" font-size="13" font-weight="600" fill="#06D6A0" class="math-italic">
+                    v<tspan dy="4" font-size="0.75em">y</tspan>
+                </text>
+
+                <rect id="bg-v" width="16" height="16" class="label-bg" rx="2" />
+                <text id="label-v" font-size="15" font-weight="700" fill="#06D6A0" class="math-italic">v&#x20D7;</text>
+            </g>
+
+            <!-- Live Data Box -->
+            <rect x="30" y="110" width="110" height="65" rx="6" fill="#ffffff" stroke="#dee2e6" stroke-width="2" />
+            <text x="40" y="130" font-size="11" fill="#6c757d" font-weight="700" text-transform="uppercase" letter-spacing="1">Live Data</text>
+            <text id="data-mag" x="40" y="150" font-size="12" fill="#06D6A0" font-weight="600" class="math">|v| = 0.0</text>
+            <text id="data-theta" x="40" y="166" font-size="12" fill="#06D6A0" font-weight="600" class="math">θ = 0.0°</text>
+        </g>
+
+        <!-- Center Divider -->
+        <line x1="400" y1="70" x2="400" y2="470" stroke="#dee2e6" stroke-width="2" stroke-dasharray="4,4" />
+
+        <!-- ========================================== -->
+        <!-- PANEL B: MICROSCOPIC KINETIC THEORY        -->
+        <!-- ========================================== -->
+        <g id="panel-b">
+            <text x="600" y="80" text-anchor="middle" font-size="16" font-weight="600" fill="#495057">Microscopic: Kinetic Theory</text>
+            
+            <!-- Coordinate Axes -->
+            <line x1="440" y1="420" x2="500" y2="420" stroke="#adb5bd" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            <line x1="440" y1="420" x2="440" y2="360" stroke="#adb5bd" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            <text x="505" y="424" font-size="14" fill="#6c757d" class="math-italic">x</text>
+            <text x="436" y="350" font-size="14" fill="#6c757d" class="math-italic">y</text>
+
+            <!-- Gas Container -->
+            <rect x="480" y="120" width="260" height="260" fill="#ffffff" stroke="#495057" stroke-width="3" rx="4" />
+            
+            <!-- Wall Collision Flash -->
+            <line id="wall-flash" x1="740" y1="120" x2="740" y2="380" stroke="#FF3366" stroke-width="6" opacity="0" stroke-linecap="round" />
+
+            <!-- Particles Group (Populated via JS) -->
+            <g id="micro-particles"></g>
+
+            <!-- Impulse Vector (Appears on collision) -->
+            <g id="impulse-group" opacity="0">
+                <line id="impulse-vec" x1="0" y1="0" x2="0" y2="0" stroke="#FF3366" stroke-width="3" marker-end="url(#arrow-red)" />
+                <rect id="impulse-bg" x="0" y="0" width="115" height="20" fill="rgba(255,255,255,0.9)" rx="3" />
+                <text id="impulse-label" x="0" y="0" font-size="13" fill="#FF3366" font-weight="700" class="math" text-anchor="end">
+                    Δv<tspan dy="4" font-size="0.75em">x</tspan><tspan dy="-4"> = -2v</tspan><tspan dy="4" font-size="0.75em">x</tspan>
+                </text>
+            </g>
+
+            <!-- Static Label -->
+            <text x="610" y="415" text-anchor="middle" font-size="13" fill="#495057" class="math">
+                Random Motion: v&#x20D7; = (v<tspan dy="4" font-size="0.75em">x</tspan><tspan dy="-4">, v</tspan><tspan dy="4" font-size="0.75em">y</tspan><tspan dy="-4">)</tspan>
+            </text>
+            <text x="610" y="435" text-anchor="middle" font-size="13" fill="#FF3366" class="math">
+                Elastic Collision: Speed is conserved
+            </text>
+        </g>
+        
+        <!-- ========================================== -->
+        <!-- LEGEND                                     -->
+        <!-- ========================================== -->
+        <g id="legend" transform="translate(240, 485)">
+            <line x1="0" y1="0" x2="24" y2="0" stroke="#06D6A0" stroke-width="3" marker-end="url(#arrow-green)"/>
+            <text x="36" y="4" font-size="12" font-weight="600" fill="#495057">Velocity (v&#x20D7;)</text>
+            
+            <line x1="140" y1="0" x2="164" y2="0" stroke="#FF3366" stroke-width="3" marker-end="url(#arrow-red)"/>
+            <text x="176" y="4" font-size="12" font-weight="600" fill="#495057">Change in Velocity (Δv&#x20D7;)</text>
+        </g>
+    </svg>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // ==========================================
+            // INITIALIZATION: Microscopic Particles
+            // ==========================================
+            const microGroup = document.getElementById('micro-particles');
+            const particles = [];
+            const numParticles = 5;
+            const box = { left: 480, right: 740, top: 120, bottom: 380 };
+
+            for (let i = 0; i < numParticles; i++) {
+                let isFocus = (i === 0);
+                
+                // Initialize particle state
+                let p = {
+                    x: box.left + 20 + Math.random() * (box.right - box.left - 40),
+                    y: box.top + 20 + Math.random() * (box.bottom - box.top - 40),
+                    vx: (Math.random() > 0.5 ? 1 : -1) * (90 + Math.random() * 50),
+                    vy: (Math.random() > 0.5 ? 1 : -1) * (90 + Math.random() * 50),
+                    r: 5,
+                    isFocus: isFocus
+                };
+
+                // Ensure focus particle hits the right wall predictably
+                if (isFocus) {
+                    p.x = box.left + 100;
+                    p.y = box.top + 130;
+                    p.vx = 160; 
+                    p.vy = 45;
+                }
+
+                particles.push(p);
+
+                // Create SVG Elements
+                let vec = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                vec.setAttribute("stroke", "#06D6A0");
+                vec.setAttribute("stroke-width", isFocus ? "2.5" : "1.5");
+                vec.setAttribute("marker-end", "url(#arrow-green)");
+
+                let circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("r", p.r);
+                circle.setAttribute("fill", "#212529");
+                
+                // Highlight the focus particle
+                if (isFocus) {
+                    let highlight = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    highlight.setAttribute("r", p.r + 4);
+                    highlight.setAttribute("fill", "none");
+                    highlight.setAttribute("stroke", "#FF3366");
+                    highlight.setAttribute("stroke-width", "1.5");
+                    highlight.setAttribute("stroke-dasharray", "2,2");
+                    microGroup.appendChild(highlight);
+                    p.elHighlight = highlight;
+                }
+
+                microGroup.appendChild(vec);
+                microGroup.appendChild(circle);
+                
+                p.elCircle = circle;
+                p.elVec = vec;
+            }
+
+            // ==========================================
+            // ANIMATION LOOP
+            // ==========================================
+            let lastTime = performance.now();
+            let flashTimer = 0;
+            let collisionY = 0;
+
+            const path = document.getElementById('macro-path');
+            const pathLength = path.getTotalLength();
+            const loopDuration = 10000; // 10 seconds for one full macro loop
+
+            function animate(time) {
+                // Calculate delta time
+                let dt = (time - lastTime) / 1000;
+                if (dt > 0.1) dt = 0.1; // Prevent huge jumps if tab is inactive
+                lastTime = time;
+
+                // ------------------------------------------
+                // UPDATE MACRO PANEL (Path Follower)
+                // ------------------------------------------
+                let t_norm = (time % loopDuration) / loopDuration;
+                
+                // Apply easing to make the particle speed up and slow down
+                let p_norm = t_norm - 0.08 * Math.sin(t_norm * Math.PI * 2);
+                if (p_norm < 0) p_norm += 1;
+                if (p_norm > 1) p_norm -= 1;
+                
+                let s = p_norm * pathLength;
+                let pt = path.getPointAtLength(s);
+                let ptNext = path.getPointAtLength((s + 1) % pathLength);
+                
+                // Calculate tangent vector
+                let dx = ptNext.x - pt.x;
+                let dy = ptNext.y - pt.y;
+                let len = Math.sqrt(dx*dx + dy*dy);
+                
+                // Calculate dynamic magnitude based on the derivative of the easing function
+                let speedFactor = 1 - 0.16 * Math.PI * Math.cos(t_norm * Math.PI * 2);
+                let visualMag = 60 * speedFactor; 
+                
+                let vx = (dx / len) * visualMag;
+                let vy = (dy / len) * visualMag;
+
+                // Update Macro SVG Elements
+                document.getElementById('macro-particle').setAttribute('cx', pt.x);
+                document.getElementById('macro-particle').setAttribute('cy', pt.y);
+                
+                // Tip-to-tail vector addition
+                document.getElementById('vec-vx').setAttribute('x1', pt.x);
+                document.getElementById('vec-vx').setAttribute('y1', pt.y);
+                document.getElementById('vec-vx').setAttribute('x2', pt.x + vx);
+                document.getElementById('vec-vx').setAttribute('y2', pt.y);
+
+                document.getElementById('vec-vy').setAttribute('x1', pt.x + vx);
+                document.getElementById('vec-vy').setAttribute('y1', pt.y);
+                document.getElementById('vec-vy').setAttribute('x2', pt.x + vx);
+                document.getElementById('vec-vy').setAttribute('y2', pt.y + vy);
+
+                document.getElementById('vec-v').setAttribute('x1', pt.x);
+                document.getElementById('vec-v').setAttribute('y1', pt.y);
+                document.getElementById('vec-v').setAttribute('x2', pt.x + vx);
+                document.getElementById('vec-v').setAttribute('y2', pt.y + vy);
+
+                // Update Labels Position
+                const posLabel = (id, x, y) => {
+                    let textEl = document.getElementById(`label-${id}`);
+                    let bgEl = document.getElementById(`bg-${id}`);
+                    textEl.setAttribute('x', x);
+                    textEl.setAttribute('y', y);
+                    let bbox = textEl.getBBox();
+                    if(bbox.width > 0) {
+                        bgEl.setAttribute('x', bbox.x - 2);
+                        bgEl.setAttribute('y', bbox.y - 2);
+                        bgEl.setAttribute('width', bbox.width + 4);
+                        bgEl.setAttribute('height', bbox.height + 4);
+                    }
+                };
+
+                posLabel('vx', pt.x + vx/2 - 8, pt.y + (vy > 0 ? -12 : 22));
+                posLabel('vy', pt.x + vx + (vx > 0 ? 12 : -28), pt.y + vy/2 + 5);
+                posLabel('v', pt.x + vx/2 + (vx > 0 ? -18 : 12), pt.y + vy/2 + (vy > 0 ? 24 : -12));
+
+                // Update Live Data
+                let displaySpeed = visualMag * 1.2; 
+                let theta = Math.atan2(-vy, vx) * 180 / Math.PI; // -vy because SVG y-axis is inverted
+                if (theta < 0) theta += 360;
+                
+                document.getElementById('data-mag').textContent = `|v| = ${displaySpeed.toFixed(1)} m/s`;
+                document.getElementById('data-theta').textContent = `θ = ${theta.toFixed(1)}°`;
+
+                // ------------------------------------------
+                // UPDATE MICRO PANEL (Kinetic Theory)
+                // ------------------------------------------
+                particles.forEach(p => {
+                    p.x += p.vx * dt;
+                    p.y += p.vy * dt;
+
+                    // Wall Collisions
+                    if (p.x < box.left + p.r) { 
+                        p.x = box.left + p.r; 
+                        p.vx *= -1; 
+                    }
+                    if (p.x > box.right - p.r) { 
+                        p.x = box.right - p.r; 
+                        p.vx *= -1; 
+                        
+                        // Trigger flash for focus particle
+                        if (p.isFocus) {
+                            flashTimer = 1.2; // Flash duration in seconds
+                            collisionY = p.y;
+                        }
+                    }
+                    if (p.y < box.top + p.r) { 
+                        p.y = box.top + p.r; 
+                        p.vy *= -1; 
+                    }
+                    if (p.y > box.bottom - p.r) { 
+                        p.y = box.bottom - p.r; 
+                        p.vy *= -1; 
+                    }
+
+                    // Update DOM
+                    p.elCircle.setAttribute('cx', p.x);
+                    p.elCircle.setAttribute('cy', p.y);
+                    
+                    if (p.isFocus) {
+                        p.elHighlight.setAttribute('cx', p.x);
+                        p.elHighlight.setAttribute('cy', p.y);
+                    }
+                    
+                    // Velocity vector scaling for visual representation
+                    let vScale = 0.3;
+                    p.elVec.setAttribute('x1', p.x);
+                    p.elVec.setAttribute('y1', p.y);
+                    p.elVec.setAttribute('x2', p.x + p.vx * vScale);
+                    p.elVec.setAttribute('y2', p.y + p.vy * vScale);
+                });
+
+                // Handle Collision Flash & Impulse Vector
+                if (flashTimer > 0) {
+                    flashTimer -= dt;
+                    let opacity = Math.max(0, flashTimer / 1.2);
+                    
+                    // Easing out the flash
+                    let easeOpacity = opacity * opacity; 
+                    
+                    document.getElementById('wall-flash').setAttribute('opacity', easeOpacity);
+                    
+                    let impGroup = document.getElementById('impulse-group');
+                    impGroup.setAttribute('opacity', easeOpacity);
+                    
+                    let impVec = document.getElementById('impulse-vec');
+                    impVec.setAttribute('x1', box.right);
+                    impVec.setAttribute('y1', collisionY);
+                    impVec.setAttribute('x2', box.right - 70);
+                    impVec.setAttribute('y2', collisionY);
+
+                    let impLabel = document.getElementById('impulse-label');
+                    impLabel.setAttribute('x', box.right - 80);
+                    impLabel.setAttribute('y', collisionY - 10);
+
+                    let impBg = document.getElementById('impulse-bg');
+                    impBg.setAttribute('x', box.right - 190);
+                    impBg.setAttribute('y', collisionY - 25);
+                } else {
+                    document.getElementById('wall-flash').setAttribute('opacity', 0);
+                    document.getElementById('impulse-group').setAttribute('opacity', 0);
+                }
+
+                requestAnimationFrame(animate);
+            }
+
+            // Start animation loop
+            requestAnimationFrame(animate);
+        });
+    </script>
+</body>
+</html>

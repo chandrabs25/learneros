@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Endocrine Control of the Gastrointestinal Tract</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title { font-weight: 700; font-size: 22px; fill: #2C3E50; }
+        .subtitle { font-weight: 400; font-size: 14px; fill: #7F8C8D; }
+        .organ-label { font-weight: 600; font-size: 14px; fill: #2C3E50; }
+        .cell-label { font-family: 'Roboto Mono', monospace; font-size: 11px; fill: #34495E; }
+        .legend-text { font-size: 12px; fill: #2C3E50; }
+
+        /* Master Animations (20s Loop) */
+        
+        /* 1. Food Bolus */
+        .food-bolus {
+            animation: food-move 20s linear infinite;
+        }
+        @keyframes food-move {
+            0% { transform: translate(265px, 80px); opacity: 0; }
+            5% { transform: translate(265px, 120px); opacity: 1; }
+            10% { transform: translate(240px, 200px); opacity: 1; }
+            35% { transform: translate(240px, 200px); opacity: 1; }
+            40% { transform: translate(320px, 265px); opacity: 1; }
+            45% { transform: translate(380px, 290px); opacity: 1; }
+            85% { transform: translate(380px, 290px); opacity: 1; }
+            90% { transform: translate(400px, 340px); opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* 2. Gastrin (10% to 25%) */
+        .gastrin-dot {
+            offset-path: path('M 300 280 L 300 380 L 120 380 L 120 140 L 250 140 L 250 180');
+            animation: gastrin-anim 20s linear infinite;
+        }
+        @keyframes gastrin-anim {
+            0%, 9.9% { offset-distance: 0%; opacity: 0; }
+            10% { offset-distance: 0%; opacity: 1; }
+            25% { offset-distance: 100%; opacity: 1; }
+            25.1%, 100% { offset-distance: 100%; opacity: 0; }
+        }
+
+        /* 3. Stomach Activity (25% to 80%) */
+        .stomach-glow {
+            animation: phase-stomach 20s linear infinite;
+        }
+        @keyframes phase-stomach {
+            0%, 24.9% { opacity: 0; }
+            25%, 80% { opacity: 1; }
+            80.1%, 100% { opacity: 0; }
+        }
+        .hcl-drip {
+            animation: drip 1.5s linear infinite;
+        }
+        @keyframes drip {
+            0% { transform: translateY(0); opacity: 1; }
+            80% { transform: translateY(15px); opacity: 0; }
+            100% { transform: translateY(15px); opacity: 0; }
+        }
+
+        /* 4. Secretin & CCK (45% to 60%) */
+        .secretin-dot {
+            offset-path: path('M 380 320 L 380 380 L 680 380 L 680 270 L 500 270');
+            animation: duodenal-hormone 20s linear infinite;
+        }
+        .cck-panc-dot {
+            offset-path: path('M 400 320 L 400 380 L 680 380 L 680 270 L 500 270');
+            animation: duodenal-hormone 20s linear infinite;
+        }
+        .cck-gb-dot {
+            offset-path: path('M 400 320 L 400 380 L 680 380 L 680 210 L 360 210');
+            animation: duodenal-hormone 20s linear infinite;
+        }
+        @keyframes duodenal-hormone {
+            0%, 44.9% { offset-distance: 0%; opacity: 0; }
+            45% { offset-distance: 0%; opacity: 1; }
+            60% { offset-distance: 100%; opacity: 1; }
+            60.1%, 100% { offset-distance: 100%; opacity: 0; }
+        }
+
+        /* 5. Pancreas & Gallbladder Activity (60% to 85%) */
+        .pancreas-active {
+            animation: phase-pancreas 20s linear infinite;
+        }
+        @keyframes phase-pancreas {
+            0%, 59.9% { opacity: 0; }
+            60%, 85% { opacity: 1; }
+            85.1%, 100% { opacity: 0; }
+        }
+        .flow-duct {
+            animation: dash-flow 1s linear infinite;
+        }
+        @keyframes dash-flow {
+            to { stroke-dashoffset: -16; }
+        }
+        .gallbladder {
+            transform-origin: 360px 210px;
+            animation: gb-contract 20s linear infinite;
+        }
+        @keyframes gb-contract {
+            0%, 59.9% { transform: scale(1); }
+            62%, 85% { transform: scale(0.8); }
+            87%, 100% { transform: scale(1); }
+        }
+
+        /* 6. GIP (70% to 85%) */
+        .gip-dot {
+            offset-path: path('M 360 320 L 360 380 L 120 380 L 120 140 L 250 140 L 250 180');
+            animation: gip-anim 20s linear infinite;
+        }
+        @keyframes gip-anim {
+            0%, 69.9% { offset-distance: 0%; opacity: 0; }
+            70% { offset-distance: 0%; opacity: 1; }
+            85% { offset-distance: 100%; opacity: 1; }
+            85.1%, 100% { offset-distance: 100%; opacity: 0; }
+        }
+
+        /* 7. Inhibition Symbol (85% to 95%) */
+        .inhibition-symbol {
+            animation: inhibit-show 20s linear infinite;
+        }
+        @keyframes inhibit-show {
+            0%, 84.9% { opacity: 0; transform: translate(250px, 200px) scale(0.5); }
+            85%, 95% { opacity: 1; transform: translate(250px, 200px) scale(1); }
+            95.1%, 100% { opacity: 0; }
+        }
+
+        /* Bloodstream Pulse */
+        .bloodstream-track {
+            animation: pulse-blood 4s ease-in-out infinite;
+        }
+        @keyframes pulse-blood {
+            0%, 100% { opacity: 0.15; }
+            50% { opacity: 0.25; }
+        }
+
+        /* Delays for multiple hormone pulses */
+        .delay-1 { animation-delay: 0.3s; }
+        .delay-2 { animation-delay: 0.6s; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="6" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#f8f9fa" />
+
+            <!-- Titles -->
+            <text x="400" y="35" text-anchor="middle" class="title">Endocrine Control of the Gastrointestinal Tract</text>
+            <text x="400" y="60" text-anchor="middle" class="subtitle">Hormonal Regulation of Digestion (Class 11 Biology: Section 19.3)</text>
+
+            <!-- 1. Bloodstream (Systemic Circulation) -->
+            <g id="bloodstream">
+                <rect x="120" y="140" width="560" height="240" rx="40" fill="none" stroke="#E74C3C" stroke-width="14" stroke-dasharray="10 6" class="bloodstream-track" />
+                <text x="680" y="400" class="cell-label" fill="#E74C3C" text-anchor="end">Systemic Circulation (Bloodstream)</text>
+            </g>
+
+            <!-- 2. Exocrine Ducts -->
+            <g id="ducts">
+                <!-- Bile Duct -->
+                <path d="M 350 225 L 380 290" fill="none" stroke="#BDC3C7" stroke-width="6" stroke-linecap="round"/>
+                <!-- Pancreatic Duct -->
+                <path d="M 500 280 L 380 290" fill="none" stroke="#BDC3C7" stroke-width="6" stroke-linecap="round"/>
+            </g>
+
+            <!-- 3. Organs -->
+            <g id="organs">
+                <!-- Stomach Glow (Active Phase) -->
+                <path d="M 250 100 C 250 130, 180 150, 180 230 C 180 300, 280 320, 340 280 L 340 250 C 300 280, 250 270, 250 220 C 250 170, 280 150, 280 100 Z" fill="none" stroke="#E74C3C" stroke-width="10" filter="url(#glow)" class="stomach-glow" />
+                
+                <!-- Stomach -->
+                <path d="M 250 100 C 250 130, 180 150, 180 230 C 180 300, 280 320, 340 280 L 340 250 C 300 280, 250 270, 250 220 C 250 170, 280 150, 280 100 Z" fill="#F39C12" stroke="#D68910" stroke-width="3" aria-label="Stomach" />
+                
+                <!-- Duodenum -->
+                <path d="M 340 250 C 420 250, 440 330, 340 330 L 340 300 C 400 300, 400 280, 340 280 Z" fill="#E67E22" stroke="#CA6F1E" stroke-width="3" aria-label="Duodenum" />
+                
+                <!-- Pancreas -->
+                <path d="M 380 290 Q 420 270, 460 280 T 520 260 Q 500 300, 460 300 T 380 290 Z" fill="#FFD700" stroke="#F39C12" stroke-width="3" aria-label="Pancreas" />
+                
+                <!-- Gallbladder -->
+                <ellipse cx="360" cy="210" rx="14" ry="22" transform="rotate(30 360 210)" fill="#27AE60" stroke="#1E8449" stroke-width="3" class="gallbladder" aria-label="Gallbladder" />
+            </g>
+
+            <!-- 4. Exocrine Secretions (Animated Flows) -->
+            <g id="secretions">
+                <!-- Stomach HCl -->
+                <g class="stomach-glow">
+                    <line x1="220" y1="180" x2="220" y2="190" stroke="#F1C40F" stroke-width="3" stroke-linecap="round" class="hcl-drip" />
+                    <line x1="250" y1="195" x2="250" y2="205" stroke="#F1C40F" stroke-width="3" stroke-linecap="round" class="hcl-drip delay-1" />
+                    <line x1="280" y1="175" x2="280" y2="185" stroke="#F1C40F" stroke-width="3" stroke-linecap="round" class="hcl-drip delay-2" />
+                    <text x="250" y="230" text-anchor="middle" font-size="12" font-weight="bold" fill="#E74C3C">HCl</text>
+                </g>
+
+                <!-- Pancreatic & Biliary Flows -->
+                <g class="pancreas-active">
+                    <!-- Bicarbonate (Teal) -->
+                    <path d="M 500 280 L 380 290" fill="none" stroke="#1ABC9C" stroke-width="3" stroke-dasharray="4 4" class="flow-duct" transform="translate(0, -2)" />
+                    <!-- Enzymes (Yellow) -->
+                    <path d="M 500 280 L 380 290" fill="none" stroke="#F39C12" stroke-width="3" stroke-dasharray="4 4" class="flow-duct" transform="translate(0, 2)" />
+                    <!-- Bile (Green) -->
+                    <path d="M 350 225 L 380 290" fill="none" stroke="#2ECC71" stroke-width="4" stroke-dasharray="4 4" class="flow-duct" />
+                </g>
+            </g>
+
+            <!-- 5. Food Bolus -->
+            <circle r="12" fill="#95A5A6" stroke="#7F8C8D" stroke-width="2" class="food-bolus" />
+
+            <!-- 6. Hormones (Endocrine Signaling) -->
+            <g id="hormones">
+                <!-- Gastrin (Red) -->
+                <circle r="6" fill="#E74C3C" stroke="#fff" stroke-width="1.5" class="gastrin-dot" />
+                <circle r="6" fill="#E74C3C" stroke="#fff" stroke-width="1.5" class="gastrin-dot delay-1" />
+                <circle r="6" fill="#E74C3C" stroke="#fff" stroke-width="1.5" class="gastrin-dot delay-2" />
+
+                <!-- Secretin (Blue) -->
+                <circle r="6" fill="#3498DB" stroke="#fff" stroke-width="1.5" class="secretin-dot" />
+                <circle r="6" fill="#3498DB" stroke="#fff" stroke-width="1.5" class="secretin-dot delay-1" />
+                <circle r="6" fill="#3498DB" stroke="#fff" stroke-width="1.5" class="secretin-dot delay-2" />
+
+                <!-- CCK to Pancreas (Green) -->
+                <circle r="6" fill="#2ECC71" stroke="#fff" stroke-width="1.5" class="cck-panc-dot" />
+                <circle r="6" fill="#2ECC71" stroke="#fff" stroke-width="1.5" class="cck-panc-dot delay-1" />
+                
+                <!-- CCK to Gallbladder (Green) -->
+                <circle r="6" fill="#2ECC71" stroke="#fff" stroke-width="1.5" class="cck-gb-dot delay-1" />
+                <circle r="6" fill="#2ECC71" stroke="#fff" stroke-width="1.5" class="cck-gb-dot delay-2" />
+
+                <!-- GIP (Purple) -->
+                <circle r="6" fill="#9B59B6" stroke="#fff" stroke-width="1.5" class="gip-dot" />
+                <circle r="6" fill="#9B59B6" stroke="#fff" stroke-width="1.5" class="gip-dot delay-1" />
+                <circle r="6" fill="#9B59B6" stroke="#fff" stroke-width="1.5" class="gip-dot delay-2" />
+            </g>
+
+            <!-- 7. Inhibition Symbol -->
+            <g class="inhibition-symbol">
+                <circle cx="0" cy="0" r="22" fill="#fff" stroke="#E74C3C" stroke-width="5" />
+                <line x1="-14" y1="-14" x2="14" y2="14" stroke="#E74C3C" stroke-width="5" />
+            </g>
+
+            <!-- 8. Labels -->
+            <g id="labels">
+                <!-- Stomach -->
+                <text x="160" y="140" class="organ-label" text-anchor="end">Stomach</text>
+                <text x="160" y="155" class="cell-label" text-anchor="end">G-cells (Gastrin)</text>
+                
+                <!-- Duodenum -->
+                <text x="340" y="355" class="organ-label" text-anchor="middle">Duodenum</text>
+                <text x="340" y="370" class="cell-label" text-anchor="middle">S-cells, I-cells, K-cells</text>
+                
+                <!-- Pancreas -->
+                <text x="540" y="290" class="organ-label">Pancreas</text>
+                <text x="540" y="305" class="cell-label">Acinar &amp; Duct cells</text>
+                
+                <!-- Gallbladder -->
+                <text x="340" y="180" class="organ-label" text-anchor="end">Gallbladder</text>
+            </g>
+
+            <!-- 9. Legend -->
+            <g id="legend" transform="translate(40, 420)">
+                <rect x="0" y="0" width="720" height="60" rx="8" fill="#ffffff" stroke="#BDC3C7" />
+                
+                <!-- Row 1 -->
+                <circle cx="20" cy="20" r="6" fill="#E74C3C" />
+                <text x="35" y="24" class="legend-text"><tspan font-weight="bold">Gastrin:</tspan> Stimulates Gastric Glands (HCl)</text>
+                
+                <circle cx="260" cy="20" r="6" fill="#3498DB" />
+                <text x="275" y="24" class="legend-text"><tspan font-weight="bold">Secretin:</tspan> Stimulates Bicarbonate</text>
+                
+                <circle cx="490" cy="20" r="6" fill="#2ECC71" />
+                <text x="505" y="24" class="legend-text"><tspan font-weight="bold">CCK:</tspan> Stimulates Enzymes &amp; Bile</text>
+                
+                <!-- Row 2 -->
+                <circle cx="20" cy="40" r="6" fill="#9B59B6" />
+                <text x="35" y="44" class="legend-text"><tspan font-weight="bold">GIP:</tspan> Inhibits Gastric Secretion</text>
+                
+                <circle cx="260" cy="40" r="6" fill="#95A5A6" />
+                <text x="275" y="44" class="legend-text">Food Bolus</text>
+                
+                <line x1="485" y1="40" x2="500" y2="40" stroke="#E74C3C" stroke-width="4" stroke-dasharray="4 2" />
+                <text x="505" y="44" class="legend-text">Endocrine Pathway (Blood)</text>
+            </g>
+        </svg>
+    </div>
+</body>
+</html>

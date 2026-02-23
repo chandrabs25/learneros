@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gas Exchange: Alveolar-Capillary Diffusion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 0 20px;
+        }
+        .header h1 {
+            color: #2C3E50;
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+        .header p {
+            color: #7F8C8D;
+            margin: 0;
+            font-size: 14px;
+            max-width: 600px;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .breathing-group {
+            animation: breathe 4s ease-in-out infinite;
+            transform-origin: 400px 250px;
+        }
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.015); }
+        }
+        .label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 12px;
+            fill: #34495E;
+        }
+        .data {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .title-text {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            fill: #2C3E50;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Gas Exchange via Diffusion</h1>
+        <p>Continuous steady-state respiration at the Alveolar-Capillary Interface. Oxygen diffuses into the blood while Carbon Dioxide diffuses into the alveolus.</p>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Gas Exchange at the Alveolar-Capillary Interface</title>
+            <desc>An animated biological diagram showing oxygen and carbon dioxide diffusion across the respiratory membrane, with red blood cells flowing and changing color as they oxygenate.</desc>
+
+            <defs>
+                <!-- Plasma Gradient -->
+                <linearGradient id="plasma-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#E8F4FD" stop-opacity="0.7" />
+                    <stop offset="50%" stop-color="#F5EEF8" stop-opacity="0.7" />
+                    <stop offset="100%" stop-color="#FDEDEC" stop-opacity="0.7" />
+                </linearGradient>
+
+                <!-- Alveolus Cavity Gradient -->
+                <radialGradient id="alveolus-grad" cx="50%" cy="0%" r="100%">
+                    <stop offset="0%" stop-color="#FFFFFF" />
+                    <stop offset="100%" stop-color="#FDFEFE" />
+                </radialGradient>
+
+                <!-- Diffusion Arrow Gradients -->
+                <linearGradient id="o2-arrow-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#FF9999" />
+                    <stop offset="100%" stop-color="#E74C3C" />
+                </linearGradient>
+                <linearGradient id="co2-arrow-grad" x1="0%" y1="100%" x2="0%" y2="0%">
+                    <stop offset="0%" stop-color="#85C1E9" />
+                    <stop offset="100%" stop-color="#2980B9" />
+                </linearGradient>
+
+                <!-- RBC Path for Animation -->
+                <path id="rbc-path" d="M -50 304 Q 400 424 850 304" />
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#f8f9fa" />
+
+            <!-- Animated Breathing Group (Contains Alveolus, Membrane, Capillary, RBCs, Gases) -->
+            <g class="breathing-group">
+                
+                <!-- Alveolar Cavity Fill -->
+                <path d="M -20 230 Q 400 350 820 230 L 820 -20 L -20 -20 Z" fill="url(#alveolus-grad)" />
+
+                <!-- Capillary Plasma Fill -->
+                <path d="M -20 250 Q 400 370 820 250 L 820 360 Q 400 480 -20 360 Z" fill="url(#plasma-grad)" />
+
+                <!-- ================= THE DIFFUSION MEMBRANE SANDWICH ================= -->
+                
+                <!-- 1. Squamous Epithelium (Alveolar Wall) -->
+                <path d="M -20 230 Q 400 350 820 230" fill="none" stroke="#E8F4FD" stroke-width="12" />
+                <path d="M -20 224 Q 400 344 820 224" fill="none" stroke="#4A90D9" stroke-width="1.5" />
+                <path d="M -20 236 Q 400 356 820 236" fill="none" stroke="#4A90D9" stroke-width="1.5" />
+                <!-- Epithelium Nuclei -->
+                <ellipse cx="400" cy="290" rx="14" ry="3.5" fill="#2C3E50" />
+                <ellipse cx="150" cy="268" rx="14" ry="3.5" fill="#2C3E50" transform="rotate(10 150 268)" />
+                <ellipse cx="650" cy="268" rx="14" ry="3.5" fill="#2C3E50" transform="rotate(-10 650 268)" />
+
+                <!-- 2. Basement Substance -->
+                <path d="M -20 240 Q 400 360 820 240" fill="none" stroke="#98D8C8" stroke-width="8" opacity="0.85" />
+
+                <!-- 3. Capillary Endothelium (Top Wall) -->
+                <path d="M -20 250 Q 400 370 820 250" fill="none" stroke="#E8F4FD" stroke-width="12" />
+                <path d="M -20 244 Q 400 364 820 244" fill="none" stroke="#4A90D9" stroke-width="1.5" />
+                <path d="M -20 256 Q 400 376 820 256" fill="none" stroke="#4A90D9" stroke-width="1.5" />
+                <!-- Endothelium Nuclei -->
+                <ellipse cx="400" cy="310" rx="12" ry="3" fill="#2C3E50" />
+                <ellipse cx="250" cy="295" rx="12" ry="3" fill="#2C3E50" transform="rotate(8 250 295)" />
+                <ellipse cx="550" cy="295" rx="12" ry="3" fill="#2C3E50" transform="rotate(-8 550 295)" />
+
+                <!-- Capillary Endothelium (Bottom Wall) -->
+                <path d="M -20 360 Q 400 480 820 360" fill="none" stroke="#E8F4FD" stroke-width="12" />
+                <path d="M -20 354 Q 400 474 820 354" fill="none" stroke="#4A90D9" stroke-width="1.5" />
+                <path d="M -20 366 Q 400 486 820 366" fill="none" stroke="#4A90D9" stroke-width="1.5" />
+                <!-- Bottom Endothelium Nuclei -->
+                <ellipse cx="400" cy="420" rx="12" ry="3" fill="#2C3E50" />
+                <ellipse cx="200" cy="398" rx="12" ry="3" fill="#2C3E50" transform="rotate(10 200 398)" />
+                <ellipse cx="600" cy="398" rx="12" ry="3" fill="#2C3E50" transform="rotate(-10 600 398)" />
+
+                <!-- ================= RED BLOOD CELLS ================= -->
+                <!-- RBC 1 -->
+                <g>
+                    <animateMotion dur="10s" begin="0s" repeatCount="indefinite" rotate="auto">
+                        <mpath href="#rbc-path" />
+                    </animateMotion>
+                    <path d="M -16 -8 Q 0 -3 16 -8 A 8 8 0 0 1 16 8 Q 0 3 -16 8 A 8 8 0 0 1 -16 -8 Z" stroke-width="1">
+                        <animate attributeName="fill" values="#3498DB;#3498DB;#E74C3C;#E74C3C" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="0s" repeatCount="indefinite" />
+                        <animate attributeName="stroke" values="#2980B9;#2980B9;#C0392B;#C0392B" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="0s" repeatCount="indefinite" />
+                    </path>
+                </g>
+                <!-- RBC 2 -->
+                <g>
+                    <animateMotion dur="10s" begin="-2s" repeatCount="indefinite" rotate="auto">
+                        <mpath href="#rbc-path" />
+                    </animateMotion>
+                    <path d="M -16 -8 Q 0 -3 16 -8 A 8 8 0 0 1 16 8 Q 0 3 -16 8 A 8 8 0 0 1 -16 -8 Z" stroke-width="1">
+                        <animate attributeName="fill" values="#3498DB;#3498DB;#E74C3C;#E74C3C" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="-2s" repeatCount="indefinite" />
+                        <animate attributeName="stroke" values="#2980B9;#2980B9;#C0392B;#C0392B" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="-2s" repeatCount="indefinite" />
+                    </path>
+                </g>
+                <!-- RBC 3 -->
+                <g>
+                    <animateMotion dur="10s" begin="-4s" repeatCount="indefinite" rotate="auto">
+                        <mpath href="#rbc-path" />
+                    </animateMotion>
+                    <path d="M -16 -8 Q 0 -3 16 -8 A 8 8 0 0 1 16 8 Q 0 3 -16 8 A 8 8 0 0 1 -16 -8 Z" stroke-width="1">
+                        <animate attributeName="fill" values="#3498DB;#3498DB;#E74C3C;#E74C3C" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="-4s" repeatCount="indefinite" />
+                        <animate attributeName="stroke" values="#2980B9;#2980B9;#C0392B;#C0392B" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="-4s" repeatCount="indefinite" />
+                    </path>
+                </g>
+                <!-- RBC 4 -->
+                <g>
+                    <animateMotion dur="10s" begin="-6s" repeatCount="indefinite" rotate="auto">
+                        <mpath href="#rbc-path" />
+                    </animateMotion>
+                    <path d="M -16 -8 Q 0 -3 16 -8 A 8 8 0 0 1 16 8 Q 0 3 -16 8 A 8 8 0 0 1 -16 -8 Z" stroke-width="1">
+                        <animate attributeName="fill" values="#3498DB;#3498DB;#E74C3C;#E74C3C" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="-6s" repeatCount="indefinite" />
+                        <animate attributeName="stroke" values="#2980B9;#2980B9;#C0392B;#C0392B" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="-6s" repeatCount="indefinite" />
+                    </path>
+                </g>
+                <!-- RBC 5 -->
+                <g>
+                    <animateMotion dur="10s" begin="-8s" repeatCount="indefinite" rotate="auto">
+                        <mpath href="#rbc-path" />
+                    </animateMotion>
+                    <path d="M -16 -8 Q 0 -3 16 -8 A 8 8 0 0 1 16 8 Q 0 3 -16 8 A 8 8 0 0 1 -16 -8 Z" stroke-width="1">
+                        <animate attributeName="fill" values="#3498DB;#3498DB;#E74C3C;#E74C3C" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="-8s" repeatCount="indefinite" />
+                        <animate attributeName="stroke" values="#2980B9;#2980B9;#C0392B;#C0392B" keyTimes="0; 0.38; 0.61; 1" dur="10s" begin="-8s" repeatCount="indefinite" />
+                    </path>
+                </g>
+
+                <!-- ================= GAS MOLECULES (O2) ================= -->
+                <!-- O2 Molecule 1 -->
+                <circle r="3.5" fill="#FF6B6B" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="250; 280" dur="3.5s" begin="0s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="180; 320" dur="3.5s" begin="0s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="3.5s" begin="0s" repeatCount="indefinite" />
+                </circle>
+                <!-- O2 Molecule 2 -->
+                <circle r="3.5" fill="#FF6B6B" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="350; 360" dur="4.0s" begin="1.2s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="150; 340" dur="4.0s" begin="1.2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="4.0s" begin="1.2s" repeatCount="indefinite" />
+                </circle>
+                <!-- O2 Molecule 3 -->
+                <circle r="3.5" fill="#FF6B6B" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="450; 440" dur="3.8s" begin="2.5s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="160; 350" dur="3.8s" begin="2.5s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="3.8s" begin="2.5s" repeatCount="indefinite" />
+                </circle>
+                <!-- O2 Molecule 4 -->
+                <circle r="3.5" fill="#FF6B6B" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="550; 520" dur="4.2s" begin="0.8s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="180; 320" dur="4.2s" begin="0.8s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="4.2s" begin="0.8s" repeatCount="indefinite" />
+                </circle>
+                <!-- O2 Molecule 5 -->
+                <circle r="3.5" fill="#FF6B6B" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="300; 310" dur="3.6s" begin="2.0s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="140; 330" dur="3.6s" begin="2.0s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="3.6s" begin="2.0s" repeatCount="indefinite" />
+                </circle>
+                <!-- O2 Molecule 6 -->
+                <circle r="3.5" fill="#FF6B6B" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="500; 490" dur="3.9s" begin="1.5s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="150; 340" dur="3.9s" begin="1.5s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="3.9s" begin="1.5s" repeatCount="indefinite" />
+                </circle>
+
+                <!-- ================= GAS MOLECULES (CO2) ================= -->
+                <!-- CO2 Molecule 1 -->
+                <circle r="3.5" fill="#3498DB" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="280; 250" dur="3.8s" begin="0.5s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="320; 180" dur="3.8s" begin="0.5s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="3.8s" begin="0.5s" repeatCount="indefinite" />
+                </circle>
+                <!-- CO2 Molecule 2 -->
+                <circle r="3.5" fill="#3498DB" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="360; 350" dur="4.2s" begin="2.0s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="340; 150" dur="4.2s" begin="2.0s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="4.2s" begin="2.0s" repeatCount="indefinite" />
+                </circle>
+                <!-- CO2 Molecule 3 -->
+                <circle r="3.5" fill="#3498DB" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="440; 450" dur="3.6s" begin="1.0s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="350; 160" dur="3.6s" begin="1.0s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="3.6s" begin="1.0s" repeatCount="indefinite" />
+                </circle>
+                <!-- CO2 Molecule 4 -->
+                <circle r="3.5" fill="#3498DB" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="520; 550" dur="4.0s" begin="3.2s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="320; 180" dur="4.0s" begin="3.2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="4.0s" begin="3.2s" repeatCount="indefinite" />
+                </circle>
+                <!-- CO2 Molecule 5 -->
+                <circle r="3.5" fill="#3498DB" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="310; 300" dur="3.9s" begin="2.7s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="330; 140" dur="3.9s" begin="2.7s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="3.9s" begin="2.7s" repeatCount="indefinite" />
+                </circle>
+                <!-- CO2 Molecule 6 -->
+                <circle r="3.5" fill="#3498DB" stroke="#FFFFFF" stroke-width="0.5">
+                    <animate attributeName="cx" values="490; 500" dur="3.7s" begin="0.2s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="340; 150" dur="3.7s" begin="0.2s" repeatCount="indefinite" />
+                    <animate attributeName="opacity" values="0; 1; 1; 0" keyTimes="0; 0.2; 0.8; 1" dur="3.7s" begin="0.2s" repeatCount="indefinite" />
+                </circle>
+
+            </g> <!-- End Breathing Group -->
+
+            <!-- ================= STATIC LABELS & ANNOTATIONS ================= -->
+            
+            <!-- Alveolar Cavity Labels -->
+            <text x="400" y="70" class="title-text" text-anchor="middle">Alveolar Cavity</text>
+            <text x="400" y="95" class="data" text-anchor="middle" fill="#E74C3C">pO₂ = 104 mmHg</text>
+            <text x="400" y="115" class="data" text-anchor="middle" fill="#3498DB">pCO₂ = 40 mmHg</text>
+
+            <!-- Venous Blood Labels (Left) -->
+            <text x="140" y="445" class="label" text-anchor="middle" fill="#3498DB">Deoxygenated Blood</text>
+            <text x="140" y="465" class="data" text-anchor="middle" fill="#E74C3C">pO₂ = 40 mmHg</text>
+            <text x="140" y="480" class="data" text-anchor="middle" fill="#3498DB">pCO₂ = 45 mmHg</text>
+
+            <!-- Arterial Blood Labels (Right) -->
+            <text x="660" y="445" class="label" text-anchor="middle" fill="#E74C3C">Oxygenated Blood</text>
+            <text x="660" y="465" class="data" text-anchor="middle" fill="#E74C3C">pO₂ = 95 mmHg</text>
+            <text x="660" y="480" class="data" text-anchor="middle" fill="#3498DB">pCO₂ = 40 mmHg</text>
+
+            <!-- Structural Pointers and Labels (Right Side) -->
+            <g>
+                <!-- Squamous Epithelium -->
+                <text x="600" y="140" class="label" text-anchor="start">Squamous Epithelium</text>
+                <polyline points="595,135 580,135 520,275" fill="none" stroke="#7F8C8D" stroke-width="1.5" />
+                <circle cx="520" cy="275" r="2.5" fill="#7F8C8D" />
+
+                <!-- Basement Substance -->
+                <text x="630" y="180" class="label" text-anchor="start">Basement Substance</text>
+                <polyline points="625,175 610,175 540,285" fill="none" stroke="#7F8C8D" stroke-width="1.5" />
+                <circle cx="540" cy="285" r="2.5" fill="#7F8C8D" />
+
+                <!-- Endothelium -->
+                <text x="660" y="220" class="label" text-anchor="start">Capillary Endothelium</text>
+                <polyline points="655,215 640,215 560,295" fill="none" stroke="#7F8C8D" stroke-width="1.5" />
+                <circle cx="560" cy="295" r="2.5" fill="#7F8C8D" />
+            </g>
+
+            <!-- Large Diffusion Arrows -->
+            <!-- O2 Arrow -->
+            <path d="M 280 170 L 300 170 L 300 220 L 310 220 L 290 250 L 270 220 L 280 220 Z" fill="url(#o2-arrow-grad)" opacity="0.85" />
+            <text x="260" y="210" font-family="Inter" font-size="14" font-weight="bold" fill="#E74C3C" text-anchor="end">O₂ Diffusion</text>
+
+            <!-- CO2 Arrow -->
+            <path d="M 480 250 L 500 250 L 500 200 L 510 200 L 490 170 L 470 200 L 480 200 Z" fill="url(#co2-arrow-grad)" opacity="0.85" />
+            <text x="520" y="210" font-family="Inter" font-size="14" font-weight="bold" fill="#2980B9" text-anchor="start">CO₂ Diffusion</text>
+
+            <!-- Legend Box -->
+            <g transform="translate(20, 20)">
+                <rect width="160" height="90" rx="6" fill="#FFFFFF" stroke="#BDC3C7" stroke-width="1" opacity="0.95" />
+                <text x="80" y="20" class="label" font-size="11" text-anchor="middle" fill="#2C3E50">LEGEND</text>
+
+                <circle cx="20" cy="40" r="4" fill="#FF6B6B" stroke="#FFF" stroke-width="0.5" />
+                <text x="35" y="44" class="label" font-size="11">Oxygen (O₂)</text>
+
+                <circle cx="20" cy="60" r="4" fill="#3498DB" stroke="#FFF" stroke-width="0.5" />
+                <text x="35" y="64" class="label" font-size="11">Carbon Dioxide (CO₂)</text>
+
+                <path d="M 12 76 Q 20 73 28 76 A 6 6 0 0 1 28 84 Q 20 87 12 84 A 6 6 0 0 1 12 76 Z" fill="#E74C3C" />
+                <text x="35" y="84" class="label" font-size="11">Red Blood Cell</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

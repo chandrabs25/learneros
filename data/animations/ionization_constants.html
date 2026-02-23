@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stepwise Ionization of Polyprotic Acids</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Animations */
+        @keyframes moveH1 {
+            0%, 10% { transform: translate(0, 0); opacity: 1; }
+            11%, 13%, 15% { transform: translate(-2px, 2px); opacity: 1; }
+            12%, 14% { transform: translate(2px, -2px); opacity: 1; }
+            18%, 90% { transform: translate(-60px, 60px); opacity: 1; }
+            95%, 100% { transform: translate(-60px, 60px); opacity: 0; }
+        }
+
+        @keyframes fadeBond1 {
+            0%, 15% { opacity: 1; }
+            16%, 90% { opacity: 0; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes showCharge1 {
+            0%, 15% { opacity: 0; transform: scale(0.5); }
+            18%, 90% { opacity: 1; transform: scale(1); }
+            95%, 100% { opacity: 0; transform: scale(1); }
+        }
+
+        @keyframes highlightEq1 {
+            0%, 15% { opacity: 0.3; font-weight: 400; }
+            18%, 40% { opacity: 1; font-weight: 700; }
+            45%, 100% { opacity: 0.3; font-weight: 400; }
+        }
+
+        @keyframes moveH2 {
+            0%, 40% { transform: translate(0, 0); opacity: 1; }
+            41%, 43%, 45% { transform: translate(2px, 2px); opacity: 1; }
+            42%, 44% { transform: translate(-2px, -2px); opacity: 1; }
+            48%, 55% { transform: translate(15px, 22px); opacity: 1; } /* Struggling / Pulled back */
+            65%, 90% { transform: translate(60px, 90px); opacity: 1; } /* Breaks free */
+            95%, 100% { transform: translate(60px, 90px); opacity: 0; }
+        }
+
+        @keyframes fadeBond2 {
+            0%, 45% { opacity: 1; }
+            46%, 90% { opacity: 0; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes showPull {
+            0%, 45% { opacity: 0; transform: scale(0.5); }
+            48%, 55% { opacity: 1; transform: scale(1.2); }
+            60%, 100% { opacity: 0; transform: scale(1.5); }
+        }
+
+        @keyframes showCharge2 {
+            0%, 60% { opacity: 0; transform: scale(0.5); }
+            65%, 90% { opacity: 1; transform: scale(1); }
+            95%, 100% { opacity: 0; transform: scale(1); }
+        }
+
+        @keyframes highlightEq2 {
+            0%, 60% { opacity: 0.3; font-weight: 400; }
+            65%, 90% { opacity: 1; font-weight: 700; }
+            95%, 100% { opacity: 0.3; font-weight: 400; }
+        }
+
+        @keyframes growBar {
+            0%, 70% { transform: scaleY(0); }
+            75%, 90% { transform: scaleY(1); }
+            95%, 100% { transform: scaleY(0); }
+        }
+
+        @keyframes fadeChartText {
+            0%, 70% { opacity: 0; }
+            75%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeNeutral {
+            0%, 15% { opacity: 1; }
+            16%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeAnion {
+            0%, 15% { opacity: 0; }
+            18%, 60% { opacity: 1; }
+            61%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeDianion {
+            0%, 60% { opacity: 0; }
+            65%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes globalReset {
+            0%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        /* Apply Animations */
+        #h1-group { animation: moveH1 12s infinite ease-in-out; }
+        #bond-h1 { animation: fadeBond1 12s infinite; }
+        #charge1 { animation: showCharge1 12s infinite ease-out; }
+        #eq1-group { animation: highlightEq1 12s infinite; }
+        
+        #h2-group { animation: moveH2 12s infinite ease-in-out; }
+        #bond-h2 { animation: fadeBond2 12s infinite; }
+        #pull-effect { animation: showPull 12s infinite ease-in-out; transform-origin: 0 0; }
+        #charge2 { animation: showCharge2 12s infinite ease-out; }
+        #eq2-group { animation: highlightEq2 12s infinite; }
+
+        .energy-bar { animation: growBar 12s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .chart-text { animation: fadeChartText 12s infinite; }
+
+        #label-neutral { animation: fadeNeutral 12s infinite; }
+        #label-anion { animation: fadeAnion 12s infinite; }
+        #label-dianion { animation: fadeDianion 12s infinite; }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Drop shadow for 3D effect on atoms -->
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15"/>
+            </filter>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="45" font-size="24" font-weight="700" fill="#212529" text-anchor="middle">Stepwise Ionization of Polyprotic Acids</text>
+        <text x="400" y="65" font-size="14" fill="#6c757d" text-anchor="middle">Oxalic Acid (H₂C₂O₄) demonstrates decreasing acid strength with each proton lost.</text>
+
+        <!-- ========================================== -->
+        <!-- LEFT PANEL: MOLECULAR ACTION ZONE          -->
+        <!-- ========================================== -->
+        
+        <!-- Dynamic Molecule Labels -->
+        <text id="label-neutral" x="250" y="440" font-size="16" font-weight="600" fill="#404040" text-anchor="middle">Neutral Molecule (H₂C₂O₄)</text>
+        <text id="label-anion" x="250" y="440" font-size="16" font-weight="600" fill="#7209B7" text-anchor="middle">Hydrogen Oxalate Anion (HC₂O₄⁻)</text>
+        <text id="label-dianion" x="250" y="440" font-size="16" font-weight="600" fill="#FF4444" text-anchor="middle">Oxalate Dianion (C₂O₄²⁻)</text>
+
+        <g id="molecule-zone">
+            <!-- Bonds -->
+            <!-- C1-C2 -->
+            <line x1="210" y1="250" x2="290" y2="250" stroke="#555" stroke-width="6" stroke-linecap="round"/>
+            
+            <!-- C1=O1 (Double Bond) -->
+            <line x1="213.5" y1="248" x2="173.5" y2="178" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+            <line x1="206.5" y1="252" x2="166.5" y2="182" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+            
+            <!-- C2=O2 (Double Bond) -->
+            <line x1="286.5" y1="248" x2="326.5" y2="178" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+            <line x1="293.5" y1="252" x2="333.5" y2="182" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+            
+            <!-- C1-O3 -->
+            <line x1="210" y1="250" x2="170" y2="320" stroke="#555" stroke-width="6" stroke-linecap="round"/>
+            
+            <!-- C2-O4 -->
+            <line x1="290" y1="250" x2="330" y2="320" stroke="#555" stroke-width="6" stroke-linecap="round"/>
+
+            <!-- O3-H1 (Animated Bond) -->
+            <line id="bond-h1" x1="170" y1="320" x2="145" y2="363" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+            
+            <!-- O4-H2 (Animated Bond) -->
+            <line id="bond-h2" x1="330" y1="320" x2="355" y2="363" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- Electrostatic Pull Effect (Animated) -->
+            <g transform="translate(330, 320)">
+                <line id="pull-effect" x1="0" y1="0" x2="20" y2="30" stroke="#F77F00" stroke-width="3" stroke-dasharray="4 4" stroke-linecap="round"/>
+            </g>
+
+            <!-- Atoms -->
+            <!-- C1, C2 -->
+            <circle cx="210" cy="250" r="20" fill="#404040" filter="url(#shadow)"/>
+            <circle cx="290" cy="250" r="20" fill="#404040" filter="url(#shadow)"/>
+            
+            <!-- O1, O2 (Double bonded) -->
+            <circle cx="170" cy="180" r="18" fill="#FF4444" filter="url(#shadow)"/>
+            <circle cx="330" cy="180" r="18" fill="#FF4444" filter="url(#shadow)"/>
+            
+            <!-- O3, O4 (Single bonded) -->
+            <circle cx="170" cy="320" r="18" fill="#FF4444" filter="url(#shadow)"/>
+            <circle cx="330" cy="320" r="18" fill="#FF4444" filter="url(#shadow)"/>
+
+            <!-- H1 (Animated Proton 1) -->
+            <g id="h1-group">
+                <circle cx="145" cy="363" r="12" fill="#EEEEEE" stroke="#CCCCCC" stroke-width="1" filter="url(#shadow)"/>
+                <text x="145" y="367" font-size="12" font-weight="bold" fill="#555" text-anchor="middle">+</text>
+            </g>
+
+            <!-- H2 (Animated Proton 2) -->
+            <g id="h2-group">
+                <circle cx="355" cy="363" r="12" fill="#EEEEEE" stroke="#CCCCCC" stroke-width="1" filter="url(#shadow)"/>
+                <text x="355" y="367" font-size="12" font-weight="bold" fill="#555" text-anchor="middle">+</text>
+            </g>
+
+            <!-- Negative Charges (Animated) -->
+            <g id="charge1" transform-origin="150 340">
+                <circle cx="145" cy="335" r="9" fill="#FF4444" stroke="#ffffff" stroke-width="1.5" filter="url(#shadow)"/>
+                <text x="145" y="339" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">-</text>
+            </g>
+
+            <g id="charge2" transform-origin="350 340">
+                <circle cx="355" cy="335" r="9" fill="#FF4444" stroke="#ffffff" stroke-width="1.5" filter="url(#shadow)"/>
+                <text x="355" y="339" font-size="14" font-weight="bold" fill="#ffffff" text-anchor="middle">-</text>
+            </g>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(20, 460)">
+            <rect x="0" y="0" width="240" height="30" rx="5" fill="#ffffff" stroke="#e9ecef"/>
+            <circle cx="15" cy="15" r="6" fill="#404040"/>
+            <text x="25" y="19" font-size="11" fill="#444">Carbon</text>
+            <circle cx="80" cy="15" r="6" fill="#FF4444"/>
+            <text x="90" y="19" font-size="11" fill="#444">Oxygen</text>
+            <circle cx="145" cy="15" r="6" fill="#EEEEEE" stroke="#CCC"/>
+            <text x="155" y="19" font-size="11" fill="#444">Hydrogen</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- RIGHT PANEL: MATH & ENERGY ZONE            -->
+        <!-- ========================================== -->
+        <rect x="460" y="100" width="320" height="370" rx="12" fill="#ffffff" stroke="#e9ecef" stroke-width="2" filter="url(#shadow)"/>
+
+        <!-- Equation 1 -->
+        <g id="eq1-group">
+            <text x="480" y="140" class="math" font-size="15" fill="#212529">
+                H<tspan dy="4" font-size="11">2</tspan><tspan dy="-4">C</tspan><tspan dy="4" font-size="11">2</tspan><tspan dy="-4">O</tspan><tspan dy="4" font-size="11">4</tspan>
+            </text>
+            <!-- Equilibrium Arrow 1 (Forward favored) -->
+            <g transform="translate(545, 135)">
+                <path d="M 0 0 L 40 0 L 35 -4 M 40 5 L 10 5 L 15 9" stroke="#7209B7" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+            <text x="595" y="140" class="math" font-size="15" fill="#212529">
+                H<tspan dy="-4" font-size="11">+</tspan><tspan dy="4"> + HC</tspan><tspan dy="4" font-size="11">2</tspan><tspan dy="-4">O</tspan><tspan dy="4" font-size="11">4</tspan><tspan dy="-8" font-size="11">-</tspan>
+            </text>
+            <text x="480" y="170" class="math" font-size="14" fill="#4444FF">
+                K<tspan dy="4" font-size="10">a1</tspan><tspan dy="-4"> = 5.9 × 10</tspan><tspan dy="-4" font-size="10">-2</tspan>
+            </text>
+        </g>
+
+        <!-- Equation 2 -->
+        <g id="eq2-group">
+            <text x="480" y="220" class="math" font-size="15" fill="#212529">
+                HC<tspan dy="4" font-size="11">2</tspan><tspan dy="-4">O</tspan><tspan dy="4" font-size="11">4</tspan><tspan dy="-8" font-size="11">-</tspan>
+            </text>
+            <!-- Equilibrium Arrow 2 (Reverse favored) -->
+            <g transform="translate(545, 215)">
+                <path d="M 10 0 L 30 0 L 25 -4 M 40 5 L 0 5 L 5 9" stroke="#7209B7" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+            <text x="595" y="220" class="math" font-size="15" fill="#212529">
+                H<tspan dy="-4" font-size="11">+</tspan><tspan dy="4"> + C</tspan><tspan dy="4" font-size="11">2</tspan><tspan dy="-4">O</tspan><tspan dy="4" font-size="11">4</tspan><tspan dy="-8" font-size="11">2-</tspan>
+            </text>
+            <text x="480" y="250" class="math" font-size="14" fill="#FF4444">
+                K<tspan dy="4" font-size="10">a2</tspan><tspan dy="-4"> = 6.4 × 10</tspan><tspan dy="-4" font-size="10">-5</tspan>
+            </text>
+        </g>
+
+        <!-- Energy Chart -->
+        <g id="energy-chart" transform="translate(480, 280)">
+            <text x="140" y="20" font-size="14" font-weight="600" fill="#495057" text-anchor="middle">Activation Energy Barrier (Ea)</text>
+            
+            <!-- Axes -->
+            <path d="M 40 30 L 40 140 L 260 140" stroke="#adb5bd" stroke-width="2" fill="none"/>
+            <text x="150" y="165" font-size="12" fill="#6c757d" text-anchor="middle">Reaction Step</text>
+            <text x="25" y="85" font-size="12" fill="#6c757d" text-anchor="middle" transform="rotate(-90 25 85)">Energy</text>
+
+            <!-- Bar 1 (Step 1) -->
+            <rect class="energy-bar" x="80" y="100" width="40" height="40" fill="#4444FF" rx="3" style="transform-origin: 100px 140px;"/>
+            <text class="chart-text" x="100" y="155" font-size="12" font-weight="600" fill="#4444FF" text-anchor="middle">Step 1</text>
+
+            <!-- Bar 2 (Step 2) -->
+            <rect class="energy-bar" x="180" y="40" width="40" height="100" fill="#FF4444" rx="3" style="transform-origin: 200px 140px;"/>
+            <text class="chart-text" x="200" y="155" font-size="12" font-weight="600" fill="#FF4444" text-anchor="middle">Step 2</text>
+
+            <!-- Conclusion Text -->
+            <text class="chart-text math" x="140" y="60" font-size="16" font-weight="700" fill="#7209B7" text-anchor="middle">
+                K<tspan dy="4" font-size="11">a1</tspan><tspan dy="-4"> ≫ K</tspan><tspan dy="4" font-size="11">a2</tspan>
+            </text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brønsted-Lowry Conjugate Pairs</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --n-color: #4444FF;
+            --o-color: #FF4444;
+            --h-color: #CCCCCC;
+            --bond-color: #404040;
+            --elec-arrow: #F77F00;
+            --rxn-arrow: #7209B7;
+            --charge-bg: #ffffff;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--text-main);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+            display: block;
+        }
+
+        /* Typography */
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: var(--text-main);
+        }
+        .math {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .atom-text {
+            font-weight: 600;
+            font-size: 16px;
+            fill: #ffffff;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        .charge-text {
+            font-weight: 700;
+            font-size: 14px;
+            fill: var(--text-main);
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        .label {
+            font-size: 14px;
+            font-weight: 600;
+            text-anchor: middle;
+        }
+        .sub-label {
+            font-size: 12px;
+            fill: var(--text-muted);
+            text-anchor: middle;
+        }
+        .panel-title {
+            font-size: 18px;
+            font-weight: 700;
+            fill: var(--rxn-arrow);
+        }
+
+        /* Elements */
+        .bond {
+            stroke: var(--bond-color);
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+        .bond.dashed {
+            stroke-dasharray: 6, 4;
+        }
+        .lone-pair {
+            fill: #FFCC00;
+        }
+        .charge-circle {
+            fill: var(--charge-bg);
+            stroke: var(--bond-color);
+            stroke-width: 2;
+        }
+
+        /* Animations */
+        .panel-rxn1 { animation: show-rxn1 12s infinite; }
+        .panel-rxn2 { animation: show-rxn2 12s infinite; }
+        .panel-seesaw { animation: show-seesaw 12s infinite; }
+        
+        .moving-proton-1 { animation: move-p1 12s infinite ease-in-out; }
+        .moving-bond-1 { animation: fade-bond1 12s infinite; }
+        .products-1 { animation: show-prod1 12s infinite; }
+        .elec-arrow-1 { animation: show-elec1 12s infinite; }
+
+        .moving-proton-2 { animation: move-p2 12s infinite ease-in-out; }
+        .moving-bond-2 { animation: fade-bond2 12s infinite; }
+        .products-2 { animation: show-prod2 12s infinite; }
+        .elec-arrow-2 { animation: show-elec2 12s infinite; }
+
+        .seesaw-beam-group { animation: tilt-seesaw 12s infinite ease-in-out; transform-origin: 400px 480px; }
+        .kw-text { animation: glow-kw 12s infinite ease-in-out; transform-origin: center; }
+
+        /* Keyframes */
+        @keyframes show-rxn1 {
+            0%, 30% { opacity: 1; }
+            33%, 100% { opacity: 0; }
+        }
+        @keyframes show-rxn2 {
+            0%, 33% { opacity: 0; }
+            36%, 63% { opacity: 1; }
+            66%, 100% { opacity: 0; }
+        }
+        @keyframes show-seesaw {
+            0%, 66% { opacity: 0; }
+            69%, 97% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Rxn 1 Animations */
+        @keyframes move-p1 {
+            0%, 8% { transform: translate(0, 0); }
+            16%, 33% { transform: translate(99px, -30px); }
+            34%, 100% { transform: translate(0, 0); }
+        }
+        @keyframes fade-bond1 {
+            0%, 8% { opacity: 1; }
+            10%, 100% { opacity: 0; }
+        }
+        @keyframes show-prod1 {
+            0%, 16% { opacity: 0; }
+            20%, 33% { opacity: 1; }
+            34%, 100% { opacity: 0; }
+        }
+        @keyframes show-elec1 {
+            0%, 4% { opacity: 0; }
+            6%, 14% { opacity: 1; }
+            16%, 100% { opacity: 0; }
+        }
+
+        /* Rxn 2 Animations */
+        @keyframes move-p2 {
+            0%, 41% { transform: translate(0, 0); }
+            49%, 66% { transform: translate(-120px, -45px); }
+            67%, 100% { transform: translate(0, 0); }
+        }
+        @keyframes fade-bond2 {
+            0%, 41% { opacity: 1; }
+            43%, 100% { opacity: 0; }
+        }
+        @keyframes show-prod2 {
+            0%, 49% { opacity: 0; }
+            53%, 66% { opacity: 1; }
+            67%, 100% { opacity: 0; }
+        }
+        @keyframes show-elec2 {
+            0%, 37% { opacity: 0; }
+            39%, 47% { opacity: 1; }
+            49%, 100% { opacity: 0; }
+        }
+
+        /* Seesaw Animations */
+        @keyframes tilt-seesaw {
+            0%, 75% { transform: rotate(0deg); }
+            83%, 100% { transform: rotate(8deg); }
+        }
+        @keyframes glow-kw {
+            0%, 80% { text-shadow: none; fill: var(--text-main); transform: scale(1); }
+            85%, 95% { text-shadow: 0 0 15px var(--elec-arrow); fill: var(--elec-arrow); transform: scale(1.05); }
+            100% { text-shadow: none; fill: var(--text-main); transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Brønsted-Lowry Conjugate Pairs: NH₄⁺ / NH₃ System</h1>
+    <p class="subtitle">An animated visualization of proton transfer and the K<sub>a</sub> · K<sub>b</sub> = K<sub>w</sub> relationship.</p>
+
+    <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+        <title>Brønsted-Lowry Acid-Base Animation</title>
+        <desc>Animation showing the proton transfer between ammonium and water, then ammonia and water, followed by a seesaw balancing Ka and Kb.</desc>
+
+        <defs>
+            <!-- Electron Flow Arrowhead -->
+            <marker id="arrow-elec" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--elec-arrow)" />
+            </marker>
+        </defs>
+
+        <!-- Legend -->
+        <g transform="translate(620, 20)">
+            <rect x="0" y="0" width="160" height="90" fill="#f8f9fa" stroke="#e0e0e0" rx="6"/>
+            <text x="80" y="18" font-size="12" font-weight="700" text-anchor="middle">Legend</text>
+            
+            <circle cx="15" cy="35" r="6" fill="var(--n-color)"/>
+            <text x="30" y="39" font-size="11">Nitrogen</text>
+            
+            <circle cx="95" cy="35" r="6" fill="var(--o-color)"/>
+            <text x="110" y="39" font-size="11">Oxygen</text>
+            
+            <circle cx="15" cy="55" r="6" fill="var(--h-color)"/>
+            <text x="30" y="59" font-size="11">Hydrogen</text>
+            
+            <path d="M 95 55 L 115 55" stroke="var(--elec-arrow)" stroke-width="2" marker-end="url(#arrow-elec)"/>
+            <text x="120" y="59" font-size="11">e⁻ flow</text>
+
+            <path d="M 15 75 L 35 75" stroke="var(--rxn-arrow)" stroke-width="2"/>
+            <text x="40" y="79" font-size="11">Reaction</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- PANEL 1: ACID DISSOCIATION (Ka)            -->
+        <!-- ========================================== -->
+        <g class="panel-rxn1">
+            <text x="400" y="60" class="panel-title" text-anchor="middle">Stage 1: Acid Dissociation (K<tspan baseline-shift="sub">a</tspan>)</text>
+            <text x="400" y="85" class="math" text-anchor="middle" font-size="16">NH₄⁺(aq) + H₂O(l) ⇌ NH₃(aq) + H₃O⁺(aq)</text>
+
+            <!-- Reactants Left Side -->
+            <!-- NH4+ Base Structure (minus moving proton) -->
+            <g transform="translate(160, 220)">
+                <line x1="0" y1="0" x2="0" y2="-30" class="bond"/>
+                <line x1="0" y1="0" x2="-26" y2="15" class="bond"/>
+                <line x1="0" y1="0" x2="0" y2="15" class="bond dashed"/>
+                
+                <circle cx="0" cy="0" r="20" fill="var(--n-color)"/>
+                <text x="0" y="0" class="atom-text">N</text>
+                
+                <circle cx="0" cy="-30" r="12" fill="var(--h-color)"/>
+                <circle cx="-26" cy="15" r="12" fill="var(--h-color)"/>
+                
+                <g transform="translate(20, -20)">
+                    <circle cx="0" cy="0" r="9" class="charge-circle"/>
+                    <text x="0" y="0" class="charge-text">+</text>
+                </g>
+            </g>
+            <text x="160" y="290" class="label">Acid</text>
+            <text x="160" y="310" class="sub-label">Ammonium (NH₄⁺)</text>
+
+            <!-- Moving Proton 1 -->
+            <g class="moving-proton-1">
+                <line x1="160" y1="220" x2="186" y2="235" class="bond moving-bond-1"/>
+                <circle cx="186" cy="235" r="12" fill="var(--h-color)"/>
+            </g>
+
+            <!-- H2O Base Structure -->
+            <g transform="translate(300, 220)">
+                <line x1="0" y1="0" x2="-20" y2="20" class="bond"/>
+                <line x1="0" y1="0" x2="20" y2="20" class="bond"/>
+                
+                <circle cx="0" cy="0" r="20" fill="var(--o-color)"/>
+                <text x="0" y="0" class="atom-text">O</text>
+                
+                <circle cx="-20" cy="20" r="12" fill="var(--h-color)"/>
+                <circle cx="20" cy="20" r="12" fill="var(--h-color)"/>
+                
+                <!-- Lone Pairs -->
+                <circle cx="-15" cy="-15" r="3" class="lone-pair"/>
+                <circle cx="-9" cy="-18" r="3" class="lone-pair"/>
+                <circle cx="15" cy="-15" r="3" class="lone-pair"/>
+                <circle cx="9" cy="-18" r="3" class="lone-pair"/>
+            </g>
+            <text x="300" y="290" class="label">Base</text>
+            <text x="300" y="310" class="sub-label">Water (H₂O)</text>
+
+            <!-- Electron Arrows 1 -->
+            <g class="elec-arrow-1">
+                <!-- Lone pair to proton -->
+                <path d="M 285 205 Q 230 160 186 235" fill="none" stroke="var(--elec-arrow)" stroke-width="3" marker-end="url(#arrow-elec)"/>
+                <!-- Bond to Nitrogen -->
+                <path d="M 173 227 Q 165 240 160 225" fill="none" stroke="var(--elec-arrow)" stroke-width="3" marker-end="url(#arrow-elec)"/>
+            </g>
+
+            <!-- Reaction Arrow -->
+            <g transform="translate(400, 220)">
+                <line x1="-20" y1="-4" x2="20" y2="-4" stroke="var(--rxn-arrow)" stroke-width="3"/>
+                <polygon points="20,-4 12,-10 12,2" fill="var(--rxn-arrow)"/>
+                <line x1="20" y1="4" x2="-20" y2="4" stroke="var(--rxn-arrow)" stroke-width="3"/>
+                <polygon points="-20,4 -12,10 -12,-2" fill="var(--rxn-arrow)"/>
+            </g>
+
+            <!-- Products Right Side -->
+            <g class="products-1">
+                <!-- NH3 -->
+                <g transform="translate(500, 220)">
+                    <line x1="0" y1="0" x2="-26" y2="15" class="bond"/>
+                    <line x1="0" y1="0" x2="26" y2="15" class="bond"/>
+                    <line x1="0" y1="0" x2="0" y2="15" class="bond dashed"/>
+                    
+                    <circle cx="0" cy="0" r="20" fill="var(--n-color)"/>
+                    <text x="0" y="0" class="atom-text">N</text>
+                    
+                    <circle cx="-26" cy="15" r="12" fill="var(--h-color)"/>
+                    <circle cx="26" cy="15" r="12" fill="var(--h-color)"/>
+                    
+                    <!-- Lone Pair -->
+                    <circle cx="-4" cy="-25" r="3" class="lone-pair"/>
+                    <circle cx="4" cy="-25" r="3" class="lone-pair"/>
+                    <ellipse cx="0" cy="-25" rx="10" ry="6" fill="none" stroke="#FFCC00" stroke-width="1" stroke-dasharray="2,2"/>
+                </g>
+                <text x="500" y="290" class="label">Conjugate Base</text>
+                <text x="500" y="310" class="sub-label">Ammonia (NH₃)</text>
+
+                <!-- H3O+ -->
+                <g transform="translate(640, 220)">
+                    <line x1="0" y1="0" x2="-20" y2="20" class="bond"/>
+                    <line x1="0" y1="0" x2="20" y2="20" class="bond"/>
+                    <line x1="0" y1="0" x2="0" y2="-25" class="bond"/>
+                    
+                    <circle cx="0" cy="0" r="20" fill="var(--o-color)"/>
+                    <text x="0" y="0" class="atom-text">O</text>
+                    
+                    <circle cx="-20" cy="20" r="12" fill="var(--h-color)"/>
+                    <circle cx="20" cy="20" r="12" fill="var(--h-color)"/>
+                    <circle cx="0" cy="-25" r="12" fill="var(--h-color)"/>
+                    
+                    <!-- Lone Pair -->
+                    <circle cx="15" cy="-15" r="3" class="lone-pair"/>
+                    <circle cx="9" cy="-18" r="3" class="lone-pair"/>
+
+                    <g transform="translate(20, -20)">
+                        <circle cx="0" cy="0" r="9" class="charge-circle"/>
+                        <text x="0" y="0" class="charge-text">+</text>
+                    </g>
+                </g>
+                <text x="640" y="290" class="label">Conjugate Acid</text>
+                <text x="640" y="310" class="sub-label">Hydronium (H₃O⁺)</text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- PANEL 2: BASE DISSOCIATION (Kb)            -->
+        <!-- ========================================== -->
+        <g class="panel-rxn2">
+            <text x="400" y="60" class="panel-title" text-anchor="middle">Stage 2: Base Dissociation (K<tspan baseline-shift="sub">b</tspan>)</text>
+            <text x="400" y="85" class="math" text-anchor="middle" font-size="16">NH₃(aq) + H₂O(l) ⇌ NH₄⁺(aq) + OH⁻(aq)</text>
+
+            <!-- Reactants Left Side -->
+            <!-- NH3 Base Structure -->
+            <g transform="translate(160, 220)">
+                <line x1="0" y1="0" x2="-26" y2="15" class="bond"/>
+                <line x1="0" y1="0" x2="26" y2="15" class="bond"/>
+                <line x1="0" y1="0" x2="0" y2="15" class="bond dashed"/>
+                
+                <circle cx="0" cy="0" r="20" fill="var(--n-color)"/>
+                <text x="0" y="0" class="atom-text">N</text>
+                
+                <circle cx="-26" cy="15" r="12" fill="var(--h-color)"/>
+                <circle cx="26" cy="15" r="12" fill="var(--h-color)"/>
+                
+                <!-- Lone Pair -->
+                <circle cx="-4" cy="-25" r="3" class="lone-pair"/>
+                <circle cx="4" cy="-25" r="3" class="lone-pair"/>
+            </g>
+            <text x="160" y="290" class="label">Base</text>
+            <text x="160" y="310" class="sub-label">Ammonia (NH₃)</text>
+
+            <!-- H2O Base Structure (minus moving proton) -->
+            <g transform="translate(300, 220)">
+                <line x1="0" y1="0" x2="20" y2="20" class="bond"/>
+                
+                <circle cx="0" cy="0" r="20" fill="var(--o-color)"/>
+                <text x="0" y="0" class="atom-text">O</text>
+                
+                <circle cx="20" cy="20" r="12" fill="var(--h-color)"/>
+                
+                <!-- Lone Pairs -->
+                <circle cx="-15" cy="-15" r="3" class="lone-pair"/>
+                <circle cx="-9" cy="-18" r="3" class="lone-pair"/>
+                <circle cx="15" cy="-15" r="3" class="lone-pair"/>
+                <circle cx="9" cy="-18" r="3" class="lone-pair"/>
+            </g>
+            <text x="300" y="290" class="label">Acid</text>
+            <text x="300" y="310" class="sub-label">Water (H₂O)</text>
+
+            <!-- Moving Proton 2 -->
+            <g class="moving-proton-2">
+                <line x1="300" y1="220" x2="280" y2="240" class="bond moving-bond-2"/>
+                <circle cx="280" cy="240" r="12" fill="var(--h-color)"/>
+            </g>
+
+            <!-- Electron Arrows 2 -->
+            <g class="elec-arrow-2">
+                <!-- Lone pair to proton -->
+                <path d="M 160 195 Q 220 160 280 240" fill="none" stroke="var(--elec-arrow)" stroke-width="3" marker-end="url(#arrow-elec)"/>
+                <!-- Bond to Oxygen -->
+                <path d="M 290 230 Q 285 215 295 210" fill="none" stroke="var(--elec-arrow)" stroke-width="3" marker-end="url(#arrow-elec)"/>
+            </g>
+
+            <!-- Reaction Arrow -->
+            <g transform="translate(400, 220)">
+                <line x1="-20" y1="-4" x2="20" y2="-4" stroke="var(--rxn-arrow)" stroke-width="3"/>
+                <polygon points="20,-4 12,-10 12,2" fill="var(--rxn-arrow)"/>
+                <line x1="20" y1="4" x2="-20" y2="4" stroke="var(--rxn-arrow)" stroke-width="3"/>
+                <polygon points="-20,4 -12,10 -12,-2" fill="var(--rxn-arrow)"/>
+            </g>
+
+            <!-- Products Right Side -->
+            <g class="products-2">
+                <!-- NH4+ -->
+                <g transform="translate(500, 220)">
+                    <line x1="0" y1="0" x2="0" y2="-30" class="bond"/>
+                    <line x1="0" y1="0" x2="-26" y2="15" class="bond"/>
+                    <line x1="0" y1="0" x2="26" y2="15" class="bond"/>
+                    <line x1="0" y1="0" x2="0" y2="15" class="bond dashed"/>
+                    
+                    <circle cx="0" cy="0" r="20" fill="var(--n-color)"/>
+                    <text x="0" y="0" class="atom-text">N</text>
+                    
+                    <circle cx="0" cy="-30" r="12" fill="var(--h-color)"/>
+                    <circle cx="-26" cy="15" r="12" fill="var(--h-color)"/>
+                    <circle cx="26" cy="15" r="12" fill="var(--h-color)"/>
+                    
+                    <g transform="translate(20, -20)">
+                        <circle cx="0" cy="0" r="9" class="charge-circle"/>
+                        <text x="0" y="0" class="charge-text">+</text>
+                    </g>
+                </g>
+                <text x="500" y="290" class="label">Conjugate Acid</text>
+                <text x="500" y="310" class="sub-label">Ammonium (NH₄⁺)</text>
+
+                <!-- OH- -->
+                <g transform="translate(640, 220)">
+                    <line x1="0" y1="0" x2="26" y2="0" class="bond"/>
+                    
+                    <circle cx="0" cy="0" r="20" fill="var(--o-color)"/>
+                    <text x="0" y="0" class="atom-text">O</text>
+                    
+                    <circle cx="26" cy="0" r="12" fill="var(--h-color)"/>
+                    
+                    <!-- Lone Pairs -->
+                    <circle cx="-15" cy="-10" r="3" class="lone-pair"/>
+                    <circle cx="-15" cy="10" r="3" class="lone-pair"/>
+                    <circle cx="0" cy="-20" r="3" class="lone-pair"/>
+                    <circle cx="0" cy="20" r="3" class="lone-pair"/>
+
+                    <g transform="translate(-20, -20)">
+                        <circle cx="0" cy="0" r="9" class="charge-circle"/>
+                        <text x="0" y="0" class="charge-text">-</text>
+                    </g>
+                </g>
+                <text x="640" y="290" class="label">Conjugate Base</text>
+                <text x="640" y="310" class="sub-label">Hydroxide (OH⁻)</text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- PANEL 3: SEESAW (Ka / Kb Relationship)     -->
+        <!-- ========================================== -->
+        <g class="panel-seesaw">
+            <text x="400" y="60" class="panel-title" text-anchor="middle">Stage 3: The K<tspan baseline-shift="sub">a</tspan> / K<tspan baseline-shift="sub">b</tspan> Relationship</text>
+            
+            <!-- Equations -->
+            <g class="math" font-size="14" text-anchor="middle">
+                <text x="200" y="150">K<tspan baseline-shift="sub">a</tspan> = 5.6 × 10<tspan baseline-shift="super">-10</tspan></text>
+                <text x="200" y="170" font-size="12" fill="var(--text-muted)">(Weak Acid)</text>
+                
+                <text x="600" y="150">K<tspan baseline-shift="sub">b</tspan> = 1.8 × 10<tspan baseline-shift="super">-5</tspan></text>
+                <text x="600" y="170" font-size="12" fill="var(--text-muted)">(Stronger Conjugate Base)</text>
+            </g>
+
+            <text x="400" y="280" class="math kw-text" font-size="22" font-weight="700" text-anchor="middle">K<tspan baseline-shift="sub">a</tspan> × K<tspan baseline-shift="sub">b</tspan> = K<tspan baseline-shift="sub">w</tspan> = 1.0 × 10<tspan baseline-shift="super">-14</tspan></text>
+
+            <!-- Seesaw Structure -->
+            <g transform="translate(0, 50)">
+                <!-- Fulcrum -->
+                <polygon points="400,480 370,530 430,530" fill="#888"/>
+                <circle cx="400" cy="480" r="6" fill="#333"/>
+                
+                <!-- Rotating Beam and Weights -->
+                <g class="seesaw-beam-group">
+                    <!-- Beam -->
+                    <line x1="150" y1="480" x2="650" y2="480" stroke="#404040" stroke-width="8" stroke-linecap="round"/>
+                    
+                    <!-- Ka Weight (Small) -->
+                    <g transform="translate(200, 480)">
+                        <rect x="-25" y="-50" width="50" height="50" fill="var(--n-color)" rx="4"/>
+                        <text x="0" y="-20" fill="white" font-weight="700" font-size="16" text-anchor="middle">K<tspan baseline-shift="sub">a</tspan></text>
+                    </g>
+
+                    <!-- Kb Weight (Large) -->
+                    <g transform="translate(600, 480)">
+                        <rect x="-45" y="-90" width="90" height="90" fill="var(--o-color)" rx="4"/>
+                        <text x="0" y="-40" fill="white" font-weight="700" font-size="24" text-anchor="middle">K<tspan baseline-shift="sub">b</tspan></text>
+                    </g>
+                </g>
+                
+                <!-- Base Line -->
+                <line x1="100" y1="530" x2="700" y2="530" stroke="#ccc" stroke-width="4" stroke-linecap="round"/>
+            </g>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

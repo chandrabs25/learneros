@@ -6,8 +6,9 @@ from contextlib import asynccontextmanager
 
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
@@ -71,5 +72,14 @@ app.include_router(tutor.router)
 app.include_router(teacher_dashboard.router)
 
 # Serve animation HTML files as static assets
-if ANIMATIONS_DIR.is_dir():
+if ANIMATIONS_DIR.is_dir() and not settings.ANIMATIONS_R2_PUBLIC_BASE_URL:
     app.mount("/api/animations", StaticFiles(directory=str(ANIMATIONS_DIR), html=True), name="animations")
+elif settings.ANIMATIONS_R2_PUBLIC_BASE_URL:
+    _ANIMATIONS_R2_BASE = settings.ANIMATIONS_R2_PUBLIC_BASE_URL.rstrip("/")
+
+    @app.get("/api/animations/{asset_path:path}", include_in_schema=False)
+    async def animation_from_r2(asset_path: str):
+        safe_parts = [p for p in asset_path.split("/") if p and p not in {".", ".."}]
+        if not safe_parts:
+            raise HTTPException(status_code=404, detail="Animation not found")
+        return RedirectResponse(url=f"{_ANIMATIONS_R2_BASE}/{'/'.join(safe_parts)}", status_code=307)

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phylum Arthropoda: The Chitinous Exoskeleton</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Animations */
+        @keyframes oldShellLeft {
+            0%, 25% { transform: translate(0, 0) rotate(0); opacity: 1; }
+            30%, 50% { transform: translate(0, -15px) rotate(0); opacity: 1; }
+            55%, 70% { transform: translate(-30px, -50px) rotate(-15deg); opacity: 0; }
+            71%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes oldShellRight {
+            0%, 25% { transform: translate(0, 0) rotate(0); opacity: 1; }
+            30%, 50% { transform: translate(0, -15px) rotate(0); opacity: 1; }
+            55%, 70% { transform: translate(30px, -50px) rotate(15deg); opacity: 0; }
+            71%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes newShellReveal {
+            0%, 24.9% { opacity: 0; }
+            25%, 100% { opacity: 1; }
+        }
+
+        @keyframes newEpiColor {
+            0%, 75% { fill: #D2B48C; }
+            90%, 100% { fill: #5DADE2; }
+        }
+
+        @keyframes newExoColor {
+            0%, 75% { fill: #D2B48C; }
+            90%, 100% { fill: #8B4513; }
+        }
+
+        @keyframes moltingFluid {
+            0%, 24.9% { opacity: 0; }
+            30%, 45% { opacity: 0.7; }
+            50%, 100% { opacity: 0; }
+        }
+
+        @keyframes floatHex {
+            0%, 24.9% { opacity: 0; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-5px); }
+            45% { opacity: 0; transform: translateY(-15px); }
+            100% { opacity: 0; }
+        }
+
+        @keyframes muscleContract {
+            0%, 25% { transform: scaleX(1); }
+            2%, 6%, 10%, 14% { transform: scaleX(0.96); }
+            4%, 8%, 12%, 16% { transform: scaleX(1); }
+            26%, 100% { transform: scaleX(1); }
+        }
+
+        @keyframes oldBugLeft {
+            0%, 25% { transform: translate(0, 0) rotate(0); opacity: 1; }
+            30%, 50% { transform: translate(-2px, -2px); opacity: 1; }
+            55%, 70% { transform: translate(-25px, -25px) rotate(-15deg); opacity: 0; }
+            71%, 100% { opacity: 0; transform: translate(0, 0); }
+        }
+
+        @keyframes oldBugRight {
+            0%, 25% { transform: translate(0, 0) rotate(0); opacity: 1; }
+            30%, 50% { transform: translate(2px, -2px); opacity: 1; }
+            55%, 70% { transform: translate(25px, -25px) rotate(15deg); opacity: 0; }
+            71%, 100% { opacity: 0; transform: translate(0, 0); }
+        }
+
+        @keyframes newBugScale {
+            0%, 24.9% { opacity: 0; transform: scale(0.85); }
+            25%, 50% { opacity: 1; transform: scale(0.85); }
+            55%, 75% { opacity: 1; transform: scale(1); }
+            75%, 100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes newBugColor {
+            0%, 75% { fill: #D2B48C; stroke: #A0522D; }
+            90%, 100% { fill: #8B4513; stroke: #5C2E0B; }
+        }
+
+        @keyframes textPhase1 { 0%, 24.9% { opacity: 1; } 25%, 100% { opacity: 0; } }
+        @keyframes textPhase2 { 0%, 24.9% { opacity: 0; } 25%, 49.9% { opacity: 1; } 50%, 100% { opacity: 0; } }
+        @keyframes textPhase3 { 0%, 49.9% { opacity: 0; } 50%, 74.9% { opacity: 1; } 75%, 100% { opacity: 0; } }
+        @keyframes textPhase4 { 0%, 74.9% { opacity: 0; } 75%, 100% { opacity: 1; } }
+        
+        @keyframes progressBar {
+            0% { width: 0; }
+            100% { width: 280px; }
+        }
+
+        /* Apply Animations */
+        .old-shell-left { animation: oldShellLeft 20s infinite linear; transform-origin: 200px 230px; }
+        .old-shell-right { animation: oldShellRight 20s infinite linear; transform-origin: 200px 230px; }
+        .new-shell { animation: newShellReveal 20s infinite linear; }
+        .new-epi { animation: newEpiColor 20s infinite linear; }
+        .new-exo { animation: newExoColor 20s infinite linear; }
+        .molting-fluid { animation: moltingFluid 20s infinite linear; }
+        .chitin-hex { animation: floatHex 20s infinite linear; }
+        .muscle-left { animation: muscleContract 20s infinite linear; transform-origin: 380px 400px; }
+        .muscle-right { animation: muscleContract 20s infinite linear; transform-origin: 380px 400px; }
+        
+        .old-bug-left { animation: oldBugLeft 20s infinite linear; transform-origin: 650px 250px; }
+        .old-bug-right { animation: oldBugRight 20s infinite linear; transform-origin: 650px 250px; }
+        .new-bug { animation: newBugScale 20s infinite linear; transform-origin: 650px 250px; }
+        .new-bug-body { animation: newBugColor 20s infinite linear; }
+
+        .p1 { animation: textPhase1 20s infinite linear; }
+        .p2 { animation: textPhase2 20s infinite linear; }
+        .p3 { animation: textPhase3 20s infinite linear; }
+        .p4 { animation: textPhase4 20s infinite linear; }
+        .progress-fill { animation: progressBar 20s infinite linear; }
+
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" aria-labelledby="diagram-title diagram-desc" role="img">
+        <title id="diagram-title">Phylum Arthropoda: The Chitinous Exoskeleton</title>
+        <desc id="diagram-desc">Animated cross-section showing the 4 stages of arthropod molting: Intermolt, Apolysis, Ecdysis, and Sclerotization.</desc>
+
+        <defs>
+            <!-- Muscle Striation Pattern -->
+            <pattern id="striations" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(15)">
+                <line x1="4" y1="0" x2="4" y2="8" stroke="#C0392B" stroke-width="2" opacity="0.6"/>
+            </pattern>
+
+            <!-- Chitin Hexagon Symbol -->
+            <g id="hex">
+                <polygon points="0,-4 3.5,-2 3.5,2 0,4 -3.5,2 -3.5,-2" fill="#98D8C8" stroke="#2C3E50" stroke-width="0.5"/>
+            </g>
+        </defs>
+
+        <!-- Background -->
+        <rect width="800" height="500" fill="#ffffff" />
+
+        <!-- Titles -->
+        <text x="400" y="35" font-family="Inter" font-size="22" font-weight="700" text-anchor="middle" fill="#2C3E50">Phylum Arthropoda: The Chitinous Exoskeleton</text>
+        <text x="400" y="58" font-family="Inter" font-size="14" text-anchor="middle" fill="#7f8c8d">Molting (Ecdysis) and Sclerotization Cycle</text>
+
+        <!-- View Dividers -->
+        <line x1="520" y1="90" x2="520" y2="480" stroke="#e0e0e0" stroke-dasharray="6 4" stroke-width="2"/>
+        <text x="120" y="100" font-family="Inter" font-size="13" fill="#95a5a6" font-weight="600" text-anchor="start">MICROSCOPIC CROSS-SECTION</text>
+        <text x="540" y="100" font-family="Inter" font-size="13" fill="#95a5a6" font-weight="600" text-anchor="start">MACROSCOPIC VIEW</text>
+
+        <!-- ========================================== -->
+        <!-- LEFT SIDE: MICROSCOPIC CROSS-SECTION       -->
+        <!-- ========================================== -->
+
+        <!-- Static Epidermis (Living Tissue) -->
+        <g id="epidermis">
+            <path d="M 120 290 L 200 290 L 340 290 L 370 380 L 390 380 L 420 290 L 460 290 L 460 330 L 420 330 L 390 420 L 370 420 L 340 330 L 200 330 L 120 330 Z" fill="#F39C12" stroke="#D68910" stroke-width="1"/>
+            <!-- Cell Dividers -->
+            <path d="M 140 290 L 140 330 M 160 290 L 160 330 M 180 290 L 180 330 M 200 290 L 200 330 M 220 290 L 220 330 M 240 290 L 240 330 M 260 290 L 260 330 M 280 290 L 280 330 M 300 290 L 300 330 M 320 290 L 320 330 M 340 290 L 340 330 M 355 335 L 355 375 M 380 380 L 380 420 M 405 335 L 405 375 M 420 290 L 420 330 M 440 290 L 440 330" stroke="#D68910" stroke-width="1"/>
+            <!-- Nuclei -->
+            <g fill="#2C3E50">
+                <circle cx="130" cy="310" r="3.5"/><circle cx="150" cy="310" r="3.5"/><circle cx="170" cy="310" r="3.5"/>
+                <circle cx="190" cy="310" r="3.5"/><circle cx="210" cy="310" r="3.5"/><circle cx="230" cy="310" r="3.5"/>
+                <circle cx="250" cy="310" r="3.5"/><circle cx="270" cy="310" r="3.5"/><circle cx="290" cy="310" r="3.5"/>
+                <circle cx="310" cy="310" r="3.5"/><circle cx="330" cy="310" r="3.5"/><circle cx="360" cy="355" r="3.5"/>
+                <circle cx="380" cy="400" r="3.5"/><circle cx="400" cy="355" r="3.5"/><circle cx="430" cy="310" r="3.5"/>
+                <circle cx="450" cy="310" r="3.5"/>
+            </g>
+        </g>
+
+        <!-- Molting Fluid (Appears during Apolysis) -->
+        <path class="molting-fluid" d="M 120 275 L 200 275 L 340 275 L 370 365 L 390 365 L 420 275 L 460 275 L 460 290 L 420 290 L 390 380 L 370 380 L 340 290 L 200 290 L 120 290 Z" fill="#98D8C8"/>
+
+        <!-- Chitin Molecules (Secretion) -->
+        <g class="chitin-hex">
+            <use href="#hex" x="160" y="285"/>
+            <use href="#hex" x="240" y="285"/>
+            <use href="#hex" x="300" y="285"/>
+            <use href="#hex" x="440" y="285"/>
+        </g>
+
+        <!-- New Shell (Secreted under old shell, expands and hardens) -->
+        <g class="new-shell">
+            <!-- New Endocuticle -->
+            <path class="new-endo" d="M 120 230 L 350 230 L 375 320 L 385 320 L 410 230 L 460 230 L 460 290 L 420 290 L 390 380 L 370 380 L 340 290 L 120 290 Z" fill="#D2B48C" stroke="#B89B74" stroke-width="0.5"/>
+            <!-- New Exocuticle -->
+            <path class="new-exo" d="M 120 185 L 360 185 L 378 265 L 382 265 L 400 185 L 460 185 L 460 230 L 410 230 L 385 320 L 375 320 L 350 230 L 120 230 Z" stroke="#5C2E0B" stroke-width="0.5"/>
+            <!-- New Epicuticle -->
+            <path class="new-epi" d="M 120 180 L 360 180 L 378 260 L 382 260 L 400 180 L 460 180 L 460 185 L 400 185 L 382 265 L 378 265 L 360 185 L 120 185 Z" stroke="#2980B9" stroke-width="0.5"/>
+        </g>
+
+        <!-- Old Shell Left Half (Splits at Ecdysial Line) -->
+        <g class="old-shell-left">
+            <path d="M 120 230 L 200 230 L 200 290 L 120 290 Z" fill="#D2B48C" stroke="#B89B74" stroke-width="0.5"/>
+            <path d="M 120 185 L 200 185 L 200 230 L 120 230 Z" fill="#8B4513" stroke="#5C2E0B" stroke-width="0.5"/>
+            <path d="M 120 180 L 200 180 L 200 185 L 120 185 Z" fill="#5DADE2" stroke="#2980B9" stroke-width="0.5"/>
+        </g>
+
+        <!-- Old Shell Right Half (Includes Apodeme) -->
+        <g class="old-shell-right">
+            <path d="M 200 230 L 350 230 L 375 320 L 385 320 L 410 230 L 460 230 L 460 290 L 420 290 L 390 380 L 370 380 L 340 290 L 200 290 Z" fill="#D2B48C" stroke="#B89B74" stroke-width="0.5"/>
+            <path d="M 200 185 L 360 185 L 378 265 L 382 265 L 400 185 L 460 185 L 460 230 L 410 230 L 385 320 L 375 320 L 350 230 L 200 230 Z" fill="#8B4513" stroke="#5C2E0B" stroke-width="0.5"/>
+            <path d="M 200 180 L 360 180 L 378 260 L 382 260 L 400 180 L 460 180 L 460 185 L 400 185 L 382 265 L 378 265 L 360 185 L 200 185 Z" fill="#5DADE2" stroke="#2980B9" stroke-width="0.5"/>
+        </g>
+
+        <!-- Ecdysial Line Indicator -->
+        <line x1="200" y1="135" x2="200" y2="180" stroke="#E74C3C" stroke-dasharray="4 2" stroke-width="2"/>
+        <text x="200" y="125" font-family="Inter" font-size="12" font-weight="600" text-anchor="middle" fill="#E74C3C">Ecdysial Line</text>
+
+        <!-- Striated Muscles attached to Apodeme -->
+        <g class="muscle-left">
+            <path d="M 220 440 L 370 400 L 370 380 L 220 420 Z" fill="#E74C3C"/>
+            <path d="M 220 440 L 370 400 L 370 380 L 220 420 Z" fill="url(#striations)"/>
+        </g>
+        <g class="muscle-right">
+            <path d="M 460 440 L 390 400 L 390 380 L 460 420 Z" fill="#E74C3C"/>
+            <path d="M 460 440 L 390 400 L 390 380 L 460 420 Z" fill="url(#striations)"/>
+        </g>
+
+        <!-- Labels for Microscopic View -->
+        <g font-family="Inter" font-size="12" fill="#333">
+            <!-- Epicuticle -->
+            <text x="105" y="185" text-anchor="end" font-weight="600">Epicuticle</text>
+            <text x="105" y="198" text-anchor="end" font-size="10" fill="#7f8c8d">(Waxy, waterproof)</text>
+            <line x1="110" y1="182" x2="118" y2="182" stroke="#333" stroke-width="1"/>
+
+            <!-- Exocuticle -->
+            <text x="105" y="215" text-anchor="end" font-weight="600">Exocuticle</text>
+            <text x="105" y="228" text-anchor="end" font-size="10" fill="#7f8c8d">(Sclerotized chitin)</text>
+            <line x1="110" y1="212" x2="118" y2="212" stroke="#333" stroke-width="1"/>
+
+            <!-- Endocuticle -->
+            <text x="105" y="265" text-anchor="end" font-weight="600">Endocuticle</text>
+            <text x="105" y="278" text-anchor="end" font-size="10" fill="#7f8c8d">(Flexible chitin)</text>
+            <line x1="110" y1="262" x2="118" y2="262" stroke="#333" stroke-width="1"/>
+
+            <!-- Epidermis -->
+            <text x="105" y="315" text-anchor="end" font-weight="600">Epidermis</text>
+            <text x="105" y="328" text-anchor="end" font-size="10" fill="#7f8c8d">(Living secretory cells)</text>
+            <line x1="110" y1="312" x2="118" y2="312" stroke="#333" stroke-width="1"/>
+
+            <!-- Apodeme -->
+            <text x="470" y="375" font-weight="600">Apodeme</text>
+            <text x="470" y="388" font-size="10" fill="#7f8c8d">(Muscle attachment)</text>
+            <line x1="465" y1="372" x2="400" y2="372" stroke="#333" stroke-width="1"/>
+
+            <!-- Muscle -->
+            <text x="470" y="420" font-weight="600">Striated Muscle</text>
+            <line x1="465" y1="417" x2="430" y2="417" stroke="#333" stroke-width="1"/>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- RIGHT SIDE: MACROSCOPIC VIEW (ORGANISM)    -->
+        <!-- ========================================== -->
+
+        <!-- New Bug (Grows and hardens) -->
+        <g class="new-bug">
+            <!-- Legs -->
+            <path d="M 615 200 L 580 180 L 560 200 M 685 200 L 720 180 L 740 200 M 610 230 L 570 230 L 550 260 M 690 230 L 730 230 L 750 260 M 615 270 L 580 300 L 560 340 M 685 270 L 720 300 L 740 340" fill="none" stroke="#A0522D" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="new-bug-body"/>
+            <!-- Body -->
+            <path d="M 630 180 C 630 150, 670 150, 670 180 Z" class="new-bug-body" stroke-width="2"/>
+            <path d="M 620 185 L 680 185 L 690 250 L 610 250 Z" class="new-bug-body" stroke-width="2"/>
+            <path d="M 610 255 L 690 255 L 670 360 L 630 360 Z" class="new-bug-body" stroke-width="2"/>
+        </g>
+
+        <!-- Old Bug Left Half -->
+        <g class="old-bug-left">
+            <path d="M 615 200 L 580 180 L 560 200 M 610 230 L 570 230 L 550 260 M 615 270 L 580 300 L 560 340" fill="none" stroke="#5C2E0B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 650 150 C 630 150, 630 180, 650 180 Z" fill="#8B4513" stroke="#5C2E0B" stroke-width="2"/>
+            <path d="M 650 185 L 620 185 L 610 250 L 650 250 Z" fill="#8B4513" stroke="#5C2E0B" stroke-width="2"/>
+            <path d="M 650 255 L 610 255 L 630 360 L 650 360 Z" fill="#8B4513" stroke="#5C2E0B" stroke-width="2"/>
+        </g>
+
+        <!-- Old Bug Right Half -->
+        <g class="old-bug-right">
+            <path d="M 685 200 L 720 180 L 740 200 M 690 230 L 730 230 L 750 260 M 685 270 L 720 300 L 740 340" fill="none" stroke="#5C2E0B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 650 150 C 670 150, 670 180, 650 180 Z" fill="#8B4513" stroke="#5C2E0B" stroke-width="2"/>
+            <path d="M 650 185 L 680 185 L 690 250 L 650 250 Z" fill="#8B4513" stroke="#5C2E0B" stroke-width="2"/>
+            <path d="M 650 255 L 690 255 L 670 360 L 650 360 Z" fill="#8B4513" stroke="#5C2E0B" stroke-width="2"/>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- PROCESS INDICATOR (BOTTOM LEFT)            -->
+        <!-- ========================================== -->
+        <g id="process-indicator" transform="translate(40, 420)">
+            <rect width="280" height="60" rx="6" fill="#ffffff" stroke="#4A90D9" stroke-width="2"/>
+            <text x="15" y="25" font-family="Roboto Mono" font-size="13" font-weight="700" fill="#2C3E50">Current Phase:</text>
+            
+            <!-- Dynamic Text -->
+            <text x="15" y="45" font-family="Inter" font-size="14" font-weight="600" fill="#E74C3C" class="p1">1. Intermolt (Structural Integrity)</text>
+            <text x="15" y="45" font-family="Inter" font-size="14" font-weight="600" fill="#E74C3C" class="p2">2. Apolysis (Epidermis separates)</text>
+            <text x="15" y="45" font-family="Inter" font-size="14" font-weight="600" fill="#E74C3C" class="p3">3. Ecdysis (Old shell is shed)</text>
+            <text x="15" y="45" font-family="Inter" font-size="14" font-weight="600" fill="#E74C3C" class="p4">4. Sclerotization (New shell hardens)</text>
+
+            <!-- Progress Bar -->
+            <rect x="0" y="56" width="280" height="4" rx="2" fill="#E8F4FD"/>
+            <rect x="0" y="56" width="0" height="4" rx="2" fill="#4A90D9" class="progress-fill"/>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competent Host Transformation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;1,400&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            background-color: #ffffff;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #2C3E50;
+        }
+
+        .chem {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+        }
+
+        /* Animations */
+        @keyframes bg-anim {
+            0%, 35% { fill: #E3F2FD; }
+            41% { fill: #FFEBEE; }
+            53% { fill: #FFCDD2; }
+            66% { fill: #FFEBEE; }
+            72%, 100% { fill: #E3F2FD; }
+        }
+
+        @keyframes pore-wall-anim {
+            0%, 35% { stroke-dasharray: 1091 0; }
+            41%, 66% { stroke-dasharray: 80 29.1; }
+            72%, 100% { stroke-dasharray: 1091 0; }
+        }
+
+        @keyframes pore-membrane-anim {
+            0%, 35% { stroke-dasharray: 1041 0; }
+            41%, 66% { stroke-dasharray: 75 29.1; }
+            72%, 100% { stroke-dasharray: 1041 0; }
+        }
+
+        @keyframes plasmid-move {
+            0%, 10% { opacity: 0; transform: translateX(-20px); }
+            15%, 41% { opacity: 1; transform: translateX(0); }
+            50%, 85% { opacity: 1; transform: translateX(340px); }
+            90%, 100% { opacity: 0; transform: translateX(360px); }
+        }
+
+        @keyframes ca-plasmid-bind {
+            0%, 15% { opacity: 0; transform: translate(-20px, -20px); }
+            25%, 85% { opacity: 1; transform: translate(0, 0); }
+            90%, 100% { opacity: 0; transform: translate(20px, 20px); }
+        }
+
+        @keyframes ca-membrane-bind {
+            0%, 15% { opacity: 0; transform: translateX(-40px) translateY(-20px); }
+            25%, 66% { opacity: 1; transform: translateX(0) translateY(0); }
+            72%, 90% { opacity: 0; transform: translateX(-40px) translateY(20px); }
+            90%, 100% { opacity: 0; }
+        }
+
+        @keyframes phase-1 { 0%, 23% { opacity: 1; } 25%, 100% { opacity: 0; } }
+        @keyframes phase-2 { 0%, 23% { opacity: 0; } 25%, 39% { opacity: 1; } 41%, 100% { opacity: 0; } }
+        @keyframes phase-3 { 0%, 39% { opacity: 0; } 41%, 64% { opacity: 1; } 66%, 100% { opacity: 0; } }
+        @keyframes phase-4 { 0%, 64% { opacity: 0; } 66%, 98% { opacity: 1; } 100% { opacity: 0; } }
+
+        @keyframes thermo-fluid {
+            0%, 35% { height: 15px; y: 70px; fill: #3498DB; }
+            41%, 66% { height: 55px; y: 30px; fill: #E74C3C; }
+            72%, 100% { height: 15px; y: 70px; fill: #3498DB; }
+        }
+
+        @keyframes thermo-bulb {
+            0%, 35% { fill: #3498DB; }
+            41%, 66% { fill: #E74C3C; }
+            72%, 100% { fill: #3498DB; }
+        }
+
+        @keyframes thermo-text-ice {
+            0%, 35% { opacity: 1; }
+            41%, 66% { opacity: 0; }
+            72%, 100% { opacity: 1; }
+        }
+
+        @keyframes thermo-text-heat {
+            0%, 35% { opacity: 0; }
+            41%, 66% { opacity: 1; }
+            72%, 100% { opacity: 0; }
+        }
+
+        @keyframes heat-waves {
+            0%, 38% { opacity: 0; transform: translateY(20px); }
+            45%, 60% { opacity: 0.5; transform: translateY(-30px); }
+            66%, 100% { opacity: 0; transform: translateY(-50px); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* Apply Animations */
+        .bg-rect { animation: bg-anim 12s infinite ease-in-out; }
+        .cell-wall { animation: pore-wall-anim 12s infinite ease-in-out; }
+        .cell-membrane { animation: pore-membrane-anim 12s infinite ease-in-out; }
+        .plasmid-group { animation: plasmid-move 12s infinite ease-in-out; }
+        .ca-plasmid { animation: ca-plasmid-bind 12s infinite ease-in-out; }
+        .ca-membrane-group { animation: ca-membrane-bind 12s infinite ease-in-out; }
+        
+        .phase-1 { animation: phase-1 12s infinite ease-in-out; }
+        .phase-2 { animation: phase-2 12s infinite ease-in-out; }
+        .phase-3 { animation: phase-3 12s infinite ease-in-out; }
+        .phase-4 { animation: phase-4 12s infinite ease-in-out; }
+        
+        .thermo-fluid { animation: thermo-fluid 12s infinite ease-in-out; }
+        .thermo-bulb { animation: thermo-bulb 12s infinite ease-in-out; }
+        .temp-text-ice { animation: thermo-text-ice 12s infinite ease-in-out; }
+        .temp-text-heat { animation: thermo-text-heat 12s infinite ease-in-out; }
+        .heat-wave { animation: heat-waves 12s infinite ease-in-out; }
+        .floating { animation: float 6s infinite ease-in-out; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of Competent Host Transformation via Heat Shock Method">
+    <title>Transformation of E. coli into a Competent Host</title>
+    <desc>An animation showing the 4 steps of bacterial transformation: incubation on ice, calcium ion binding, heat shock at 42°C creating transient pores to allow plasmid entry, and recovery on ice.</desc>
+
+    <!-- Background -->
+    <rect width="800" height="500" class="bg-rect" />
+
+    <!-- Heat Shock Waves -->
+    <g class="heat-wave" style="animation-delay: 0s;">
+        <path d="M 150 450 Q 170 400 150 350 T 150 250" stroke="#E74C3C" fill="none" stroke-width="4" stroke-linecap="round" />
+    </g>
+    <g class="heat-wave" style="animation-delay: 0.3s;">
+        <path d="M 350 480 Q 370 430 350 380 T 350 280" stroke="#E74C3C" fill="none" stroke-width="5" stroke-linecap="round" />
+    </g>
+    <g class="heat-wave" style="animation-delay: 0.6s;">
+        <path d="M 550 460 Q 570 410 550 360 T 550 260" stroke="#E74C3C" fill="none" stroke-width="4" stroke-linecap="round" />
+    </g>
+    <g class="heat-wave" style="animation-delay: 0.1s;">
+        <path d="M 700 440 Q 720 390 700 340 T 700 240" stroke="#E74C3C" fill="none" stroke-width="3" stroke-linecap="round" />
+    </g>
+
+    <!-- Title -->
+    <text x="400" y="35" text-anchor="middle" font-weight="700" font-size="22">
+        Transformation of <tspan font-style="italic">E. coli</tspan> into a Competent Host
+    </text>
+
+    <!-- Floating Container for Cell -->
+    <g class="floating">
+        <!-- E. coli Cell -->
+        <!-- Cell Wall -->
+        <rect x="320" y="140" width="420" height="220" rx="110" fill="none" stroke="#D2B48C" stroke-width="16" class="cell-wall" stroke-linecap="round" />
+        
+        <!-- Plasma Membrane & Cytoplasm -->
+        <rect x="328" y="148" width="404" height="204" rx="102" fill="#E8F4FD" stroke="#4A90D9" stroke-width="6" class="cell-membrane" stroke-linecap="round" />
+
+        <!-- Bacterial Chromosome -->
+        <path d="M 520 200 Q 550 150 600 180 T 680 220 T 630 280 T 550 260 T 580 210 T 650 260 T 610 190 T 520 200" fill="none" stroke="#FF6B6B" stroke-width="5" opacity="0.4" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M 540 230 Q 510 270 560 300 T 620 310 T 660 270 T 590 240 T 540 230" fill="none" stroke="#FF6B6B" stroke-width="4" opacity="0.3" stroke-linecap="round" stroke-linejoin="round" />
+        
+        <!-- Labels for Cell Parts -->
+        <line x1="420" y1="140" x2="380" y2="90" stroke="#2C3E50" stroke-width="1.5" />
+        <text x="375" y="85" text-anchor="end" font-size="14" font-weight="600">Cell Wall</text>
+        
+        <line x1="450" y1="148" x2="480" y2="90" stroke="#2C3E50" stroke-width="1.5" />
+        <text x="485" y="85" font-size="14" font-weight="600">Plasma Membrane</text>
+
+        <line x1="620" y1="200" x2="650" y2="120" stroke="#2C3E50" stroke-width="1.5" />
+        <text x="655" y="115" font-size="14" font-weight="600">Bacterial Chromosome</text>
+    </g>
+
+    <!-- Membrane-bound Calcium Ions -->
+    <g class="ca-membrane-group floating">
+        <circle cx="310" cy="180" r="4.5" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" />
+        <circle cx="300" cy="210" r="4.5" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" />
+        <circle cx="295" cy="240" r="4.5" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" />
+        <circle cx="298" cy="270" r="4.5" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" />
+        <circle cx="312" cy="300" r="4.5" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" />
+        <circle cx="330" cy="330" r="4.5" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" />
+        <circle cx="335" cy="155" r="4.5" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" />
+    </g>
+
+    <!-- Recombinant Plasmids & Plasmid-bound Calcium Ions -->
+    <g class="floating">
+        <g class="plasmid-group">
+            <!-- Plasmid 1 -->
+            <circle cx="120" cy="200" r="16" fill="none" stroke="#FF6B6B" stroke-width="6" />
+            <circle cx="120" cy="200" r="16" fill="none" stroke="#ffffff" stroke-width="1.5" />
+            
+            <!-- Plasmid 2 -->
+            <circle cx="160" cy="250" r="16" fill="none" stroke="#FF6B6B" stroke-width="6" />
+            <circle cx="160" cy="250" r="16" fill="none" stroke="#ffffff" stroke-width="1.5" />
+            
+            <!-- Plasmid 3 -->
+            <circle cx="100" cy="270" r="16" fill="none" stroke="#FF6B6B" stroke-width="6" />
+            <circle cx="100" cy="270" r="16" fill="none" stroke="#ffffff" stroke-width="1.5" />
+
+            <!-- Calcium Ions binding to Plasmids -->
+            <circle cx="100" cy="185" r="4" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" class="ca-plasmid" style="animation-delay: 0.1s;" />
+            <circle cx="135" cy="190" r="4" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" class="ca-plasmid" style="animation-delay: 0.2s;" />
+            <circle cx="125" cy="220" r="4" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" class="ca-plasmid" style="animation-delay: 0.3s;" />
+            
+            <circle cx="145" cy="240" r="4" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" class="ca-plasmid" style="animation-delay: 0.1s;" />
+            <circle cx="178" cy="245" r="4" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" class="ca-plasmid" style="animation-delay: 0.4s;" />
+            <circle cx="165" cy="270" r="4" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" class="ca-plasmid" style="animation-delay: 0.2s;" />
+            
+            <circle cx="85" cy="260" r="4" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" class="ca-plasmid" style="animation-delay: 0.3s;" />
+            <circle cx="115" cy="285" r="4" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" class="ca-plasmid" style="animation-delay: 0.1s;" />
+        </g>
+    </g>
+
+    <!-- Legend -->
+    <rect x="15" y="60" width="220" height="150" fill="rgba(255, 255, 255, 0.9)" stroke="#BDC3C7" stroke-width="1.5" rx="8" />
+    <text x="125" y="80" text-anchor="middle" font-size="13" font-weight="700">Legend</text>
+    
+    <line x1="25" y1="100" x2="55" y2="100" stroke="#D2B48C" stroke-width="6" stroke-linecap="round" />
+    <text x="65" y="104" font-size="12">Cell Wall</text>
+    
+    <line x1="25" y1="125" x2="55" y2="125" stroke="#4A90D9" stroke-width="4" stroke-linecap="round" />
+    <text x="65" y="129" font-size="12">Plasma Membrane</text>
+    
+    <circle cx="40" cy="150" r="6" fill="none" stroke="#FF6B6B" stroke-width="3" />
+    <circle cx="40" cy="150" r="6" fill="none" stroke="#ffffff" stroke-width="1" />
+    <text x="65" y="154" font-size="12">Recombinant Plasmid</text>
+    
+    <circle cx="40" cy="175" r="4.5" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1" />
+    <text x="65" y="179" font-size="12">Divalent Cation (<tspan class="chem">Ca²⁺</tspan>)</text>
+
+    <!-- Thermometer -->
+    <g transform="translate(720, 20)">
+        <!-- Glass Tube -->
+        <rect x="0" y="0" width="14" height="70" rx="7" fill="#ffffff" stroke="#2C3E50" stroke-width="2" />
+        <!-- Bulb -->
+        <circle cx="7" cy="75" r="14" fill="#ffffff" stroke="#2C3E50" stroke-width="2" />
+        
+        <!-- Fluid inside Bulb -->
+        <circle cx="7" cy="75" r="10" class="thermo-bulb" />
+        <!-- Fluid Column -->
+        <rect x="4" y="30" width="6" height="40" class="thermo-fluid" rx="3" />
+        
+        <!-- Temperature Marks -->
+        <line x1="14" y1="35" x2="20" y2="35" stroke="#2C3E50" stroke-width="1.5" />
+        <line x1="14" y1="60" x2="20" y2="60" stroke="#2C3E50" stroke-width="1.5" />
+        
+        <!-- Temperature Text -->
+        <text x="25" y="39" font-size="14" font-weight="700" fill="#E74C3C" class="temp-text-heat">42°C</text>
+        <text x="25" y="64" font-size="14" font-weight="700" fill="#3498DB" class="temp-text-ice">0°C</text>
+    </g>
+
+    <!-- Dynamic Text Box (Process Stages) -->
+    <rect x="100" y="420" width="600" height="55" rx="12" fill="#ffffff" stroke="#2C3E50" stroke-width="2" opacity="0.95" box-shadow="0 4px 6px rgba(0,0,0,0.1)" />
+    
+    <text x="400" y="453" text-anchor="middle" font-size="18" font-weight="600" class="phase-1">
+        1. Incubation with <tspan class="chem">CaCl₂</tspan> on Ice (0°C)
+    </text>
+    
+    <text x="400" y="453" text-anchor="middle" font-size="18" font-weight="600" class="phase-2">
+        2. <tspan class="chem">Ca²⁺</tspan> neutralizes DNA &amp; membrane charges
+    </text>
+    
+    <text x="400" y="453" text-anchor="middle" font-size="18" font-weight="600" class="phase-3">
+        3. Heat Shock (42°C) creates transient pores, DNA enters
+    </text>
+    
+    <text x="400" y="453" text-anchor="middle" font-size="18" font-weight="600" class="phase-4">
+        4. Recovery on Ice (0°C) traps DNA inside
+    </text>
+
+</svg>
+
+</body>
+</html>

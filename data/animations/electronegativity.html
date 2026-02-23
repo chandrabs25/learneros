@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electronegativity and Molecular Polarity</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        text {
+            user-select: none;
+        }
+
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Animations */
+        .electron-a {
+            animation: oscillate 3s ease-in-out infinite;
+        }
+
+        @keyframes oscillate {
+            0%, 100% { transform: translateX(-3px); }
+            50% { transform: translateX(3px); }
+        }
+
+        .electron-b {
+            animation: electron-shift 10s ease-in-out infinite;
+        }
+
+        @keyframes electron-shift {
+            0%, 30% { transform: translateX(0); }
+            70%, 90% { transform: translateX(-35px); }
+            100% { transform: translateX(0); }
+        }
+
+        .dipole-line {
+            stroke-dasharray: 95;
+            stroke-dashoffset: 95;
+            animation: draw-line 10s ease-in-out infinite;
+        }
+
+        @keyframes draw-line {
+            0%, 65% { stroke-dashoffset: 95; opacity: 0; }
+            70% { stroke-dashoffset: 95; opacity: 1; }
+            75%, 90% { stroke-dashoffset: 0; opacity: 1; }
+            95%, 100% { stroke-dashoffset: 95; opacity: 0; }
+        }
+
+        .dipole-head, .dipole-cross {
+            opacity: 0;
+            animation: pop-in 10s ease-in-out infinite;
+        }
+
+        @keyframes pop-in {
+            0%, 73% { opacity: 0; }
+            75%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        .fade-in-text {
+            opacity: 0;
+            animation: fade-in 10s ease-in-out infinite;
+        }
+
+        @keyframes fade-in {
+            0%, 65% { opacity: 0; transform: translateY(5px); }
+            75%, 90% { opacity: 1; transform: translateY(0); }
+            95%, 100% { opacity: 0; transform: translateY(5px); }
+        }
+        
+        .fade-in-dipole-text {
+            opacity: 0;
+            animation: fade-in-dipole 10s ease-in-out infinite;
+        }
+
+        @keyframes fade-in-dipole {
+            0%, 65% { opacity: 0; }
+            75%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-label="Animation showing the difference in electron sharing between C-H and O-H bonds.">
+            <defs>
+                <!-- Drop Shadow for Atoms -->
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.25" />
+                </filter>
+
+                <!-- Radial Gradients for Electron Density Clouds -->
+                <radialGradient id="cloudGradA" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#4488FF" stop-opacity="0.5" />
+                    <stop offset="70%" stop-color="#4488FF" stop-opacity="0.2" />
+                    <stop offset="100%" stop-color="#4488FF" stop-opacity="0" />
+                </radialGradient>
+
+                <radialGradient id="cloudGradB" cx="40%" cy="50%" r="60%">
+                    <stop offset="0%" stop-color="#4488FF" stop-opacity="0.5" />
+                    <stop offset="70%" stop-color="#4488FF" stop-opacity="0.2" />
+                    <stop offset="100%" stop-color="#4488FF" stop-opacity="0" />
+                </radialGradient>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#f8f9fa" />
+
+            <!-- Title -->
+            <text x="400" y="45" text-anchor="middle" font-size="24" font-weight="700" fill="#222">Electronegativity and Molecular Polarity</text>
+            
+            <!-- Divider Line -->
+            <line x1="400" y1="80" x2="400" y2="380" stroke="#dee2e6" stroke-width="2" stroke-dasharray="8,8" />
+
+            <!-- ========================================== -->
+            <!-- PANEL A: C-H BOND (NON-POLAR)              -->
+            <!-- ========================================== -->
+            <g id="panel-a">
+                <!-- Subtitle -->
+                <text x="200" y="95" text-anchor="middle" font-size="18" font-weight="600" fill="#404040">C-H Bond (Non-polar)</text>
+
+                <!-- Electron Density Cloud -->
+                <ellipse cx="200" cy="250" rx="85" ry="45" fill="url(#cloudGradA)" />
+
+                <!-- Bond -->
+                <line x1="140" y1="250" x2="260" y2="250" stroke="#333333" stroke-width="4" />
+
+                <!-- Atoms -->
+                <circle cx="140" cy="250" r="25" fill="#404040" filter="url(#shadow)" />
+                <text x="140" y="256" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">C</text>
+
+                <circle cx="260" cy="250" r="15" fill="#CCCCCC" filter="url(#shadow)" />
+                <text x="260" y="255" text-anchor="middle" font-size="14" font-weight="700" fill="#333333">H</text>
+
+                <!-- Shared Electrons -->
+                <circle cx="200" cy="242" r="4" fill="#FFD700" stroke="#E6A800" stroke-width="1" class="electron-a" />
+                <circle cx="200" cy="258" r="4" fill="#FFD700" stroke="#E6A800" stroke-width="1" class="electron-a" />
+
+                <!-- Electronegativity Values -->
+                <text x="140" y="310" text-anchor="middle" font-size="14" fill="#555" class="mono">χ = 2.5</text>
+                <text x="260" y="310" text-anchor="middle" font-size="14" fill="#555" class="mono">χ = 2.1</text>
+                
+                <!-- Delta Chi -->
+                <text x="200" y="350" text-anchor="middle" font-size="16" font-weight="700" fill="#333" class="mono">Δχ = 0.4</text>
+
+                <!-- No Dipole Indicator -->
+                <text x="200" y="180" text-anchor="middle" font-size="16" font-weight="600" fill="#888" class="fade-in-dipole-text">Ø No Dipole</text>
+            </g>
+
+            <!-- ========================================== -->
+            <!-- PANEL B: O-H BOND (POLAR)                  -->
+            <!-- ========================================== -->
+            <g id="panel-b">
+                <!-- Subtitle -->
+                <text x="600" y="95" text-anchor="middle" font-size="18" font-weight="600" fill="#404040">O-H Bond (Polar)</text>
+
+                <!-- Electron Density Cloud (Morphing Path) -->
+                <path fill="url(#cloudGradB)">
+                    <animate attributeName="d"
+                        values="
+                            M 510,250 C 510,190 690,190 690,250 C 690,310 510,310 510,250 Z;
+                            M 510,250 C 510,190 690,190 690,250 C 690,310 510,310 510,250 Z;
+                            M 480,250 C 480,160 600,210 680,250 C 600,290 480,340 480,250 Z;
+                            M 480,250 C 480,160 600,210 680,250 C 600,290 480,340 480,250 Z;
+                            M 510,250 C 510,190 690,190 690,250 C 690,310 510,310 510,250 Z
+                        "
+                        keyTimes="0; 0.3; 0.7; 0.9; 1"
+                        dur="10s" repeatCount="indefinite" />
+                </path>
+
+                <!-- Bond -->
+                <line x1="540" y1="250" x2="660" y2="250" stroke="#333333" stroke-width="4" />
+
+                <!-- Atoms -->
+                <circle cx="540" cy="250" r="25" fill="#FF4444" filter="url(#shadow)" />
+                <text x="540" y="256" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">O</text>
+
+                <circle cx="660" cy="250" r="15" fill="#CCCCCC" filter="url(#shadow)" />
+                <text x="660" y="255" text-anchor="middle" font-size="14" font-weight="700" fill="#333333">H</text>
+
+                <!-- Shared Electrons -->
+                <circle cx="600" cy="242" r="4" fill="#FFD700" stroke="#E6A800" stroke-width="1" class="electron-b" />
+                <circle cx="600" cy="258" r="4" fill="#FFD700" stroke="#E6A800" stroke-width="1" class="electron-b" />
+
+                <!-- Electronegativity Values -->
+                <text x="540" y="310" text-anchor="middle" font-size="14" fill="#555" class="mono">χ = 3.5</text>
+                <text x="660" y="310" text-anchor="middle" font-size="14" fill="#555" class="mono">χ = 2.1</text>
+
+                <!-- Delta Chi -->
+                <text x="600" y="350" text-anchor="middle" font-size="16" font-weight="700" fill="#333" class="mono">Δχ = 1.4</text>
+
+                <!-- Partial Charges -->
+                <text x="540" y="200" text-anchor="middle" font-size="20" font-weight="700" fill="#FF4444" class="mono fade-in-text">δ-</text>
+                <text x="660" y="200" text-anchor="middle" font-size="20" font-weight="700" fill="#4444FF" class="mono fade-in-text">δ+</text>
+
+                <!-- Dipole Arrow -->
+                <g>
+                    <line x1="640" y1="180" x2="545" y2="180" stroke="#F77F00" stroke-width="3" class="dipole-line" />
+                    <line x1="630" y1="172" x2="630" y2="188" stroke="#F77F00" stroke-width="3" class="dipole-cross" />
+                    <polygon points="545,175 535,180 545,185" fill="#F77F00" class="dipole-head" />
+                </g>
+            </g>
+
+            <!-- ========================================== -->
+            <!-- LEGEND & CAPTION                           -->
+            <!-- ========================================== -->
+            
+            <!-- Legend Background -->
+            <rect x="120" y="405" width="560" height="30" rx="15" fill="#ffffff" stroke="#e9ecef" stroke-width="1" />
+
+            <!-- Legend Items -->
+            <g font-size="12" fill="#555" font-weight="600">
+                <circle cx="150" cy="420" r="6" fill="#404040" />
+                <text x="162" y="424">Carbon</text>
+
+                <circle cx="230" cy="420" r="6" fill="#FF4444" />
+                <text x="242" y="424">Oxygen</text>
+
+                <circle cx="310" cy="420" r="6" fill="#CCCCCC" />
+                <text x="322" y="424">Hydrogen</text>
+
+                <circle cx="395" cy="420" r="4" fill="#FFD700" stroke="#E6A800" />
+                <text x="405" y="424">Electron</text>
+
+                <line x1="475" y1="420" x2="495" y2="420" stroke="#F77F00" stroke-width="2" />
+                <polygon points="495,417 500,420 495,423" fill="#F77F00" />
+                <text x="505" y="424">Dipole</text>
+
+                <ellipse cx="570" cy="420" rx="10" ry="6" fill="#4488FF" opacity="0.4" />
+                <text x="585" y="424">Electron Cloud</text>
+            </g>
+
+            <!-- Caption -->
+            <text x="400" y="475" text-anchor="middle" font-size="14" font-weight="600" fill="#444">
+                Minimal Δχ in Alkanes leads to equal electron sharing, resulting in non-polarity and water insolubility.
+            </text>
+        </svg>
+    </div>
+</body>
+</html>

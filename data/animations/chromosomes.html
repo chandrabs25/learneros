@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chromosomal Segregation and Aneuploidy</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #2C3E50;
+        }
+
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+        }
+
+        /* Animations */
+        .scene {
+            animation: scene-fade 12s infinite ease-in-out;
+        }
+
+        .jiggle {
+            animation: jiggle 0.5s infinite ease-in-out;
+        }
+
+        .move-left {
+            animation: move-left 12s infinite ease-in-out;
+        }
+
+        .move-right {
+            animation: move-right 12s infinite ease-in-out;
+        }
+
+        .spindle-left {
+            transform-origin: 180px 250px;
+            animation: spindle-left 12s infinite ease-in-out;
+        }
+
+        .spindle-right {
+            transform-origin: 620px 250px;
+            animation: spindle-right 12s infinite ease-in-out;
+        }
+
+        .parent-cell {
+            animation: parent-cell 12s infinite ease-in-out;
+        }
+
+        .daughter-cell {
+            animation: daughter-cell 12s infinite ease-in-out;
+        }
+
+        .nucleus {
+            animation: nucleus-fade 12s infinite ease-in-out;
+        }
+
+        .label-fade {
+            animation: label-fade 12s infinite ease-in-out;
+        }
+
+        .fail-label {
+            animation: fail-label 12s infinite ease-in-out;
+        }
+
+        .result-label {
+            animation: result-label 12s infinite ease-in-out;
+        }
+
+        @keyframes scene-fade {
+            0%, 91.6% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes jiggle {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(0.5px, -0.5px) rotate(0.5deg); }
+            50% { transform: translate(-0.5px, 0.5px) rotate(-0.5deg); }
+            75% { transform: translate(0.5px, 0.5px) rotate(0deg); }
+        }
+
+        @keyframes move-left {
+            0%, 25% { transform: translateX(0); }
+            58.3%, 100% { transform: translateX(-130px); }
+        }
+
+        @keyframes move-right {
+            0%, 25% { transform: translateX(0); }
+            58.3%, 100% { transform: translateX(130px); }
+        }
+
+        @keyframes spindle-left {
+            0%, 12.5%, 25% { transform: scaleX(1); opacity: 0.8; }
+            6.25%, 18.75% { transform: scaleX(1); opacity: 0.3; }
+            58.3% { transform: scaleX(0.35); opacity: 0.8; }
+            60%, 100% { transform: scaleX(0.35); opacity: 0; }
+        }
+
+        @keyframes spindle-right {
+            0%, 12.5%, 25% { transform: scaleX(1); opacity: 0.8; }
+            6.25%, 18.75% { transform: scaleX(1); opacity: 0.3; }
+            58.3% { transform: scaleX(0.35); opacity: 0.8; }
+            60%, 100% { transform: scaleX(0.35); opacity: 0; }
+        }
+
+        @keyframes parent-cell {
+            0%, 50% { opacity: 1; }
+            66.6%, 100% { opacity: 0; }
+        }
+
+        @keyframes daughter-cell {
+            0%, 50% { opacity: 0; transform: scale(0.9); transform-origin: center; }
+            66.6%, 100% { opacity: 1; transform: scale(1); transform-origin: center; }
+        }
+
+        @keyframes nucleus-fade {
+            0% { opacity: 1; }
+            8.3%, 100% { opacity: 0; }
+        }
+
+        @keyframes label-fade {
+            0%, 25% { opacity: 1; }
+            30%, 100% { opacity: 0; }
+        }
+
+        @keyframes fail-label {
+            0%, 30% { opacity: 0; transform: translateY(10px); }
+            35%, 60% { opacity: 1; transform: translateY(0); }
+            65%, 100% { opacity: 0; }
+        }
+
+        @keyframes result-label {
+            0%, 66.6% { opacity: 0; transform: translateY(10px); }
+            75%, 100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Chromosomal Nondisjunction during Meiosis I</title>
+        <desc>Diagram showing normal chromosomal segregation vs nondisjunction leading to aneuploidy.</desc>
+
+        <defs>
+            <!-- Chromosome Dyad Path -->
+            <path id="chrom" d="M -12 -25 C -4 -12, -4 -12, 0 0 C -4 12, -4 12, -12 25 M 12 -25 C 4 -12, 4 -12, 0 0 C 4 12, 4 12, 12 25" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            <circle id="centromere" cx="0" cy="0" r="4" />
+        </defs>
+
+        <!-- Static Background Elements -->
+        <rect width="100%" height="100%" fill="#ffffff" />
+        
+        <text x="400" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#2C3E50">Chromosomal Nondisjunction during Meiosis I</text>
+        <text x="400" y="65" text-anchor="middle" font-size="14" fill="#7f8c8d">Mechanism leading to Aneuploidy</text>
+
+        <!-- Legend -->
+        <g transform="translate(20, 430)">
+            <rect x="0" y="0" width="140" height="60" rx="6" fill="#f8f9fa" stroke="#e0e0e0" stroke-width="1"/>
+            <line x1="10" y1="15" x2="25" y2="15" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round"/>
+            <text x="35" y="19" font-size="11">Maternal Chromosome</text>
+            
+            <line x1="10" y1="30" x2="25" y2="30" stroke="#E74C3C" stroke-width="4" stroke-linecap="round"/>
+            <text x="35" y="34" font-size="11">Paternal Chromosome</text>
+            
+            <line x1="10" y1="45" x2="25" y2="45" stroke="#98D8C8" stroke-width="2" stroke-dasharray="3 3"/>
+            <text x="35" y="49" font-size="11">Spindle Fibers</text>
+        </g>
+
+        <!-- Main Animated Scene -->
+        <g class="scene">
+            
+            <!-- Daughter Cells (Fade in later) -->
+            <g class="daughter-cell">
+                <!-- Left Daughter -->
+                <rect x="110" y="100" width="260" height="300" rx="130" ry="130" fill="#E8F4FD" stroke="#4A90D9" stroke-width="4"/>
+                <circle cx="180" cy="250" r="6" fill="#2C3E50"/> <!-- Centrosome -->
+                
+                <!-- Right Daughter -->
+                <rect x="430" y="100" width="260" height="300" rx="130" ry="130" fill="#E8F4FD" stroke="#4A90D9" stroke-width="4"/>
+                <circle cx="620" cy="250" r="6" fill="#2C3E50"/> <!-- Centrosome -->
+            </g>
+
+            <!-- Parent Cell (Fades out) -->
+            <g class="parent-cell">
+                <rect x="150" y="100" width="500" height="300" rx="150" ry="150" fill="#E8F4FD" stroke="#4A90D9" stroke-width="4"/>
+                <circle class="nucleus" cx="400" cy="250" r="110" fill="none" stroke="#2C3E50" stroke-width="2" stroke-dasharray="8 8"/>
+                
+                <!-- Centrosomes -->
+                <circle cx="180" cy="250" r="6" fill="#2C3E50"/>
+                <circle cx="620" cy="250" r="6" fill="#2C3E50"/>
+            </g>
+
+            <!-- Spindle Fibers -->
+            <g class="spindle-left" stroke="#98D8C8" stroke-width="2.5" stroke-dasharray="6 4">
+                <line x1="180" y1="250" x2="380" y2="180" />
+                <line x1="180" y1="250" x2="380" y2="320" />
+            </g>
+            
+            <g class="spindle-right" stroke="#98D8C8" stroke-width="2.5" stroke-dasharray="6 4">
+                <line x1="620" y1="250" x2="420" y2="180" />
+                <line x1="620" y1="250" x2="420" y2="290" />
+                <line x1="620" y1="250" x2="420" y2="350" />
+            </g>
+
+            <!-- Chromosomes -->
+            <!-- Small Pair (Normal Segregation) -->
+            <g class="move-left">
+                <g class="jiggle" transform="translate(380, 180)">
+                    <use href="#chrom" stroke="#FF6B6B" transform="scale(0.6)"/>
+                    <use href="#centromere" fill="#FF6B6B" transform="scale(0.6)"/>
+                </g>
+            </g>
+            <g class="move-right">
+                <g class="jiggle" transform="translate(420, 180)">
+                    <use href="#chrom" stroke="#E74C3C" transform="scale(0.6)"/>
+                    <use href="#centromere" fill="#E74C3C" transform="scale(0.6)"/>
+                </g>
+            </g>
+
+            <!-- Large Chromosome (Normal Segregation - Left) -->
+            <g class="move-left">
+                <g class="jiggle" transform="translate(380, 320)">
+                    <use href="#chrom" stroke="#FF6B6B"/>
+                    <use href="#centromere" fill="#FF6B6B"/>
+                </g>
+            </g>
+
+            <!-- Large Pair (Nondisjunction - Both move Right) -->
+            <g class="move-right">
+                <g class="jiggle" transform="translate(420, 290)">
+                    <use href="#chrom" stroke="#E74C3C"/>
+                    <use href="#centromere" fill="#E74C3C"/>
+                </g>
+            </g>
+            <g class="move-right">
+                <g class="jiggle" transform="translate(420, 350)">
+                    <use href="#chrom" stroke="#FF6B6B"/>
+                    <use href="#centromere" fill="#FF6B6B"/>
+                </g>
+            </g>
+
+            <!-- Process Annotations -->
+            <g class="label-fade">
+                <!-- Spindle Apparatus Label -->
+                <line x1="130" y1="180" x2="250" y2="220" stroke="#2C3E50" stroke-width="1" stroke-dasharray="2 2"/>
+                <text x="130" y="170" font-size="13" font-weight="600" text-anchor="middle">Spindle Apparatus</text>
+
+                <!-- Homologous Pair Label -->
+                <line x1="530" y1="380" x2="440" y2="340" stroke="#2C3E50" stroke-width="1" stroke-dasharray="2 2"/>
+                <text x="540" y="395" font-size="13" font-weight="600" text-anchor="middle">Homologous Pair</text>
+            </g>
+
+            <!-- Failure Label -->
+            <g class="fail-label">
+                <rect x="460" y="400" width="180" height="26" rx="4" fill="#FF6B6B" opacity="0.15"/>
+                <text x="550" y="418" font-size="13" font-weight="600" fill="#E74C3C" text-anchor="middle">Failure of Segregation</text>
+            </g>
+
+            <!-- Result Annotations -->
+            <g class="result-label">
+                <text x="240" y="440" font-size="16" font-weight="600" text-anchor="middle">Normal Gamete <tspan class="mono">(n)</tspan></text>
+                <text x="560" y="440" font-size="16" font-weight="600" text-anchor="middle">Aneuploid Gamete <tspan class="mono">(n+1)</tspan></text>
+            </g>
+
+        </g>
+    </svg>
+</body>
+</html>

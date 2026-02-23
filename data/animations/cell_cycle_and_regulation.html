@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cell Cycle Regulation and Oncogenic Transformation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        text {
+            user-select: none;
+        }
+
+        .sci-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            fill: #2C3E50;
+        }
+
+        /* Normal Cell Animations */
+        .moving-normal {
+            animation: hideMovingCell 15s infinite;
+        }
+
+        .dna-double {
+            animation: dnaDouble 15s infinite;
+        }
+
+        .daughter-left {
+            animation: splitLeft 15s infinite;
+        }
+
+        .daughter-right {
+            animation: splitRight 15s infinite;
+        }
+
+        /* Checkpoint Pulses */
+        .pulse-g1s {
+            animation: pulseG1S 15s infinite;
+        }
+
+        .pulse-g2m {
+            animation: pulseG2M 15s infinite;
+        }
+
+        /* Cancer Cell Animations */
+        .lightning {
+            animation: flash 15s infinite;
+            transform-origin: 580px 170px;
+        }
+
+        .t1 { animation: popIn1 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .t2 { animation: popIn2 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .t3 { animation: popIn3 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .t4 { animation: popIn4 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+
+        /* Keyframes */
+        @keyframes hideMovingCell {
+            0%, 86% { opacity: 1; }
+            87%, 100% { opacity: 0; }
+        }
+
+        @keyframes dnaDouble {
+            0%, 36% { opacity: 0; }
+            45%, 100% { opacity: 1; }
+        }
+
+        @keyframes splitLeft {
+            0%, 86% { opacity: 0; transform: translate(0, 0); }
+            87% { opacity: 1; transform: translate(0, 0); }
+            95%, 98% { opacity: 1; transform: translate(-25px, 0) scale(0.8); }
+            100% { opacity: 0; transform: translate(-25px, 0) scale(0.8); }
+        }
+
+        @keyframes splitRight {
+            0%, 86% { opacity: 0; transform: translate(0, 0); }
+            87% { opacity: 1; transform: translate(0, 0); }
+            95%, 98% { opacity: 1; transform: translate(25px, 0) scale(0.8); }
+            100% { opacity: 0; transform: translate(25px, 0) scale(0.8); }
+        }
+
+        @keyframes pulseG1S {
+            0%, 26% { r: 10px; opacity: 0; stroke-width: 4px; }
+            28% { r: 20px; opacity: 1; stroke-width: 3px; }
+            33%, 100% { r: 35px; opacity: 0; stroke-width: 0px; }
+        }
+
+        @keyframes pulseG2M {
+            0%, 63% { r: 10px; opacity: 0; stroke-width: 4px; }
+            65% { r: 20px; opacity: 1; stroke-width: 3px; }
+            70%, 100% { r: 35px; opacity: 0; stroke-width: 0px; }
+        }
+
+        @keyframes flash {
+            0%, 1% { opacity: 1; transform: scale(1.5); }
+            3%, 100% { opacity: 0; transform: scale(1); }
+        }
+
+        @keyframes popIn1 {
+            0%, 24% { opacity: 0; transform: scale(0); }
+            25%, 100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes popIn2 {
+            0%, 49% { opacity: 0; transform: scale(0); }
+            50%, 100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes popIn3 {
+            0%, 74% { opacity: 0; transform: scale(0); }
+            75%, 100% { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes popIn4 {
+            0%, 98% { opacity: 0; transform: scale(0); }
+            99%, 100% { opacity: 1; transform: scale(1); }
+        }
+
+        .checkpoint {
+            cursor: help;
+            transition: filter 0.3s;
+        }
+        .checkpoint:hover {
+            filter: brightness(1.2) drop-shadow(0 0 5px rgba(152, 216, 200, 0.8));
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" aria-label="Cell Cycle Regulation and Oncogenic Transformation">
+    <title>Cell Cycle Regulation vs. Cancerous Proliferation</title>
+    <desc>A split-screen animation showing a normal cell cycle with functional checkpoints on the left, and a malignant transformation with bypassed checkpoints and tumor formation on the right.</desc>
+
+    <defs>
+        <!-- Shadows -->
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.15"/>
+        </filter>
+
+        <!-- Arrow Marker -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#E74C3C" />
+        </marker>
+
+        <!-- Normal Cell Template -->
+        <g id="normal-cell-def">
+            <circle cx="0" cy="0" r="16" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2.5" filter="url(#shadow)"/>
+            <circle cx="0" cy="0" r="6" fill="#2C3E50"/>
+            <!-- DNA 1 -->
+            <path d="M-3,-2 Q0,-5 3,-2 T3,3" fill="none" stroke="#FF6B6B" stroke-width="1.5"/>
+            <!-- DNA 2 (Doubles in S Phase) -->
+            <path d="M-4,0 Q-1,-3 2,0 T2,5" fill="none" stroke="#FF6B6B" stroke-width="1.5" class="dna-double"/>
+        </g>
+
+        <!-- Cancer Cell Template (Moving) -->
+        <g id="cancer-cell-def">
+            <path d="M 0 -16 C 8 -18, 16 -8, 16 0 C 18 8, 8 16, 0 16 C -8 18, -16 8, -16 0 C -18 -8, -8 -16, 0 -16 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2.5" filter="url(#shadow)"/>
+            <!-- Larger Nucleus -->
+            <circle cx="0" cy="0" r="10" fill="#2C3E50"/>
+            <!-- Mutated DNA -->
+            <path d="M-4,-3 L-1,1 L-5,4 L1,5 L3,1 L0,-3 L4,-4" fill="none" stroke="#E74C3C" stroke-width="1.5"/>
+        </g>
+
+        <!-- Tumor Cell Template (Static Mass) -->
+        <g id="tumor-cell-def">
+            <path d="M 0 -16 C 8 -18, 16 -8, 16 0 C 18 8, 8 16, 0 16 C -8 18, -16 8, -16 0 C -18 -8, -8 -16, 0 -16 Z" fill="#F39C12" stroke="#E74C3C" stroke-width="1.5" opacity="0.95" filter="url(#shadow)"/>
+            <circle cx="0" cy="0" r="10" fill="#2C3E50"/>
+            <path d="M-4,-3 L-1,1 L-5,4 L1,5 L3,1 L0,-3 L4,-4" fill="none" stroke="#E74C3C" stroke-width="1.5"/>
+        </g>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#f8f9fa" rx="12"/>
+
+    <!-- Header & Titles -->
+    <text x="400" y="35" text-anchor="middle" font-size="22" font-weight="600" fill="#2C3E50">Cell Cycle Regulation and Oncogenic Transformation</text>
+    <line x1="400" y1="60" x2="400" y2="450" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="6 6"/>
+    
+    <text x="220" y="75" text-anchor="middle" font-size="16" font-weight="600" fill="#27AE60">Normal Regulatory Control</text>
+    <text x="580" y="75" text-anchor="middle" font-size="16" font-weight="600" fill="#E74C3C">Malignant Transformation</text>
+
+    <!-- ========================================== -->
+    <!-- LEFT SIDE: NORMAL CELL CYCLE               -->
+    <!-- ========================================== -->
+    <g id="left-side">
+        <!-- Track Base -->
+        <g transform="translate(220, 280) rotate(-90)">
+            <circle r="110" fill="none" stroke="#e9ecef" stroke-width="24"/>
+            <!-- G1 Phase (45%) -->
+            <circle r="110" fill="none" stroke="#4A90D9" stroke-width="24" stroke-dasharray="311.02 691.15" stroke-dashoffset="0"/>
+            <!-- S Phase (30%) -->
+            <circle r="110" fill="none" stroke="#98D8C8" stroke-width="24" stroke-dasharray="207.35 691.15" stroke-dashoffset="-311.02"/>
+            <!-- G2 Phase (15%) -->
+            <circle r="110" fill="none" stroke="#F39C12" stroke-width="24" stroke-dasharray="103.67 691.15" stroke-dashoffset="-518.37"/>
+            <!-- M Phase (10%) -->
+            <circle r="110" fill="none" stroke="#E74C3C" stroke-width="24" stroke-dasharray="69.12 691.15" stroke-dashoffset="-622.04"/>
+        </g>
+
+        <!-- Phase Labels -->
+        <text x="355" y="255" font-size="16" font-weight="600" fill="#4A90D9">G1</text>
+        <text x="135" y="415" font-size="16" font-weight="600" fill="#27AE60">S</text>
+        <text x="105" y="195" font-size="16" font-weight="600" fill="#F39C12">G2</text>
+        <text x="175" y="145" font-size="16" font-weight="600" fill="#E74C3C">M</text>
+
+        <!-- Annotations -->
+        <text x="135" y="435" text-anchor="middle" font-size="12" fill="#2C3E50">DNA Replication</text>
+        <text x="135" y="450" text-anchor="middle" class="sci-text">2n → 4n</text>
+        <text x="220" y="125" text-anchor="middle" font-size="12" fill="#2C3E50">Cytokinesis</text>
+
+        <!-- Checkpoints -->
+        <!-- G1/S Checkpoint -->
+        <circle cx="254" cy="384" r="10" fill="none" stroke="#98D8C8" class="pulse-g1s"/>
+        <g class="checkpoint" transform="translate(254, 384) rotate(162)">
+            <title>G1/S Checkpoint: Proteins like p53 monitor DNA integrity. Cell pauses until cleared.</title>
+            <rect x="-16" y="-6" width="32" height="12" fill="#2C3E50" rx="3"/>
+            <rect x="-14" y="-4" width="28" height="8" fill="#98D8C8" rx="2"/>
+        </g>
+        <text x="310" y="400" font-size="12" font-weight="600" fill="#2C3E50">G1/S Checkpoint</text>
+
+        <!-- G2/M Checkpoint -->
+        <circle cx="155" cy="191" r="10" fill="none" stroke="#98D8C8" class="pulse-g2m"/>
+        <g class="checkpoint" transform="translate(155, 191) rotate(324)">
+            <title>G2/M Checkpoint: Ensures all DNA is replicated and undamaged.</title>
+            <rect x="-16" y="-6" width="32" height="12" fill="#2C3E50" rx="3"/>
+            <rect x="-14" y="-4" width="28" height="8" fill="#98D8C8" rx="2"/>
+        </g>
+        <text x="100" y="165" font-size="12" font-weight="600" fill="#2C3E50">G2/M Checkpoint</text>
+
+        <!-- Moving Normal Cell -->
+        <use href="#normal-cell-def" class="moving-normal">
+            <animateMotion 
+                dur="15s" 
+                repeatCount="indefinite" 
+                calcMode="linear" 
+                keyTimes="0; 0.266; 0.366; 0.633; 0.733; 0.866; 1" 
+                keyPoints="0; 0.45; 0.45; 0.9; 0.9; 1; 1" 
+                path="M 220 170 A 110 110 0 1 1 219.9 170" />
+        </use>
+
+        <!-- Daughter Cells (Cytokinesis) -->
+        <use href="#normal-cell-def" class="daughter-left" x="220" y="170"/>
+        <use href="#normal-cell-def" class="daughter-right" x="220" y="170"/>
+    </g>
+
+
+    <!-- ========================================== -->
+    <!-- RIGHT SIDE: CANCER CELL CYCLE              -->
+    <!-- ========================================== -->
+    <g id="right-side">
+        <!-- Track Base -->
+        <g transform="translate(580, 280) rotate(-90)">
+            <circle r="110" fill="none" stroke="#e9ecef" stroke-width="24"/>
+            <!-- G1 Phase -->
+            <circle r="110" fill="none" stroke="#4A90D9" stroke-width="24" stroke-dasharray="311.02 691.15" stroke-dashoffset="0" opacity="0.6"/>
+            <!-- S Phase -->
+            <circle r="110" fill="none" stroke="#98D8C8" stroke-width="24" stroke-dasharray="207.35 691.15" stroke-dashoffset="-311.02" opacity="0.6"/>
+            <!-- G2 Phase -->
+            <circle r="110" fill="none" stroke="#F39C12" stroke-width="24" stroke-dasharray="103.67 691.15" stroke-dashoffset="-518.37" opacity="0.6"/>
+            <!-- M Phase -->
+            <circle r="110" fill="none" stroke="#E74C3C" stroke-width="24" stroke-dasharray="69.12 691.15" stroke-dashoffset="-622.04" opacity="0.6"/>
+        </g>
+
+        <!-- Broken Checkpoints -->
+        <!-- G1/S Broken -->
+        <g transform="translate(614, 384) rotate(162)">
+            <rect x="-18" y="-6" width="14" height="12" fill="#E74C3C" rx="2" transform="rotate(-20)" opacity="0.8"/>
+            <rect x="4" y="-6" width="14" height="12" fill="#E74C3C" rx="2" transform="rotate(20)" opacity="0.8"/>
+        </g>
+        <text x="640" y="410" font-size="12" font-weight="600" fill="#E74C3C">Checkpoints Bypassed</text>
+
+        <!-- G2/M Broken -->
+        <g transform="translate(515, 191) rotate(324)">
+            <rect x="-18" y="-6" width="14" height="12" fill="#E74C3C" rx="2" transform="rotate(-25)" opacity="0.8"/>
+            <rect x="4" y="-6" width="14" height="12" fill="#E74C3C" rx="2" transform="rotate(15)" opacity="0.8"/>
+        </g>
+
+        <!-- Annotations -->
+        <text x="580" y="435" text-anchor="middle" font-size="13" font-weight="600" fill="#E74C3C">Uncontrolled Proliferation</text>
+        <text x="700" y="270" font-size="12" fill="#E74C3C">Loss of Contact</text>
+        <text x="700" y="285" font-size="12" fill="#E74C3C">Inhibition</text>
+        <path d="M 695 275 Q 660 275 620 280" fill="none" stroke="#E74C3C" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+        <!-- Tumor Mass (Static overlapping cells) -->
+        <g transform="translate(580, 280)">
+            <g class="t1"><use href="#tumor-cell-def" x="-12" y="-12" transform="scale(0.9)"/></g>
+            <g class="t2"><use href="#tumor-cell-def" x="12" y="-8" transform="scale(0.85)"/></g>
+            <g class="t3"><use href="#tumor-cell-def" x="-8" y="12" transform="scale(0.95)"/></g>
+            <g class="t4"><use href="#tumor-cell-def" x="10" y="10" transform="scale(0.8)"/></g>
+        </g>
+
+        <!-- Moving Cancer Cell (Fast, no pauses) -->
+        <use href="#cancer-cell-def">
+            <animateMotion 
+                dur="3.75s" 
+                repeatCount="indefinite" 
+                path="M 580 170 A 110 110 0 1 1 579.9 170" />
+        </use>
+
+        <!-- Mutation Event Lightning Bolt -->
+        <path d="M 585 135 L 570 160 L 582 160 L 575 185 L 595 155 L 582 155 Z" fill="#F39C12" class="lightning"/>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- LEGEND                                     -->
+    <!-- ========================================== -->
+    <g transform="translate(140, 470)" font-size="11" fill="#2C3E50">
+        <rect x="0" y="0" width="12" height="12" fill="#4A90D9" rx="2"/> 
+        <text x="18" y="10">Normal Cell</text>
+        
+        <rect x="100" y="0" width="12" height="12" fill="#F39C12" rx="2"/> 
+        <text x="118" y="10">Malignant Tissue</text>
+        
+        <rect x="230" y="0" width="12" height="12" fill="#FF6B6B" rx="2"/> 
+        <text x="248" y="10">Normal DNA</text>
+        
+        <rect x="330" y="0" width="12" height="12" fill="#E74C3C" rx="2"/> 
+        <text x="348" y="10">Mutated DNA</text>
+        
+        <rect x="430" y="0" width="12" height="12" fill="#98D8C8" rx="2"/> 
+        <text x="448" y="10">Functional Checkpoint</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ionic Product of Water</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Animations */
+        .w1-group {
+            animation: moveW1 10s ease-in-out infinite;
+        }
+
+        .w2-group {
+            animation: moveW2 10s ease-in-out infinite;
+        }
+
+        .h3-group {
+            animation: moveH3 10s ease-in-out infinite;
+        }
+
+        .bond-w2 {
+            transform-origin: 510px 180px;
+            animation: scaleBondW2 10s ease-in-out infinite;
+        }
+
+        .bond-w1 {
+            transform-origin: 510px 180px;
+            animation: scaleBondW1 10s ease-in-out infinite;
+        }
+
+        .bond-dashed {
+            animation: fadeDashed 10s ease-in-out infinite;
+        }
+
+        .bond-solid {
+            animation: fadeSolid 10s ease-in-out infinite;
+        }
+
+        .arrow-fwd {
+            stroke-dasharray: 150;
+            animation: drawArrowFwd 10s ease-in-out infinite;
+        }
+
+        .arrow-rev {
+            stroke-dasharray: 150;
+            animation: drawArrowRev 10s ease-in-out infinite;
+        }
+
+        .charge-scale {
+            transform-origin: center;
+            animation: fadeCharge 10s ease-in-out infinite;
+        }
+
+        .transfer-text {
+            animation: fadeText 10s ease-in-out infinite;
+        }
+
+        /* Keyframes */
+        @keyframes moveW1 {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(80px) translateY(0); }
+            12% { transform: translateX(80px) translateY(-2px); }
+            14% { transform: translateX(80px) translateY(2px); }
+            16% { transform: translateX(80px) translateY(-2px); }
+            18% { transform: translateX(80px) translateY(2px); }
+            20%, 35% { transform: translateX(80px) translateY(0); }
+            45%, 55% { transform: translateX(0); }
+            65%, 80% { transform: translateX(80px); }
+            90% { transform: translateX(0); }
+        }
+
+        @keyframes moveW2 {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-80px) translateY(0); }
+            12% { transform: translateX(-80px) translateY(-2px); }
+            14% { transform: translateX(-80px) translateY(2px); }
+            16% { transform: translateX(-80px) translateY(-2px); }
+            18% { transform: translateX(-80px) translateY(2px); }
+            20%, 35% { transform: translateX(-80px) translateY(0); }
+            45%, 55% { transform: translateX(0); }
+            65%, 80% { transform: translateX(-80px); }
+            90% { transform: translateX(0); }
+        }
+
+        @keyframes moveH3 {
+            0%, 100% { transform: translateX(0); }
+            10% { transform: translateX(-80px) translateY(0); }
+            12% { transform: translateX(-80px) translateY(-2px); }
+            14% { transform: translateX(-80px) translateY(2px); }
+            16% { transform: translateX(-80px) translateY(-2px); }
+            18% { transform: translateX(-80px) translateY(2px); }
+            20% { transform: translateX(-80px) translateY(0); }
+            35% { transform: translateX(-140px); }
+            45%, 55% { transform: translateX(-220px); }
+            65% { transform: translateX(-140px); }
+            80% { transform: translateX(-80px); }
+            90% { transform: translateX(0); }
+        }
+
+        @keyframes scaleBondW2 {
+            0%, 20% { transform: scaleX(1); opacity: 1; }
+            35% { transform: scaleX(2.5); opacity: 0; }
+            45%, 65% { transform: scaleX(2.5); opacity: 0; }
+            80% { transform: scaleX(1); opacity: 1; }
+            100% { transform: scaleX(1); opacity: 1; }
+        }
+
+        @keyframes scaleBondW1 {
+            0%, 10% { transform: scaleX(1); }
+            20% { transform: scaleX(1); }
+            35%, 65% { transform: scaleX(0.4); }
+            80% { transform: scaleX(1); }
+            100% { transform: scaleX(1); }
+        }
+
+        @keyframes fadeDashed {
+            0%, 10% { opacity: 0; }
+            15%, 25% { opacity: 1; }
+            30%, 70% { opacity: 0; }
+            75%, 85% { opacity: 1; }
+            90%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeSolid {
+            0%, 25% { opacity: 0; }
+            30%, 70% { opacity: 1; }
+            75%, 100% { opacity: 0; }
+        }
+
+        @keyframes drawArrowFwd {
+            0%, 20% { opacity: 0; stroke-dashoffset: 150; }
+            22% { opacity: 1; }
+            28% { stroke-dashoffset: 0; opacity: 1; }
+            32% { opacity: 1; }
+            35%, 100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+
+        @keyframes drawArrowRev {
+            0%, 65% { opacity: 0; stroke-dashoffset: 150; }
+            67% { opacity: 1; }
+            73% { stroke-dashoffset: 0; opacity: 1; }
+            77% { opacity: 1; }
+            80%, 100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+
+        @keyframes fadeCharge {
+            0%, 30% { opacity: 0; transform: scale(0.5); }
+            40%, 60% { opacity: 1; transform: scale(1); }
+            70%, 100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        @keyframes fadeText {
+            0%, 15% { opacity: 0; }
+            20%, 30% { opacity: 1; }
+            35%, 60% { opacity: 0; }
+            65%, 75% { opacity: 1; }
+            80%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Auto-ionization of Water</title>
+        <desc>Animation showing two water molecules colliding and transferring a proton to form hydronium and hydroxide ions.</desc>
+
+        <defs>
+            <!-- Gradients for 3D atom effect -->
+            <radialGradient id="o-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#ff9999" />
+                <stop offset="100%" stop-color="#FF4444" />
+            </radialGradient>
+            
+            <radialGradient id="h-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#ffffff" />
+                <stop offset="100%" stop-color="#CCCCCC" />
+            </radialGradient>
+
+            <!-- Drop shadow for Kw box -->
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.08" />
+            </filter>
+
+            <!-- Arrowhead marker for mechanism arrows -->
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00" />
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Title -->
+        <text x="400" y="45" text-anchor="middle" font-size="24" font-weight="700" fill="#333">
+            Auto-ionization of Water &amp; The Ionic Product (K<tspan dy="5" font-size="16">w</tspan>)
+        </text>
+
+        <!-- Legend -->
+        <g transform="translate(20, 390)" font-size="12" fill="#555">
+            <rect x="0" y="0" width="140" height="90" rx="6" fill="#fff" stroke="#ddd" />
+            <circle cx="15" cy="20" r="6" fill="url(#o-grad)" />
+            <text x="30" y="24">Oxygen</text>
+            
+            <circle cx="15" cy="40" r="4" fill="url(#h-grad)" />
+            <text x="30" y="44">Hydrogen</text>
+            
+            <line x1="10" y1="60" x2="20" y2="60" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowhead)" />
+            <text x="30" y="64">Electron Flow</text>
+
+            <line x1="10" y1="80" x2="20" y2="80" stroke="#7209B7" stroke-width="2" stroke-dasharray="2,2" />
+            <text x="30" y="84">Hydrogen Bond</text>
+        </g>
+
+        <!-- Dynamic Proton Transfer Text -->
+        <text x="400" y="110" text-anchor="middle" font-size="16" font-weight="600" fill="#F77F00" class="transfer-text">
+            Proton Transfer
+        </text>
+
+        <!-- ANIMATED MOLECULES SECTION -->
+        
+        <!-- H3 Group (The transferring proton and its bonds) -->
+        <!-- Placed first so bonds render under atoms -->
+        <g class="h3-group">
+            <!-- Bond to W2 (Donor) -->
+            <line x1="510" y1="180" x2="550" y2="180" stroke="#404040" stroke-width="6" stroke-linecap="round" class="bond-w2" vector-effect="non-scaling-stroke" />
+            
+            <!-- Bond to W1 (Acceptor) - Dashed (H-bond) -->
+            <line x1="510" y1="180" x2="410" y2="180" stroke="#7209B7" stroke-width="4" stroke-dasharray="6,6" class="bond-w1 bond-dashed" vector-effect="non-scaling-stroke" />
+            
+            <!-- Bond to W1 (Acceptor) - Solid (Covalent) -->
+            <line x1="510" y1="180" x2="410" y2="180" stroke="#404040" stroke-width="6" stroke-linecap="round" class="bond-w1 bond-solid" vector-effect="non-scaling-stroke" />
+        </g>
+
+        <!-- W1 Group (Left Molecule - Acceptor) -->
+        <g class="w1-group">
+            <!-- Bonds -->
+            <line x1="250" y1="180" x2="225.5" y2="211.6" stroke="#404040" stroke-width="6" stroke-linecap="round" />
+            <line x1="250" y1="180" x2="225.5" y2="148.4" stroke="#404040" stroke-width="6" stroke-linecap="round" />
+            
+            <!-- Atoms -->
+            <circle cx="225.5" cy="211.6" r="12" fill="url(#h-grad)" />
+            <circle cx="225.5" cy="148.4" r="12" fill="url(#h-grad)" />
+            <circle cx="250" cy="180" r="18" fill="url(#o-grad)" />
+
+            <!-- Formal Charge (+) -->
+            <g transform="translate(250, 135)">
+                <g class="charge-scale">
+                    <circle cx="0" cy="0" r="12" fill="#4444FF" />
+                    <text x="0" y="5" text-anchor="middle" font-size="16" font-weight="bold" fill="#fff">+</text>
+                </g>
+            </g>
+        </g>
+
+        <!-- W2 Group (Right Molecule - Donor) -->
+        <g class="w2-group">
+            <!-- Bonds -->
+            <line x1="550" y1="180" x2="560" y2="218.7" stroke="#404040" stroke-width="6" stroke-linecap="round" />
+            
+            <!-- Atoms -->
+            <circle cx="560" cy="218.7" r="12" fill="url(#h-grad)" />
+            <circle cx="550" cy="180" r="18" fill="url(#o-grad)" />
+
+            <!-- Formal Charge (-) -->
+            <g transform="translate(550, 135)">
+                <g class="charge-scale">
+                    <circle cx="0" cy="0" r="12" fill="#FF4444" />
+                    <text x="0" y="4" text-anchor="middle" font-size="18" font-weight="bold" fill="#fff">-</text>
+                </g>
+            </g>
+        </g>
+
+        <!-- H3 Atom (The transferring proton) -->
+        <g class="h3-group">
+            <circle cx="510" cy="180" r="12" fill="url(#h-grad)" />
+        </g>
+
+        <!-- Mechanism Arrows (Forward Reaction) -->
+        <!-- Lone pair to H3 -->
+        <path d="M 340 160 Q 380 120 420 165" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-fwd" />
+        <!-- Bond to O -->
+        <path d="M 450 190 Q 460 220 470 195" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-fwd" />
+
+        <!-- Mechanism Arrows (Reverse Reaction) -->
+        <!-- OH- lone pair to H3 -->
+        <path d="M 460 160 Q 420 120 380 165" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-rev" />
+        <!-- H3O+ bond to O -->
+        <path d="M 350 190 Q 340 220 330 195" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-rev" />
+
+        <!-- STATIC REACTION EQUATION -->
+        <g transform="translate(0, 300)">
+            <text x="250" y="0" text-anchor="middle" font-size="22" class="formula" fill="#333">2H₂O(l)</text>
+            
+            <!-- Equilibrium Arrow -->
+            <g stroke="#7209B7" stroke-width="2" fill="none">
+                <!-- Top harpoon (right) -->
+                <line x1="360" y1="-8" x2="440" y2="-8" />
+                <polyline points="430,-14 440,-8 430,-8" fill="#7209B7" />
+                <!-- Bottom harpoon (left) -->
+                <line x1="360" y1="2" x2="440" y2="2" />
+                <polyline points="370,8 360,2 370,2" fill="#7209B7" />
+            </g>
+
+            <text x="550" y="0" text-anchor="middle" font-size="22" class="formula" fill="#333">H₃O⁺(aq) + OH⁻(aq)</text>
+        </g>
+
+        <!-- KW CONSTANT BOX -->
+        <g transform="translate(250, 370)">
+            <rect x="0" y="0" width="300" height="90" rx="10" fill="#ffffff" stroke="#e0e0e0" stroke-width="2" filter="url(#shadow)" />
+            <text x="150" y="35" text-anchor="middle" font-size="20" font-weight="700" class="formula" fill="#333">
+                K<tspan dy="5" font-size="14">w</tspan><tspan dy="-5"> = [H₃O⁺][OH⁻]</tspan>
+            </text>
+            <text x="150" y="65" text-anchor="middle" font-size="18" class="formula" fill="#555">
+                = 1.0 × 10⁻¹⁴ <tspan font-family="Inter" font-size="14">at 25°C</tspan>
+            </text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

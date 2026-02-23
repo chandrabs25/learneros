@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Reference Circle: Visualizing Trigonometric Functions in SHM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --axis-color: #adb5bd;
+            --grid-color: #dee2e6;
+            --force-red: #FF3366;
+            --particle-blue: #4361EE;
+            --phasor-green: #06D6A0;
+            
+            /* SVG Geometry Constants */
+            --CX: 200px;
+            --CY: 250px;
+            --R: 120px;
+            --WX: 400px;
+            --WW: 300px;
+        }
+
+        /* Modern CSS Math Functions for Animation */
+        @property --angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: true;
+        }
+
+        @property --angle-num {
+            syntax: '<integer>';
+            initial-value: 0;
+            inherits: true;
+        }
+
+        @keyframes rotate {
+            0% { --angle: 0deg; --angle-num: 0; }
+            100% { --angle: 360deg; --angle-num: 360; }
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.8rem;
+            color: #111;
+        }
+
+        .equation-box {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: inline-block;
+            border: 1px solid var(--grid-color);
+        }
+
+        .angle-display::after {
+            counter-reset: angle var(--angle-num);
+            content: counter(angle) "°";
+            color: var(--force-red);
+            font-weight: bold;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        button {
+            background: white;
+            border: 2px solid var(--axis-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            border-color: var(--particle-blue);
+            color: var(--particle-blue);
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border: 1px solid var(--grid-color);
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Animation System */
+        .system {
+            animation: rotate 8s linear infinite;
+        }
+
+        .system.paused {
+            animation-play-state: paused;
+        }
+
+        /* Dynamic SVG Elements using CSS Math */
+        .phasor {
+            transform-origin: var(--CX) var(--CY);
+            transform: translate(var(--CX), var(--CY)) rotate(calc(-1 * var(--angle)));
+        }
+
+        .particle {
+            transform: translate(
+                calc(var(--CX) + var(--R) * cos(var(--angle))),
+                calc(var(--CY) - var(--R) * sin(var(--angle)))
+            );
+        }
+
+        .tracking-point {
+            transform: translate(
+                calc(var(--WX) + (var(--angle) / 360deg) * var(--WW)),
+                calc(var(--CY) - var(--R) * sin(var(--angle)))
+            );
+        }
+
+        .tether {
+            transform-origin: 0 0;
+            transform: translate(
+                calc(var(--CX) + var(--R) * cos(var(--angle))),
+                calc(var(--CY) - var(--R) * sin(var(--angle)))
+            ) scaleX(
+                calc((var(--WX) + (var(--angle) / 360deg) * var(--WW) - (var(--CX) + var(--R) * cos(var(--angle)))) / 100)
+            );
+        }
+
+        .proj-y {
+            transform-origin: 0 0;
+            transform: translate(
+                var(--CX),
+                calc(var(--CY) - var(--R) * sin(var(--angle)))
+            ) scaleX(
+                calc((var(--R) * cos(var(--angle))) / 100)
+            );
+        }
+
+        .proj-x {
+            transform-origin: 0 0;
+            transform: translate(
+                calc(var(--CX) + var(--R) * cos(var(--angle))),
+                var(--CY)
+            ) scaleY(
+                calc((-1 * var(--R) * sin(var(--angle))) / 100)
+            );
+        }
+
+        .angle-arc {
+            transform-origin: var(--CX) var(--CY);
+            transform: scaleY(-1); /* Flips to draw counter-clockwise */
+            stroke-dasharray: 188.5; /* 2 * pi * 30 */
+            stroke-dashoffset: calc(188.5 - (var(--angle) / 360deg) * 188.5);
+        }
+
+        #wave-clip-rect {
+            transform-origin: var(--WX) 0;
+            transform: scaleX(calc(var(--angle) / 360deg));
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: var(--text-color);
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Simple Harmonic Motion: The Reference Circle</h1>
+        <div class="equation-box">
+            y(t) = A · sin( <span class="angle-display system"></span> )
+        </div>
+    </div>
+
+    <div class="controls">
+        <button id="playPauseBtn">Pause Animation</button>
+        <span style="font-size: 0.9rem; color: #6c757d;">(Hover over the diagram to inspect)</span>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" class="system" id="svgSystem">
+            <defs>
+                <!-- Arrowheads -->
+                <marker id="arrow-green" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#06D6A0" />
+                </marker>
+                <marker id="arrow-gray" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#adb5bd" />
+                </marker>
+                <!-- Clip Path for drawing the wave -->
+                <clipPath id="wave-clip">
+                    <rect id="wave-clip-rect" x="400" y="0" width="300" height="500" />
+                </clipPath>
+            </defs>
+
+            <!-- STATIC BACKGROUND ELEMENTS -->
+            <g class="static-layer">
+                <!-- Reference Circle Axes -->
+                <line x1="40" y1="250" x2="360" y2="250" stroke="#dee2e6" stroke-width="2" marker-end="url(#arrow-gray)" />
+                <line x1="200" y1="400" x2="200" y2="100" stroke="#dee2e6" stroke-width="2" marker-end="url(#arrow-gray)" />
+                
+                <!-- Reference Circle -->
+                <circle cx="200" cy="250" r="120" fill="none" stroke="#adb5bd" stroke-width="2" stroke-dasharray="6,6" />
+                
+                <!-- Wave Plot Axes -->
+                <line x1="400" y1="250" x2="740" y2="250" stroke="#dee2e6" stroke-width="2" marker-end="url(#arrow-gray)" />
+                <line x1="400" y1="400" x2="400" y2="100" stroke="#dee2e6" stroke-width="2" marker-end="url(#arrow-gray)" />
+                
+                <!-- Labels -->
+                <text x="365" y="255" font-size="14" fill="#adb5bd">x</text>
+                <text x="185" y="90" font-size="14" fill="#adb5bd">y</text>
+                <text x="745" y="255" font-size="14" fill="#adb5bd">t</text>
+                <text x="385" y="90" font-size="14" fill="#adb5bd">y</text>
+                
+                <text x="170" y="135" font-size="14" class="math-text">+A</text>
+                <text x="170" y="375" font-size="14" class="math-text">-A</text>
+                <text x="375" y="135" font-size="14" class="math-text">+A</text>
+                <text x="375" y="375" font-size="14" class="math-text">-A</text>
+                
+                <!-- Tick marks -->
+                <line x1="195" y1="130" x2="205" y2="130" stroke="#adb5bd" stroke-width="2" />
+                <line x1="195" y1="370" x2="205" y2="370" stroke="#adb5bd" stroke-width="2" />
+                <line x1="395" y1="130" x2="405" y2="130" stroke="#adb5bd" stroke-width="2" />
+                <line x1="395" y1="370" x2="405" y2="370" stroke="#adb5bd" stroke-width="2" />
+
+                <!-- Faint background wave for context -->
+                <path id="bg-wave-path" fill="none" stroke="#f1f3f5" stroke-width="3" />
+            </g>
+
+            <!-- DYNAMIC ANIMATED ELEMENTS -->
+            <g class="dynamic-layer">
+                <!-- Angle Arc -->
+                <circle cx="200" cy="250" r="30" fill="none" stroke="#FF3366" stroke-width="2" class="angle-arc" />
+                <text x="235" y="235" font-size="14" fill="#FF3366" class="math-text">θ</text>
+
+                <!-- Projections (Sine and Cosine) -->
+                <!-- Base line is 100px long, scaled by CSS -->
+                <line x1="0" y1="0" x2="100" y2="0" stroke="#adb5bd" stroke-width="1.5" stroke-dasharray="4,4" class="proj-y" />
+                <line x1="0" y1="0" x2="0" y2="100" stroke="#adb5bd" stroke-width="1.5" stroke-dasharray="4,4" class="proj-x" />
+
+                <!-- Phasor (Radius Vector) -->
+                <line x1="0" y1="0" x2="120" y2="0" stroke="#06D6A0" stroke-width="3" marker-end="url(#arrow-green)" class="phasor" />
+                
+                <!-- The Wave (Clipped to draw over time) -->
+                <path id="wave-path" fill="none" stroke="#4361EE" stroke-width="3" clip-path="url(#wave-clip)" />
+
+                <!-- Connecting Tether -->
+                <line x1="0" y1="0" x2="100" y2="0" stroke="#FF3366" stroke-width="2" stroke-dasharray="6,4" class="tether" />
+
+                <!-- Particles -->
+                <circle cx="0" cy="0" r="6" fill="#4361EE" class="particle" />
+                <circle cx="0" cy="0" r="6" fill="#4361EE" class="tracking-point" />
+            </g>
+        </svg>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="color-box" style="background-color: #06D6A0;"></div>
+            <span>Phasor (Uniform Circular Motion)</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: #4361EE;"></div>
+            <span>Particle & Wave Displacement</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: #FF3366;"></div>
+            <span>Synchronization Tether</span>
+        </div>
+    </div>
+
+    <script>
+        // Generate the static sine wave path data accurately
+        function generateSineWave() {
+            const wavePath = document.getElementById('wave-path');
+            const bgWavePath = document.getElementById('bg-wave-path');
+            const startX = 400;
+            const startY = 250;
+            const amplitude = 120;
+            const width = 300;
+            
+            let d = `M ${startX} ${startY}`;
+            // Generate points every 2 degrees for a smooth curve
+            for(let i = 0; i <= 360; i += 2) {
+                let x = startX + (i / 360) * width;
+                let y = startY - amplitude * Math.sin(i * Math.PI / 180);
+                d += ` L ${x.toFixed(2)} ${y.toFixed(2)}`;
+            }
+            
+            wavePath.setAttribute('d', d);
+            bgWavePath.setAttribute('d', d);
+        }
+
+        // Initialize wave on load
+        generateSineWave();
+
+        // Play/Pause Interactivity
+        const btn = document.getElementById('playPauseBtn');
+        const systems = document.querySelectorAll('.system');
+        const svgContainer = document.querySelector('.svg-container');
+
+        function toggleAnimation() {
+            systems.forEach(sys => {
+                if (sys.style.animationPlayState === 'paused') {
+                    sys.style.animationPlayState = 'running';
+                    btn.textContent = 'Pause Animation';
+                } else {
+                    sys.style.animationPlayState = 'paused';
+                    btn.textContent = 'Play Animation';
+                }
+            });
+        }
+
+        btn.addEventListener('click', toggleAnimation);
+
+        // Hover to pause functionality for inspection
+        svgContainer.addEventListener('mouseenter', () => {
+            systems.forEach(sys => sys.style.animationPlayState = 'paused');
+            btn.textContent = 'Play Animation';
+        });
+
+        svgContainer.addEventListener('mouseleave', () => {
+            systems.forEach(sys => sys.style.animationPlayState = 'running');
+            btn.textContent = 'Pause Animation';
+        });
+    </script>
+</body>
+</html>

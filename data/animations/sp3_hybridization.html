@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sp³ Hybridization Animation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* --- Animations --- */
+        * {
+            animation-timing-function: ease-in-out;
+        }
+
+        /* Energy Levels */
+        @keyframes level-s {
+            0%, 35% { transform: translateY(0); stroke: #4444FF; }
+            45%, 90% { transform: translateY(-100px); stroke: #44CC44; }
+            100% { transform: translateY(0); stroke: #4444FF; }
+        }
+        @keyframes level-p {
+            0%, 35% { transform: translateY(0); stroke: #FF4444; }
+            45%, 90% { transform: translateY(100px); stroke: #44CC44; }
+            100% { transform: translateY(0); stroke: #FF4444; }
+        }
+
+        /* Electrons */
+        @keyframes e1-anim {
+            0%, 35% { transform: translateY(0); }
+            45%, 90% { transform: translateY(-100px); }
+            100% { transform: translateY(0); }
+        }
+        @keyframes e2-down-anim {
+            0%, 14% { opacity: 1; }
+            15%, 100% { opacity: 0; }
+        }
+        @keyframes e2-up-anim {
+            0%, 14% { opacity: 0; transform: translate(0, 0); }
+            15% { opacity: 1; transform: translate(0, 0); }
+            20%, 35% { opacity: 1; transform: translate(190px, -200px); }
+            45%, 90% { opacity: 1; transform: translate(190px, -100px); }
+            95%, 100% { opacity: 0; transform: translate(190px, -100px); }
+        }
+        @keyframes e3-anim {
+            0%, 35% { transform: translateY(0); }
+            45%, 90% { transform: translateY(100px); }
+            100% { transform: translateY(0); }
+        }
+        @keyframes e4-anim {
+            0%, 35% { transform: translateY(0); }
+            45%, 90% { transform: translateY(100px); }
+            100% { transform: translateY(0); }
+        }
+        @keyframes h-elec-anim {
+            0%, 60% { opacity: 0; }
+            65%, 90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Spatial Orbitals */
+        @keyframes s-orb-anim {
+            0%, 14% { opacity: 0.6; transform: scale(1); }
+            17% { opacity: 0.8; transform: scale(1.15); }
+            20%, 35% { opacity: 0.6; transform: scale(1); }
+            45%, 100% { opacity: 0; transform: scale(1); }
+        }
+        @keyframes p-orb-anim {
+            0%, 35% { opacity: 0.6; }
+            45%, 100% { opacity: 0; }
+        }
+        @keyframes pz-orb-anim {
+            0%, 14% { opacity: 0; }
+            20%, 35% { opacity: 0.6; }
+            45%, 100% { opacity: 0; }
+        }
+        @keyframes sp3-orb-anim {
+            0%, 35% { opacity: 0; transform: scale(0.2); }
+            45%, 90% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.2); }
+        }
+
+        /* Hydrogen Atoms */
+        @keyframes h1-anim {
+            0%, 60% { opacity: 0; transform: translate(0, -150px); }
+            70%, 90% { opacity: 1; transform: translate(0, 0); }
+            100% { opacity: 0; transform: translate(0, 0); }
+        }
+        @keyframes h2-anim {
+            0%, 60% { opacity: 0; transform: translate(150px, 150px); }
+            70%, 90% { opacity: 1; transform: translate(0, 0); }
+            100% { opacity: 0; transform: translate(0, 0); }
+        }
+        @keyframes h3-anim {
+            0%, 60% { opacity: 0; transform: translate(-150px, 150px); }
+            70%, 90% { opacity: 1; transform: translate(0, 0); }
+            100% { opacity: 0; transform: translate(0, 0); }
+        }
+        @keyframes h4-anim {
+            0%, 60% { opacity: 0; transform: translate(-150px, -150px); }
+            70%, 90% { opacity: 1; transform: translate(0, 0); }
+            100% { opacity: 0; transform: translate(0, 0); }
+        }
+
+        /* Labels and Text */
+        @keyframes fade-in-out {
+            0%, 60% { opacity: 0; }
+            70%, 90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes formula1 { 0%, 14% { opacity: 1; } 15%, 100% { opacity: 0; } }
+        @keyframes formula2 { 0%, 14% { opacity: 0; } 15%, 34% { opacity: 1; } 35%, 100% { opacity: 0; } }
+        @keyframes formula3 { 0%, 34% { opacity: 0; } 35%, 59% { opacity: 1; } 60%, 100% { opacity: 0; } }
+        @keyframes formula4 { 0%, 59% { opacity: 0; } 60%, 90% { opacity: 1; } 95%, 100% { opacity: 0; } }
+        
+        @keyframes label-sp3 {
+            0%, 35% { opacity: 0; }
+            45%, 90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes label-2sp {
+            0%, 35% { opacity: 1; }
+            45%, 100% { opacity: 0; }
+        }
+
+        /* Reset Overlay */
+        @keyframes reset-anim {
+            0%, 90% { opacity: 0; }
+            94%, 96% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Assigning Classes */
+        .level-s { animation: level-s 15s infinite; }
+        .level-p { animation: level-p 15s infinite; }
+        .e1-anim { animation: e1-anim 15s infinite; }
+        .e2-down-anim { animation: e2-down-anim 15s infinite; }
+        .e2-up-anim { animation: e2-up-anim 15s infinite; }
+        .e3-anim { animation: e3-anim 15s infinite; }
+        .e4-anim { animation: e4-anim 15s infinite; }
+        .h-elec-anim { animation: h-elec-anim 15s infinite; }
+        
+        .s-orb { animation: s-orb-anim 15s infinite; transform-origin: center; }
+        .p-orb { animation: p-orb-anim 15s infinite; }
+        .pz-orb { animation: pz-orb-anim 15s infinite; }
+        .sp3-orb { animation: sp3-orb-anim 15s infinite; transform-origin: 0px 0px; }
+        
+        .h1-anim { animation: h1-anim 15s infinite; }
+        .h2-anim { animation: h2-anim 15s infinite; }
+        .h3-anim { animation: h3-anim 15s infinite; }
+        .h4-anim { animation: h4-anim 15s infinite; }
+        
+        .fade-in-out { animation: fade-in-out 15s infinite; }
+        .formula1 { animation: formula1 15s infinite; }
+        .formula2 { animation: formula2 15s infinite; }
+        .formula3 { animation: formula3 15s infinite; }
+        .formula4 { animation: formula4 15s infinite; }
+        .label-sp3 { animation: label-sp3 15s infinite; }
+        .label-2sp { animation: label-2sp 15s infinite; }
+        .reset-overlay { animation: reset-anim 15s infinite; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Electron Up -->
+            <g id="elec-up">
+                <circle cx="0" cy="0" r="8" fill="#FFD60A" stroke="#F77F00" stroke-width="1.5"/>
+                <path d="M 0,4 L 0,-4 M -3,-1 L 0,-4 L 3,-1" stroke="#F77F00" stroke-width="1.5" fill="none"/>
+            </g>
+            <!-- Electron Down -->
+            <g id="elec-down">
+                <circle cx="0" cy="0" r="8" fill="#FFD60A" stroke="#F77F00" stroke-width="1.5"/>
+                <path d="M 0,-4 L 0,4 M -3,1 L 0,4 L 3,1" stroke="#F77F00" stroke-width="1.5" fill="none"/>
+            </g>
+            <!-- p-orbital -->
+            <g id="p-orbital">
+                <path d="M 0,0 C 30,-25 70,-15 70,0 C 70,15 30,25 0,0" fill="#F72585"/>
+                <path d="M 0,0 C -30,-25 -70,-15 -70,0 C -70,15 -30,25 0,0" fill="#F72585"/>
+            </g>
+            <!-- sp3-orbital -->
+            <g id="sp3-orbital">
+                <path d="M 0,0 C 30,-25 90,-20 90,0 C 90,20 30,25 0,0" fill="#7209B7" opacity="0.85"/>
+                <path d="M 0,0 C -10,-8 -25,-5 -25,0 C -25,5 -10,8 0,0" fill="#7209B7" opacity="0.85"/>
+            </g>
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="40" text-anchor="middle" font-size="22" font-weight="bold" fill="#2B2D42">sp³ Hybridization: Carbon to Methane (CH₄)</text>
+        
+        <!-- Formulas -->
+        <g font-family="'Roboto Mono', monospace" font-size="18" font-weight="bold" fill="#2B2D42" text-anchor="middle">
+            <text x="400" y="75" class="formula1">C [He] 2s² 2p²</text>
+            <text x="400" y="75" class="formula2">C* [He] 2s¹ 2p³</text>
+            <text x="400" y="75" class="formula3">C [He] (sp³)⁴</text>
+            <text x="400" y="75" class="formula4">CH₄ (Methane)</text>
+        </g>
+
+        <!-- ================= LEFT PANE: ENERGY DIAGRAM ================= -->
+        
+        <!-- Energy Axis -->
+        <g stroke="#2B2D42" stroke-width="2">
+            <line x1="60" x2="60" y1="400" y2="100"/>
+            <polygon points="55,110 65,110 60,95" fill="#2B2D42"/>
+        </g>
+        <g transform="translate(40, 250) rotate(-90)">
+            <text x="0" y="0" text-anchor="middle" font-size="14" fill="#2B2D42" font-weight="bold" letter-spacing="1">Energy (E)</text>
+        </g>
+
+        <!-- Energy Level Lines -->
+        <g transform="translate(110, 350)">
+            <line x1="0" x2="50" y1="0" y2="0" class="level-s" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <g transform="translate(180, 150)">
+            <line x1="0" x2="50" y1="0" y2="0" class="level-p" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <g transform="translate(250, 150)">
+            <line x1="0" x2="50" y1="0" y2="0" class="level-p" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <g transform="translate(320, 150)">
+            <line x1="0" x2="50" y1="0" y2="0" class="level-p" stroke-width="4" stroke-linecap="round"/>
+        </g>
+
+        <!-- Energy Labels -->
+        <g class="label-2sp" font-size="16" fill="#2B2D42" font-weight="bold">
+            <text x="80" y="355">2s</text>
+            <text x="80" y="155">2p</text>
+        </g>
+        <text x="240" y="290" font-size="14" fill="#44CC44" font-weight="bold" text-anchor="middle" class="label-sp3">4 degenerate sp³ hybrid orbitals</text>
+
+        <!-- Carbon Electrons -->
+        <g transform="translate(125, 350)"><g class="e1-anim"><use href="#elec-up"/></g></g>
+        <g transform="translate(145, 350)"><g class="e2-down-anim"><use href="#elec-down"/></g></g>
+        <g transform="translate(145, 350)"><g class="e2-up-anim"><use href="#elec-up"/></g></g>
+        <g transform="translate(195, 150)"><g class="e3-anim"><use href="#elec-up"/></g></g>
+        <g transform="translate(265, 150)"><g class="e4-anim"><use href="#elec-up"/></g></g>
+
+        <!-- Hydrogen Electrons -->
+        <g transform="translate(145, 250)"><g class="h-elec-anim"><use href="#elec-down"/></g></g>
+        <g transform="translate(215, 250)"><g class="h-elec-anim"><use href="#elec-down"/></g></g>
+        <g transform="translate(285, 250)"><g class="h-elec-anim"><use href="#elec-down"/></g></g>
+        <g transform="translate(355, 250)"><g class="h-elec-anim"><use href="#elec-down"/></g></g>
+
+
+        <!-- ================= RIGHT PANE: SPATIAL VIEW ================= -->
+        
+        <g transform="translate(600, 260)">
+            
+            <!-- 2s Orbital -->
+            <circle class="s-orb" r="45" fill="#4CC9F0" />
+            
+            <!-- 2p Orbitals -->
+            <use href="#p-orbital" class="p-orb" opacity="0.6" />
+            <use href="#p-orbital" class="p-orb" transform="rotate(90)" opacity="0.6" />
+            <use href="#p-orbital" class="pz-orb" transform="rotate(45)" />
+            
+            <!-- sp3 Orbitals (Tetrahedral arrangement) -->
+            <g class="sp3-orb">
+                <use href="#sp3-orbital" transform="rotate(-90)" />
+                <use href="#sp3-orbital" transform="rotate(30)" />
+                <use href="#sp3-orbital" transform="rotate(140) scale(1.15)" />
+                <use href="#sp3-orbital" transform="rotate(220) scale(0.7)" />
+            </g>
+            
+            <!-- Hydrogen Atoms -->
+            <!-- H1 (Up) -->
+            <g class="h1-anim">
+                <g transform="translate(0, -100)">
+                    <circle cx="0" cy="0" r="20" fill="#CCCCCC"/>
+                    <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">H</text>
+                </g>
+            </g>
+            <!-- H2 (Down-Right) -->
+            <g class="h2-anim">
+                <g transform="translate(86, 50)">
+                    <circle cx="0" cy="0" r="20" fill="#CCCCCC"/>
+                    <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">H</text>
+                </g>
+            </g>
+            <!-- H3 (Down-Left, Wedge) -->
+            <g class="h3-anim">
+                <g transform="translate(-90, 75)">
+                    <circle cx="0" cy="0" r="22" fill="#DDDDDD"/>
+                    <text x="0" y="5" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">H</text>
+                </g>
+            </g>
+            <!-- H4 (Up-Left, Dash) -->
+            <g class="h4-anim">
+                <g transform="translate(-50, -50)">
+                    <circle cx="0" cy="0" r="15" fill="#AAAAAA"/>
+                    <text x="0" y="4" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">H</text>
+                </g>
+            </g>
+            
+            <!-- Carbon Nucleus -->
+            <circle r="16" fill="#404040"/>
+            <text x="0" y="5" text-anchor="middle" font-size="14" fill="white" font-weight="bold">C</text>
+        </g>
+
+        <!-- Spatial Annotations -->
+        <g class="fade-in-out">
+            <!-- Bond Angle -->
+            <path d="M 600,190 A 70,70 0 0,1 660,225" fill="none" stroke="#2B2D42" stroke-width="1.5" stroke-dasharray="4"/>
+            <text x="645" y="200" font-size="14" fill="#2B2D42" font-weight="bold">109.5°</text>
+            
+            <!-- Sigma Bonds Label -->
+            <text x="730" y="140" font-size="14" fill="#2B2D42" font-weight="bold">σ-bonds</text>
+            <path d="M 725,145 L 610,170" stroke="#2B2D42" stroke-width="1.5" stroke-dasharray="3"/>
+            <path d="M 740,150 L 680,270" stroke="#2B2D42" stroke-width="1.5" stroke-dasharray="3"/>
+        </g>
+
+        <!-- ================= LEGEND ================= -->
+        <g transform="translate(40, 470)" font-size="12" fill="#2B2D42" font-weight="600">
+            <circle cx="0" cy="-4" r="6" fill="#404040"/> <text x="12" y="0">Carbon</text>
+            <circle cx="85" cy="-4" r="6" fill="#CCCCCC"/> <text x="97" y="0">Hydrogen</text>
+            <circle cx="180" cy="-4" r="6" fill="#4CC9F0"/> <text x="192" y="0">s-orbital</text>
+            <circle cx="270" cy="-4" r="6" fill="#F72585"/> <text x="282" y="0">p-orbital</text>
+            <circle cx="360" cy="-4" r="6" fill="#7209B7"/> <text x="372" y="0">sp³-orbital</text>
+            <circle cx="465" cy="-4" r="6" fill="#FFD60A" stroke="#F77F00"/> <text x="477" y="0">Electron</text>
+        </g>
+
+        <!-- Reset Overlay (Fades in at the end of loop to hide snapping) -->
+        <rect width="100%" height="100%" fill="#ffffff" class="reset-overlay" pointer-events="none"/>
+    </svg>
+</div>
+
+</body>
+</html>

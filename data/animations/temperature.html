@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microscopic Interpretation of Temperature</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* CSS Animations */
+        .particle-system {
+            offset-rotate: auto;
+            animation: move-particle 12s infinite;
+        }
+
+        .particle-dot {
+            animation: color-particle 12s infinite;
+        }
+
+        .particle-vector {
+            vector-effect: non-scaling-stroke;
+            transform-origin: 0 0;
+            animation: scale-vector 12s infinite;
+        }
+
+        #thermo-column {
+            animation: thermo-rise 12s infinite;
+        }
+
+        .heat-flux {
+            animation: heat-glow 12s infinite, heat-pulse 2s ease-in-out infinite;
+        }
+
+        /* Keyframes */
+        @keyframes move-particle {
+            0% { offset-distance: 0%; animation-timing-function: linear; }
+            25% { offset-distance: 16.667%; animation-timing-function: cubic-bezier(0.333, 0.222, 0.667, 0.556); }
+            50% { offset-distance: 41.667%; animation-timing-function: linear; }
+            75% { offset-distance: 75.000%; animation-timing-function: cubic-bezier(0.333, 0.444, 0.667, 0.778); }
+            100% { offset-distance: 100%; }
+        }
+
+        @keyframes color-particle {
+            0%, 25% { fill: #4361EE; animation-timing-function: linear; }
+            50%, 75% { fill: #FF3366; animation-timing-function: linear; }
+            100% { fill: #4361EE; }
+        }
+
+        @keyframes scale-vector {
+            0%, 25% { transform: scaleX(1); animation-timing-function: linear; }
+            50%, 75% { transform: scaleX(1.5); animation-timing-function: linear; }
+            100% { transform: scaleX(1); }
+        }
+
+        @keyframes thermo-rise {
+            0%, 25% { height: 20px; y: 330px; animation-timing-function: linear; }
+            50%, 75% { height: 200px; y: 150px; animation-timing-function: linear; }
+            100% { height: 20px; y: 330px; }
+        }
+
+        @keyframes heat-glow {
+            0%, 25% { opacity: 0; }
+            35%, 50% { opacity: 1; }
+            60%, 100% { opacity: 0; }
+        }
+
+        @keyframes heat-pulse {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        /* Paths */
+        .path-1 { offset-path: path('M 0 -50 C 40 -50, 60 -20, 60 0 C 60 30, 30 60, 0 60 C -30 60, -60 30, -60 0 C -60 -20, -40 -50, 0 -50 Z'); }
+        .path-2 { offset-path: path('M 0 0 C 20 -50, 70 -50, 70 0 C 70 50, -70 -50, -70 0 C -70 50, -20 50, 0 0 Z'); }
+        .path-3 { offset-path: path('M 0 -60 C 50 -60, 70 0, 50 50 C 20 80, -20 80, -50 50 C -70 0, -50 -60, 0 -60 Z'); }
+        .path-4 { offset-path: path('M -40 -30 C 40 -70, 70 -10, 40 30 C -40 70, -70 10, -40 -30 Z'); }
+
+        /* Interactivity */
+        svg:hover .particle-system,
+        svg:hover .particle-dot,
+        svg:hover .particle-vector,
+        svg:hover #thermo-column,
+        svg:hover .heat-flux {
+            animation-play-state: paused !important;
+        }
+
+        .hover-text {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        svg:hover .hover-text {
+            opacity: 1;
+        }
+        svg:hover .default-text {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Microscopic Interpretation of Temperature</title>
+        <desc>An animated diagram showing how the macroscopic temperature of a gas relates to the microscopic kinetic energy and velocity of its particles. As heat is added, particles move faster and the thermometer rises.</desc>
+
+        <defs>
+            <!-- Velocity Vector Arrowhead -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#06D6A0" />
+            </marker>
+            
+            <!-- Label Pointer Arrowhead -->
+            <marker id="arrow-label" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2B2D42" />
+            </marker>
+
+            <!-- Heat Flux Arrowhead -->
+            <marker id="heat-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+            </marker>
+
+            <!-- Thermometer Gradient -->
+            <linearGradient id="thermo-grad" x1="0" y1="330" x2="0" y2="150" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#4361EE" />
+                <stop offset="100%" stop-color="#FF3366" />
+            </linearGradient>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Title -->
+        <text x="400" y="45" font-family="Inter" font-size="24" font-weight="700" text-anchor="middle" fill="#2B2D42">Microscopic Interpretation of Temperature</text>
+        
+        <!-- Pause Instruction -->
+        <text x="400" y="70" font-family="Inter" font-size="13" font-style="italic" fill="#6c757d" text-anchor="middle" class="default-text">Hover over the diagram to pause the simulation</text>
+        <text x="400" y="70" font-family="Inter" font-size="13" font-weight="bold" fill="#FF3366" text-anchor="middle" class="hover-text">Simulation Paused</text>
+
+        <!-- Heat Source (Wavy Arrows) -->
+        <g class="heat-flux">
+            <path d="M 150 450 Q 165 430 150 410 T 150 370" fill="none" stroke="#F77F00" stroke-width="4" marker-end="url(#heat-arrow)"/>
+            <path d="M 225 450 Q 240 430 225 410 T 225 370" fill="none" stroke="#F77F00" stroke-width="4" marker-end="url(#heat-arrow)"/>
+            <path d="M 300 450 Q 315 430 300 410 T 300 370" fill="none" stroke="#F77F00" stroke-width="4" marker-end="url(#heat-arrow)"/>
+            <path d="M 375 450 Q 390 430 375 410 T 375 370" fill="none" stroke="#F77F00" stroke-width="4" marker-end="url(#heat-arrow)"/>
+            <path d="M 450 450 Q 465 430 450 410 T 450 370" fill="none" stroke="#F77F00" stroke-width="4" marker-end="url(#heat-arrow)"/>
+        </g>
+
+        <!-- Thermodynamic Chamber -->
+        <rect x="100" y="100" width="400" height="300" rx="15" fill="#ffffff" stroke="#2B2D42" stroke-width="4" />
+
+        <!-- Particles -->
+        <g id="particles-container">
+            <!-- P1 -->
+            <g transform="translate(300, 250) rotate(0)">
+                <g class="particle-system path-1">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P2 -->
+            <g transform="translate(220, 180) rotate(45)">
+                <g class="particle-system path-2">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P3 -->
+            <g transform="translate(380, 320) rotate(90)">
+                <g class="particle-system path-3">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P4 -->
+            <g transform="translate(220, 320) rotate(15)">
+                <g class="particle-system path-4">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P5 -->
+            <g transform="translate(380, 180) rotate(60)">
+                <g class="particle-system path-1">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P6 -->
+            <g transform="translate(300, 180) rotate(120)">
+                <g class="particle-system path-2">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P7 -->
+            <g transform="translate(300, 320) rotate(180)">
+                <g class="particle-system path-3">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P8 -->
+            <g transform="translate(220, 250) rotate(210)">
+                <g class="particle-system path-4">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P9 -->
+            <g transform="translate(380, 250) rotate(240)">
+                <g class="particle-system path-1">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P10 -->
+            <g transform="translate(260, 330) rotate(270)">
+                <g class="particle-system path-2">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P11 -->
+            <g transform="translate(340, 170) rotate(300)">
+                <g class="particle-system path-3">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P12 -->
+            <g transform="translate(180, 220) rotate(330)">
+                <g class="particle-system path-4">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P13 -->
+            <g transform="translate(420, 280) rotate(45)">
+                <g class="particle-system path-1">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P14 -->
+            <g transform="translate(420, 200) rotate(135)">
+                <g class="particle-system path-2">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+            <!-- P15 -->
+            <g transform="translate(180, 280) rotate(225)">
+                <g class="particle-system path-3">
+                    <circle class="particle-dot" r="6" />
+                    <line class="particle-vector" x1="0" y1="0" x2="14" y2="0" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)" />
+                </g>
+            </g>
+        </g>
+
+        <!-- Particle Label -->
+        <g transform="translate(120, 130)" font-family="Inter" font-size="14" fill="#2B2D42" font-weight="600">
+            <text x="0" y="0">Average Kinetic Energy ∝ T</text>
+            <path d="M 100 8 L 120 40" fill="none" stroke="#2B2D42" stroke-width="2" marker-end="url(#arrow-label)"/>
+        </g>
+
+        <!-- Thermometer -->
+        <g id="thermometer">
+            <!-- Glass Tube & Bulb Background -->
+            <path d="M 600 120 A 20 20 0 0 1 640 120 L 640 340 A 30 30 0 1 1 600 340 Z" fill="#ffffff" stroke="#2B2D42" stroke-width="4"/>
+            
+            <!-- Liquid Bulb -->
+            <circle cx="620" cy="360" r="22" fill="url(#thermo-grad)"/>
+            
+            <!-- Liquid Column -->
+            <rect id="thermo-column" x="610" y="330" width="20" height="20" rx="10" fill="url(#thermo-grad)"/>
+
+            <!-- Celsius Scale (Left) -->
+            <g font-family="Roboto Mono" font-size="13" font-weight="700" fill="#2B2D42" text-anchor="end">
+                <line x1="590" y1="330" x2="600" y2="330" stroke="#2B2D42" stroke-width="2"/>
+                <text x="582" y="335">0°C</text>
+                
+                <line x1="590" y1="240" x2="600" y2="240" stroke="#2B2D42" stroke-width="2"/>
+                <text x="582" y="245">50°C</text>
+                
+                <line x1="590" y1="150" x2="600" y2="150" stroke="#2B2D42" stroke-width="2"/>
+                <text x="582" y="155">100°C</text>
+            </g>
+
+            <!-- Kelvin Scale (Right) -->
+            <g font-family="Roboto Mono" font-size="13" font-weight="700" fill="#2B2D42" text-anchor="start">
+                <line x1="640" y1="330" x2="650" y2="330" stroke="#2B2D42" stroke-width="2"/>
+                <text x="658" y="335">273K</text>
+                
+                <line x1="640" y1="240" x2="650" y2="240" stroke="#2B2D42" stroke-width="2"/>
+                <text x="658" y="245">323K</text>
+                
+                <line x1="640" y1="150" x2="650" y2="150" stroke="#2B2D42" stroke-width="2"/>
+                <text x="658" y="155">373K</text>
+            </g>
+        </g>
+
+        <!-- Dynamic Values Display -->
+        <g transform="translate(670, 210)">
+            <rect x="0" y="0" width="100" height="60" rx="8" fill="#ffffff" stroke="#2B2D42" stroke-width="2" style="box-shadow: 0 4px 6px rgba(0,0,0,0.1);"/>
+            <text x="50" y="25" font-family="Roboto Mono" font-size="16" font-weight="bold" fill="#FF3366" text-anchor="middle" id="temp-c">0 °C</text>
+            <text x="50" y="48" font-family="Roboto Mono" font-size="16" font-weight="bold" fill="#FF3366" text-anchor="middle" id="temp-k">273 K</text>
+        </g>
+
+        <!-- Formula -->
+        <g transform="translate(300, 460)" font-family="Roboto Mono" font-size="18" font-weight="700" fill="#2B2D42">
+            <text x="-80" y="5">v<tspan baseline-shift="sub" font-size="12">rms</tspan> = </text>
+            <!-- Square root symbol -->
+            <path d="M -25 0 L -20 10 L -10 -18 L 45 -18" fill="none" stroke="#2B2D42" stroke-width="2.5" stroke-linejoin="round"/>
+            <!-- Fraction line -->
+            <line x1="-5" y1="-2" x2="40" y2="-2" stroke="#2B2D42" stroke-width="2.5"/>
+            <!-- Numerator -->
+            <text x="17" y="-8" font-size="15" text-anchor="middle">3k<tspan baseline-shift="sub" font-size="11">B</tspan>T</text>
+            <!-- Denominator -->
+            <text x="17" y="14" font-size="15" text-anchor="middle">m</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(30, 430)" font-family="Inter" font-size="13" font-weight="600" fill="#2B2D42">
+            <rect x="-10" y="-15" width="200" height="75" rx="8" fill="#ffffff" stroke="#ced4da" stroke-width="1"/>
+            <circle cx="10" cy="0" r="6" fill="#4361EE" />
+            <text x="25" y="4">Cold Particle (Low E<tspan baseline-shift="sub" font-size="10">k</tspan>)</text>
+            
+            <circle cx="10" cy="22" r="6" fill="#FF3366" />
+            <text x="25" y="26">Hot Particle (High E<tspan baseline-shift="sub" font-size="10">k</tspan>)</text>
+            
+            <line x1="2" y1="44" x2="16" y2="44" stroke="#06D6A0" stroke-width="2.5" marker-end="url(#arrow)"/>
+            <text x="25" y="48">Velocity Vector</text>
+        </g>
+
+    </svg>
+</div>
+
+<script>
+    // Minimal JS to sync the dynamic text with the CSS animation state
+    const thermo = document.getElementById('thermo-column');
+    const tempC = document.getElementById('temp-c');
+    const tempK = document.getElementById('temp-k');
+
+    function updateTemp() {
+        // Read the current computed height of the thermometer column
+        const h = parseFloat(window.getComputedStyle(thermo).height);
+        
+        // Map height (20px to 200px) to Temperature (0 to 100 Celsius)
+        const temp = ((h - 20) / 180) * 100;
+        const clampedTemp = Math.max(0, Math.min(100, temp));
+        
+        // Update text content
+        tempC.textContent = Math.round(clampedTemp) + ' °C';
+        tempK.textContent = Math.round(clampedTemp + 273.15) + ' K';
+        
+        // Interpolate color from Blue to Red based on temp
+        // Blue: #4361EE (67, 97, 238)
+        // Red: #FF3366 (255, 51, 102)
+        const r = Math.round(67 + (255 - 67) * (clampedTemp / 100));
+        const g = Math.round(97 + (51 - 97) * (clampedTemp / 100));
+        const b = Math.round(238 + (102 - 238) * (clampedTemp / 100));
+        const color = `rgb(${r}, ${g}, ${b})`;
+        
+        tempC.setAttribute('fill', color);
+        tempK.setAttribute('fill', color);
+
+        requestAnimationFrame(updateTemp);
+    }
+
+    // Start the loop
+    requestAnimationFrame(updateTemp);
+</script>
+
+</body>
+</html>

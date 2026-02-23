@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigma Bond Symmetry & Ethane Conformations</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* 3D and Animation Styles */
+        .scene {
+            transform-style: preserve-3d;
+            transform: rotateX(-15deg) rotateY(-15deg);
+            transform-origin: 270px 250px;
+        }
+
+        .atom-group {
+            transform-style: preserve-3d;
+        }
+
+        /* 
+         * Animation Timeline (12s Loop):
+         * 0s - 2s (0% - 16.66%): Pause at Staggered
+         * 2s - 10s (16.66% - 83.33%): Rotate 360 degrees
+         * 10s - 12s (83.33% - 100%): Pause at Staggered
+         */
+        .rotate-back {
+            animation: spin 12s linear infinite;
+            transform-style: preserve-3d;
+        }
+
+        @keyframes spin {
+            0%, 16.66% { transform: rotateX(0deg); }
+            83.33%, 100% { transform: rotateX(360deg); }
+        }
+
+        .marker-x {
+            animation: moveX 12s linear infinite;
+        }
+
+        .marker-y {
+            animation: moveY 12s infinite;
+        }
+
+        @keyframes moveX {
+            0%, 16.66% { transform: translateX(450px); }
+            83.33%, 100% { transform: translateX(750px); }
+        }
+
+        @keyframes moveY {
+            0%, 16.66% { transform: translateY(350px); animation-timing-function: ease-in-out; }
+            27.77% { transform: translateY(150px); animation-timing-function: ease-in-out; }
+            38.88% { transform: translateY(350px); animation-timing-function: ease-in-out; }
+            50.00% { transform: translateY(150px); animation-timing-function: ease-in-out; }
+            61.11% { transform: translateY(350px); animation-timing-function: ease-in-out; }
+            72.22% { transform: translateY(150px); animation-timing-function: ease-in-out; }
+            83.33%, 100% { transform: translateY(350px); }
+        }
+
+        .text-eclipsed {
+            animation: eclipsedText 12s infinite;
+        }
+
+        .text-staggered {
+            animation: staggeredText 12s infinite;
+        }
+
+        @keyframes eclipsedText {
+            0%, 20% { opacity: 0; }
+            24%, 31% { opacity: 1; }
+            35%, 43% { opacity: 0; }
+            46%, 54% { opacity: 1; }
+            57%, 65% { opacity: 0; }
+            68%, 76% { opacity: 1; }
+            80%, 100% { opacity: 0; }
+        }
+
+        @keyframes staggeredText {
+            0%, 20% { opacity: 1; }
+            24%, 31% { opacity: 0; }
+            35%, 43% { opacity: 1; }
+            46%, 54% { opacity: 0; }
+            57%, 65% { opacity: 1; }
+            68%, 76% { opacity: 0; }
+            80%, 100% { opacity: 1; }
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Gradients for 3D spheres -->
+            <radialGradient id="carbonGrad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#666"/>
+                <stop offset="100%" stop-color="#222"/>
+            </radialGradient>
+            <radialGradient id="hydrogenGrad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FFF"/>
+                <stop offset="100%" stop-color="#999"/>
+            </radialGradient>
+            <radialGradient id="markerGrad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FF8888"/>
+                <stop offset="100%" stop-color="#CC0000"/>
+            </radialGradient>
+
+            <!-- Arrowheads -->
+            <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00"/>
+            </marker>
+            <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#333"/>
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa"/>
+
+        <!-- Title -->
+        <text x="400" y="35" text-anchor="middle" font-size="22" font-weight="700" fill="#222">Symmetry of the σ Bond &amp; Torsional Strain in Ethane</text>
+        <text x="400" y="60" text-anchor="middle" font-size="16" fill="#555" class="formula">C<tspan dy="4" font-size="12">2</tspan><tspan dy="-4">H</tspan><tspan dy="4" font-size="12">6</tspan></text>
+
+        <!-- Concept Overlay -->
+        <foreignObject x="20" y="380" width="380" height="100">
+            <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Inter, sans-serif; font-size: 13px; color: #333; line-height: 1.5; background: white; padding: 12px; border-radius: 8px; border: 1px solid #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <strong>Concept:</strong> The electron distribution in a <strong>σ (sigma) bond</strong> is cylindrically symmetrical around the internuclear axis. This symmetry allows for "free rotation" around the C–C single bond without breaking the orbital overlap, resulting in different spatial arrangements called <strong>conformations</strong>.
+            </div>
+        </foreignObject>
+
+        <!-- ========================================== -->
+        <!-- LEFT PANEL: MOLECULAR VIEW                 -->
+        <!-- ========================================== -->
+
+        <!-- Rotation Arrow & Label (Outside 3D scene for clarity) -->
+        <path d="M 160 190 A 25 60 0 1 1 160 310" fill="none" stroke="#F77F00" stroke-width="3" stroke-dasharray="4,4" marker-end="url(#arrow-orange)"/>
+        <text x="150" y="170" text-anchor="middle" font-size="13" font-weight="600" fill="#F77F00">Free Rotation</text>
+
+        <!-- 3D Scene Container -->
+        <g class="scene">
+            
+            <!-- Internuclear Axis -->
+            <line x1="130" y1="250" x2="410" y2="250" stroke="#333" stroke-width="2" stroke-dasharray="6,6"/>
+
+            <!-- Back Carbon Group (Rotates) -->
+            <g style="transform: translate(200px, 250px);" class="atom-group">
+                <g class="rotate-back">
+                    <!-- sp3 Lobe (Back) -->
+                    <ellipse cx="30" cy="0" rx="45" ry="22" fill="none" stroke="#00B4D8" stroke-width="1.5" stroke-dasharray="4,4"/>
+                    
+                    <!-- Bond 1 (0 deg) -->
+                    <g style="transform: rotateX(0deg) rotateZ(109.5deg); transform-origin: 0 0;">
+                        <line x1="0" y1="0" x2="65" y2="0" stroke="#444" stroke-width="5" stroke-linecap="round"/>
+                        <circle cx="65" cy="0" r="14" fill="url(#hydrogenGrad)" stroke="#aaa" stroke-width="1"/>
+                    </g>
+                    <!-- Bond 2 (120 deg) -->
+                    <g style="transform: rotateX(120deg) rotateZ(109.5deg); transform-origin: 0 0;">
+                        <line x1="0" y1="0" x2="65" y2="0" stroke="#444" stroke-width="5" stroke-linecap="round"/>
+                        <circle cx="65" cy="0" r="14" fill="url(#hydrogenGrad)" stroke="#aaa" stroke-width="1"/>
+                    </g>
+                    <!-- Bond 3 (240 deg) -->
+                    <g style="transform: rotateX(240deg) rotateZ(109.5deg); transform-origin: 0 0;">
+                        <line x1="0" y1="0" x2="65" y2="0" stroke="#444" stroke-width="5" stroke-linecap="round"/>
+                        <circle cx="65" cy="0" r="14" fill="url(#hydrogenGrad)" stroke="#aaa" stroke-width="1"/>
+                    </g>
+                    <!-- Back Carbon Atom -->
+                    <circle cx="0" cy="0" r="20" fill="url(#carbonGrad)"/>
+                </g>
+            </g>
+
+            <!-- Sigma Bond Orbital (Static, Symmetrical) -->
+            <ellipse cx="270" cy="250" rx="85" ry="32" fill="#00B4D8" opacity="0.35"/>
+            <ellipse cx="270" cy="250" rx="85" ry="32" fill="none" stroke="#00B4D8" stroke-width="2" opacity="0.8"/>
+
+            <!-- Front Carbon Group (Static) -->
+            <g style="transform: translate(340px, 250px);" class="atom-group">
+                <!-- sp3 Lobe (Front) -->
+                <ellipse cx="-30" cy="0" rx="45" ry="22" fill="none" stroke="#00B4D8" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+                <!-- Bond 1 (60 deg) -->
+                <g style="transform: rotateX(60deg) rotateZ(70.5deg); transform-origin: 0 0;">
+                    <line x1="0" y1="0" x2="65" y2="0" stroke="#222" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="65" cy="0" r="14" fill="url(#hydrogenGrad)" stroke="#aaa" stroke-width="1"/>
+                </g>
+                <!-- Bond 2 (180 deg) -->
+                <g style="transform: rotateX(180deg) rotateZ(70.5deg); transform-origin: 0 0;">
+                    <line x1="0" y1="0" x2="65" y2="0" stroke="#222" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="65" cy="0" r="14" fill="url(#hydrogenGrad)" stroke="#aaa" stroke-width="1"/>
+                </g>
+                <!-- Bond 3 (300 deg) -->
+                <g style="transform: rotateX(300deg) rotateZ(70.5deg); transform-origin: 0 0;">
+                    <line x1="0" y1="0" x2="65" y2="0" stroke="#222" stroke-width="6" stroke-linecap="round"/>
+                    <circle cx="65" cy="0" r="14" fill="url(#hydrogenGrad)" stroke="#aaa" stroke-width="1"/>
+                </g>
+                <!-- Front Carbon Atom -->
+                <circle cx="0" cy="0" r="20" fill="url(#carbonGrad)"/>
+            </g>
+        </g>
+
+        <!-- Sigma Bond Annotation -->
+        <path d="M 270 140 L 270 200" stroke="#333" stroke-width="2" marker-end="url(#arrow-dark)"/>
+        <text x="270" y="130" text-anchor="middle" font-size="13" font-weight="600" fill="#333">Cylindrically Symmetrical σ Bond</text>
+        <text x="270" y="115" text-anchor="middle" font-size="11" fill="#666">(Overlap remains constant during rotation)</text>
+
+
+        <!-- ========================================== -->
+        <!-- RIGHT PANEL: POTENTIAL ENERGY DIAGRAM      -->
+        <!-- ========================================== -->
+
+        <!-- Dynamic Conformation Labels -->
+        <text x="600" y="90" text-anchor="middle" font-weight="700" font-size="15" fill="#333">Current Conformation:</text>
+        <text x="600" y="115" text-anchor="middle" font-weight="700" font-size="16" fill="#0096c7" class="text-staggered">Staggered (Global Minimum)</text>
+        <text x="600" y="115" text-anchor="middle" font-weight="700" font-size="16" fill="#d90429" class="text-eclipsed">Eclipsed (Torsional Strain)</text>
+
+        <!-- Graph Axes -->
+        <line x1="450" y1="380" x2="770" y2="380" stroke="#333" stroke-width="2"/>
+        <line x1="450" y1="380" x2="450" y2="130" stroke="#333" stroke-width="2"/>
+        
+        <!-- Axis Labels -->
+        <text x="600" y="420" text-anchor="middle" font-size="13" font-weight="600" fill="#333">Dihedral Angle (φ)</text>
+        <text x="430" y="255" text-anchor="middle" font-size="13" font-weight="600" fill="#333" transform="rotate(-90, 430, 255)">Potential Energy (kJ/mol)</text>
+
+        <!-- Grid Lines (Peaks and Troughs) -->
+        <g stroke="#ccc" stroke-dasharray="4,4" stroke-width="1">
+            <line x1="500" y1="150" x2="500" y2="380"/>
+            <line x1="550" y1="350" x2="550" y2="380"/>
+            <line x1="600" y1="150" x2="600" y2="380"/>
+            <line x1="650" y1="350" x2="650" y2="380"/>
+            <line x1="700" y1="150" x2="700" y2="380"/>
+            <line x1="750" y1="350" x2="750" y2="380"/>
+        </g>
+
+        <!-- X-Axis Ticks & Text -->
+        <g font-size="12" fill="#555" text-anchor="middle">
+            <text x="450" y="398">0°</text>
+            <text x="500" y="398">60°</text>
+            <text x="550" y="398">120°</text>
+            <text x="600" y="398">180°</text>
+            <text x="650" y="398">240°</text>
+            <text x="700" y="398">300°</text>
+            <text x="750" y="398">360°</text>
+        </g>
+
+        <!-- Y-Axis Ticks & Text -->
+        <g font-size="11" fill="#555" text-anchor="end">
+            <text x="440" y="154">12.0</text>
+            <text x="440" y="354">0.0</text>
+            <line x1="445" y1="150" x2="450" y2="150" stroke="#333" stroke-width="2"/>
+            <line x1="445" y1="350" x2="450" y2="350" stroke="#333" stroke-width="2"/>
+        </g>
+
+        <!-- Energy Curve (Sine Wave Approximation) -->
+        <path d="M 450 350 
+                 C 468 350, 482 150, 500 150 
+                 C 518 150, 532 350, 550 350 
+                 C 568 350, 582 150, 600 150 
+                 C 618 150, 632 350, 650 350 
+                 C 668 350, 682 150, 700 150 
+                 C 718 150, 732 350, 750 350" 
+              fill="none" stroke="#7209B7" stroke-width="3.5" stroke-linecap="round"/>
+
+        <!-- Animated Energy Marker -->
+        <g class="marker-x">
+            <g class="marker-y">
+                <circle cx="0" cy="0" r="7" fill="url(#markerGrad)" stroke="#fff" stroke-width="2" style="box-shadow: 0 0 10px red;"/>
+                <circle cx="0" cy="0" r="12" fill="#FF4444" opacity="0.3">
+                    <animate attributeName="r" values="10;16;10" dur="1.5s" repeatCount="indefinite"/>
+                </circle>
+            </g>
+        </g>
+
+
+        <!-- ========================================== -->
+        <!-- LEGEND                                     -->
+        <!-- ========================================== -->
+        <g transform="translate(450, 440)">
+            <rect x="0" y="0" width="320" height="45" rx="6" fill="#fff" stroke="#ddd" stroke-width="1"/>
+            
+            <circle cx="20" cy="22.5" r="8" fill="url(#carbonGrad)"/>
+            <text x="35" y="27" font-size="12" fill="#333">Carbon</text>
+            
+            <circle cx="100" cy="22.5" r="6" fill="url(#hydrogenGrad)" stroke="#aaa" stroke-width="1"/>
+            <text x="115" y="27" font-size="12" fill="#333">Hydrogen</text>
+            
+            <ellipse cx="195" cy="22.5" rx="12" ry="6" fill="#00B4D8" opacity="0.5"/>
+            <text x="215" y="27" font-size="12" fill="#333">σ Orbital</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

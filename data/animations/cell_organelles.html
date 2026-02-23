@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Diagram of Cell Organelles</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        
+        /* Animations */
+        @keyframes pulseCristae {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+        .cristae {
+            transform-origin: 580px 375px;
+            animation: pulseCristae 4s ease-in-out infinite;
+        }
+
+        @keyframes moveATP1 {
+            0% { transform: translate(580px, 375px) scale(0); opacity: 0; }
+            10% { transform: translate(580px, 375px) scale(1); opacity: 1; }
+            80% { transform: translate(320px, 320px) scale(1); opacity: 1; }
+            100% { transform: translate(300px, 300px) scale(0); opacity: 0; }
+        }
+        @keyframes moveATP2 {
+            0% { transform: translate(580px, 375px) scale(0); opacity: 0; }
+            10% { transform: translate(580px, 375px) scale(1); opacity: 1; }
+            80% { transform: translate(480px, 190px) scale(1); opacity: 1; }
+            100% { transform: translate(465px, 165px) scale(0); opacity: 0; }
+        }
+        @keyframes moveATP3 {
+            0% { transform: translate(580px, 375px) scale(0); opacity: 0; }
+            10% { transform: translate(580px, 375px) scale(1); opacity: 1; }
+            80% { transform: translate(400px, 420px) scale(1); opacity: 1; }
+            100% { transform: translate(380px, 430px) scale(0); opacity: 0; }
+        }
+        .atp1 { animation: moveATP1 5s ease-in-out infinite; }
+        .atp2 { animation: moveATP2 6s ease-in-out infinite 1.5s; }
+        .atp3 { animation: moveATP3 5.5s ease-in-out infinite 3s; }
+
+        @keyframes mrna-export {
+            0% { transform: translate(180px, 240px) scale(0); opacity: 0; }
+            10% { transform: translate(180px, 240px) scale(1); opacity: 1; }
+            45% { transform: translate(317px, 193px) scale(1); opacity: 1; }
+            80% { transform: translate(400px, 150px) scale(1); opacity: 1; }
+            100% { transform: translate(420px, 140px) scale(0); opacity: 0; }
+        }
+        .mrna1 { animation: mrna-export 7s ease-in-out infinite; }
+        .mrna2 { animation: mrna-export 7s ease-in-out infinite 3.5s; }
+
+        @keyframes growMask {
+            0% { stroke-dashoffset: 200; }
+            40%, 60% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 200; }
+        }
+        .mt-mask-line {
+            stroke-dasharray: 200;
+            stroke-dashoffset: 200;
+            animation: growMask 6s ease-in-out infinite;
+        }
+
+        @keyframes drift {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(12px, 8px); }
+            100% { transform: translate(0, 0); }
+        }
+        .granule { animation: drift 8s ease-in-out infinite alternate; }
+        .granule:nth-child(odd) { animation-duration: 11s; animation-direction: alternate-reverse; }
+        .granule:nth-child(3n) { animation-duration: 14s; }
+
+        .process-label {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animated Diagram of Cell Organelles">
+        <defs>
+            <!-- Shadows and Glows -->
+            <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+                <feDropShadow dx="3" dy="6" stdDeviation="5" flood-color="#000000" flood-opacity="0.15"/>
+            </filter>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+
+            <!-- Gradients -->
+            <radialGradient id="nucGrad" cx="40%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="#34495E"/>
+                <stop offset="100%" stop-color="#2C3E50"/>
+            </radialGradient>
+
+            <!-- Masks for Microtubule Polymerization -->
+            <mask id="mt-mask">
+                <line x1="465" y1="155" x2="345" y2="45" stroke="white" stroke-width="5" class="mt-mask-line" />
+                <line x1="465" y1="155" x2="585" y2="65" stroke="white" stroke-width="5" class="mt-mask-line" style="animation-delay: 1s;" />
+                <line x1="465" y1="155" x2="365" y2="255" stroke="white" stroke-width="5" class="mt-mask-line" style="animation-delay: 2s;" />
+                <line x1="465" y1="155" x2="615" y2="205" stroke="white" stroke-width="5" class="mt-mask-line" style="animation-delay: 0.5s;" />
+                <line x1="465" y1="155" x2="465" y2="25" stroke="white" stroke-width="5" class="mt-mask-line" style="animation-delay: 1.5s;" />
+            </mask>
+
+            <!-- Reusable Molecules -->
+            <circle id="atp-shape" cx="0" cy="0" r="4.5" fill="#F1C40F" filter="url(#glow)"/>
+            <path id="mrna-shape" d="M -12 0 Q -6 -6 0 0 T 12 0 T 24 0" fill="none" stroke="#FFA07A" stroke-width="2.5" stroke-linecap="round"/>
+        </defs>
+
+        <!-- Background -->
+        <rect width="800" height="500" fill="#f8f9fa" />
+
+        <!-- Plasma Membrane & Cytoplasm -->
+        <g aria-label="Cell Boundary and Cytoplasm">
+            <rect x="20" y="60" width="760" height="420" rx="120" fill="#E8F4FD" stroke="#4A90D9" stroke-width="4" />
+            
+            <!-- Cytoplasmic Granules (Streaming) -->
+            <g class="granules" fill="#AED6F1">
+                <circle cx="100" cy="150" r="2.5" class="granule" />
+                <circle cx="150" cy="350" r="2" class="granule" />
+                <circle cx="350" cy="100" r="3" class="granule" />
+                <circle cx="400" cy="400" r="2" class="granule" />
+                <circle cx="650" cy="150" r="2.5" class="granule" />
+                <circle cx="700" cy="300" r="2" class="granule" />
+                <circle cx="500" cy="250" r="3" class="granule" />
+                <circle cx="250" cy="420" r="2.5" class="granule" />
+                <circle cx="80" cy="280" r="2" class="granule" />
+                <circle cx="550" cy="100" r="2.5" class="granule" />
+                <circle cx="300" cy="200" r="2" class="granule" />
+                <circle cx="680" cy="420" r="3" class="granule" />
+            </g>
+        </g>
+
+        <!-- Nucleus -->
+        <g aria-label="Nucleus" filter="url(#shadow)">
+            <!-- Nucleoplasm -->
+            <circle cx="240" cy="270" r="110" fill="url(#nucGrad)" />
+            
+            <!-- Double Membrane with Pores (Rotated to align gap with mRNA path) -->
+            <g transform="rotate(-15 240 270)">
+                <!-- Outer Membrane -->
+                <circle cx="240" cy="270" r="110" fill="none" stroke="#1A252F" stroke-width="3" stroke-dasharray="70 16.3" />
+                <!-- Inner Membrane -->
+                <circle cx="240" cy="270" r="104" fill="none" stroke="#1A252F" stroke-width="2" stroke-dasharray="65 16.6" />
+            </g>
+
+            <!-- Nucleolus -->
+            <circle cx="180" cy="240" r="28" fill="#1A252F" />
+            
+            <!-- Chromatin -->
+            <path d="M 150 220 Q 170 180 200 200 T 240 180 T 270 230 T 250 280 T 210 290 T 170 320 T 140 280 T 150 220" fill="none" stroke="#FF6B6B" stroke-width="2" opacity="0.8" />
+            <path d="M 180 260 Q 210 240 230 270 T 280 250 T 300 290 T 260 330 T 220 310" fill="none" stroke="#FF6B6B" stroke-width="1.5" opacity="0.8" />
+            <path d="M 200 210 Q 230 190 260 210 T 290 270" fill="none" stroke="#FF6B6B" stroke-width="1.5" opacity="0.6" />
+        </g>
+
+        <!-- Centrosome -->
+        <g aria-label="Centrosome">
+            <!-- Microtubules (Dynamic Instability) -->
+            <g mask="url(#mt-mask)" stroke="#95A5A6" stroke-width="1.5" stroke-dasharray="4 4" stroke-linecap="round">
+                <line x1="465" y1="155" x2="345" y2="45" />
+                <line x1="465" y1="155" x2="585" y2="65" />
+                <line x1="465" y1="155" x2="365" y2="255" />
+                <line x1="465" y1="155" x2="615" y2="205" />
+                <line x1="465" y1="155" x2="465" y2="25" />
+            </g>
+
+            <!-- Centrioles (Perpendicular) -->
+            <g filter="url(#shadow)">
+                <!-- Vertical Centriole -->
+                <g transform="translate(455, 135)">
+                    <rect x="0" y="0" width="12" height="32" fill="#F39C12" rx="1" />
+                    <line x1="4" y1="0" x2="4" y2="32" stroke="#D68910" stroke-width="1" />
+                    <line x1="8" y1="0" x2="8" y2="32" stroke="#D68910" stroke-width="1" />
+                </g>
+                <!-- Horizontal Centriole -->
+                <g transform="translate(470, 155)">
+                    <rect x="0" y="0" width="32" height="12" fill="#F39C12" rx="1" />
+                    <line x1="0" y1="4" x2="32" y2="4" stroke="#D68910" stroke-width="1" />
+                    <line x1="0" y1="8" x2="32" y2="8" stroke="#D68910" stroke-width="1" />
+                </g>
+            </g>
+        </g>
+
+        <!-- Mitochondrion -->
+        <g aria-label="Mitochondrion producing ATP" filter="url(#shadow)">
+            <!-- Outer Membrane -->
+            <path d="M 520 330 Q 580 290 640 330 Q 680 380 640 420 Q 580 440 520 400 Q 480 360 520 330 Z" fill="#E74C3C" stroke="#C0392B" stroke-width="3" />
+            
+            <!-- Inner Membrane (Cristae) -->
+            <path d="M 525 335 L 540 360 L 535 385 L 560 345 L 570 395 L 590 340 L 605 405 L 625 345 L 635 395 L 645 350" fill="none" stroke="#FADBD8" stroke-width="2.5" stroke-linejoin="round" class="cristae" />
+        </g>
+
+        <!-- Animated Molecules -->
+        <g aria-label="Molecular Transport">
+            <!-- ATP -->
+            <use href="#atp-shape" class="atp1" />
+            <use href="#atp-shape" class="atp2" />
+            <use href="#atp-shape" class="atp3" />
+            
+            <!-- mRNA -->
+            <use href="#mrna-shape" class="mrna1" />
+            <use href="#mrna-shape" class="mrna2" />
+        </g>
+
+        <!-- Labels and Annotations -->
+        <g aria-label="Text Labels">
+            <!-- Title -->
+            <text x="30" y="35" font-size="20" font-weight="700" fill="#2C3E50">The Dynamic Cell: Integration of Energy, Information, and Structure</text>
+            
+            <!-- Organelle Labels -->
+            <text x="240" y="140" font-size="14" font-weight="700" fill="#2C3E50" text-anchor="middle">Nucleus</text>
+            <text x="580" y="465" font-size="14" font-weight="700" fill="#C0392B" text-anchor="middle">Mitochondrion (Site of ATP Synthesis)</text>
+            <text x="465" y="120" font-size="14" font-weight="700" fill="#D68910" text-anchor="middle">Centrosome (Centrioles)</text>
+
+            <!-- Process Labels -->
+            <text x="330" y="175" class="process-label" fill="#D35400">mRNA Export</text>
+            <text x="650" y="320" class="process-label" fill="#B7950B">ATP Production</text>
+            <text x="550" y="145" class="process-label" fill="#7F8C8D">Microtubule Polymerization</text>
+            
+            <!-- Pointer Lines for Process Labels -->
+            <line x1="320" y1="180" x2="305" y2="195" stroke="#D35400" stroke-width="1" opacity="0.6" />
+            <line x1="645" y1="325" x2="625" y2="345" stroke="#B7950B" stroke-width="1" opacity="0.6" />
+        </g>
+
+        <!-- Legend -->
+        <g aria-label="Legend" transform="translate(35, 415)">
+            <rect x="0" y="0" width="290" height="55" rx="6" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" opacity="0.95" filter="url(#shadow)"/>
+            
+            <!-- Row 1 -->
+            <circle cx="15" cy="15" r="4.5" fill="#F1C40F" filter="url(#glow)"/>
+            <text x="28" y="19" font-size="11" font-weight="600" fill="#34495E">ATP (Energy)</text>
+            
+            <line x1="140" y1="15" x2="165" y2="15" stroke="#95A5A6" stroke-width="2" stroke-dasharray="4 4"/>
+            <text x="175" y="19" font-size="11" font-weight="600" fill="#34495E">Microtubules</text>
+            
+            <!-- Row 2 -->
+            <path d="M 10 38 Q 14 32 18 38 T 26 38" fill="none" stroke="#FFA07A" stroke-width="2.5"/>
+            <text x="28" y="42" font-size="11" font-weight="600" fill="#34495E">mRNA (Info)</text>
+            
+            <path d="M 140 38 Q 148 32 155 38 T 165 38" fill="none" stroke="#FF6B6B" stroke-width="2"/>
+            <text x="175" y="42" font-size="11" font-weight="600" fill="#34495E">Chromatin</text>
+        </g>
+    </svg>
+</div>
+
+</body>
+</html>

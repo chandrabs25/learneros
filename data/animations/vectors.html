@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Resolution & Simple Harmonic Motion</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital@0;1&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            background-color: #ffffff;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            width: 100%;
+            height: auto;
+            display: block;
+            /* Hover effect to slow down animation for inspection */
+            transition: all 0.3s ease;
+        }
+
+        svg:hover * {
+            animation-duration: 16s !important;
+        }
+
+        /* --- CSS Animations --- */
+
+        /* Main Vector Rotation (Counter-Clockwise) */
+        @keyframes rotate-vector {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(-360deg); }
+        }
+
+        /* Counter Rotation to keep labels upright */
+        @keyframes counter-rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Angle Arc Growth */
+        @keyframes arc-grow {
+            0% { stroke-dashoffset: 188.5; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        /* X Component Scaling */
+        @keyframes scale-x {
+            0%, 100% { transform: scaleX(160); }
+            4.16%, 95.83% { transform: scaleX(154.5); }
+            8.33%, 91.66% { transform: scaleX(138.6); }
+            12.5%, 87.5% { transform: scaleX(113.1); }
+            16.66%, 83.33% { transform: scaleX(80); }
+            20.83%, 79.16% { transform: scaleX(41.4); }
+            25%, 75% { transform: scaleX(0); }
+            29.16%, 70.83% { transform: scaleX(-41.4); }
+            33.33%, 66.66% { transform: scaleX(-80); }
+            37.5%, 62.5% { transform: scaleX(-113.1); }
+            41.66%, 58.33% { transform: scaleX(-138.6); }
+            45.83%, 54.16% { transform: scaleX(-154.5); }
+            50% { transform: scaleX(-160); }
+        }
+
+        /* Y Component Scaling */
+        @keyframes scale-y {
+            0%, 50%, 100% { transform: scaleY(0); }
+            4.16%, 45.83% { transform: scaleY(-41.4); }
+            8.33%, 41.66% { transform: scaleY(-80); }
+            12.5%, 37.5% { transform: scaleY(-113.1); }
+            16.66%, 33.33% { transform: scaleY(-138.6); }
+            20.83%, 29.16% { transform: scaleY(-154.5); }
+            25% { transform: scaleY(-160); }
+            54.16%, 95.83% { transform: scaleY(41.4); }
+            58.33%, 91.66% { transform: scaleY(80); }
+            62.5%, 87.5% { transform: scaleY(113.1); }
+            66.66%, 83.33% { transform: scaleY(138.6); }
+            70.83%, 79.16% { transform: scaleY(154.5); }
+            75% { transform: scaleY(160); }
+        }
+
+        /* X Projection Line Translation */
+        @keyframes translate-x {
+            0%, 100% { transform: translateX(160px); }
+            4.16%, 95.83% { transform: translateX(154.5px); }
+            8.33%, 91.66% { transform: translateX(138.6px); }
+            12.5%, 87.5% { transform: translateX(113.1px); }
+            16.66%, 83.33% { transform: translateX(80px); }
+            20.83%, 79.16% { transform: translateX(41.4px); }
+            25%, 75% { transform: translateX(0px); }
+            29.16%, 70.83% { transform: translateX(-41.4px); }
+            33.33%, 66.66% { transform: translateX(-80px); }
+            37.5%, 62.5% { transform: translateX(-113.1px); }
+            41.66%, 58.33% { transform: translateX(-138.6px); }
+            45.83%, 54.16% { transform: translateX(-154.5px); }
+            50% { transform: translateX(-160px); }
+        }
+
+        /* Y Projection Line Translation */
+        @keyframes translate-y {
+            0%, 50%, 100% { transform: translateY(0px); }
+            4.16%, 45.83% { transform: translateY(-41.4px); }
+            8.33%, 41.66% { transform: translateY(-80px); }
+            12.5%, 37.5% { transform: translateY(-113.1px); }
+            16.66%, 33.33% { transform: translateY(-138.6px); }
+            20.83%, 29.16% { transform: translateY(-154.5px); }
+            25% { transform: translateY(-160px); }
+            54.16%, 95.83% { transform: translateY(41.4px); }
+            58.33%, 91.66% { transform: translateY(80px); }
+            62.5%, 87.5% { transform: translateY(113.1px); }
+            66.66%, 83.33% { transform: translateY(138.6px); }
+            70.83%, 79.16% { transform: translateY(154.5px); }
+            75% { transform: translateY(160px); }
+        }
+
+        /* X Arrowhead Translation & Flipping */
+        @keyframes ax-arrow {
+            0% { transform: translateX(160px) rotate(0deg); }
+            4.16% { transform: translateX(154.5px) rotate(0deg); }
+            8.33% { transform: translateX(138.6px) rotate(0deg); }
+            12.5% { transform: translateX(113.1px) rotate(0deg); }
+            16.66% { transform: translateX(80px) rotate(0deg); }
+            20.83% { transform: translateX(41.4px) rotate(0deg); }
+            24.99% { transform: translateX(0px) rotate(0deg); }
+            25% { transform: translateX(0px) rotate(180deg); }
+            29.16% { transform: translateX(-41.4px) rotate(180deg); }
+            33.33% { transform: translateX(-80px) rotate(180deg); }
+            37.5% { transform: translateX(-113.1px) rotate(180deg); }
+            41.66% { transform: translateX(-138.6px) rotate(180deg); }
+            45.83% { transform: translateX(-154.5px) rotate(180deg); }
+            50% { transform: translateX(-160px) rotate(180deg); }
+            54.16% { transform: translateX(-154.5px) rotate(180deg); }
+            58.33% { transform: translateX(-138.6px) rotate(180deg); }
+            62.5% { transform: translateX(-113.1px) rotate(180deg); }
+            66.66% { transform: translateX(-80px) rotate(180deg); }
+            70.83% { transform: translateX(-41.4px) rotate(180deg); }
+            74.99% { transform: translateX(0px) rotate(180deg); }
+            75% { transform: translateX(0px) rotate(0deg); }
+            79.16% { transform: translateX(41.4px) rotate(0deg); }
+            83.33% { transform: translateX(80px) rotate(0deg); }
+            87.5% { transform: translateX(113.1px) rotate(0deg); }
+            91.66% { transform: translateX(138.6px) rotate(0deg); }
+            95.83% { transform: translateX(154.5px) rotate(0deg); }
+            100% { transform: translateX(160px) rotate(0deg); }
+        }
+
+        /* Y Arrowhead Translation & Flipping */
+        @keyframes ay-arrow {
+            0% { transform: translateY(0px) rotate(-90deg); }
+            4.16% { transform: translateY(-41.4px) rotate(-90deg); }
+            8.33% { transform: translateY(-80px) rotate(-90deg); }
+            12.5% { transform: translateY(-113.1px) rotate(-90deg); }
+            16.66% { transform: translateY(-138.6px) rotate(-90deg); }
+            20.83% { transform: translateY(-154.5px) rotate(-90deg); }
+            24.99% { transform: translateY(-160px) rotate(-90deg); }
+            25% { transform: translateY(-160px) rotate(-90deg); }
+            29.16% { transform: translateY(-154.5px) rotate(-90deg); }
+            33.33% { transform: translateY(-138.6px) rotate(-90deg); }
+            37.5% { transform: translateY(-113.1px) rotate(-90deg); }
+            41.66% { transform: translateY(-80px) rotate(-90deg); }
+            45.83% { transform: translateY(-41.4px) rotate(-90deg); }
+            49.99% { transform: translateY(0px) rotate(-90deg); }
+            50% { transform: translateY(0px) rotate(90deg); }
+            54.16% { transform: translateY(41.4px) rotate(90deg); }
+            58.33% { transform: translateY(80px) rotate(90deg); }
+            62.5% { transform: translateY(113.1px) rotate(90deg); }
+            66.66% { transform: translateY(138.6px) rotate(90deg); }
+            70.83% { transform: translateY(154.5px) rotate(90deg); }
+            74.99% { transform: translateY(160px) rotate(90deg); }
+            75% { transform: translateY(160px) rotate(90deg); }
+            79.16% { transform: translateY(154.5px) rotate(90deg); }
+            83.33% { transform: translateY(138.6px) rotate(90deg); }
+            87.5% { transform: translateY(113.1px) rotate(90deg); }
+            91.66% { transform: translateY(80px) rotate(90deg); }
+            95.83% { transform: translateY(41.4px) rotate(90deg); }
+            99.99% { transform: translateY(0px) rotate(90deg); }
+            100% { transform: translateY(0px) rotate(-90deg); }
+        }
+
+        /* Vertical Mask Animation (Translate X and Scale Y) */
+        @keyframes mask-v-anim {
+            0% { transform: translateX(160px) scaleY(0); }
+            4.16% { transform: translateX(154.5px) scaleY(-41.4); }
+            8.33% { transform: translateX(138.6px) scaleY(-80); }
+            12.5% { transform: translateX(113.1px) scaleY(-113.1); }
+            16.66% { transform: translateX(80px) scaleY(-138.6); }
+            20.83% { transform: translateX(41.4px) scaleY(-154.5); }
+            25% { transform: translateX(0px) scaleY(-160); }
+            29.16% { transform: translateX(-41.4px) scaleY(-154.5); }
+            33.33% { transform: translateX(-80px) scaleY(-138.6); }
+            37.5% { transform: translateX(-113.1px) scaleY(-113.1); }
+            41.66% { transform: translateX(-138.6px) scaleY(-80); }
+            45.83% { transform: translateX(-154.5px) scaleY(-41.4); }
+            50% { transform: translateX(-160px) scaleY(0); }
+            54.16% { transform: translateX(-154.5px) scaleY(41.4); }
+            58.33% { transform: translateX(-138.6px) scaleY(80); }
+            62.5% { transform: translateX(-113.1px) scaleY(113.1); }
+            66.66% { transform: translateX(-80px) scaleY(138.6); }
+            70.83% { transform: translateX(-41.4px) scaleY(154.5); }
+            75% { transform: translateX(0px) scaleY(160); }
+            79.16% { transform: translateX(41.4px) scaleY(154.5); }
+            83.33% { transform: translateX(80px) scaleY(138.6); }
+            87.5% { transform: translateX(113.1px) scaleY(113.1); }
+            91.66% { transform: translateX(138.6px) scaleY(80); }
+            95.83% { transform: translateX(154.5px) scaleY(41.4); }
+            100% { transform: translateX(160px) scaleY(0); }
+        }
+
+        /* Horizontal Mask Animation (Translate Y and Scale X) */
+        @keyframes mask-h-anim {
+            0% { transform: translateY(0px) scaleX(160); }
+            4.16% { transform: translateY(-41.4px) scaleX(154.5); }
+            8.33% { transform: translateY(-80px) scaleX(138.6); }
+            12.5% { transform: translateY(-113.1px) scaleX(113.1); }
+            16.66% { transform: translateY(-138.6px) scaleX(80); }
+            20.83% { transform: translateY(-154.5px) scaleX(41.4); }
+            25% { transform: translateY(-160px) scaleX(0); }
+            29.16% { transform: translateY(-154.5px) scaleX(-41.4); }
+            33.33% { transform: translateY(-138.6px) scaleX(-80); }
+            37.5% { transform: translateY(-113.1px) scaleX(-113.1); }
+            41.66% { transform: translateY(-80px) scaleX(-138.6); }
+            45.83% { transform: translateY(-41.4px) scaleX(-154.5); }
+            50% { transform: translateY(0px) scaleX(-160); }
+            54.16% { transform: translateY(41.4px) scaleX(-154.5); }
+            58.33% { transform: translateY(80px) scaleX(-138.6); }
+            62.5% { transform: translateY(113.1px) scaleX(-113.1); }
+            66.66% { transform: translateY(138.6px) scaleX(-80); }
+            70.83% { transform: translateY(154.5px) scaleX(-41.4); }
+            75% { transform: translateY(160px) scaleX(0); }
+            79.16% { transform: translateY(154.5px) scaleX(41.4); }
+            83.33% { transform: translateY(138.6px) scaleX(80); }
+            87.5% { transform: translateY(113.1px) scaleX(113.1); }
+            91.66% { transform: translateY(80px) scaleX(138.6); }
+            95.83% { transform: translateY(41.4px) scaleX(154.5); }
+            100% { transform: translateY(0px) scaleX(160); }
+        }
+
+        .anim-vector { animation: rotate-vector 8s linear infinite; }
+        .anim-counter { animation: counter-rotate 8s linear infinite; }
+        .anim-arc { animation: arc-grow 8s linear infinite; }
+        .anim-scale-x { animation: scale-x 8s linear infinite; }
+        .anim-scale-y { animation: scale-y 8s linear infinite; }
+        .anim-trans-x { animation: translate-x 8s linear infinite; }
+        .anim-trans-y { animation: translate-y 8s linear infinite; }
+        .anim-ax-arrow { animation: ax-arrow 8s linear infinite; }
+        .anim-ay-arrow { animation: ay-arrow 8s linear infinite; }
+        .anim-mask-v { animation: mask-v-anim 8s linear infinite; }
+        .anim-mask-h { animation: mask-h-anim 8s linear infinite; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Vector Resolution & Simple Harmonic Motion</title>
+        <desc>An animated diagram showing a purple vector rotating in a circle, with its red horizontal and blue vertical components oscillating along the axes, demonstrating simple harmonic motion.</desc>
+
+        <!-- Definitions for reusable elements and masks -->
+        <defs>
+            <!-- Arrowhead Polygon -->
+            <polygon id="arrow-right" points="0,0 -12,-6 -9,0 -12,6" />
+            
+            <!-- Mask for Vertical Projection Line (prevents dash stretching) -->
+            <mask id="mask-v" maskUnits="userSpaceOnUse">
+                <rect x="-10" y="0" width="20" height="1" fill="white" class="anim-mask-v" />
+            </mask>
+            
+            <!-- Mask for Horizontal Projection Line (prevents dash stretching) -->
+            <mask id="mask-h" maskUnits="userSpaceOnUse">
+                <rect x="0" y="-10" width="1" height="20" fill="white" class="anim-mask-h" />
+            </mask>
+        </defs>
+
+        <!-- Title & Subtitle -->
+        <text x="30" y="40" font-family="'Inter', sans-serif" font-size="22" font-weight="700" fill="#212529">Vector Resolution &amp; Simple Harmonic Motion</text>
+        <text x="30" y="65" font-family="'Inter', sans-serif" font-size="14" fill="#6C757D">Hover over the diagram to slow down the animation (0.5x speed).</text>
+
+        <!-- Main Coordinate System & Animation Group -->
+        <g transform="translate(400, 250)">
+            
+            <!-- Reference Circle -->
+            <circle cx="0" cy="0" r="160" fill="none" stroke="#CED4DA" stroke-width="2" stroke-dasharray="8 8" />
+
+            <!-- X and Y Axes -->
+            <line x1="-300" y1="0" x2="300" y2="0" stroke="#CED4DA" stroke-width="2" />
+            <line x1="0" y1="-200" x2="0" y2="200" stroke="#CED4DA" stroke-width="2" />
+            
+            <!-- Axis Arrowheads -->
+            <polygon points="300,0 290,-5 290,5" fill="#CED4DA" />
+            <polygon points="0,-200 -5,-190 5,-190" fill="#CED4DA" />
+            
+            <!-- Axis Labels -->
+            <text x="310" y="5" font-family="'Inter', sans-serif" font-size="14" font-weight="600" fill="#6C757D">X</text>
+            <text x="-5" y="-210" font-family="'Inter', sans-serif" font-size="14" font-weight="600" fill="#6C757D">Y</text>
+
+            <!-- Angle Arc (Grows with rotation) -->
+            <circle cx="0" cy="0" r="30" fill="none" stroke="#6C757D" stroke-width="2" stroke-dasharray="188.5" stroke-dashoffset="188.5" class="anim-arc" style="transform: scale(1, -1);" />
+            
+            <!-- Angle Label -->
+            <text x="38" y="-15" font-family="'Roboto Mono', monospace" font-size="14" fill="#6C757D">θ = ωt</text>
+
+            <!-- Projection Lines (Dashed Cyan) -->
+            <!-- Vertical Projection -->
+            <g class="anim-trans-x">
+                <line x1="0" y1="-180" x2="0" y2="180" stroke="#00B4D8" stroke-width="2" stroke-dasharray="6 6" mask="url(#mask-v)" />
+            </g>
+            <!-- Horizontal Projection -->
+            <g class="anim-trans-y">
+                <line x1="-180" y1="0" x2="180" y2="0" stroke="#00B4D8" stroke-width="2" stroke-dasharray="6 6" mask="url(#mask-h)" />
+            </g>
+
+            <!-- X Component (Red) -->
+            <line x1="0" y1="0" x2="1" y2="0" stroke="#FF3366" stroke-width="3" stroke-linecap="butt" class="anim-scale-x" />
+            <use href="#arrow-right" fill="#FF3366" class="anim-ax-arrow" />
+
+            <!-- Y Component (Blue) -->
+            <line x1="0" y1="0" x2="0" y2="1" stroke="#4361EE" stroke-width="3" stroke-linecap="butt" class="anim-scale-y" />
+            <use href="#arrow-right" fill="#4361EE" class="anim-ay-arrow" />
+
+            <!-- Main Rotating Vector (Purple) -->
+            <g class="anim-vector">
+                <line x1="0" y1="0" x2="160" y2="0" stroke="#7209B7" stroke-width="4" stroke-linecap="round" />
+                <use href="#arrow-right" x="160" y="0" fill="#7209B7" />
+                
+                <!-- Vector Label (Counter-rotates to stay upright) -->
+                <g transform="translate(80, -20)">
+                    <g class="anim-counter">
+                        <text x="0" y="0" fill="#7209B7" font-family="'Roboto Mono', monospace" font-style="italic" font-weight="700" font-size="18" text-anchor="middle" dominant-baseline="middle">A</text>
+                        <!-- Vector Arrow above 'A' -->
+                        <path d="M -6,-12 L 6,-12 M 6,-12 L 3,-15 M 6,-12 L 3,-9" stroke="#7209B7" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                    </g>
+                </g>
+            </g>
+
+            <!-- Dynamic Component Formulas -->
+            <!-- X Component Formula -->
+            <text x="180" y="30" font-family="'Roboto Mono', monospace" font-size="15" fill="#FF3366" font-style="italic">
+                A<tspan dy="4" font-size="0.75em" font-style="normal">x</tspan><tspan dy="-4"> = A cos(ωt)</tspan>
+            </text>
+            
+            <!-- Y Component Formula -->
+            <text x="20" y="-180" font-family="'Roboto Mono', monospace" font-size="15" fill="#4361EE" font-style="italic">
+                A<tspan dy="4" font-size="0.75em" font-style="normal">y</tspan><tspan dy="-4"> = A sin(ωt)</tspan>
+            </text>
+
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(30, 400)" font-family="'Inter', sans-serif" font-size="13" fill="#495057">
+            <rect x="0" y="0" width="14" height="14" fill="#7209B7" rx="3" />
+            <text x="24" y="12">Position Vector (A)</text>
+            
+            <rect x="0" y="24" width="14" height="14" fill="#FF3366" rx="3" />
+            <text x="24" y="36">Horizontal Component (A_x)</text>
+            
+            <rect x="0" y="48" width="14" height="14" fill="#4361EE" rx="3" />
+            <text x="24" y="60">Vertical Component (A_y)</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

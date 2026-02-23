@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Step-Up Transformer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Animations */
+        @keyframes wave-scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-80px); }
+        }
+
+        .wave {
+            animation: wave-scroll 4s linear infinite;
+        }
+
+        @keyframes flux-flow {
+            0% { stroke-dashoffset: -100; }
+            100% { stroke-dashoffset: 100; }
+        }
+
+        @keyframes flux-glow {
+            0% { opacity: 0.2; filter: drop-shadow(0 0 2px rgba(114, 9, 183, 0.2)); }
+            50% { opacity: 1; filter: drop-shadow(0 0 8px rgba(114, 9, 183, 0.8)); }
+            100% { opacity: 0.2; filter: drop-shadow(0 0 2px rgba(114, 9, 183, 0.2)); }
+        }
+
+        .flux {
+            animation: 
+                flux-flow 2s ease-in-out infinite alternate,
+                flux-glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes el-move {
+            0% { transform: translateX(-20px); }
+            100% { transform: translateX(20px); }
+        }
+
+        @keyframes el-move-rev {
+            0% { transform: translateX(20px); }
+            100% { transform: translateX(-20px); }
+        }
+
+        .electron-fwd {
+            animation: el-move 2s ease-in-out infinite alternate;
+        }
+
+        .electron-rev {
+            animation: el-move-rev 2s ease-in-out infinite alternate;
+        }
+
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Step-Up Transformer Physics Diagram</title>
+        <desc>An animated diagram showing the physics of a step-up transformer, including primary and secondary coils, magnetic flux, and input/output voltage waveforms.</desc>
+
+        <defs>
+            <!-- Core Metallic Gradient -->
+            <linearGradient id="core-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#DEE2E6" />
+                <stop offset="50%" stop-color="#CED4DA" />
+                <stop offset="100%" stop-color="#ADB5BD" />
+            </linearGradient>
+
+            <!-- Waveform Clip Paths -->
+            <clipPath id="clip-p">
+                <rect x="170" y="60" width="160" height="80" rx="4"/>
+            </clipPath>
+            <clipPath id="clip-s">
+                <rect x="470" y="60" width="160" height="80" rx="4"/>
+            </clipPath>
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="35" font-size="22" font-weight="700" text-anchor="middle" fill="#212529">Step-Up Transformer: V<tspan baseline-shift="sub" font-size="14">s</tspan> = V<tspan baseline-shift="sub" font-size="14">p</tspan> (N<tspan baseline-shift="sub" font-size="14">s</tspan> / N<tspan baseline-shift="sub" font-size="14">p</tspan>)</text>
+
+        <!-- ================= BACK COILS (Drawn behind the core) ================= -->
+        <g id="back-coils">
+            <!-- Primary Back (4 turns) -->
+            <path d="
+                M 210 230 Q 250 225, 290 240
+                M 210 250 Q 250 245, 290 260
+                M 210 270 Q 250 265, 290 280
+                M 210 290 Q 250 285, 290 300
+            " fill="none" stroke="#273E9E" stroke-width="8" stroke-linecap="round"/>
+            
+            <!-- Secondary Back (8 turns) -->
+            <path d="
+                M 590 222 Q 550 217, 510 228
+                M 590 234 Q 550 229, 510 240
+                M 590 246 Q 550 241, 510 252
+                M 590 258 Q 550 253, 510 264
+                M 590 270 Q 550 265, 510 276
+                M 590 282 Q 550 277, 510 288
+                M 590 294 Q 550 289, 510 300
+                M 590 306 Q 550 301, 510 312
+            " fill="none" stroke="#C9184A" stroke-width="5" stroke-linecap="round"/>
+        </g>
+
+        <!-- ================= IRON CORE ================= -->
+        <g id="iron-core">
+            <!-- Main thick core body -->
+            <rect x="250" y="180" width="300" height="180" rx="20" fill="none" stroke="url(#core-grad)" stroke-width="60" />
+            
+            <!-- Lamination lines to simulate stacked iron sheets -->
+            <rect x="230" y="160" width="340" height="220" rx="25" fill="none" stroke="#6C757D" stroke-width="1" opacity="0.4"/>
+            <rect x="240" y="170" width="320" height="200" rx="22" fill="none" stroke="#6C757D" stroke-width="1" opacity="0.4"/>
+            <rect x="260" y="190" width="280" height="160" rx="18" fill="none" stroke="#6C757D" stroke-width="1" opacity="0.4"/>
+            <rect x="270" y="200" width="260" height="140" rx="15" fill="none" stroke="#6C757D" stroke-width="1" opacity="0.4"/>
+        </g>
+
+        <!-- ================= MAGNETIC FLUX ================= -->
+        <g id="magnetic-flux">
+            <rect x="245" y="175" width="310" height="190" rx="22" fill="none" stroke="#7209B7" stroke-width="2" stroke-dasharray="10 10" class="flux"/>
+            <rect x="250" y="180" width="300" height="180" rx="20" fill="none" stroke="#7209B7" stroke-width="2" stroke-dasharray="10 10" class="flux"/>
+            <rect x="255" y="185" width="290" height="170" rx="18" fill="none" stroke="#7209B7" stroke-width="2" stroke-dasharray="10 10" class="flux"/>
+            
+            <!-- Flux Label -->
+            <text x="400" y="186" font-size="18" font-weight="700" text-anchor="middle" fill="#7209B7">Φ<tspan baseline-shift="sub" font-size="12">B</tspan></text>
+        </g>
+
+        <!-- ================= FRONT COILS (Drawn over the core) ================= -->
+        <g id="front-coils">
+            <!-- Primary Front (4 turns) -->
+            <path d="
+                M 290 240 Q 250 255, 210 250
+                M 290 260 Q 250 275, 210 270
+                M 290 280 Q 250 295, 210 290
+                M 290 300 Q 250 315, 210 310
+            " fill="none" stroke="#4361EE" stroke-width="8" stroke-linecap="round"/>
+            
+            <!-- Secondary Front (8 turns) -->
+            <path d="
+                M 510 228 Q 550 239, 590 234
+                M 510 240 Q 550 251, 590 246
+                M 510 252 Q 550 263, 590 258
+                M 510 264 Q 550 275, 590 270
+                M 510 276 Q 550 287, 590 282
+                M 510 288 Q 550 299, 590 294
+                M 510 300 Q 550 311, 590 306
+                M 510 312 Q 550 323, 590 318
+            " fill="none" stroke="#FF3366" stroke-width="5" stroke-linecap="round"/>
+        </g>
+
+        <!-- ================= CIRCUIT COMPONENTS & WIRES ================= -->
+        <g id="circuit-wires" fill="none" stroke-width="2">
+            <!-- Primary Circuit -->
+            <path d="M 100 230 L 210 230" stroke="#4361EE" stroke-width="4"/>
+            <path d="M 210 310 L 100 310" stroke="#4361EE" stroke-width="4"/>
+            <path d="M 100 230 L 100 250" stroke="#212529"/>
+            <path d="M 100 310 L 100 290" stroke="#212529"/>
+            
+            <!-- AC Source Symbol -->
+            <circle cx="100" cy="270" r="20" stroke="#212529" fill="#ffffff"/>
+            <path d="M 85 270 Q 92.5 255, 100 270 T 115 270" stroke="#212529"/>
+
+            <!-- Secondary Circuit -->
+            <path d="M 590 222 L 700 222" stroke="#FF3366" stroke-width="3"/>
+            <path d="M 590 318 L 700 318" stroke="#FF3366" stroke-width="3"/>
+            <path d="M 700 222 L 700 250" stroke="#212529"/>
+            <path d="M 700 318 L 700 290" stroke="#212529"/>
+            
+            <!-- Load Resistor Symbol -->
+            <path d="M 700 250 L 688 256 L 712 268 L 688 280 L 712 292 L 700 298 L 700 318" stroke="#212529" stroke-linejoin="round"/>
+        </g>
+
+        <!-- ================= ELECTRON FLOW INDICATORS ================= -->
+        <g id="electrons">
+            <!-- Primary Electrons -->
+            <circle cx="150" cy="230" r="4" fill="#06D6A0" class="electron-fwd"/>
+            <circle cx="150" cy="310" r="4" fill="#06D6A0" class="electron-rev"/>
+            
+            <!-- Secondary Electrons -->
+            <circle cx="650" cy="222" r="4" fill="#06D6A0" class="electron-fwd"/>
+            <circle cx="650" cy="318" r="4" fill="#06D6A0" class="electron-rev"/>
+        </g>
+
+        <!-- ================= OSCILLOSCOPE WAVEFORMS ================= -->
+        <!-- Primary Waveform (Input) -->
+        <g id="waveform-primary">
+            <rect x="170" y="60" width="160" height="80" fill="#ffffff" stroke="#ced4da" stroke-width="2" rx="4"/>
+            <!-- Grid lines -->
+            <path d="M 170 100 L 330 100 M 210 60 L 210 140 M 250 60 L 250 140 M 290 60 L 290 140" stroke="#e9ecef" stroke-width="2" fill="none"/>
+            
+            <g clip-path="url(#clip-p)">
+                <!-- Sine wave path (Amplitude 20px) -->
+                <path class="wave" d="M 90 100 Q 110 60, 130 100 T 170 100 T 210 100 T 250 100 T 290 100 T 330 100 T 370 100 T 410 100" fill="none" stroke="#4361EE" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            <text x="250" y="50" font-size="14" font-weight="600" text-anchor="middle" fill="#4361EE">Input Voltage (V<tspan baseline-shift="sub" font-size="10">p</tspan>)</text>
+        </g>
+
+        <!-- Secondary Waveform (Output) -->
+        <g id="waveform-secondary">
+            <rect x="470" y="60" width="160" height="80" fill="#ffffff" stroke="#ced4da" stroke-width="2" rx="4"/>
+            <!-- Grid lines -->
+            <path d="M 470 100 L 630 100 M 510 60 L 510 140 M 550 60 L 550 140 M 590 60 L 590 140" stroke="#e9ecef" stroke-width="2" fill="none"/>
+            
+            <g clip-path="url(#clip-s)">
+                <!-- Sine wave path (Amplitude 40px - Double the primary) -->
+                <path class="wave" d="M 390 100 Q 410 20, 430 100 T 470 100 T 510 100 T 550 100 T 590 100 T 630 100 T 670 100 T 710 100" fill="none" stroke="#FF3366" stroke-width="3" stroke-linecap="round"/>
+            </g>
+            <text x="550" y="50" font-size="14" font-weight="600" text-anchor="middle" fill="#FF3366">Output Voltage (V<tspan baseline-shift="sub" font-size="10">s</tspan>)</text>
+        </g>
+
+        <!-- ================= LABELS & EQUATIONS ================= -->
+        <g id="labels">
+            <!-- Primary Side Info -->
+            <text x="250" y="410" font-size="16" font-weight="700" text-anchor="middle" fill="#4361EE">Primary Coil</text>
+            <text x="250" y="435" class="math" font-size="14" text-anchor="middle" fill="#495057">N_p = 4 turns</text>
+            <text x="250" y="455" class="math" font-size="14" text-anchor="middle" fill="#495057">V_p = V_m sin(ωt)</text>
+
+            <!-- Secondary Side Info -->
+            <text x="550" y="410" font-size="16" font-weight="700" text-anchor="middle" fill="#FF3366">Secondary Coil</text>
+            <text x="550" y="435" class="math" font-size="14" text-anchor="middle" fill="#495057">N_s = 8 turns</text>
+            <text x="550" y="455" class="math" font-size="14" text-anchor="middle" fill="#495057">V_s = 2 V_p</text>
+
+            <!-- Core Info -->
+            <text x="400" y="485" font-size="14" font-weight="600" text-anchor="middle" fill="#6C757D">Laminated Soft Iron Core (High Permeability)</text>
+        </g>
+
+        <!-- ================= LEGEND ================= -->
+        <g id="legend" transform="translate(630, 400)">
+            <rect x="0" y="0" width="150" height="60" fill="#ffffff" stroke="#dee2e6" stroke-width="1" rx="6" opacity="0.9"/>
+            
+            <line x1="15" y1="20" x2="35" y2="20" stroke="#7209B7" stroke-width="3" stroke-dasharray="4 4"/>
+            <text x="45" y="24" font-size="12" font-weight="600" fill="#495057">Magnetic Flux</text>
+            
+            <circle cx="25" cy="40" r="4" fill="#06D6A0"/>
+            <text x="45" y="44" font-size="12" font-weight="600" fill="#495057">Electron Flow</text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

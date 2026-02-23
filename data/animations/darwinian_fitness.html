@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Darwinian Fitness: Reproductive Strategy & r Value</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #2C3E50;
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-style: italic;
+        }
+
+        /* Organism Base Styles */
+        .org {
+            transform-box: fill-box;
+            transform-origin: center;
+            opacity: 0;
+        }
+
+        .load-ring {
+            transform-box: fill-box;
+            transform-origin: center;
+            transform: rotate(-90deg);
+        }
+
+        /* Population A (Low r) Animations */
+        @keyframes c1-survive {
+            0%, 2% { transform: scale(0); opacity: 0; }
+            4% { transform: scale(1.2); opacity: 1; }
+            6%, 98% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes c1-die {
+            0%, 2% { transform: scale(0); opacity: 0; }
+            4% { transform: scale(1.2); opacity: 1; }
+            6%, 55% { transform: scale(1); opacity: 1; }
+            56% { transform: scale(1.2); opacity: 0.8; }
+            57% { transform: scale(0.8); opacity: 0.4; }
+            59%, 100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes cA2-survive {
+            0%, 25% { transform: scale(0); opacity: 0; }
+            27% { transform: scale(1.2); opacity: 1; }
+            29%, 98% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Population B (High r) Animations */
+        @keyframes cB2-survive {
+            0%, 19% { transform: scale(0); opacity: 0; }
+            21% { transform: scale(1.2); opacity: 1; }
+            23%, 98% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes cB2-die {
+            0%, 19% { transform: scale(0); opacity: 0; }
+            21% { transform: scale(1.2); opacity: 1; }
+            23%, 55% { transform: scale(1); opacity: 1; }
+            56% { transform: scale(1.2); opacity: 0.8; }
+            57% { transform: scale(0.8); opacity: 0.4; }
+            59%, 100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes cB3-survive {
+            0%, 32% { transform: scale(0); opacity: 0; }
+            34% { transform: scale(1.2); opacity: 1; }
+            36%, 98% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes cB3-die {
+            0%, 32% { transform: scale(0); opacity: 0; }
+            34% { transform: scale(1.2); opacity: 1; }
+            36%, 55% { transform: scale(1); opacity: 1; }
+            56% { transform: scale(1.2); opacity: 0.8; }
+            57% { transform: scale(0.8); opacity: 0.4; }
+            59%, 100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes cB4-survive {
+            0%, 45% { transform: scale(0); opacity: 0; }
+            47% { transform: scale(1.2); opacity: 1; }
+            49%, 98% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+        @keyframes cB4-die {
+            0%, 45% { transform: scale(0); opacity: 0; }
+            47% { transform: scale(1.2); opacity: 1; }
+            49%, 55% { transform: scale(1); opacity: 1; }
+            56% { transform: scale(1.2); opacity: 0.8; }
+            57% { transform: scale(0.8); opacity: 0.4; }
+            59%, 100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Loading Rings (Reproduction Preparation) */
+        @keyframes loadA {
+            0%, 15% { stroke-dashoffset: 126; opacity: 1; }
+            25% { stroke-dashoffset: 0; opacity: 1; }
+            26%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes loadB1 {
+            0%, 10% { stroke-dashoffset: 63; opacity: 1; }
+            19% { stroke-dashoffset: 0; opacity: 1; }
+            20%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes loadB2 {
+            0%, 23% { stroke-dashoffset: 63; opacity: 1; }
+            32% { stroke-dashoffset: 0; opacity: 1; }
+            33%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes loadB3 {
+            0%, 36% { stroke-dashoffset: 63; opacity: 1; }
+            45% { stroke-dashoffset: 0; opacity: 1; }
+            46%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        /* Selection Pressure Sweep */
+        @keyframes sweep {
+            0%, 50% { clip-path: inset(0 100% 0 0); opacity: 0.15; }
+            53%, 65% { clip-path: inset(0 0 0 0); opacity: 0.15; }
+            68%, 100% { clip-path: inset(0 0 0 100%); opacity: 0.15; }
+        }
+        .sweep-rect {
+            animation: sweep 15s linear infinite;
+            fill: #E74C3C;
+        }
+
+        @keyframes stressText {
+            0%, 50% { opacity: 0; transform: scale(0.9); }
+            53%, 65% { opacity: 1; transform: scale(1); }
+            68%, 100% { opacity: 0; transform: scale(1.1); }
+        }
+        .stress-text {
+            animation: stressText 15s ease-in-out infinite;
+            transform-box: fill-box;
+            transform-origin: center;
+            fill: #E74C3C;
+            font-weight: bold;
+            font-size: 22px;
+            letter-spacing: 3px;
+        }
+
+        /* Graph Reveal */
+        @keyframes revealGraph {
+            0% { clip-path: inset(0 100% 0 0); }
+            100% { clip-path: inset(0 0 0 0); }
+        }
+        .graph-path {
+            animation: revealGraph 15s linear infinite;
+        }
+
+        /* Fitness Realization Glow */
+        @keyframes glowText {
+            0%, 73% { opacity: 0; filter: drop-shadow(0 0 0px #E67E22); }
+            80%, 95% { opacity: 1; filter: drop-shadow(0 0 6px #E67E22); }
+            100% { opacity: 0; }
+        }
+        .glow-text {
+            animation: glowText 15s ease-in-out infinite;
+            fill: #E67E22;
+            font-weight: bold;
+            font-size: 18px;
+            text-anchor: middle;
+        }
+
+        /* Class Assignments */
+        .c1-survive { animation: c1-survive 15s ease-in-out infinite; }
+        .c1-die { animation: c1-die 15s ease-in-out infinite; }
+        .cA2-survive { animation: cA2-survive 15s ease-in-out infinite; }
+        
+        .cB2-survive { animation: cB2-survive 15s ease-in-out infinite; }
+        .cB2-die { animation: cB2-die 15s ease-in-out infinite; }
+        .cB3-survive { animation: cB3-survive 15s ease-in-out infinite; }
+        .cB3-die { animation: cB3-die 15s ease-in-out infinite; }
+        .cB4-survive { animation: cB4-survive 15s ease-in-out infinite; }
+        .cB4-die { animation: cB4-die 15s ease-in-out infinite; }
+
+        .l-A { animation: loadA 15s linear infinite; }
+        .l-B1 { animation: loadB1 15s linear infinite; }
+        .l-B2 { animation: loadB2 15s linear infinite; }
+        .l-B3 { animation: loadB3 15s linear infinite; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 600" preserveAspectRatio="xMidYMid meet" aria-label="Animation showing Darwinian fitness through population growth">
+    <title>Darwinian Fitness and r-Selection</title>
+    <desc>A split-screen comparison demonstrating how different reproductive strategies (K vs r) lead to different Darwinian fitness levels under selection pressure.</desc>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#f8f9fa" rx="12" />
+
+    <!-- Title and Equation -->
+    <text x="400" y="35" font-size="24" font-weight="bold" text-anchor="middle">Darwinian Fitness: Reproductive Strategy &amp; r Value</text>
+    
+    <rect x="320" y="55" width="160" height="35" rx="6" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+    <text x="400" y="79" font-size="18" font-weight="bold" text-anchor="middle" class="math-text" fill="#2C3E50">r = b - d</text>
+    <text x="400" y="108" font-size="13" text-anchor="middle" fill="#7F8C8D">r = Intrinsic rate of natural increase</text>
+
+    <!-- Environment Containers -->
+    <text x="212.5" y="135" font-size="15" font-weight="600" text-anchor="middle">Low r Strategy (K-strategist)</text>
+    <text x="212.5" y="152" font-size="11" text-anchor="middle" fill="#7F8C8D">Fewer offspring, high investment</text>
+    <rect x="50" y="165" width="325" height="220" fill="#ffffff" stroke="#BDC3C7" stroke-width="2" rx="8"/>
+
+    <text x="587.5" y="135" font-size="15" font-weight="600" text-anchor="middle">High r Strategy (r-strategist)</text>
+    <text x="587.5" y="152" font-size="11" text-anchor="middle" fill="#7F8C8D">Many offspring, low investment</text>
+    <rect x="425" y="165" width="325" height="220" fill="#ffffff" stroke="#BDC3C7" stroke-width="2" rx="8"/>
+
+    <!-- ================= POPULATION A (Low r) ================= -->
+    <g id="population-A">
+        <!-- Loading Rings -->
+        <circle class="load-ring l-A" cx="150" cy="240" r="20" fill="none" stroke="#4A90D9" stroke-width="2.5" stroke-dasharray="126" />
+        <circle class="load-ring l-A" cx="280" cy="340" r="20" fill="none" stroke="#4A90D9" stroke-width="2.5" stroke-dasharray="126" />
+
+        <!-- Gen 1 -->
+        <g class="org c1-die">
+            <circle cx="150" cy="240" r="15" fill="#F39C12"/>
+            <circle cx="150" cy="240" r="4" fill="#2C3E50"/>
+        </g>
+        <g class="org c1-survive">
+            <circle cx="280" cy="340" r="15" fill="#F39C12"/>
+            <circle cx="280" cy="340" r="4" fill="#2C3E50"/>
+        </g>
+        <!-- Gen 2 -->
+        <g class="org cA2-survive">
+            <circle cx="180" cy="320" r="15" fill="#F39C12"/>
+            <circle cx="180" cy="320" r="4" fill="#2C3E50"/>
+        </g>
+        <g class="org cA2-survive">
+            <circle cx="250" cy="220" r="15" fill="#F39C12"/>
+            <circle cx="250" cy="220" r="4" fill="#2C3E50"/>
+        </g>
+    </g>
+
+    <!-- ================= POPULATION B (High r) ================= -->
+    <g id="population-B">
+        <!-- Loading Rings Gen 1 -> 2 -->
+        <circle class="load-ring l-B1" cx="580" cy="275" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B1" cx="600" cy="275" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        
+        <!-- Loading Rings Gen 2 -> 3 -->
+        <circle class="load-ring l-B2" cx="520" cy="210" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B2" cx="650" cy="330" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B2" cx="520" cy="330" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B2" cx="650" cy="210" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+
+        <!-- Loading Rings Gen 3 -> 4 -->
+        <circle class="load-ring l-B3" cx="480" cy="180" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B3" cx="560" cy="180" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B3" cx="480" cy="360" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B3" cx="560" cy="360" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B3" cx="610" cy="180" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B3" cx="690" cy="180" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B3" cx="610" cy="360" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+        <circle class="load-ring l-B3" cx="690" cy="360" r="10" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="63" />
+
+        <!-- Gen 1 -->
+        <circle class="org c1-survive" cx="580" cy="275" r="7" fill="#E67E22"/>
+        <circle class="org c1-die" cx="600" cy="275" r="7" fill="#E67E22"/>
+        
+        <!-- Gen 2 -->
+        <circle class="org cB2-survive" cx="520" cy="210" r="7" fill="#E67E22"/>
+        <circle class="org cB2-survive" cx="650" cy="330" r="7" fill="#E67E22"/>
+        <circle class="org cB2-die" cx="520" cy="330" r="7" fill="#E67E22"/>
+        <circle class="org cB2-die" cx="650" cy="210" r="7" fill="#E67E22"/>
+        
+        <!-- Gen 3 -->
+        <circle class="org cB3-survive" cx="480" cy="180" r="7" fill="#E67E22"/>
+        <circle class="org cB3-survive" cx="560" cy="180" r="7" fill="#E67E22"/>
+        <circle class="org cB3-survive" cx="480" cy="360" r="7" fill="#E67E22"/>
+        <circle class="org cB3-survive" cx="560" cy="360" r="7" fill="#E67E22"/>
+        <circle class="org cB3-die" cx="610" cy="180" r="7" fill="#E67E22"/>
+        <circle class="org cB3-die" cx="690" cy="180" r="7" fill="#E67E22"/>
+        <circle class="org cB3-die" cx="610" cy="360" r="7" fill="#E67E22"/>
+        <circle class="org cB3-die" cx="690" cy="360" r="7" fill="#E67E22"/>
+        
+        <!-- Gen 4 -->
+        <circle class="org cB4-survive" cx="450" cy="230" r="7" fill="#E67E22"/>
+        <circle class="org cB4-survive" cx="450" cy="310" r="7" fill="#E67E22"/>
+        <circle class="org cB4-survive" cx="500" cy="230" r="7" fill="#E67E22"/>
+        <circle class="org cB4-survive" cx="500" cy="310" r="7" fill="#E67E22"/>
+        <circle class="org cB4-survive" cx="550" cy="230" r="7" fill="#E67E22"/>
+        <circle class="org cB4-survive" cx="550" cy="310" r="7" fill="#E67E22"/>
+        <circle class="org cB4-survive" cx="700" cy="230" r="7" fill="#E67E22"/>
+        <circle class="org cB4-survive" cx="700" cy="310" r="7" fill="#E67E22"/>
+        
+        <circle class="org cB4-die" cx="470" cy="275" r="7" fill="#E67E22"/>
+        <circle class="org cB4-die" cx="530" cy="275" r="7" fill="#E67E22"/>
+        <circle class="org cB4-die" cx="630" cy="230" r="7" fill="#E67E22"/>
+        <circle class="org cB4-die" cx="630" cy="310" r="7" fill="#E67E22"/>
+        <circle class="org cB4-die" cx="670" cy="230" r="7" fill="#E67E22"/>
+        <circle class="org cB4-die" cx="670" cy="310" r="7" fill="#E67E22"/>
+        <circle class="org cB4-die" cx="720" cy="230" r="7" fill="#E67E22"/>
+        <circle class="org cB4-die" cx="720" cy="310" r="7" fill="#E67E22"/>
+    </g>
+
+    <!-- Selection Pressure Overlay -->
+    <rect x="50" y="165" width="700" height="220" class="sweep-rect" rx="8"/>
+    <text x="400" y="285" text-anchor="middle" class="stress-text">ENVIRONMENTAL STRESS</text>
+
+    <!-- Glow Text for Fitness Realization -->
+    <text x="587.5" y="415" class="glow-text">Higher Darwinian Fitness!</text>
+
+    <!-- ================= GRAPH AREA ================= -->
+    <!-- Grid Lines -->
+    <line x1="150" y1="510" x2="650" y2="510" stroke="#BDC3C7" stroke-dasharray="4" stroke-width="1"/>
+    <line x1="150" y1="460" x2="650" y2="460" stroke="#BDC3C7" stroke-dasharray="4" stroke-width="1"/>
+
+    <!-- Axes -->
+    <line x1="150" y1="560" x2="650" y2="560" stroke="#2C3E50" stroke-width="2"/>
+    <line x1="150" y1="560" x2="150" y2="430" stroke="#2C3E50" stroke-width="2"/>
+    
+    <!-- Axis Labels -->
+    <text x="400" y="590" font-size="14" font-weight="600" text-anchor="middle">Time</text>
+    <text x="120" y="495" font-size="14" font-weight="600" text-anchor="middle" transform="rotate(-90, 120, 495)">Population Size (N)</text>
+
+    <!-- Legend -->
+    <line x1="170" y1="440" x2="190" y2="440" stroke="#F39C12" stroke-width="3"/>
+    <text x="200" y="444" font-size="12">Low r (Stable)</text>
+    
+    <line x1="170" y1="460" x2="190" y2="460" stroke="#E67E22" stroke-width="3"/>
+    <text x="200" y="464" font-size="12">High r (Exponential)</text>
+
+    <!-- Animated Graph Lines -->
+    <g class="graph-path">
+        <!-- Pop A Line (Stable, slight dip) -->
+        <path d="M 150 552 L 283 552 L 293 544 L 433 544 L 443 548 L 650 548" fill="none" stroke="#F39C12" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+        
+        <!-- Pop B Line (J-Curve, sharp dip, higher recovery) -->
+        <path d="M 150 552 L 250 552 L 260 536 L 316 536 L 326 504 L 383 504 L 393 440 L 433 440 L 443 500 L 650 500" fill="none" stroke="#E67E22" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+    </g>
+
+</svg>
+
+</body>
+</html>

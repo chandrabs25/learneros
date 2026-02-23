@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Glycolysis: The EMP Pathway</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* --- Animations --- */
+        
+        /* Carbon Color Transition (Glucose -> Pyruvate) */
+        @keyframes carbon-color {
+            0%, 60% { fill: #F39C12; }
+            70%, 100% { fill: #E67E22; }
+        }
+
+        .carbon-node {
+            animation: carbon-color 15s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            stroke: #ffffff;
+            stroke-width: 2px;
+        }
+
+        /* Glucose Hexagon */
+        @keyframes glucose-anim {
+            0% { opacity: 0; transform: translate(400px, 0px); }
+            6% { opacity: 1; transform: translate(400px, 80px); }
+            16% { transform: translate(400px, 160px); }
+            24.9% { opacity: 1; transform: translate(400px, 160px); }
+            25%, 100% { opacity: 0; transform: translate(400px, 160px); }
+        }
+        .glucose-hex { animation: glucose-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Splitting Halves */
+        @keyframes left-half-anim {
+            0%, 24.9% { opacity: 0; transform: translate(400px, 160px) translate(0, -24px); }
+            25% { opacity: 1; transform: translate(400px, 160px) translate(0, -24px); }
+            30% { transform: translate(400px, 240px) translate(0, -24px); }
+            36% { transform: translate(250px, 300px) translate(0, 0px); }
+            42%, 50% { transform: translate(250px, 340px); }
+            52%, 60% { transform: translate(250px, 420px); }
+            62%, 70% { transform: translate(250px, 500px); }
+            80% { transform: translate(250px, 600px); opacity: 1; }
+            85%, 100% { transform: translate(250px, 650px); opacity: 0; }
+        }
+        .left-half { animation: left-half-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes right-half-anim {
+            0%, 24.9% { opacity: 0; transform: translate(400px, 160px) translate(0, 24px); }
+            25% { opacity: 1; transform: translate(400px, 160px) translate(0, 24px); }
+            30% { transform: translate(400px, 240px) translate(0, 24px); }
+            36% { transform: translate(550px, 300px) translate(0, 0px); }
+            42%, 50% { transform: translate(550px, 340px); }
+            52%, 60% { transform: translate(550px, 420px); }
+            62%, 70% { transform: translate(550px, 500px); }
+            80% { transform: translate(550px, 600px); opacity: 1; }
+            85%, 100% { transform: translate(550px, 650px); opacity: 0; }
+        }
+        .right-half { animation: right-half-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Glow Effect for Splitting */
+        @keyframes pulse-glow {
+            0%, 23% { opacity: 0; transform: scale(0.5); }
+            25% { opacity: 0.6; transform: scale(1.5); }
+            28%, 100% { opacity: 0; transform: scale(2); }
+        }
+        .split-glow { animation: pulse-glow 15s infinite ease-out; transform-origin: 400px 160px; }
+
+        /* Phosphate Attachments */
+        @keyframes pi-hex-1-anim { 0%, 9.9% { opacity: 0; transform: scale(0); } 10%, 100% { opacity: 1; transform: scale(1); } }
+        .pi-hex-1 { animation: pi-hex-1-anim 15s infinite; transform-origin: 0 36px; }
+        
+        @keyframes pi-hex-2-anim { 0%, 19.9% { opacity: 0; transform: scale(0); } 20%, 100% { opacity: 1; transform: scale(1); } }
+        .pi-hex-2 { animation: pi-hex-2-anim 15s infinite; transform-origin: 0 -36px; }
+
+        @keyframes pi-free-anim {
+            0%, 43.9% { opacity: 0; transform: translate(-30px, 0) scale(0.5); }
+            46% { opacity: 1; transform: translate(0, 0) scale(1); }
+            56%, 100% { opacity: 0; }
+        }
+        .pi-free-left { animation: pi-free-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); transform-origin: 0 36px; }
+        
+        @keyframes pi-free-right-anim {
+            0%, 43.9% { opacity: 0; transform: translate(30px, 0) scale(0.5); }
+            46% { opacity: 1; transform: translate(0, 0) scale(1); }
+            56%, 100% { opacity: 0; }
+        }
+        .pi-free-right { animation: pi-free-right-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); transform-origin: 0 -36px; }
+
+        @keyframes pi-remove-anim { 0%, 65.9% { opacity: 1; } 66%, 100% { opacity: 0; } }
+        .pi-remove { animation: pi-remove-anim 15s infinite; }
+
+        /* Co-reactants: ATP/ADP Investment */
+        @keyframes atp1-anim {
+            0%, 5% { opacity: 0; transform: translate(480px, 40px); }
+            8% { opacity: 1; transform: translate(440px, 80px); }
+            10%, 100% { opacity: 0; transform: translate(440px, 80px); }
+        }
+        .atp1 { animation: atp1-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes adp1-anim {
+            0%, 9.9% { opacity: 0; transform: translate(440px, 80px); }
+            10% { opacity: 1; transform: translate(440px, 80px); }
+            13% { opacity: 1; transform: translate(480px, 120px); }
+            15%, 100% { opacity: 0; transform: translate(480px, 120px); }
+        }
+        .adp1 { animation: adp1-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes atp2-anim {
+            0%, 15% { opacity: 0; transform: translate(480px, 120px); }
+            18% { opacity: 1; transform: translate(440px, 160px); }
+            20%, 100% { opacity: 0; transform: translate(440px, 160px); }
+        }
+        .atp2 { animation: atp2-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes adp2-anim {
+            0%, 19.9% { opacity: 0; transform: translate(440px, 160px); }
+            20% { opacity: 1; transform: translate(440px, 160px); }
+            23% { opacity: 1; transform: translate(480px, 200px); }
+            25%, 100% { opacity: 0; transform: translate(480px, 200px); }
+        }
+        .adp2 { animation: adp2-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Co-reactants: NAD+ / NADH */
+        @keyframes nad-left-anim {
+            0%, 42% { opacity: 0; transform: translate(170px, 300px); }
+            44% { opacity: 1; transform: translate(210px, 340px); }
+            46%, 100% { opacity: 0; transform: translate(210px, 340px); }
+        }
+        .nad-left { animation: nad-left-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes nadh-left-anim {
+            0%, 45.9% { opacity: 0; transform: translate(210px, 340px); }
+            46% { opacity: 1; transform: translate(210px, 340px); }
+            48% { opacity: 1; transform: translate(170px, 380px); }
+            50%, 100% { opacity: 0; transform: translate(170px, 380px); }
+        }
+        .nadh-left { animation: nadh-left-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes nad-right-anim {
+            0%, 42% { opacity: 0; transform: translate(630px, 300px); }
+            44% { opacity: 1; transform: translate(590px, 340px); }
+            46%, 100% { opacity: 0; transform: translate(590px, 340px); }
+        }
+        .nad-right { animation: nad-right-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes nadh-right-anim {
+            0%, 45.9% { opacity: 0; transform: translate(590px, 340px); }
+            46% { opacity: 1; transform: translate(590px, 340px); }
+            48% { opacity: 1; transform: translate(630px, 380px); }
+            50%, 100% { opacity: 0; transform: translate(630px, 380px); }
+        }
+        .nadh-right { animation: nadh-right-anim 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Co-reactants: ATP Payoff 1 */
+        @keyframes adp-payoff1-left {
+            0%, 52% { opacity: 0; transform: translate(170px, 380px); }
+            54% { opacity: 1; transform: translate(210px, 420px); }
+            56%, 100% { opacity: 0; transform: translate(210px, 420px); }
+        }
+        .adp-pay1-l { animation: adp-payoff1-left 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes atp-payoff1-left {
+            0%, 55.9% { opacity: 0; transform: translate(210px, 420px); }
+            56% { opacity: 1; transform: translate(210px, 420px); }
+            58% { opacity: 1; transform: translate(170px, 460px); }
+            60%, 100% { opacity: 0; transform: translate(170px, 460px); }
+        }
+        .atp-pay1-l { animation: atp-payoff1-left 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes adp-payoff1-right {
+            0%, 52% { opacity: 0; transform: translate(630px, 380px); }
+            54% { opacity: 1; transform: translate(590px, 420px); }
+            56%, 100% { opacity: 0; transform: translate(590px, 420px); }
+        }
+        .adp-pay1-r { animation: adp-payoff1-right 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes atp-payoff1-right {
+            0%, 55.9% { opacity: 0; transform: translate(590px, 420px); }
+            56% { opacity: 1; transform: translate(590px, 420px); }
+            58% { opacity: 1; transform: translate(630px, 460px); }
+            60%, 100% { opacity: 0; transform: translate(630px, 460px); }
+        }
+        .atp-pay1-r { animation: atp-payoff1-right 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Co-reactants: ATP Payoff 2 */
+        @keyframes adp-payoff2-left {
+            0%, 62% { opacity: 0; transform: translate(170px, 460px); }
+            64% { opacity: 1; transform: translate(210px, 500px); }
+            66%, 100% { opacity: 0; transform: translate(210px, 500px); }
+        }
+        .adp-pay2-l { animation: adp-payoff2-left 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes atp-payoff2-left {
+            0%, 65.9% { opacity: 0; transform: translate(210px, 500px); }
+            66% { opacity: 1; transform: translate(210px, 500px); }
+            68% { opacity: 1; transform: translate(170px, 540px); }
+            70%, 100% { opacity: 0; transform: translate(170px, 540px); }
+        }
+        .atp-pay2-l { animation: atp-payoff2-left 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes adp-payoff2-right {
+            0%, 62% { opacity: 0; transform: translate(630px, 460px); }
+            64% { opacity: 1; transform: translate(590px, 500px); }
+            66%, 100% { opacity: 0; transform: translate(590px, 500px); }
+        }
+        .adp-pay2-r { animation: adp-payoff2-right 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes atp-payoff2-right {
+            0%, 65.9% { opacity: 0; transform: translate(590px, 500px); }
+            66% { opacity: 1; transform: translate(590px, 500px); }
+            68% { opacity: 1; transform: translate(630px, 540px); }
+            70%, 100% { opacity: 0; transform: translate(630px, 540px); }
+        }
+        .atp-pay2-r { animation: atp-payoff2-right 15s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Text Fades */
+        @keyframes fade-in-out {
+            0%, 80% { opacity: 0; }
+            82%, 88% { opacity: 1; }
+            90%, 100% { opacity: 0; }
+        }
+        .pyruvate-label { animation: fade-in-out 15s infinite; }
+
+        .mono { font-family: 'Roboto Mono', monospace; }
+        .bold { font-weight: 700; }
+        .italic { font-style: italic; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 650" aria-labelledby="svg-title svg-desc" role="img">
+    <title id="svg-title">Glycolysis: The EMP Pathway</title>
+    <desc id="svg-desc">An animated diagram showing the conversion of one glucose molecule into two pyruvate molecules, yielding a net of 2 ATP and 2 NADH.</desc>
+
+    <!-- Definitions -->
+    <defs>
+        <!-- Arrowhead Marker -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50" opacity="0.3" />
+        </marker>
+
+        <!-- Glow Filter for NADH -->
+        <filter id="nadh-glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+
+        <!-- Reusable Molecules -->
+        <g id="pi-group">
+            <circle cx="0" cy="0" r="8" fill="#FFD700" stroke="#ffffff" stroke-width="1.5"/>
+            <text x="0" y="3" font-size="8" fill="#000000" text-anchor="middle" class="bold">Pi</text>
+        </g>
+
+        <g id="atp-group">
+            <rect x="-14" y="-16" width="28" height="10" rx="5" fill="#E74C3C"/>
+            <rect x="-14" y="-5" width="28" height="10" rx="5" fill="#E74C3C"/>
+            <rect x="-14" y="6" width="28" height="10" rx="5" fill="#E74C3C"/>
+            <text x="0" y="3" font-size="10" fill="#ffffff" text-anchor="middle" class="bold">ATP</text>
+        </g>
+
+        <g id="adp-group">
+            <rect x="-14" y="-10" width="28" height="10" rx="5" fill="#E74C3C"/>
+            <rect x="-14" y="1" width="28" height="10" rx="5" fill="#E74C3C"/>
+            <text x="0" y="0" font-size="10" fill="#ffffff" text-anchor="middle" class="bold">ADP</text>
+        </g>
+
+        <g id="nad-group">
+            <polygon points="0,-14 14,0 0,14 -14,0" fill="#9B59B6"/>
+            <text x="0" y="3" font-size="8" fill="#ffffff" text-anchor="middle" class="bold">NAD+</text>
+        </g>
+
+        <g id="nadh-group" filter="url(#nadh-glow)">
+            <polygon points="0,-16 16,0 0,16 -16,0" fill="#8E44AD"/>
+            <text x="0" y="3" font-size="8" fill="#ffffff" text-anchor="middle" class="bold">NADH</text>
+        </g>
+    </defs>
+
+    <!-- Background Elements -->
+    <rect width="100%" height="100%" fill="#ffffff" />
+    
+    <!-- Cytoplasm Boundary -->
+    <rect x="20" y="60" width="760" height="520" rx="20" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" stroke-dasharray="10, 5"/>
+    <text x="40" y="85" font-size="14" fill="#4A90D9" class="bold">CYTOPLASM</text>
+
+    <!-- Mitochondria Hint -->
+    <path d="M 20 580 Q 400 520 780 580 L 780 620 L 20 620 Z" fill="#E74C3C" opacity="0.1"/>
+    <text x="400" y="610" font-size="14" fill="#E74C3C" text-anchor="middle" class="bold" opacity="0.6">MITOCHONDRIA (Aerobic Pathway)</text>
+
+    <!-- Title & Headers -->
+    <text x="400" y="35" font-size="24" fill="#2C3E50" text-anchor="middle" class="bold">GLYCOLYSIS: The EMP Pathway</text>
+    
+    <text x="40" y="120" font-size="16" fill="#2C3E50" class="bold">Energy Investment Phase</text>
+    <text x="40" y="140" font-size="12" fill="#7F8C8D">Uses 2 ATP to activate Glucose</text>
+
+    <text x="40" y="360" font-size="16" fill="#2C3E50" class="bold">Energy Pay-off Phase</text>
+    <text x="40" y="380" font-size="12" fill="#7F8C8D">Yields 4 ATP and 2 NADH</text>
+
+    <!-- Legend -->
+    <g transform="translate(640, 75)">
+        <rect x="0" y="0" width="130" height="90" rx="8" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" opacity="0.9"/>
+        <text x="65" y="15" font-size="10" fill="#2C3E50" text-anchor="middle" class="bold">LEGEND</text>
+        <circle cx="15" cy="30" r="6" fill="#F39C12"/>
+        <text x="30" y="34" font-size="10" fill="#2C3E50">Carbon (C)</text>
+        <circle cx="15" cy="50" r="6" fill="#FFD700"/>
+        <text x="30" y="54" font-size="10" fill="#2C3E50">Phosphate (Pi)</text>
+        <rect x="9" y="66" width="12" height="12" rx="3" fill="#98D8C8"/>
+        <text x="30" y="76" font-size="10" fill="#2C3E50">Enzyme</text>
+    </g>
+
+    <!-- Net Gain Box -->
+    <g transform="translate(620, 480)">
+        <rect x="0" y="0" width="150" height="85" rx="8" fill="#ffffff" stroke="#2C3E50" stroke-width="2"/>
+        <text x="75" y="20" font-size="12" fill="#2C3E50" text-anchor="middle" class="bold">NET GAIN / GLUCOSE</text>
+        <text x="75" y="40" font-size="14" fill="#E74C3C" text-anchor="middle" class="bold">+ 2 ATP</text>
+        <text x="75" y="58" font-size="14" fill="#8E44AD" text-anchor="middle" class="bold">+ 2 NADH</text>
+        <text x="75" y="76" font-size="14" fill="#E67E22" text-anchor="middle" class="bold">+ 2 Pyruvate</text>
+    </g>
+
+    <!-- Static Pathway Arrows & Enzyme Callouts -->
+    <g stroke="#2C3E50" stroke-width="3" opacity="0.2" fill="none">
+        <!-- Center Track -->
+        <path d="M 400 30 L 400 60" marker-end="url(#arrow)"/>
+        <path d="M 400 100 L 400 135" marker-end="url(#arrow)"/>
+        <path d="M 400 180 L 400 215" marker-end="url(#arrow)"/>
+        <!-- Split -->
+        <path d="M 390 250 Q 250 250 250 280" marker-end="url(#arrow)"/>
+        <path d="M 410 250 Q 550 250 550 280" marker-end="url(#arrow)"/>
+        <!-- Left Track -->
+        <path d="M 250 310 L 250 325" marker-end="url(#arrow)"/>
+        <path d="M 250 355 L 250 395" marker-end="url(#arrow)"/>
+        <path d="M 250 435 L 250 475" marker-end="url(#arrow)"/>
+        <path d="M 250 515 L 250 565" marker-end="url(#arrow)"/>
+        <!-- Right Track -->
+        <path d="M 550 310 L 550 325" marker-end="url(#arrow)"/>
+        <path d="M 550 355 L 550 395" marker-end="url(#arrow)"/>
+        <path d="M 550 435 L 550 475" marker-end="url(#arrow)"/>
+        <path d="M 550 515 L 550 565" marker-end="url(#arrow)"/>
+    </g>
+
+    <!-- Enzyme Background Pills -->
+    <g opacity="0.6">
+        <rect x="330" y="70" width="140" height="20" rx="10" fill="#98D8C8"/>
+        <text x="480" y="84" font-size="12" fill="#2C3E50" class="italic">Hexokinase</text>
+        
+        <rect x="330" y="150" width="140" height="20" rx="10" fill="#98D8C8"/>
+        <text x="480" y="164" font-size="12" fill="#2C3E50" class="italic">Phosphofructokinase</text>
+        
+        <rect x="330" y="230" width="140" height="20" rx="10" fill="#98D8C8"/>
+        <text x="480" y="244" font-size="12" fill="#2C3E50" class="italic">Aldolase (Splitting)</text>
+
+        <!-- Left Track Enzymes -->
+        <rect x="180" y="330" width="140" height="20" rx="10" fill="#98D8C8"/>
+        <text x="170" y="344" font-size="10" fill="#2C3E50" class="italic" text-anchor="end">GAPDH</text>
+
+        <rect x="180" y="410" width="140" height="20" rx="10" fill="#98D8C8"/>
+        <text x="170" y="424" font-size="10" fill="#2C3E50" class="italic" text-anchor="end">Phosphoglycerate Kinase</text>
+
+        <rect x="180" y="490" width="140" height="20" rx="10" fill="#98D8C8"/>
+        <text x="170" y="504" font-size="10" fill="#2C3E50" class="italic" text-anchor="end">Pyruvate Kinase</text>
+
+        <!-- Right Track Enzymes -->
+        <rect x="480" y="330" width="140" height="20" rx="10" fill="#98D8C8"/>
+        <text x="630" y="344" font-size="10" fill="#2C3E50" class="italic">GAPDH</text>
+
+        <rect x="480" y="410" width="140" height="20" rx="10" fill="#98D8C8"/>
+        <text x="630" y="424" font-size="10" fill="#2C3E50" class="italic">Phosphoglycerate Kinase</text>
+
+        <rect x="480" y="490" width="140" height="20" rx="10" fill="#98D8C8"/>
+        <text x="630" y="504" font-size="10" fill="#2C3E50" class="italic">Pyruvate Kinase</text>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- ANIMATED ELEMENTS                          -->
+    <!-- ========================================== -->
+
+    <!-- Co-reactants: Investment Phase -->
+    <use href="#atp-group" class="atp1" />
+    <use href="#adp-group" class="adp1" />
+    <use href="#atp-group" class="atp2" />
+    <use href="#adp-group" class="adp2" />
+
+    <!-- Co-reactants: Pay-off Phase (Left Track) -->
+    <use href="#nad-group" class="nad-left" />
+    <use href="#nadh-group" class="nadh-left" />
+    <use href="#adp-group" class="adp-pay1-l" />
+    <use href="#atp-group" class="atp-pay1-l" />
+    <use href="#adp-group" class="adp-pay2-l" />
+    <use href="#atp-group" class="atp-pay2-l" />
+
+    <!-- Co-reactants: Pay-off Phase (Right Track) -->
+    <use href="#nad-group" class="nad-right" />
+    <use href="#nadh-group" class="nadh-right" />
+    <use href="#adp-group" class="adp-pay1-r" />
+    <use href="#atp-group" class="atp-pay1-r" />
+    <use href="#adp-group" class="adp-pay2-r" />
+    <use href="#atp-group" class="atp-pay2-r" />
+
+    <!-- Glow effect behind the splitting molecule -->
+    <circle cx="400" cy="160" r="30" fill="#F39C12" class="split-glow" />
+
+    <!-- Molecule: Glucose (Hexagon) -->
+    <g class="glucose-hex">
+        <text x="-40" y="0" font-size="12" fill="#2C3E50" class="bold" text-anchor="end">Glucose</text>
+        <text x="-40" y="14" font-size="10" fill="#7F8C8D" class="mono" text-anchor="end">C6H12O6</text>
+        
+        <!-- 6 Carbons in Hexagon shape -->
+        <circle cx="0" cy="-24" r="12" class="carbon-node" />
+        <circle cx="20.78" cy="-12" r="12" class="carbon-node" />
+        <circle cx="20.78" cy="12" r="12" class="carbon-node" />
+        <circle cx="0" cy="24" r="12" class="carbon-node" />
+        <circle cx="-20.78" cy="12" r="12" class="carbon-node" />
+        <circle cx="-20.78" cy="-12" r="12" class="carbon-node" />
+
+        <!-- Phosphates attached during investment -->
+        <use href="#pi-group" x="0" y="36" class="pi-hex-1" />
+        <use href="#pi-group" x="0" y="-36" class="pi-hex-2" />
+    </g>
+
+    <!-- Molecule: Left Half (3-Carbon Chain) -->
+    <g class="left-half">
+        <circle cx="0" cy="-16" r="12" class="carbon-node" />
+        <circle cx="0" cy="0" r="12" class="carbon-node" />
+        <circle cx="0" cy="16" r="12" class="carbon-node" />
+        
+        <!-- Original Phosphate from PFK step (Top) -->
+        <use href="#pi-group" x="0" y="-36" class="pi-remove" />
+        
+        <!-- Free Phosphate added at GAPDH step (Bottom) -->
+        <use href="#pi-group" x="0" y="36" class="pi-free-left" />
+
+        <!-- Pyruvate Label (Appears at end) -->
+        <text x="-25" y="5" font-size="12" fill="#E67E22" class="bold pyruvate-label" text-anchor="end">Pyruvic Acid</text>
+        <text x="-25" y="19" font-size="10" fill="#E67E22" class="mono pyruvate-label" text-anchor="end">C3H4O3</text>
+    </g>
+
+    <!-- Molecule: Right Half (3-Carbon Chain) -->
+    <g class="right-half">
+        <circle cx="0" cy="-16" r="12" class="carbon-node" />
+        <circle cx="0" cy="0" r="12" class="carbon-node" />
+        <circle cx="0" cy="16" r="12" class="carbon-node" />
+        
+        <!-- Original Phosphate from Hexokinase step (Bottom) -->
+        <use href="#pi-group" x="0" y="36" class="pi-remove" />
+        
+        <!-- Free Phosphate added at GAPDH step (Top) -->
+        <use href="#pi-group" x="0" y="-36" class="pi-free-right" />
+
+        <!-- Pyruvate Label (Appears at end) -->
+        <text x="25" y="5" font-size="12" fill="#E67E22" class="bold pyruvate-label" text-anchor="start">Pyruvic Acid</text>
+        <text x="25" y="19" font-size="10" fill="#E67E22" class="mono pyruvate-label" text-anchor="start">C3H4O3</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

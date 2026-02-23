@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benzene: From Resonance to Carcinogenicity</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        :root {
+            --c-color: #404040;
+            --h-color: #CCCCCC;
+            --sigma-color: #666666;
+            --pi-color: #7209B7;
+            --orb-top: #4361EE;
+            --orb-bot: #F72585;
+            --danger: #FF4444;
+            --bg-color: #f8f9fa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .title-container {
+            position: absolute;
+            top: 20px;
+            text-align: center;
+            width: 100%;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #333;
+            margin: 0 0 5px 0;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #666;
+            font-weight: 600;
+            height: 24px;
+            position: relative;
+        }
+
+        .phase-text {
+            position: absolute;
+            width: 100%;
+            left: 0;
+            opacity: 0;
+            animation: text-sequence 12s infinite;
+        }
+
+        .pt-1 { animation-delay: 0s; }
+        .pt-2 { animation-delay: -12s; } /* Handled in keyframes */
+        .pt-3 { animation-delay: -12s; }
+        .pt-4 { animation-delay: -12s; }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            max-height: 80vh;
+        }
+
+        /* SVG Element Styles */
+        .bond {
+            stroke: var(--sigma-color);
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .pi-bond {
+            stroke: var(--pi-color);
+            stroke-width: 6;
+            stroke-linecap: round;
+            fill: none;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .deloc-ring {
+            stroke: var(--pi-color);
+            stroke-width: 5;
+            fill: none;
+            vector-effect: non-scaling-stroke;
+        }
+
+        .atom-c { fill: var(--c-color); }
+        .atom-h { fill: var(--h-color); }
+
+        /* Animations */
+        @keyframes kekule-1 {
+            0%, 10% { opacity: 1; }
+            12%, 20% { opacity: 0; }
+            22%, 25% { opacity: 1; }
+            28%, 100% { opacity: 0; }
+        }
+
+        @keyframes kekule-2 {
+            0%, 10% { opacity: 0; }
+            12%, 20% { opacity: 1; }
+            22%, 25% { opacity: 0; }
+            28%, 100% { opacity: 0; }
+        }
+
+        @keyframes res-arrow {
+            0%, 25% { opacity: 1; }
+            28%, 100% { opacity: 0; }
+        }
+
+        @keyframes scene-transform {
+            0%, 25% { transform: translate(400px, 250px) scale(1) scaleY(1); }
+            33%, 75% { transform: translate(400px, 250px) scale(1.2) scaleY(0.5); }
+            83%, 100% { transform: translate(322px, 250px) scale(0.8) scaleY(1); }
+        }
+
+        @keyframes atom-counter {
+            0%, 25% { transform: scale(1, 1); }
+            33%, 75% { transform: scale(0.833, 1.666); }
+            83%, 100% { transform: scale(1.25, 1.25); }
+        }
+
+        @keyframes orbitals {
+            0%, 25% { opacity: 0; transform: scaleY(0); }
+            33%, 50% { opacity: 0.85; transform: scaleY(2); }
+            58%, 100% { opacity: 0; transform: scaleY(2); }
+        }
+
+        @keyframes pulse-lobe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes toroids {
+            0%, 50% { opacity: 0; transform: scaleY(0); }
+            58%, 75% { opacity: 1; transform: scaleY(2); }
+            83%, 100% { opacity: 0; transform: scaleY(2); }
+        }
+
+        @keyframes deloc-base {
+            0%, 75% { opacity: 0; }
+            83%, 100% { opacity: 1; }
+        }
+
+        @keyframes pah-elements {
+            0%, 75% { opacity: 0; }
+            83%, 100% { opacity: 1; }
+        }
+
+        @keyframes lost-hydrogens {
+            0%, 75% { opacity: 1; }
+            83%, 100% { opacity: 0; }
+        }
+
+        @keyframes pah-glow {
+            0%, 83% { opacity: 0; filter: drop-shadow(0 0 0px var(--danger)); }
+            88%, 100% { opacity: 1; filter: drop-shadow(0 0 15px var(--danger)); }
+        }
+
+        @keyframes text-seq-1 { 0%, 25% { opacity: 1; } 28%, 100% { opacity: 0; } }
+        @keyframes text-seq-2 { 0%, 25% { opacity: 0; } 33%, 50% { opacity: 1; } 58%, 100% { opacity: 0; } }
+        @keyframes text-seq-3 { 0%, 50% { opacity: 0; } 58%, 75% { opacity: 1; } 83%, 100% { opacity: 0; } }
+        @keyframes text-seq-4 { 0%, 75% { opacity: 0; } 83%, 100% { opacity: 1; } }
+
+        @keyframes form-1 { 0%, 75% { opacity: 1; } 83%, 100% { opacity: 0; } }
+        @keyframes form-2 { 0%, 75% { opacity: 0; } 83%, 100% { opacity: 1; } }
+
+        /* Apply Animations */
+        .k1 { animation: kekule-1 12s infinite; }
+        .k2 { animation: kekule-2 12s infinite; }
+        .arrow-grp { animation: res-arrow 12s infinite; }
+        #scene { animation: scene-transform 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .atom-dot { animation: atom-counter 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .orbital-grp { animation: orbitals 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .lobe { animation: pulse-lobe 2s infinite ease-in-out; }
+        .toroid-grp { animation: toroids 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .deloc-base { animation: deloc-base 12s infinite; }
+        .pah-show { animation: pah-elements 12s infinite; }
+        .pah-hide { animation: lost-hydrogens 12s infinite; }
+        .pah-danger { animation: pah-glow 12s infinite alternate; }
+        
+        .pt-1 { animation: text-seq-1 12s infinite; }
+        .pt-2 { animation: text-seq-2 12s infinite; }
+        .pt-3 { animation: text-seq-3 12s infinite; }
+        .pt-4 { animation: text-seq-4 12s infinite; }
+        .f1 { animation: form-1 12s infinite; }
+        .f2 { animation: form-2 12s infinite; }
+
+    </style>
+</head>
+<body>
+
+    <div class="title-container">
+        <h1>Benzene: From Resonance to Carcinogenicity</h1>
+        <div class="subtitle">
+            <span class="phase-text pt-1">Phase 1: Kekulé Resonance Structures</span>
+            <span class="phase-text pt-2">Phase 2: p-Orbital Overlap</span>
+            <span class="phase-text pt-3">Phase 3: Delocalized π-Cloud</span>
+            <span class="phase-text pt-4" style="color: #FF4444;">Phase 4: Fused Polynuclear System (Benzo[a]pyrene)</span>
+        </div>
+    </div>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of benzene resonance and PAH formation">
+        <defs>
+            <radialGradient id="c-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#666" />
+                <stop offset="100%" stop-color="#222" />
+            </radialGradient>
+            <radialGradient id="h-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FFF" />
+                <stop offset="100%" stop-color="#AAA" />
+            </radialGradient>
+            <linearGradient id="top-lobe" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stop-color="rgba(67, 97, 238, 0.2)" />
+                <stop offset="100%" stop-color="rgba(67, 97, 238, 0.9)" />
+            </linearGradient>
+            <linearGradient id="bot-lobe" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="rgba(247, 37, 133, 0.2)" />
+                <stop offset="100%" stop-color="rgba(247, 37, 133, 0.9)" />
+            </linearGradient>
+            
+            <g id="carbon">
+                <circle class="atom-dot atom-c" r="7" fill="url(#c-grad)"/>
+            </g>
+            <g id="hydrogen">
+                <circle class="atom-dot atom-h" r="5" fill="url(#h-grad)"/>
+            </g>
+            <g id="orbital-pair">
+                <path class="lobe" d="M 0,0 C 18,-15 12,-55 0,-55 C -12,-55 -18,-15 0,0" fill="url(#top-lobe)"/>
+                <path class="lobe" d="M 0,0 C 18,15 12,55 0,55 C -12,55 -18,15 0,0" fill="url(#bot-lobe)"/>
+            </g>
+        </defs>
+
+        <!-- Legend -->
+        <g transform="translate(620, 380)" font-family="Inter" font-size="12" fill="#555">
+            <rect x="0" y="0" width="160" height="100" fill="#fff" stroke="#ddd" rx="6" opacity="0.9"/>
+            <circle cx="20" cy="20" r="6" fill="url(#c-grad)"/> <text x="35" y="24">Carbon (sp²)</text>
+            <circle cx="20" cy="40" r="4" fill="url(#h-grad)"/> <text x="35" y="44">Hydrogen (s)</text>
+            <line x1="12" y1="60" x2="28" y2="60" stroke="var(--pi-color)" stroke-width="4" stroke-linecap="round"/> <text x="35" y="64">π-Electrons</text>
+            <circle cx="20" cy="80" r="6" fill="var(--danger)" opacity="0.8"/> <text x="35" y="84">Carcinogenic Region</text>
+        </g>
+
+        <!-- Chemical Formula -->
+        <g transform="translate(30, 460)" font-family="'Roboto Mono', monospace" font-size="24" fill="#333" font-weight="bold">
+            <text class="f1">C<tspan baseline-shift="sub" font-size="0.7em">6</tspan>H<tspan baseline-shift="sub" font-size="0.7em">6</tspan></text>
+            <text class="f2" fill="var(--danger)">C<tspan baseline-shift="sub" font-size="0.7em">20</tspan>H<tspan baseline-shift="sub" font-size="0.7em">12</tspan></text>
+        </g>
+
+        <!-- Resonance Arrow -->
+        <g class="arrow-grp" transform="translate(400, 380)">
+            <path d="M -40,0 L 40,0 M -30,-10 L -40,0 L -30,10 M 30,-10 L 40,0 L 30,10" stroke="#F77F00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </g>
+
+        <!-- Main Scene Container -->
+        <g id="scene">
+            
+            <!-- PAH Red Glow Outline -->
+            <path class="pah-show pah-danger" d="M 0,-60 L 52,-30 L 104,-60 L 104,-120 L 156,-150 L 208,-120 L 208,-60 L 156,-30 L 156,30 L 208,60 L 208,120 L 156,150 L 104,120 L 52,150 L 0,120 L 0,60 L -52,30 L -52,-30 Z" stroke="var(--danger)" stroke-width="12" fill="none" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+
+            <!-- Sigma Bonds (Base Benzene) -->
+            <polygon class="bond" points="0,-60 52,-30 52,30 0,60 -52,30 -52,-30" />
+            
+            <!-- PAH Extra Rings Sigma Bonds -->
+            <g class="pah-show bond">
+                <path d="M 52,-30 L 104,-60 L 156,-30 L 156,30 L 104,60 L 52,30" />
+                <path d="M 104,60 L 104,120 L 52,150 L 0,120 L 0,60" />
+                <path d="M 156,30 L 208,60 L 208,120 L 156,150 L 104,120" />
+                <path d="M 104,-60 L 104,-120 L 156,-150 L 208,-120 L 208,-60 L 156,-30" />
+            </g>
+
+            <!-- Base Hydrogen Bonds -->
+            <g class="bond">
+                <line x1="0" y1="-60" x2="0" y2="-100" />
+                <line x1="-52" y1="30" x2="-86.6" y2="50" />
+                <line x1="-52" y1="-30" x2="-86.6" y2="-50" />
+            </g>
+            <g class="bond pah-hide">
+                <line x1="52" y1="-30" x2="86.6" y2="-50" />
+                <line x1="52" y1="30" x2="86.6" y2="50" />
+                <line x1="0" y1="60" x2="0" y2="100" />
+            </g>
+
+            <!-- PAH Extra Hydrogen Bonds -->
+            <g class="pah-show bond">
+                <line x1="104" y1="-120" x2="69.4" y2="-140" />
+                <line x1="156" y1="-150" x2="156" y2="-190" />
+                <line x1="208" y1="-120" x2="242.6" y2="-140" />
+                <line x1="208" y1="-60" x2="242.6" y2="-40" />
+                <line x1="208" y1="60" x2="242.6" y2="80" />
+                <line x1="208" y1="120" x2="242.6" y2="140" />
+                <line x1="156" y1="150" x2="156" y2="190" />
+                <line x1="52" y1="150" x2="52" y2="190" />
+                <line x1="0" y1="120" x2="-34.6" y2="140" />
+            </g>
+
+            <!-- Kekule Pi Bonds -->
+            <g class="k1 pi-bond">
+                <line x1="0" y1="-48" x2="41.6" y2="-24" />
+                <line x1="41.6" y1="24" x2="0" y2="48" />
+                <line x1="-41.6" y1="24" x2="-41.6" y2="-24" />
+            </g>
+            <g class="k2 pi-bond">
+                <line x1="41.6" y1="-24" x2="41.6" y2="24" />
+                <line x1="0" y1="48" x2="-41.6" y2="24" />
+                <line x1="-41.6" y1="-24" x2="0" y2="-48" />
+            </g>
+
+            <!-- Delocalized Rings -->
+            <circle class="deloc-base deloc-ring" cx="0" cy="0" r="35" />
+            <g class="pah-show deloc-ring">
+                <circle cx="104" cy="0" r="35" />
+                <circle cx="52" cy="90" r="35" />
+                <circle cx="156" cy="90" r="35" />
+                <circle cx="156" cy="-90" r="35" />
+            </g>
+
+            <!-- Toroids (3D Pi Cloud) -->
+            <g class="toroid-grp">
+                <ellipse cx="0" cy="-25" rx="50" ry="12" fill="none" stroke="var(--pi-color)" stroke-width="15" opacity="0.6" vector-effect="non-scaling-stroke"/>
+                <ellipse cx="0" cy="25" rx="50" ry="12" fill="none" stroke="var(--pi-color)" stroke-width="15" opacity="0.6" vector-effect="non-scaling-stroke"/>
+            </g>
+
+            <!-- p-Orbitals -->
+            <g class="orbital-grp">
+                <use href="#orbital-pair" x="0" y="-60" />
+                <use href="#orbital-pair" x="52" y="-30" />
+                <use href="#orbital-pair" x="52" y="30" />
+                <use href="#orbital-pair" x="0" y="60" />
+                <use href="#orbital-pair" x="-52" y="30" />
+                <use href="#orbital-pair" x="-52" y="-30" />
+            </g>
+
+            <!-- Atoms (Base Benzene) -->
+            <use href="#carbon" x="0" y="-60" />
+            <use href="#carbon" x="52" y="-30" />
+            <use href="#carbon" x="52" y="30" />
+            <use href="#carbon" x="0" y="60" />
+            <use href="#carbon" x="-52" y="30" />
+            <use href="#carbon" x="-52" y="-30" />
+
+            <!-- Base Hydrogens -->
+            <use href="#hydrogen" x="0" y="-100" />
+            <use href="#hydrogen" x="-86.6" y="50" />
+            <use href="#hydrogen" x="-86.6" y="-50" />
+            <g class="pah-hide">
+                <use href="#hydrogen" x="86.6" y="-50" />
+                <use href="#hydrogen" x="86.6" y="50" />
+                <use href="#hydrogen" x="0" y="100" />
+            </g>
+
+            <!-- PAH Extra Atoms -->
+            <g class="pah-show">
+                <!-- Carbons -->
+                <use href="#carbon" x="104" y="-60" />
+                <use href="#carbon" x="156" y="-30" />
+                <use href="#carbon" x="156" y="30" />
+                <use href="#carbon" x="104" y="60" />
+                <use href="#carbon" x="104" y="120" />
+                <use href="#carbon" x="52" y="150" />
+                <use href="#carbon" x="0" y="120" />
+                <use href="#carbon" x="208" y="60" />
+                <use href="#carbon" x="208" y="120" />
+                <use href="#carbon" x="156" y="150" />
+                <use href="#carbon" x="104" y="-120" />
+                <use href="#carbon" x="156" y="-150" />
+                <use href="#carbon" x="208" y="-120" />
+                <use href="#carbon" x="208" y="-60" />
+                
+                <!-- Hydrogens -->
+                <use href="#hydrogen" x="69.4" y="-140" />
+                <use href="#hydrogen" x="156" y="-190" />
+                <use href="#hydrogen" x="242.6" y="-140" />
+                <use href="#hydrogen" x="242.6" y="-40" />
+                <use href="#hydrogen" x="242.6" y="80" />
+                <use href="#hydrogen" x="242.6" y="140" />
+                <use href="#hydrogen" x="156" y="190" />
+                <use href="#hydrogen" x="52" y="190" />
+                <use href="#hydrogen" x="-34.6" y="140" />
+            </g>
+
+            <!-- 120 Degree Angle Annotation (Visible in 2D phases) -->
+            <g class="pah-hide k1" style="animation-name: form-1;">
+                <path d="M -52,-10 A 20 20 0 0 0 -34.68,-40" fill="none" stroke="#888" stroke-width="2" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>
+                <text x="-20" y="-15" font-family="Inter" font-size="12" fill="#666" font-weight="600" transform="scale(1, 1)">120°</text>
+            </g>
+
+        </g>
+    </svg>
+
+</body>
+</html>

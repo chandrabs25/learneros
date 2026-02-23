@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dynamic Cytoskeleton: Architecture of Cell Morphology</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* CSS Animations */
+        .actin-strand-1 {
+            animation: treadmill 2s linear infinite;
+        }
+        
+        .actin-strand-2 {
+            animation: treadmill-reverse 2s linear infinite;
+        }
+
+        @keyframes treadmill {
+            from { stroke-dashoffset: 18; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes treadmill-reverse {
+            from { stroke-dashoffset: 0; }
+            to { stroke-dashoffset: 18; }
+        }
+
+        .if-group {
+            transform-origin: 400px 270px;
+            animation: pulse-tension 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-tension {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.015); }
+        }
+
+        /* Typography */
+        .title { font-size: 24px; font-weight: 700; fill: #2C3E50; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #7F8C8D; }
+        .label { font-size: 12px; font-weight: 600; fill: #2C3E50; }
+        .mono { font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: 500; fill: #34495E; }
+        .process-label { font-size: 11px; font-weight: 600; font-style: italic; }
+        .legend-text { font-size: 11px; font-weight: 500; fill: #2C3E50; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" aria-label="Animated diagram of the cell cytoskeleton showing microtubules, microfilaments, and intermediate filaments.">
+        <title>Cell Morphology: The Cytoskeleton</title>
+        <desc>A dynamic cross-section of a eukaryotic cell demonstrating the structure and movement of the cytoskeleton, including microtubule dynamic instability, actin treadmilling, and organelle transport.</desc>
+
+        <defs>
+            <!-- Drop Shadow for Cell -->
+            <filter id="drop-shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#2C3E50" flood-opacity="0.15" />
+            </filter>
+
+            <!-- Text Background Filter for Readability -->
+            <filter id="text-bg" x="-10%" y="-10%" width="120%" height="120%">
+                <feFlood flood-color="#ffffff" flood-opacity="0.85" result="bg" />
+                <feMerge>
+                    <feMergeNode in="bg" />
+                    <feMergeNode in="SourceGraphic" />
+                </feMerge>
+            </filter>
+
+            <!-- Microtubule Paths -->
+            <path id="mt1-path" d="M 290 200 L 150 120" />
+            <path id="mt2-path" d="M 290 200 L 120 280" />
+            <path id="mt3-path" d="M 290 200 L 250 420" />
+            <path id="mt4-path" d="M 290 200 L 600 120" />
+            <path id="mt5-path" d="M 290 200 L 620 320" />
+
+            <!-- Masks for Dynamic Instability -->
+            <mask id="mt-mask-1">
+                <use href="#mt1-path" stroke="white" stroke-width="20" stroke-dasharray="165" stroke-dashoffset="165">
+                    <animate attributeName="stroke-dashoffset" values="165;0;0;165" keyTimes="0; 0.5; 0.9; 1" dur="5s" begin="0s" repeatCount="indefinite" />
+                </use>
+            </mask>
+            <mask id="mt-mask-2">
+                <use href="#mt2-path" stroke="white" stroke-width="20" stroke-dasharray="185" stroke-dashoffset="185">
+                    <animate attributeName="stroke-dashoffset" values="185;0;0;185" keyTimes="0; 0.5; 0.9; 1" dur="6s" begin="1.5s" repeatCount="indefinite" />
+                </use>
+            </mask>
+            <mask id="mt-mask-3">
+                <use href="#mt3-path" stroke="white" stroke-width="20" stroke-dasharray="225" stroke-dashoffset="225">
+                    <animate attributeName="stroke-dashoffset" values="225;0;0;225" keyTimes="0; 0.5; 0.9; 1" dur="7s" begin="0.5s" repeatCount="indefinite" />
+                </use>
+            </mask>
+            <mask id="mt-mask-4">
+                <use href="#mt4-path" stroke="white" stroke-width="20" stroke-dasharray="325" stroke-dashoffset="325">
+                    <animate attributeName="stroke-dashoffset" values="325;0;0;325" keyTimes="0; 0.5; 0.9; 1" dur="8s" begin="2s" repeatCount="indefinite" />
+                </use>
+            </mask>
+            <mask id="mt-mask-5">
+                <use href="#mt5-path" stroke="white" stroke-width="20" stroke-dasharray="355" stroke-dashoffset="355">
+                    <animate attributeName="stroke-dashoffset" values="355;0;0;355" keyTimes="0; 0.5; 0.9; 1" dur="6.5s" begin="3s" repeatCount="indefinite" />
+                </use>
+            </mask>
+
+            <!-- Mitochondrion Symbol -->
+            <g id="mitochondrion">
+                <!-- Motor Protein (Kinesin/Dynein representation) -->
+                <line x1="0" y1="8" x2="0" y2="18" stroke="#2C3E50" stroke-width="2" />
+                <circle cx="0" cy="18" r="2" fill="#2C3E50" />
+                <!-- Organelle Body -->
+                <rect x="-16" y="-8" width="32" height="16" rx="8" ry="8" fill="#E74C3C" />
+                <!-- Cristae (Inner Membrane) -->
+                <path d="M -10 0 Q -5 -8 0 0 T 10 0" fill="none" stroke="#FADBD8" stroke-width="2" stroke-linecap="round" />
+            </g>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- ================= CELL BOUNDARY & CYTOPLASM ================= -->
+        <g id="cell-boundary" filter="url(#drop-shadow)">
+            <!-- Plasma Membrane -->
+            <rect x="100" y="80" width="600" height="380" rx="180" ry="180" fill="#E8F4FD" stroke="#4A90D9" stroke-width="8" />
+        </g>
+
+        <!-- ================= MICROFILAMENTS (ACTIN CORTEX) ================= -->
+        <g id="microfilaments" aria-label="Actin Microfilaments">
+            <!-- Outer twisted strand -->
+            <rect x="106" y="86" width="588" height="368" rx="174" ry="174" fill="none" stroke="#FF6B6B" stroke-width="3" stroke-dasharray="12 6" class="actin-strand-1" />
+            <!-- Inner twisted strand (offset to simulate double helix) -->
+            <rect x="108" y="88" width="584" height="364" rx="172" ry="172" fill="none" stroke="#E74C3C" stroke-width="2" stroke-dasharray="12 6" stroke-dashoffset="6" class="actin-strand-2" opacity="0.9" />
+        </g>
+
+        <!-- ================= INTERMEDIATE FILAMENTS ================= -->
+        <g id="intermediate-filaments" class="if-group" aria-label="Intermediate Filaments">
+            <!-- IF1 -->
+            <path d="M 460 270 Q 550 240 680 270" fill="none" stroke="#F39C12" stroke-width="6" />
+            <path d="M 460 270 Q 550 240 680 270" fill="none" stroke="#D68910" stroke-width="2" stroke-dasharray="8 4" />
+            <!-- IF2 -->
+            <path d="M 400 340 Q 430 400 400 450" fill="none" stroke="#F39C12" stroke-width="6" />
+            <path d="M 400 340 Q 430 400 400 450" fill="none" stroke="#D68910" stroke-width="2" stroke-dasharray="8 4" />
+            <!-- IF3 -->
+            <path d="M 340 310 Q 250 360 180 380" fill="none" stroke="#F39C12" stroke-width="6" />
+            <path d="M 340 310 Q 250 360 180 380" fill="none" stroke="#D68910" stroke-width="2" stroke-dasharray="8 4" />
+            <!-- IF4 -->
+            <path d="M 440 210 Q 500 140 520 90" fill="none" stroke="#F39C12" stroke-width="6" />
+            <path d="M 440 210 Q 500 140 520 90" fill="none" stroke="#D68910" stroke-width="2" stroke-dasharray="8 4" />
+            <!-- IF5 -->
+            <path d="M 350 220 Q 280 140 220 110" fill="none" stroke="#F39C12" stroke-width="6" />
+            <path d="M 350 220 Q 280 140 220 110" fill="none" stroke="#D68910" stroke-width="2" stroke-dasharray="8 4" />
+        </g>
+
+        <!-- ================= CENTROSOME (MTOC) ================= -->
+        <g id="centrosome" aria-label="Centrosome">
+            <!-- Pericentriolar Material -->
+            <circle cx="290" cy="200" r="28" fill="#98D8C8" opacity="0.3" filter="blur(2px)" />
+            <circle cx="290" cy="200" r="18" fill="#98D8C8" opacity="0.5" />
+            <!-- Centrioles (Orthogonal cylinders) -->
+            <rect x="286" y="188" width="8" height="24" fill="#27AE60" rx="2" transform="rotate(25 290 200)" />
+            <rect x="286" y="188" width="8" height="24" fill="#229954" rx="2" transform="rotate(-65 290 200)" />
+        </g>
+
+        <!-- ================= MICROTUBULES ================= -->
+        <g id="microtubules" aria-label="Microtubules">
+            <!-- MT1 -->
+            <g mask="url(#mt-mask-1)">
+                <use href="#mt1-path" stroke="#98D8C8" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+                <use href="#mt1-path" stroke="#E8F4FD" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+            </g>
+            <!-- MT2 -->
+            <g mask="url(#mt-mask-2)">
+                <use href="#mt2-path" stroke="#98D8C8" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+                <use href="#mt2-path" stroke="#E8F4FD" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+            </g>
+            <!-- MT3 -->
+            <g mask="url(#mt-mask-3)">
+                <use href="#mt3-path" stroke="#98D8C8" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+                <use href="#mt3-path" stroke="#E8F4FD" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+            </g>
+            <!-- MT4 -->
+            <g mask="url(#mt-mask-4)">
+                <use href="#mt4-path" stroke="#98D8C8" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+                <use href="#mt4-path" stroke="#E8F4FD" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+            </g>
+            <!-- MT5 -->
+            <g mask="url(#mt-mask-5)">
+                <use href="#mt5-path" stroke="#98D8C8" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+                <use href="#mt5-path" stroke="#E8F4FD" stroke-width="5" stroke-linecap="round" stroke-dasharray="0 13" fill="none" />
+            </g>
+        </g>
+
+        <!-- ================= NUCLEUS ================= -->
+        <g id="nucleus" aria-label="Nucleus">
+            <!-- Outer Envelope -->
+            <circle cx="400" cy="270" r="72" fill="#2C3E50" stroke="#4A90D9" stroke-width="6" />
+            <!-- Nuclear Pores (Dashed Inner Line) -->
+            <circle cx="400" cy="270" r="72" fill="none" stroke="#E8F4FD" stroke-width="7" stroke-dasharray="5 25" />
+            <!-- Inner Envelope -->
+            <circle cx="400" cy="270" r="68" fill="none" stroke="#E8F4FD" stroke-width="1.5" opacity="0.5" />
+            <!-- Nucleolus -->
+            <circle cx="375" cy="245" r="22" fill="#1A252F" />
+            <!-- Chromatin (Stylized) -->
+            <path d="M 380 290 Q 390 280 410 300 T 440 280 T 450 310" fill="none" stroke="#34495E" stroke-width="3" stroke-linecap="round" />
+            <path d="M 420 240 Q 430 230 440 250 T 460 240" fill="none" stroke="#34495E" stroke-width="3" stroke-linecap="round" />
+        </g>
+
+        <!-- ================= ORGANELLE TRANSPORT ================= -->
+        <g id="organelles" aria-label="Mitochondria Transport">
+            <!-- Mitochondrion moving along MT4 -->
+            <use href="#mitochondrion">
+                <animateMotion dur="8s" repeatCount="indefinite" path="M 310 195 L 580 125 L 310 195" rotate="auto" />
+            </use>
+            <!-- Mitochondrion moving along MT5 -->
+            <use href="#mitochondrion">
+                <animateMotion dur="11s" repeatCount="indefinite" path="M 310 208 L 600 312 L 310 208" rotate="auto" begin="3s" />
+            </use>
+        </g>
+
+        <!-- ================= LABELS & ANNOTATIONS ================= -->
+        <g id="labels">
+            <!-- Title -->
+            <text x="400" y="35" text-anchor="middle" class="title">Cell Morphology: The Cytoskeleton</text>
+            <text x="400" y="55" text-anchor="middle" class="subtitle">Architecture & Dynamics of Protein Filaments</text>
+
+            <!-- Structural Labels -->
+            <!-- Microtubules -->
+            <line x1="530" y1="138" x2="620" y2="90" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="2 2" />
+            <circle cx="530" cy="138" r="3" fill="#98D8C8" />
+            <text x="625" y="85" class="label" filter="url(#text-bg)">Microtubules <tspan class="mono">(25 nm)</tspan></text>
+
+            <!-- Intermediate Filaments -->
+            <line x1="600" y1="260" x2="650" y2="220" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="2 2" />
+            <circle cx="600" cy="260" r="3" fill="#F39C12" />
+            <text x="655" y="215" class="label" filter="url(#text-bg)">Intermediate Filaments <tspan class="mono">(8-12 nm)</tspan></text>
+
+            <!-- Microfilaments -->
+            <line x1="150" y1="110" x2="150" y2="70" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="2 2" />
+            <circle cx="150" cy="110" r="3" fill="#FF6B6B" />
+            <text x="150" y="60" text-anchor="middle" class="label" filter="url(#text-bg)">Microfilaments <tspan class="mono">(7 nm)</tspan></text>
+
+            <!-- Centrosome -->
+            <line x1="265" y1="200" x2="190" y2="200" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="2 2" />
+            <circle cx="265" cy="200" r="3" fill="#27AE60" />
+            <text x="180" y="204" text-anchor="end" class="label" filter="url(#text-bg)">Centrosome (MTOC)</text>
+
+            <!-- Nucleus -->
+            <line x1="400" y1="200" x2="400" y2="150" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="2 2" />
+            <circle cx="400" cy="200" r="3" fill="#2C3E50" />
+            <text x="400" y="140" text-anchor="middle" class="label" filter="url(#text-bg)">Nucleus</text>
+
+            <!-- Process Labels (Animated) -->
+            <!-- MT5 Dynamic Instability Labels -->
+            <text x="500" y="300" class="process-label" fill="#27AE60" filter="url(#text-bg)" opacity="0">
+                Growth / Polymerization ↗
+                <animate attributeName="opacity" values="0;1;1;0;0" keyTimes="0; 0.1; 0.4; 0.5; 1" dur="6.5s" begin="3s" repeatCount="indefinite" />
+            </text>
+            <text x="500" y="300" class="process-label" fill="#E74C3C" filter="url(#text-bg)" opacity="0">
+                ↙ Shrinkage / Catastrophe
+                <animate attributeName="opacity" values="0;0;0;1;0" keyTimes="0; 0.85; 0.9; 0.98; 1" dur="6.5s" begin="3s" repeatCount="indefinite" />
+            </text>
+
+            <!-- Actin Treadmilling Label -->
+            <text x="160" y="380" class="process-label" fill="#E74C3C" filter="url(#text-bg)">
+                ↓ Actin Treadmilling
+            </text>
+            
+            <!-- Tension Label -->
+            <text x="320" y="360" class="process-label" fill="#D68910" filter="url(#text-bg)">
+                ↔ Mechanical Tension
+            </text>
+        </g>
+
+        <!-- ================= LEGEND ================= -->
+        <g id="legend" transform="translate(580, 360)">
+            <rect x="0" y="0" width="200" height="115" rx="6" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" filter="url(#drop-shadow)" />
+            <text x="100" y="20" text-anchor="middle" class="label">Cytoskeleton Key</text>
+            <line x1="10" y1="30" x2="190" y2="30" stroke="#ECF0F1" stroke-width="1" />
+            
+            <!-- Legend Item 1: Microtubules -->
+            <g transform="translate(15, 45)">
+                <line x1="0" y1="0" x2="30" y2="0" stroke="#98D8C8" stroke-width="8" stroke-linecap="round" stroke-dasharray="0 9" />
+                <line x1="0" y1="0" x2="30" y2="0" stroke="#E8F4FD" stroke-width="3" stroke-linecap="round" stroke-dasharray="0 9" />
+                <text x="40" y="4" class="legend-text">Microtubules (Tubulin)</text>
+            </g>
+
+            <!-- Legend Item 2: Intermediate Filaments -->
+            <g transform="translate(15, 70)">
+                <line x1="0" y1="0" x2="30" y2="0" stroke="#F39C12" stroke-width="5" />
+                <line x1="0" y1="0" x2="30" y2="0" stroke="#D68910" stroke-width="2" stroke-dasharray="4 3" />
+                <text x="40" y="4" class="legend-text">Intermediate Filaments</text>
+            </g>
+
+            <!-- Legend Item 3: Microfilaments -->
+            <g transform="translate(15, 95)">
+                <line x1="0" y1="-1" x2="30" y2="-1" stroke="#FF6B6B" stroke-width="2" stroke-dasharray="6 3" />
+                <line x1="0" y1="1" x2="30" y2="1" stroke="#E74C3C" stroke-width="1.5" stroke-dasharray="6 3" stroke-dashoffset="3" />
+                <text x="40" y="4" class="legend-text">Microfilaments (Actin)</text>
+            </g>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

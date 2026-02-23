@@ -2,6 +2,11 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
+# System build dependencies for native Python wheels (e.g., hdbscan)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends build-essential gcc g++ \
+    && rm -rf /var/lib/apt/lists/*
+
 # Install uv for fast dependency resolution
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 

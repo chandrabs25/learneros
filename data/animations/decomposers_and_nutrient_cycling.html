@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decomposition: The Nutrient Cycle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2C3E50;
+            font-size: 24px;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .svg-container {
+            width: 100%;
+            height: auto;
+            position: relative;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 8px;
+        }
+
+        /* --- CSS Animations --- */
+        
+        /* 1. Fragmentation (0-20%) */
+        @keyframes worm-move {
+            0% { transform: translateX(-80px); opacity: 0; }
+            5% { opacity: 1; }
+            10% { transform: translateX(20px); }
+            15% { transform: translateX(80px); opacity: 1; }
+            20% { transform: translateX(120px); opacity: 0; }
+            100% { transform: translateX(120px); opacity: 0; }
+        }
+
+        @keyframes whole-leaf-fade {
+            0%, 9.9% { opacity: 1; }
+            10%, 100% { opacity: 0; }
+        }
+
+        @keyframes fragments-anim {
+            0%, 9.9% { opacity: 0; transform: translate(0, 0) scale(1); }
+            10% { opacity: 1; transform: translate(0, 0) scale(1); }
+            40% { opacity: 1; transform: translate(0, 0) scale(1); }
+            60% { opacity: 0.6; transform: translate(0, 15px) scale(0.7); }
+            80%, 100% { opacity: 0; transform: translate(0, 25px) scale(0.3); }
+        }
+
+        /* 2. Leaching (20-40%) */
+        @keyframes rain-fall {
+            0%, 19.9% { opacity: 0; transform: translateY(-60px); }
+            20% { opacity: 1; transform: translateY(-30px); }
+            35% { opacity: 1; transform: translateY(120px); }
+            40%, 100% { opacity: 0; transform: translateY(160px); }
+        }
+
+        @keyframes leach-nutrients {
+            0%, 24.9% { opacity: 0; transform: translateY(0); }
+            25% { opacity: 1; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(180px); }
+            45%, 100% { opacity: 0; transform: translateY(220px); }
+        }
+
+        /* 3. Catabolism (40-60%) */
+        @keyframes microbe-pulse {
+            0%, 39.9% { transform: scale(1); filter: brightness(1); opacity: 0.6; }
+            45% { transform: scale(1.15); filter: brightness(1.3); opacity: 1; }
+            55% { transform: scale(1.15); filter: brightness(1.3); opacity: 1; }
+            60%, 100% { transform: scale(1); filter: brightness(1); opacity: 0.6; }
+        }
+
+        @keyframes enzymes-move {
+            0%, 39.9% { opacity: 0; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(0); }
+            55% { opacity: 1; transform: translateY(-35px); }
+            60%, 100% { opacity: 0; transform: translateY(-45px); }
+        }
+
+        /* 4. Humification (60-80%) */
+        @keyframes humus-form {
+            0%, 59.9% { opacity: 0; transform: scale(0.7); }
+            60% { opacity: 0; transform: scale(0.7); }
+            70% { opacity: 0.9; transform: scale(1.1); }
+            80% { opacity: 0.9; transform: scale(1.1); }
+            90% { opacity: 0.4; transform: scale(0.9); }
+            100% { opacity: 0; transform: scale(0.7); }
+        }
+
+        /* 5. Mineralization & Uptake (80-100%) */
+        @keyframes mineral-release {
+            0%, 79.9% { opacity: 0; transform: translate(0, 0); }
+            80% { opacity: 1; transform: translate(0, 0); }
+            88% { opacity: 1; transform: translate(250px, 60px); }
+            96% { opacity: 1; transform: translate(320px, -120px); }
+            100% { opacity: 0; transform: translate(320px, -180px); }
+        }
+
+        /* Continuous/Overlapping */
+        @keyframes co2-rise {
+            0%, 39.9% { opacity: 0; transform: translateY(0) scale(0.8); }
+            40% { opacity: 0; transform: translateY(0) scale(0.8); }
+            50% { opacity: 0.7; transform: translateY(-40px) scale(1); }
+            70% { opacity: 0.7; transform: translateY(-90px) scale(1.2); }
+            80%, 100% { opacity: 0; transform: translateY(-130px) scale(1.4); }
+        }
+
+        /* Label Highlights */
+        @keyframes label-highlight-1 { 0%, 20% { opacity: 1; transform: scale(1.05); } 21%, 100% { opacity: 0.4; transform: scale(1); } }
+        @keyframes label-highlight-2 { 0%, 19% { opacity: 0.4; transform: scale(1); } 20%, 40% { opacity: 1; transform: scale(1.05); } 41%, 100% { opacity: 0.4; transform: scale(1); } }
+        @keyframes label-highlight-3 { 0%, 39% { opacity: 0.4; transform: scale(1); } 40%, 60% { opacity: 1; transform: scale(1.05); } 61%, 100% { opacity: 0.4; transform: scale(1); } }
+        @keyframes label-highlight-4 { 0%, 59% { opacity: 0.4; transform: scale(1); } 60%, 80% { opacity: 1; transform: scale(1.05); } 81%, 100% { opacity: 0.4; transform: scale(1); } }
+        @keyframes label-highlight-5 { 0%, 79% { opacity: 0.4; transform: scale(1); } 80%, 100% { opacity: 1; transform: scale(1.05); } }
+
+        /* Apply Animations */
+        .anim-worm { animation: worm-move 20s linear infinite; will-change: transform, opacity; }
+        .anim-whole-leaf { animation: whole-leaf-fade 20s linear infinite; will-change: opacity; }
+        .anim-fragments { animation: fragments-anim 20s linear infinite; will-change: transform, opacity; transform-origin: 250px 130px; }
+        .anim-rain { animation: rain-fall 20s linear infinite; will-change: transform, opacity; }
+        .anim-leach { animation: leach-nutrients 20s linear infinite; will-change: transform, opacity; }
+        .anim-microbes { animation: microbe-pulse 20s linear infinite; will-change: transform, filter, opacity; transform-origin: 250px 190px; }
+        .anim-enzymes { animation: enzymes-move 20s linear infinite; will-change: transform, opacity; }
+        .anim-humus { animation: humus-form 20s linear infinite; will-change: transform, opacity; transform-origin: 250px 160px; }
+        .anim-mineral { animation: mineral-release 20s linear infinite; will-change: transform, opacity; }
+        .anim-co2 { animation: co2-rise 20s linear infinite; will-change: transform, opacity; }
+
+        .lbl-1 { animation: label-highlight-1 20s linear infinite; transform-origin: left center; }
+        .lbl-2 { animation: label-highlight-2 20s linear infinite; transform-origin: left center; }
+        .lbl-3 { animation: label-highlight-3 20s linear infinite; transform-origin: left center; }
+        .lbl-4 { animation: label-highlight-4 20s linear infinite; transform-origin: left center; }
+        .lbl-5 { animation: label-highlight-5 20s linear infinite; transform-origin: left center; }
+
+        .sci-font { font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 700; }
+        .label-title { font-weight: 700; font-size: 14px; }
+        .label-desc { font-size: 11px; font-weight: 400; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Decomposition: The Nutrient Cycle</h1>
+    
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram showing the five stages of decomposition: Fragmentation, Leaching, Catabolism, Humification, and Mineralization." role="img">
+            <title>The Five Stages of Decomposition and Nutrient Cycling</title>
+            <desc>An educational animation demonstrating how detritus is broken down by detritivores and microbes, turning into humus and eventually releasing inorganic nutrients for plant uptake.</desc>
+            
+            <defs>
+                <!-- Gradients for Soil Horizons -->
+                <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#E8F4FD" />
+                    <stop offset="100%" stop-color="#f8f9fa" />
+                </linearGradient>
+                <linearGradient id="topsoilGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#3E2723" />
+                    <stop offset="100%" stop-color="#4e342e" />
+                </linearGradient>
+                <linearGradient id="subsoilGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#5D4037" />
+                    <stop offset="100%" stop-color="#795548" />
+                </linearGradient>
+
+                <!-- Filters -->
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="humusBlur" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="8" />
+                </filter>
+                <filter id="shadow">
+                    <feDropShadow dx="1" dy="1" stdDeviation="2" flood-color="#000" flood-opacity="0.5"/>
+                </filter>
+            </defs>
+
+            <!-- ================= BACKGROUND & SOIL LAYERS ================= -->
+            <!-- Sky / Above Ground -->
+            <rect x="0" y="0" width="800" height="120" fill="url(#skyGrad)" />
+            
+            <!-- Surface Litter (O Horizon) -->
+            <rect x="0" y="120" width="800" height="30" fill="#D2B48C" />
+            <!-- Litter texture -->
+            <path d="M 50 130 L 70 135 M 120 140 L 140 135 M 350 125 L 370 130 M 450 140 L 480 135 M 750 130 L 770 135" stroke="#A0522D" stroke-width="2" stroke-linecap="round" />
+            
+            <!-- Topsoil / Humus Layer (A Horizon) -->
+            <rect x="0" y="150" width="800" height="180" fill="url(#topsoilGrad)" />
+            <!-- Topsoil texture -->
+            <circle cx="100" cy="200" r="2" fill="#2a1a17" opacity="0.5" />
+            <circle cx="150" cy="250" r="3" fill="#2a1a17" opacity="0.5" />
+            <circle cx="350" cy="180" r="1.5" fill="#2a1a17" opacity="0.5" />
+            <circle cx="450" cy="280" r="2.5" fill="#2a1a17" opacity="0.5" />
+            <circle cx="550" cy="220" r="2" fill="#2a1a17" opacity="0.5" />
+
+            <!-- Mineral Subsoil (B Horizon) -->
+            <rect x="0" y="330" width="800" height="170" fill="url(#subsoilGrad)" />
+            <!-- Subsoil texture (rocks/minerals) -->
+            <polygon points="120,380 130,370 145,375 140,390" fill="#8D6E63" opacity="0.4" />
+            <polygon points="420,420 435,405 450,415 440,430" fill="#8D6E63" opacity="0.4" />
+            <polygon points="620,360 630,350 645,355 635,370" fill="#8D6E63" opacity="0.4" />
+
+            <!-- ================= STATIC ELEMENTS ================= -->
+            <!-- Plant & Roots (Right Side) -->
+            <g id="plant">
+                <!-- Stem -->
+                <path d="M 650 120 L 650 20" stroke="#2ECC71" stroke-width="8" stroke-linecap="round" />
+                <!-- Leaves -->
+                <path d="M 650 90 Q 600 70 610 40 Q 640 50 650 90 Z" fill="#27AE60" />
+                <path d="M 650 60 Q 700 40 690 10 Q 660 20 650 60 Z" fill="#27AE60" />
+                
+                <!-- Main Taproot -->
+                <path d="M 650 120 C 650 200, 630 280, 630 380 C 630 430, 610 470, 610 490" stroke="#2ECC71" stroke-width="6" fill="none" stroke-linecap="round" />
+                <!-- Lateral Roots -->
+                <path d="M 645 180 Q 580 200 540 240" stroke="#2ECC71" stroke-width="3" fill="none" stroke-linecap="round" />
+                <path d="M 640 250 Q 680 280 720 310" stroke="#2ECC71" stroke-width="3" fill="none" stroke-linecap="round" />
+                <path d="M 635 320 Q 550 350 500 400" stroke="#2ECC71" stroke-width="3" fill="none" stroke-linecap="round" />
+                <path d="M 632 400 Q 670 430 700 460" stroke="#2ECC71" stroke-width="2" fill="none" stroke-linecap="round" />
+                <!-- Root hairs -->
+                <path d="M 560 220 L 550 210 M 580 230 L 570 245 M 520 380 L 510 370 M 540 370 L 530 390" stroke="#2ECC71" stroke-width="1" fill="none" />
+            </g>
+
+            <!-- Legend -->
+            <g id="legend" transform="translate(15, 15)">
+                <rect width="160" height="110" fill="rgba(255, 255, 255, 0.9)" rx="6" stroke="#BDC3C7" stroke-width="1" />
+                <text x="10" y="20" font-size="12" font-weight="700" fill="#2C3E50">Key</text>
+                
+                <circle cx="15" cy="35" r="4" fill="#F1C40F" filter="url(#glow)" />
+                <text x="25" y="39" font-size="11" fill="#2C3E50">Inorganic Nutrients</text>
+                
+                <circle cx="15" cy="55" r="4" fill="#98D8C8" />
+                <text x="25" y="59" font-size="11" fill="#2C3E50">Bacteria & Enzymes</text>
+                
+                <path d="M 10 75 L 20 75" stroke="#F8F9FA" stroke-width="2" />
+                <text x="25" y="79" font-size="11" fill="#2C3E50">Fungal Hyphae</text>
+                
+                <circle cx="15" cy="95" r="4" fill="#BDC3C7" />
+                <text x="25" y="99" font-size="11" fill="#2C3E50">Gas Release (CO₂)</text>
+            </g>
+
+            <!-- ================= ANIMATED ELEMENTS ================= -->
+            
+            <!-- 1. Detritus & Detritivore (Fragmentation) -->
+            <g id="stage-1-fragmentation">
+                <!-- Whole Leaf -->
+                <g class="anim-whole-leaf">
+                    <path d="M 200 130 C 220 100, 280 100, 300 130 C 280 160, 220 160, 200 130 Z" fill="#8B4513" stroke="#5D4037" stroke-width="1" />
+                    <path d="M 200 130 C 240 130, 260 130, 300 130" stroke="#5D4037" stroke-width="2" fill="none" />
+                    <path d="M 240 130 L 260 115 M 260 130 L 280 145" stroke="#5D4037" stroke-width="1" fill="none" />
+                </g>
+
+                <!-- Leaf Fragments -->
+                <g class="anim-fragments">
+                    <polygon points="200,130 220,115 230,130 210,140" fill="#8B4513" stroke="#5D4037" stroke-width="0.5" />
+                    <polygon points="235,125 255,110 270,125 245,135" fill="#8B4513" stroke="#5D4037" stroke-width="0.5" />
+                    <polygon points="275,120 295,125 300,130 280,135" fill="#8B4513" stroke="#5D4037" stroke-width="0.5" />
+                    <polygon points="215,145 235,135 250,145 230,155" fill="#8B4513" stroke="#5D4037" stroke-width="0.5" />
+                    <polygon points="255,140 275,135 285,150 265,155" fill="#8B4513" stroke="#5D4037" stroke-width="0.5" />
+                </g>
+
+                <!-- Earthworm -->
+                <g class="anim-worm">
+                    <path d="M 140 125 Q 150 110 160 125 T 180 125 T 200 125" stroke="#F39C12" stroke-width="7" fill="none" stroke-linecap="round" />
+                    <!-- Segments -->
+                    <path d="M 140 125 Q 150 110 160 125 T 180 125 T 200 125" stroke="#D68910" stroke-width="7" fill="none" stroke-linecap="round" stroke-dasharray="2, 3" />
+                </g>
+            </g>
+
+            <!-- 2. Leaching -->
+            <g id="stage-2-leaching">
+                <!-- Rain Droplets -->
+                <g class="anim-rain">
+                    <path d="M 220 80 L 220 95 M 250 60 L 250 75 M 280 85 L 280 100" stroke="#3498DB" stroke-width="2.5" stroke-linecap="round" />
+                    <path d="M 235 50 L 235 65 M 265 70 L 265 85" stroke="#3498DB" stroke-width="2.5" stroke-linecap="round" />
+                </g>
+
+                <!-- Leached Nutrients moving down -->
+                <g class="anim-leach">
+                    <circle cx="230" cy="140" r="3.5" fill="#F1C40F" filter="url(#glow)" />
+                    <circle cx="260" cy="145" r="3.5" fill="#F1C40F" filter="url(#glow)" />
+                    <circle cx="280" cy="135" r="3.5" fill="#F1C40F" filter="url(#glow)" />
+                    <circle cx="245" cy="150" r="3.5" fill="#F1C40F" filter="url(#glow)" />
+                </g>
+            </g>
+
+            <!-- 3. Catabolism -->
+            <g id="stage-3-catabolism">
+                <!-- Microbes (Fungi & Bacteria) -->
+                <g class="anim-microbes">
+                    <!-- Fungal Hyphae -->
+                    <path d="M 200 190 Q 220 170 240 190 T 280 180 T 310 195" stroke="#F8F9FA" stroke-width="2" fill="none" stroke-linecap="round" />
+                    <path d="M 240 190 Q 250 210 260 195" stroke="#F8F9FA" stroke-width="1.5" fill="none" stroke-linecap="round" />
+                    <path d="M 280 180 Q 290 160 300 175" stroke="#F8F9FA" stroke-width="1.5" fill="none" stroke-linecap="round" />
+                    
+                    <!-- Bacterial Colonies -->
+                    <circle cx="210" cy="180" r="3" fill="#98D8C8" />
+                    <circle cx="215" cy="185" r="3" fill="#98D8C8" />
+                    <circle cx="245" cy="195" r="3" fill="#98D8C8" />
+                    <circle cx="250" cy="190" r="3" fill="#98D8C8" />
+                    <circle cx="285" cy="175" r="3" fill="#98D8C8" />
+                    <circle cx="290" cy="180" r="3" fill="#98D8C8" />
+                </g>
+
+                <!-- Extracellular Enzymes -->
+                <g class="anim-enzymes">
+                    <circle cx="220" cy="175" r="2" fill="#98D8C8" />
+                    <circle cx="250" cy="180" r="2" fill="#98D8C8" />
+                    <circle cx="280" cy="170" r="2" fill="#98D8C8" />
+                    <circle cx="235" cy="185" r="2" fill="#98D8C8" />
+                    <circle cx="265" cy="175" r="2" fill="#98D8C8" />
+                </g>
+            </g>
+
+            <!-- 4. Humification -->
+            <g id="stage-4-humification">
+                <!-- Dark amorphous humus cloud -->
+                <ellipse cx="250" cy="160" rx="70" ry="35" fill="#1a0f0d" filter="url(#humusBlur)" class="anim-humus" />
+            </g>
+
+            <!-- 5. Mineralization & Uptake -->
+            <g id="stage-5-mineralization">
+                <!-- Mineralized Nutrients moving to roots -->
+                <g class="anim-mineral">
+                    <circle cx="240" cy="160" r="4" fill="#F1C40F" filter="url(#glow)" />
+                    <circle cx="255" cy="155" r="4" fill="#F1C40F" filter="url(#glow)" />
+                    <circle cx="270" cy="165" r="4" fill="#F1C40F" filter="url(#glow)" />
+                    <circle cx="250" cy="170" r="4" fill="#F1C40F" filter="url(#glow)" />
+                    <circle cx="265" cy="150" r="4" fill="#F1C40F" filter="url(#glow)" />
+                </g>
+
+                <!-- Scientific Notation Labels moving with nutrients (Optional, but static is better for readability. I will place static labels near the path) -->
+            </g>
+
+            <!-- CO2 Release (Continuous during catabolism/humification) -->
+            <g id="co2-release" class="anim-co2">
+                <circle cx="230" cy="160" r="5" fill="#BDC3C7" />
+                <circle cx="260" cy="150" r="4" fill="#BDC3C7" />
+                <circle cx="280" cy="165" r="6" fill="#BDC3C7" />
+                <circle cx="245" cy="145" r="3" fill="#BDC3C7" />
+            </g>
+
+            <!-- ================= LABELS & ANNOTATIONS ================= -->
+            
+            <!-- 1. Fragmentation -->
+            <g class="lbl-1" transform="translate(30, 135)">
+                <rect x="0" y="-15" width="105" height="35" fill="rgba(255,255,255,0.85)" rx="4" />
+                <text x="5" y="0" class="label-title" fill="#2C3E50">1. Fragmentation</text>
+                <text x="5" y="12" class="label-desc" fill="#2C3E50">Detritivores break detritus</text>
+            </g>
+
+            <!-- 2. Leaching -->
+            <g class="lbl-2" transform="translate(30, 200)">
+                <rect x="0" y="-15" width="115" height="35" fill="rgba(62, 39, 35, 0.8)" rx="4" stroke="#D2B48C" stroke-width="1" />
+                <text x="5" y="0" class="label-title" fill="#fff">2. Leaching</text>
+                <text x="5" y="12" class="label-desc" fill="#E8F4FD">Solubles move to subsoil</text>
+            </g>
+
+            <!-- 3. Catabolism -->
+            <g class="lbl-3" transform="translate(30, 265)">
+                <rect x="0" y="-15" width="125" height="35" fill="rgba(62, 39, 35, 0.8)" rx="4" stroke="#98D8C8" stroke-width="1" />
+                <text x="5" y="0" class="label-title" fill="#fff">3. Catabolism</text>
+                <text x="5" y="12" class="label-desc" fill="#E8F4FD">Microbial enzymes degrade</text>
+            </g>
+
+            <!-- 4. Humification -->
+            <g class="lbl-4" transform="translate(350, 190)">
+                <rect x="0" y="-15" width="115" height="35" fill="rgba(62, 39, 35, 0.8)" rx="4" stroke="#8B4513" stroke-width="1" />
+                <text x="5" y="0" class="label-title" fill="#fff">4. Humification</text>
+                <text x="5" y="12" class="label-desc" fill="#E8F4FD">Dark humus forms</text>
+            </g>
+
+            <!-- 5. Mineralization -->
+            <g class="lbl-5" transform="translate(400, 260)">
+                <rect x="0" y="-15" width="125" height="35" fill="rgba(93, 64, 55, 0.8)" rx="4" stroke="#F1C40F" stroke-width="1" />
+                <text x="5" y="0" class="label-title" fill="#fff">5. Mineralization</text>
+                <text x="5" y="12" class="label-desc" fill="#E8F4FD">Inorganic nutrients freed</text>
+            </g>
+
+            <!-- Scientific Notations -->
+            <g class="sci-font">
+                <!-- Water -->
+                <text x="295" y="85" fill="#3498DB" filter="url(#shadow)">H<tspan baseline-shift="sub" font-size="9">2</tspan>O</text>
+                <!-- CO2 -->
+                <text x="295" y="120" fill="#BDC3C7" filter="url(#shadow)">CO<tspan baseline-shift="sub" font-size="9">2</tspan></text>
+                <!-- Nutrients -->
+                <text x="400" y="235" fill="#F1C40F" filter="url(#shadow)">NH<tspan baseline-shift="sub" font-size="9">4</tspan><tspan baseline-shift="super" font-size="9">+</tspan> / PO<tspan baseline-shift="sub" font-size="9">4</tspan><tspan baseline-shift="super" font-size="9">3-</tspan></text>
+            </g>
+
+        </svg>
+    </div>
+</div>
+
+</body>
+</html>

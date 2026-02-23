@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethane Conformations & Molecular Orbital Symmetry</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        text {
+            user-select: none;
+        }
+
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* 3D Molecule Animations */
+        @keyframes spinFront {
+            0% { transform: rotateY(60deg) rotateZ(0deg); }
+            100% { transform: rotateY(60deg) rotateZ(360deg); }
+        }
+
+        /* Newman Projection Animations */
+        @keyframes spinNewman {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Graph Tracking Animations */
+        @keyframes trackX {
+            0% { transform: translateX(150px); }
+            100% { transform: translateX(650px); }
+        }
+
+        @keyframes trackY {
+            0% { transform: translateY(440px); animation-timing-function: ease-in-out; }
+            16.666% { transform: translateY(340px); animation-timing-function: ease-in-out; }
+            33.333% { transform: translateY(440px); animation-timing-function: ease-in-out; }
+            50% { transform: translateY(340px); animation-timing-function: ease-in-out; }
+            66.666% { transform: translateY(440px); animation-timing-function: ease-in-out; }
+            83.333% { transform: translateY(340px); animation-timing-function: ease-in-out; }
+            100% { transform: translateY(440px); }
+        }
+
+        /* State Label Highlights */
+        @keyframes highlightEclipsed {
+            0%, 10% { opacity: 0.2; fill: #888; transform: scale(1); }
+            14%, 19% { opacity: 1; fill: #FF4444; transform: scale(1.05); }
+            23%, 43% { opacity: 0.2; fill: #888; transform: scale(1); }
+            47%, 53% { opacity: 1; fill: #FF4444; transform: scale(1.05); }
+            57%, 76% { opacity: 0.2; fill: #888; transform: scale(1); }
+            80%, 86% { opacity: 1; fill: #FF4444; transform: scale(1.05); }
+            90%, 100% { opacity: 0.2; fill: #888; transform: scale(1); }
+        }
+
+        @keyframes highlightStaggered {
+            0%, 3% { opacity: 1; fill: #4361EE; transform: scale(1.05); }
+            7%, 26% { opacity: 0.2; fill: #888; transform: scale(1); }
+            30%, 36% { opacity: 1; fill: #4361EE; transform: scale(1.05); }
+            40%, 60% { opacity: 0.2; fill: #888; transform: scale(1); }
+            63%, 70% { opacity: 1; fill: #4361EE; transform: scale(1.05); }
+            74%, 93% { opacity: 0.2; fill: #888; transform: scale(1); }
+            97%, 100% { opacity: 1; fill: #4361EE; transform: scale(1.05); }
+        }
+
+        /* Subtle pulse for the tracking ball */
+        @keyframes pulseBall {
+            0%, 100% { filter: drop-shadow(0 0 4px rgba(247, 37, 133, 0.5)); }
+            50% { filter: drop-shadow(0 0 10px rgba(247, 37, 133, 0.9)); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Gradients for 3D Atoms -->
+            <radialGradient id="cGrad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#666666" />
+                <stop offset="100%" stop-color="#222222" />
+            </radialGradient>
+            
+            <radialGradient id="hGrad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FFFFFF" />
+                <stop offset="100%" stop-color="#AAAAAA" />
+            </radialGradient>
+
+            <!-- Gradient for Sigma Orbital -->
+            <linearGradient id="sigmaGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#4CC9F0" stop-opacity="0.35" />
+                <stop offset="50%" stop-color="#4361EE" stop-opacity="0.5" />
+                <stop offset="100%" stop-color="#4CC9F0" stop-opacity="0.35" />
+            </linearGradient>
+
+            <!-- Arrowhead Marker -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7" />
+            </marker>
+
+            <!-- Reusable CH3 Group -->
+            <g id="ch3">
+                <!-- Bonds -->
+                <line x1="0" y1="0" x2="0" y2="-65" stroke="#333" stroke-width="5" stroke-linecap="round"/>
+                <line x1="0" y1="0" x2="56.29" y2="32.5" stroke="#333" stroke-width="5" stroke-linecap="round"/>
+                <line x1="0" y1="0" x2="-56.29" y2="32.5" stroke="#333" stroke-width="5" stroke-linecap="round"/>
+                <!-- Hydrogen Atoms -->
+                <circle cx="0" cy="-65" r="11" fill="url(#hGrad)"/>
+                <circle cx="56.29" cy="32.5" r="11" fill="url(#hGrad)"/>
+                <circle cx="-56.29" cy="32.5" r="11" fill="url(#hGrad)"/>
+                <!-- Carbon Atom -->
+                <circle cx="0" cy="0" r="18" fill="url(#cGrad)"/>
+            </g>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#ffffff" />
+
+        <!-- Title -->
+        <text x="400" y="35" text-anchor="middle" font-size="22" font-weight="700" fill="#111">
+            Ethane (C<tspan dy="6" font-size="14">2</tspan><tspan dy="-6">H</tspan><tspan dy="6" font-size="14">6</tspan><tspan dy="-6">): </tspan>σ-Bond Rotation &amp; Conformational Energy
+        </text>
+
+        <!-- Legend -->
+        <g transform="translate(20, 20)">
+            <rect x="0" y="0" width="140" height="85" rx="6" fill="#f8f9fa" stroke="#e0e0e0" stroke-width="1"/>
+            <circle cx="15" cy="20" r="6" fill="url(#cGrad)"/>
+            <text x="30" y="24" font-size="12" fill="#444">Carbon (sp³)</text>
+            
+            <circle cx="15" cy="42" r="5" fill="url(#hGrad)"/>
+            <text x="30" y="46" font-size="12" fill="#444">Hydrogen (s)</text>
+            
+            <ellipse cx="15" cy="64" rx="8" ry="4" fill="url(#sigmaGrad)"/>
+            <text x="30" y="68" font-size="12" fill="#444">σ MO (Symmetric)</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- 3D MOLECULE VISUALIZATION                  -->
+        <!-- ========================================== -->
+        <g id="molecule-3d">
+            <!-- Rear CH3 Group (Static, Staggered at 60 deg) -->
+            <g style="transform-origin: 400px 200px; transform: rotateY(60deg) rotateZ(60deg);">
+                <use href="#ch3" x="400" y="200" />
+            </g>
+
+            <!-- C-C Sigma Bond -->
+            <line x1="250" y1="200" x2="400" y2="200" stroke="#333" stroke-width="8" />
+
+            <!-- Sigma Molecular Orbital (Stationary) -->
+            <ellipse cx="325" cy="200" rx="105" ry="42" fill="url(#sigmaGrad)" />
+            <path d="M 325 158 Q 325 120 325 100" fill="none" stroke="#4361EE" stroke-width="1.5" stroke-dasharray="4" />
+            <text x="325" y="90" text-anchor="middle" font-size="13" font-weight="600" fill="#4361EE">Cylindrically Symmetrical σ MO</text>
+            <text x="325" y="265" text-anchor="middle" font-size="12" font-style="italic" fill="#555">sp³ - sp³ overlap</text>
+
+            <!-- Front CH3 Group (Animated Rotation) -->
+            <g style="transform-origin: 250px 200px; animation: spinFront 12s linear infinite;">
+                <use href="#ch3" x="250" y="200" />
+            </g>
+
+            <!-- Rotation Direction Arrow (3D) -->
+            <path d="M 210 130 A 60 25 0 0 1 290 130" fill="none" stroke="#7209B7" stroke-width="2" marker-end="url(#arrow)" style="transform-origin: 250px 200px; transform: rotateX(40deg);" />
+            <text x="250" y="110" text-anchor="middle" font-size="11" fill="#7209B7" font-weight="600">Free Rotation</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- NEWMAN PROJECTION INSET                    -->
+        <!-- ========================================== -->
+        <g id="newman-projection" transform="translate(660, 140)">
+            <rect x="-75" y="-85" width="150" height="170" rx="10" fill="#f8f9fa" stroke="#e0e0e0" stroke-width="1"/>
+            <text x="0" y="-65" text-anchor="middle" font-size="12" font-weight="600" fill="#333">Newman Projection</text>
+            
+            <!-- Rear Carbon Circle -->
+            <circle cx="0" cy="10" r="30" fill="#ffffff" stroke="#404040" stroke-width="2.5"/>
+
+            <!-- Rear Bonds & H's (Static, Staggered) -->
+            <g transform="rotate(60)">
+                <line x1="0" y1="-30" x2="0" y2="-55" stroke="#333" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="0" y1="30" x2="21.65" y2="42.5" stroke="#333" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="0" y1="30" x2="-21.65" y2="42.5" stroke="#333" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="0" cy="-55" r="7" fill="url(#hGrad)"/>
+                <circle cx="21.65" cy="42.5" r="7" fill="url(#hGrad)"/>
+                <circle cx="-21.65" cy="42.5" r="7" fill="url(#hGrad)"/>
+            </g>
+
+            <!-- Front Bonds & H's (Animated) -->
+            <g style="transform-origin: 0px 10px; animation: spinNewman 12s linear infinite;">
+                <line x1="0" y1="10" x2="0" y2="-45" stroke="#333" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="0" y1="10" x2="47.63" y2="37.5" stroke="#333" stroke-width="3.5" stroke-linecap="round"/>
+                <line x1="0" y1="10" x2="-47.63" y2="37.5" stroke="#333" stroke-width="3.5" stroke-linecap="round"/>
+                <circle cx="0" cy="-45" r="7" fill="url(#hGrad)"/>
+                <circle cx="47.63" cy="37.5" r="7" fill="url(#hGrad)"/>
+                <circle cx="-47.63" cy="37.5" r="7" fill="url(#hGrad)"/>
+                <!-- Front Carbon Dot -->
+                <circle cx="0" cy="10" r="3" fill="#404040"/>
+            </g>
+
+            <!-- Rotation Arrow (Newman) -->
+            <path d="M -40 -30 A 50 50 0 0 1 40 -30" fill="none" stroke="#7209B7" stroke-width="2" marker-end="url(#arrow)" />
+        </g>
+
+        <!-- ========================================== -->
+        <!-- ENERGY PROFILE GRAPH                       -->
+        <!-- ========================================== -->
+        <g id="energy-graph">
+            <!-- Grid Lines -->
+            <line x1="150" y1="340" x2="650" y2="340" stroke="#FF4444" stroke-dasharray="4" stroke-width="1" opacity="0.3" />
+            <line x1="150" y1="440" x2="650" y2="440" stroke="#4361EE" stroke-dasharray="4" stroke-width="1" opacity="0.3" />
+
+            <!-- Axes -->
+            <line x1="150" y1="450" x2="670" y2="450" stroke="#888" stroke-width="2" marker-end="url(#arrow)" />
+            <line x1="150" y1="450" x2="150" y2="310" stroke="#888" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- Axis Labels -->
+            <text x="400" y="490" text-anchor="middle" font-size="14" font-weight="600" fill="#555">Dihedral Angle (φ)</text>
+            <text x="135" y="380" text-anchor="middle" font-size="14" font-weight="600" fill="#555" transform="rotate(-90, 135, 380)">Potential Energy (Ep)</text>
+
+            <!-- X-Axis Ticks & Values -->
+            <g class="mono" font-size="12" fill="#666" text-anchor="middle">
+                <text x="150" y="468">0°</text>
+                <text x="233.3" y="468">60°</text>
+                <text x="316.6" y="468">120°</text>
+                <text x="400" y="468">180°</text>
+                <text x="483.3" y="468">240°</text>
+                <text x="566.6" y="468">300°</text>
+                <text x="650" y="468">360°</text>
+                
+                <line x1="233.3" y1="447" x2="233.3" y2="453" stroke="#888" stroke-width="1.5"/>
+                <line x1="316.6" y1="447" x2="316.6" y2="453" stroke="#888" stroke-width="1.5"/>
+                <line x1="400" y1="447" x2="400" y2="453" stroke="#888" stroke-width="1.5"/>
+                <line x1="483.3" y1="447" x2="483.3" y2="453" stroke="#888" stroke-width="1.5"/>
+                <line x1="566.6" y1="447" x2="566.6" y2="453" stroke="#888" stroke-width="1.5"/>
+                <line x1="650" y1="447" x2="650" y2="453" stroke="#888" stroke-width="1.5"/>
+            </g>
+
+            <!-- The Sine Wave Path -->
+            <path d="M 150 440 
+                     C 180 440, 203.3 340, 233.3 340 
+                     C 263.3 340, 286.6 440, 316.6 440 
+                     C 346.6 440, 370 340, 400 340 
+                     C 430 340, 453.3 440, 483.3 440 
+                     C 513.3 440, 536.6 340, 566.6 340 
+                     C 596.6 340, 620 440, 650 440" 
+                  fill="none" stroke="#7209B7" stroke-width="4" stroke-linecap="round" />
+
+            <!-- Dynamic State Labels -->
+            <text x="400" y="325" text-anchor="middle" font-size="15" font-weight="700" style="animation: highlightEclipsed 12s infinite; transform-origin: 400px 325px;">
+                Eclipsed (High Energy, ~12 kJ/mol)
+            </text>
+            <text x="400" y="430" text-anchor="middle" font-size="15" font-weight="700" style="animation: highlightStaggered 12s infinite; transform-origin: 400px 430px;">
+                Staggered (Low Energy, Stable)
+            </text>
+
+            <!-- Tracking Elements -->
+            <!-- Sweeping Vertical Line -->
+            <line x1="0" y1="340" x2="0" y2="450" stroke="#F72585" stroke-dasharray="4" stroke-width="2" opacity="0.4" style="animation: trackX 12s linear infinite;" />
+            
+            <!-- Tracking Ball -->
+            <g style="animation: trackX 12s linear infinite;">
+                <circle cx="0" cy="0" r="8" fill="#F72585" style="animation: trackY 12s ease-in-out infinite, pulseBall 2s infinite;" />
+                <circle cx="0" cy="0" r="14" fill="none" stroke="#F72585" stroke-width="2" opacity="0.5" style="animation: trackY 12s ease-in-out infinite;" />
+            </g>
+        </g>
+    </svg>
+</div>
+
+</body>
+</html>

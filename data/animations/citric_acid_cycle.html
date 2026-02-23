@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Citric Acid Cycle (Krebs Cycle)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .svg-container {
+    width: 100%;
+    max-width: 1000px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    background-color: #FFF5F5;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  text {
+    font-family: 'Inter', sans-serif;
+    user-select: none;
+  }
+
+  .mono {
+    font-family: 'Roboto Mono', monospace;
+  }
+
+  /* Static Flow Animation */
+  .flow-arrow {
+    stroke-dasharray: 6, 6;
+    animation: flow 1.5s linear infinite;
+  }
+
+  @keyframes flow {
+    to { stroke-dashoffset: -12; }
+  }
+
+  /* Entity Animations (20s Loop) */
+  .anim-acetyl {
+    animation: acetylDrop 20s linear infinite;
+  }
+  .anim-co2-1 {
+    animation: flyCO2_1 20s linear infinite;
+  }
+  .anim-nadh-1 {
+    animation: flyNADH_1 20s linear infinite;
+  }
+  .anim-co2-2 {
+    animation: flyCO2_2 20s linear infinite;
+  }
+  .anim-nadh-2 {
+    animation: flyNADH_2 20s linear infinite;
+  }
+  .anim-gtp {
+    animation: pulseGTP 20s linear infinite;
+    transform-origin: 340px 420px;
+  }
+  .anim-fadh2 {
+    animation: flyFADH2 20s linear infinite;
+  }
+  .anim-nadh-3 {
+    animation: flyNADH_3 20s linear infinite;
+  }
+
+  /* Keyframes based on 4-second intervals (20% of 20s) */
+  
+  /* 0-4s: Acetyl-CoA enters */
+  @keyframes acetylDrop {
+    0% { opacity: 0; transform: translate(340px, 20px); }
+    2% { opacity: 1; transform: translate(340px, 40px); }
+    10% { opacity: 1; transform: translate(390px, 140px); }
+    12%, 100% { opacity: 0; transform: translate(400px, 150px); }
+  }
+
+  /* 4-8s: Citrate to a-KG (CO2 and NADH produced) */
+  @keyframes flyCO2_1 {
+    0%, 20% { opacity: 0; transform: translate(440px, 190px) scale(0.5); }
+    22% { opacity: 1; transform: translate(440px, 190px) scale(1); }
+    32% { opacity: 1; transform: translate(520px, 120px) scale(1.2); }
+    35%, 100% { opacity: 0; transform: translate(540px, 100px) scale(1.2); }
+  }
+
+  @keyframes flyNADH_1 {
+    0%, 20% { opacity: 0; transform: translate(450px, 230px); }
+    22% { opacity: 1; transform: translate(450px, 230px); }
+    35% { opacity: 1; transform: translate(660px, 230px); }
+    38%, 100% { opacity: 0; transform: translate(680px, 230px); }
+  }
+
+  /* 8-12s: a-KG to Succinate (CO2, NADH, GTP produced) */
+  @keyframes flyCO2_2 {
+    0%, 40% { opacity: 0; transform: translate(470px, 320px) scale(0.5); }
+    42% { opacity: 1; transform: translate(470px, 320px) scale(1); }
+    52% { opacity: 1; transform: translate(550px, 380px) scale(1.2); }
+    55%, 100% { opacity: 0; transform: translate(570px, 400px) scale(1.2); }
+  }
+
+  @keyframes flyNADH_2 {
+    0%, 40% { opacity: 0; transform: translate(430px, 365px); }
+    42% { opacity: 1; transform: translate(430px, 365px); }
+    55% { opacity: 1; transform: translate(660px, 365px); }
+    58%, 100% { opacity: 0; transform: translate(680px, 365px); }
+  }
+
+  @keyframes pulseGTP {
+    0%, 42% { opacity: 0; transform: scale(0.5); }
+    46% { opacity: 1; transform: scale(1.2); }
+    50% { opacity: 1; transform: scale(1); }
+    55%, 100% { opacity: 0; transform: scale(1.5); }
+  }
+
+  /* 12-16s: Succinate to Malate (FADH2 produced) */
+  @keyframes flyFADH2 {
+    0%, 60% { opacity: 0; transform: translate(270px, 380px); }
+    62% { opacity: 1; transform: translate(270px, 380px); }
+    75% { opacity: 1; transform: translate(660px, 420px); }
+    78%, 100% { opacity: 0; transform: translate(680px, 420px); }
+  }
+
+  /* 16-20s: Malate to OAA (NADH produced) */
+  @keyframes flyNADH_3 {
+    0%, 80% { opacity: 0; transform: translate(225px, 250px); }
+    82% { opacity: 1; transform: translate(225px, 250px); }
+    95% { opacity: 1; transform: translate(660px, 250px); }
+    98%, 100% { opacity: 0; transform: translate(680px, 250px); }
+  }
+
+  /* Membrane Glow */
+  .membrane-glow {
+    animation: pulseMembrane 4s ease-in-out infinite alternate;
+  }
+  @keyframes pulseMembrane {
+    from { filter: drop-shadow(0 0 5px rgba(231, 76, 60, 0.5)); }
+    to { filter: drop-shadow(0 0 15px rgba(231, 76, 60, 0.9)); }
+  }
+</style>
+</head>
+<body>
+
+<div class="svg-container">
+  <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <title>Animated Citric Acid Cycle (Krebs Cycle)</title>
+    <desc>A biologically accurate, animated diagram showing the steady-state flux of the Citric Acid Cycle in the mitochondrial matrix, highlighting carbon stoichiometry and the generation of NADH/FADH2 for the Electron Transport System.</desc>
+
+    <defs>
+      <!-- Arrowheads -->
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#BDC3C7" />
+      </marker>
+      <marker id="arrow-dark" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50" />
+      </marker>
+      
+      <!-- Glow Filter for GTP -->
+      <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
+
+      <!-- Reusable Carbon Sphere -->
+      <g id="carbon">
+        <circle cx="0" cy="0" r="6" fill="#2C3E50" />
+        <circle cx="-2" cy="-2" r="2" fill="#34495E" opacity="0.5" />
+      </g>
+    </defs>
+
+    <!-- Background is handled by CSS, this is the Matrix area -->
+    <rect width="800" height="500" fill="#FFF5F5" />
+
+    <!-- Inner Mitochondrial Membrane (Cristae) -->
+    <g class="membrane-glow">
+      <path d="M 680 0 
+               C 630 20, 630 60, 680 80 
+               C 730 100, 730 140, 680 160 
+               C 630 180, 630 220, 680 240 
+               C 730 260, 730 300, 680 320 
+               C 630 340, 630 380, 680 400 
+               C 730 420, 730 460, 680 480 
+               L 680 500 L 800 500 L 800 0 Z" 
+            fill="#E74C3C" opacity="0.85" />
+      <path d="M 680 0 
+               C 630 20, 630 60, 680 80 
+               C 730 100, 730 140, 680 160 
+               C 630 180, 630 220, 680 240 
+               C 730 260, 730 300, 680 320 
+               C 630 340, 630 380, 680 400 
+               C 730 420, 730 460, 680 480 
+               L 680 500" 
+            fill="none" stroke="#C0392B" stroke-width="4" />
+    </g>
+    
+    <!-- Membrane Label -->
+    <text x="730" y="250" fill="#FFF5F5" font-weight="700" font-size="16" transform="rotate(90, 730, 250)" text-anchor="middle" letter-spacing="2">INNER MITOCHONDRIAL MEMBRANE</text>
+    
+    <!-- ETS Destination Indicators -->
+    <g transform="translate(610, 250)">
+      <path d="M 0 0 L 40 0" stroke="#2C3E50" stroke-width="2" marker-end="url(#arrow-dark)"/>
+      <text x="20" y="-8" text-anchor="middle" font-size="11" font-weight="600" fill="#2C3E50">To ETS</text>
+    </g>
+    <g transform="translate(610, 365)">
+      <path d="M 0 0 L 40 0" stroke="#2C3E50" stroke-width="2" marker-end="url(#arrow-dark)"/>
+      <text x="20" y="-8" text-anchor="middle" font-size="11" font-weight="600" fill="#2C3E50">To ETS</text>
+    </g>
+
+    <!-- Title and Subtitle -->
+    <text x="30" y="45" font-weight="700" font-size="24" fill="#2C3E50">Citric Acid Cycle (Krebs Cycle)</text>
+    <text x="30" y="70" font-weight="600" font-size="14" fill="#E74C3C">Location: Mitochondrial Matrix</text>
+
+    <!-- CYCLE ARROWS (Static Background) -->
+    <g fill="none" stroke="#BDC3C7" stroke-width="3" marker-end="url(#arrow)">
+      <!-- OAA to Citrate -->
+      <path d="M 280 180 A 140 140 0 0 1 390 180" />
+      <!-- Citrate to a-KG -->
+      <path d="M 430 190 A 140 140 0 0 1 470 270" />
+      <!-- a-KG to Succinate -->
+      <path d="M 460 320 A 140 140 0 0 1 370 410" />
+      <!-- Succinate to Malate -->
+      <path d="M 310 410 A 140 140 0 0 1 230 350" />
+      <!-- Malate to OAA -->
+      <path d="M 210 310 A 140 140 0 0 1 240 190" />
+    </g>
+
+    <!-- CYCLE ARROWS (Animated Flow) -->
+    <g fill="none" stroke="#7F8C8D" stroke-width="3" class="flow-arrow">
+      <path d="M 280 180 A 140 140 0 0 1 390 180" />
+      <path d="M 430 190 A 140 140 0 0 1 470 270" />
+      <path d="M 460 320 A 140 140 0 0 1 370 410" />
+      <path d="M 310 410 A 140 140 0 0 1 230 350" />
+      <path d="M 210 310 A 140 140 0 0 1 240 190" />
+    </g>
+
+    <!-- CARBON POOLS (Stationary Intermediates) -->
+    
+    <!-- Oxaloacetate (OAA) - 4C -->
+    <g transform="translate(260, 170)">
+      <use href="#carbon" x="-21" y="0" />
+      <use href="#carbon" x="-7" y="0" />
+      <use href="#carbon" x="7" y="0" />
+      <use href="#carbon" x="21" y="0" />
+      <text x="0" y="-15" text-anchor="middle" font-weight="700" font-size="14" fill="#2C3E50">Oxaloacetate</text>
+      <text x="0" y="20" text-anchor="middle" font-weight="600" font-size="12" fill="#7F8C8D">(4C)</text>
+    </g>
+
+    <!-- Citrate - 6C -->
+    <g transform="translate(420, 170)">
+      <use href="#carbon" x="-35" y="0" />
+      <use href="#carbon" x="-21" y="0" />
+      <use href="#carbon" x="-7" y="0" />
+      <use href="#carbon" x="7" y="0" />
+      <use href="#carbon" x="21" y="0" />
+      <use href="#carbon" x="35" y="0" />
+      <text x="0" y="-15" text-anchor="middle" font-weight="700" font-size="14" fill="#2C3E50">Citrate</text>
+      <text x="0" y="20" text-anchor="middle" font-weight="600" font-size="12" fill="#7F8C8D">(6C)</text>
+    </g>
+
+    <!-- alpha-Ketoglutarate - 5C -->
+    <g transform="translate(470, 300)">
+      <use href="#carbon" x="-28" y="0" />
+      <use href="#carbon" x="-14" y="0" />
+      <use href="#carbon" x="0" y="0" />
+      <use href="#carbon" x="14" y="0" />
+      <use href="#carbon" x="28" y="0" />
+      <text x="45" y="4" font-weight="700" font-size="14" fill="#2C3E50">α-Ketoglutarate</text>
+      <text x="45" y="20" font-weight="600" font-size="12" fill="#7F8C8D">(5C)</text>
+    </g>
+
+    <!-- Succinate - 4C -->
+    <g transform="translate(340, 420)">
+      <use href="#carbon" x="-21" y="0" />
+      <use href="#carbon" x="-7" y="0" />
+      <use href="#carbon" x="7" y="0" />
+      <use href="#carbon" x="21" y="0" />
+      <text x="0" y="22" text-anchor="middle" font-weight="700" font-size="14" fill="#2C3E50">Succinate</text>
+      <text x="0" y="38" text-anchor="middle" font-weight="600" font-size="12" fill="#7F8C8D">(4C)</text>
+    </g>
+
+    <!-- Malate - 4C -->
+    <g transform="translate(210, 330)">
+      <use href="#carbon" x="-21" y="0" />
+      <use href="#carbon" x="-7" y="0" />
+      <use href="#carbon" x="7" y="0" />
+      <use href="#carbon" x="21" y="0" />
+      <text x="-35" y="4" text-anchor="end" font-weight="700" font-size="14" fill="#2C3E50">Malate</text>
+      <text x="-35" y="20" text-anchor="end" font-weight="600" font-size="12" fill="#7F8C8D">(4C)</text>
+    </g>
+
+    <!-- PROCESS LABELS -->
+    <text x="490" y="220" font-size="11" font-style="italic" fill="#7F8C8D" transform="rotate(15, 490, 220)">Decarboxylation & Dehydrogenation</text>
+    <text x="470" y="380" font-size="11" font-style="italic" fill="#7F8C8D" transform="rotate(-15, 470, 380)">Decarboxylation & Dehydrogenation</text>
+    <text x="270" y="400" font-size="11" font-style="italic" fill="#7F8C8D" transform="rotate(-30, 270, 400)">Dehydrogenation</text>
+    <text x="180" y="260" font-size="11" font-style="italic" fill="#7F8C8D" transform="rotate(30, 180, 260)">Dehydrogenation</text>
+
+    <!-- ANIMATED ENTITIES -->
+
+    <!-- 1. Acetyl-CoA Entry -->
+    <g class="anim-acetyl">
+      <use href="#carbon" x="-7" y="0" />
+      <use href="#carbon" x="7" y="0" />
+      <rect x="16" y="-8" width="32" height="16" rx="4" fill="#9B59B6" />
+      <text x="32" y="3" text-anchor="middle" font-size="10" font-weight="700" fill="#FFF" class="mono">CoA</text>
+      <text x="0" y="-15" text-anchor="middle" font-weight="700" font-size="14" fill="#2C3E50">Acetyl-CoA</text>
+      <text x="0" y="20" text-anchor="middle" font-weight="600" font-size="12" fill="#7F8C8D">(2C)</text>
+    </g>
+
+    <!-- 2. First Decarboxylation (CO2) -->
+    <g class="anim-co2-1">
+      <circle cx="-6" cy="0" r="9" fill="#BDC3C7" stroke="#95A5A6" stroke-width="1"/>
+      <circle cx="6" cy="0" r="9" fill="#BDC3C7" stroke="#95A5A6" stroke-width="1"/>
+      <text x="0" y="3" text-anchor="middle" font-size="10" font-weight="700" fill="#2C3E50" class="mono">CO₂</text>
+    </g>
+
+    <!-- 3. First NADH -->
+    <g class="anim-nadh-1">
+      <rect x="-30" y="-12" width="60" height="24" rx="12" fill="#98D8C8" stroke="#16A085" stroke-width="2"/>
+      <text x="0" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#2C3E50" class="mono">NADH</text>
+    </g>
+
+    <!-- 4. Second Decarboxylation (CO2) -->
+    <g class="anim-co2-2">
+      <circle cx="-6" cy="0" r="9" fill="#BDC3C7" stroke="#95A5A6" stroke-width="1"/>
+      <circle cx="6" cy="0" r="9" fill="#BDC3C7" stroke="#95A5A6" stroke-width="1"/>
+      <text x="0" y="3" text-anchor="middle" font-size="10" font-weight="700" fill="#2C3E50" class="mono">CO₂</text>
+    </g>
+
+    <!-- 5. Second NADH -->
+    <g class="anim-nadh-2">
+      <rect x="-30" y="-12" width="60" height="24" rx="12" fill="#98D8C8" stroke="#16A085" stroke-width="2"/>
+      <text x="0" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#2C3E50" class="mono">NADH</text>
+    </g>
+
+    <!-- 6. GTP Production -->
+    <g class="anim-gtp">
+      <circle cx="340" cy="420" r="18" fill="#F1C40F" filter="url(#glow)"/>
+      <text x="340" y="424" text-anchor="middle" font-size="11" font-weight="700" fill="#2C3E50" class="mono">GTP</text>
+    </g>
+
+    <!-- 7. FADH2 Production -->
+    <g class="anim-fadh2">
+      <rect x="-30" y="-12" width="60" height="24" rx="12" fill="#F39C12" stroke="#D35400" stroke-width="2"/>
+      <text x="0" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#FFF" class="mono">FADH₂</text>
+    </g>
+
+    <!-- 8. Third NADH -->
+    <g class="anim-nadh-3">
+      <rect x="-30" y="-12" width="60" height="24" rx="12" fill="#98D8C8" stroke="#16A085" stroke-width="2"/>
+      <text x="0" y="4" text-anchor="middle" font-size="11" font-weight="700" fill="#2C3E50" class="mono">NADH</text>
+    </g>
+
+    <!-- LEGEND -->
+    <g transform="translate(30, 350)">
+      <rect x="0" y="0" width="140" height="120" rx="6" fill="#FFFFFF" stroke="#BDC3C7" stroke-width="1" opacity="0.9"/>
+      <text x="10" y="20" font-weight="700" font-size="12" fill="#2C3E50">Key / Legend</text>
+      
+      <!-- Carbon -->
+      <use href="#carbon" x="20" y="40" />
+      <text x="35" y="44" font-size="11" fill="#2C3E50">Carbon Atom</text>
+      
+      <!-- NADH -->
+      <rect x="10" y="55" width="20" height="10" rx="5" fill="#98D8C8" stroke="#16A085" stroke-width="1"/>
+      <text x="35" y="64" font-size="11" fill="#2C3E50">NADH + H⁺</text>
+      
+      <!-- FADH2 -->
+      <rect x="10" y="75" width="20" height="10" rx="5" fill="#F39C12" stroke="#D35400" stroke-width="1"/>
+      <text x="35" y="84" font-size="11" fill="#2C3E50">FADH₂</text>
+      
+      <!-- CO2 -->
+      <circle cx="15" cy="100" r="4" fill="#BDC3C7" stroke="#95A5A6" stroke-width="1"/>
+      <circle cx="21" cy="100" r="4" fill="#BDC3C7" stroke="#95A5A6" stroke-width="1"/>
+      <text x="35" y="104" font-size="11" fill="#2C3E50">Carbon Dioxide</text>
+    </g>
+
+  </svg>
+</div>
+
+</body>
+</html>
