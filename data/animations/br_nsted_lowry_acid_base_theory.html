@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brønsted-Lowry Acid-Base Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title { font-size: 24px; font-weight: 700; fill: #212529; }
+        .formula { font-family: 'Roboto Mono', monospace; font-size: 18px; fill: #343a40; font-weight: 500; }
+        .label { font-size: 15px; font-weight: 600; fill: #495057; }
+        .note { font-size: 13px; font-style: italic; fill: #6c757d; }
+        .legend-text { font-size: 12px; fill: #495057; }
+        .charge-text { font-size: 16px; font-weight: bold; font-family: 'Roboto Mono', monospace; }
+
+        /* Animations */
+        @keyframes moveBase {
+            0%, 20% { transform: translate(600px, 240px); }
+            30%, 60% { transform: translate(500px, 240px); }
+            75%, 90% { transform: translate(650px, 240px); }
+            90.1%, 100% { transform: translate(600px, 240px); }
+        }
+
+        @keyframes moveH {
+            0%, 60% { transform: translateX(0); }
+            75%, 90% { transform: translateX(150px); }
+            90.1%, 100% { transform: translateX(0); }
+        }
+
+        @keyframes moveEthanol {
+            0%, 60% { transform: translateX(0); }
+            75%, 90% { transform: translateX(-30px); }
+            90.1%, 100% { transform: translateX(0); }
+        }
+
+        @keyframes drawArrow {
+            0%, 30% { stroke-dashoffset: 150; opacity: 0; }
+            35%, 40% { stroke-dashoffset: 0; opacity: 1; }
+            45%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes fadeOut {
+            0%, 40% { opacity: 1; }
+            50%, 90% { opacity: 0; }
+            95%, 100% { opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            0%, 40% { opacity: 0; }
+            50%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes globalFade {
+            0%, 85% { opacity: 1; }
+            90%, 95% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* Applying Animations */
+        .base-group { animation: moveBase 10s ease-in-out infinite; }
+        .acid-h { animation: moveH 10s ease-in-out infinite; }
+        .ethanol-group { animation: moveEthanol 10s ease-in-out infinite; }
+        
+        .mech-arrow {
+            stroke-dasharray: 150;
+            stroke-dashoffset: 150;
+            animation: drawArrow 10s ease-in-out infinite;
+        }
+
+        .reactant-only { animation: fadeOut 10s ease-in-out infinite; }
+        .product-only { animation: fadeIn 10s ease-in-out infinite; }
+        .scene-wrapper { animation: globalFade 10s linear infinite; }
+
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Gradients for 2.5D Atom Effect -->
+            <radialGradient id="gradC" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#777777"/>
+                <stop offset="100%" stop-color="#222222"/>
+            </radialGradient>
+            <radialGradient id="gradO" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#FF8888"/>
+                <stop offset="100%" stop-color="#CC0000"/>
+            </radialGradient>
+            <radialGradient id="gradH" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#FFFFFF"/>
+                <stop offset="100%" stop-color="#AAAAAA"/>
+            </radialGradient>
+            <radialGradient id="gradB" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#A239EA"/>
+                <stop offset="100%" stop-color="#4A047A"/>
+            </radialGradient>
+
+            <!-- Drop Shadow Filter -->
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.25"/>
+            </filter>
+
+            <!-- Arrowheads -->
+            <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00" />
+            </marker>
+            <marker id="arrowhead-gray" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#888888" />
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Title -->
+        <text x="400" y="45" class="title" text-anchor="middle">Brønsted-Lowry Theory: Proton Transfer in Alcohols</text>
+
+        <!-- Legend -->
+        <g transform="translate(630, 20)">
+            <rect x="0" y="0" width="150" height="95" rx="8" fill="#ffffff" stroke="#dee2e6" stroke-width="1" filter="url(#shadow)"/>
+            <text x="75" y="18" class="legend-text" font-weight="bold" text-anchor="middle">Legend</text>
+            
+            <circle cx="15" cy="35" r="5" fill="url(#gradC)"/>
+            <text x="28" y="39" class="legend-text">Carbon</text>
+            
+            <circle cx="85" cy="35" r="5" fill="url(#gradO)"/>
+            <text x="98" y="39" class="legend-text">Oxygen</text>
+            
+            <circle cx="15" cy="55" r="5" fill="url(#gradH)"/>
+            <text x="28" y="59" class="legend-text">Hydrogen</text>
+            
+            <circle cx="85" cy="55" r="5" fill="url(#gradB)"/>
+            <text x="98" y="59" class="legend-text">Base</text>
+
+            <line x1="12" y1="75" x2="25" y2="75" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowhead-orange)"/>
+            <text x="32" y="79" class="legend-text">Electron Flow</text>
+        </g>
+
+        <!-- Inductive Effect Annotation -->
+        <g>
+            <text x="140" y="100" class="note">Electron-releasing alkyl group</text>
+            <text x="140" y="115" class="note">increases electron density on O.</text>
+            <path d="M 180,125 C 220,135 280,160 340,250" fill="none" stroke="#888888" stroke-width="1.5" stroke-dasharray="4,4" marker-end="url(#arrowhead-gray)"/>
+        </g>
+
+        <!-- MAIN ANIMATION SCENE -->
+        <g class="scene-wrapper">
+            
+            <!-- ETHANOL MOLECULE -->
+            <g class="ethanol-group">
+                <!-- Bonds -->
+                <line x1="200" y1="280" x2="280" y2="230" stroke="#555555" stroke-width="6" stroke-linecap="round"/>
+                <line x1="280" y1="230" x2="360" y2="280" stroke="#555555" stroke-width="6" stroke-linecap="round"/>
+                
+                <!-- C1 C-H Bonds -->
+                <line x1="200" y1="280" x2="150" y2="280" stroke="#555555" stroke-width="6" stroke-linecap="round"/>
+                <line x1="200" y1="280" x2="200" y2="330" stroke="#555555" stroke-width="6" stroke-linecap="round"/>
+                <line x1="200" y1="280" x2="170" y2="230" stroke="#555555" stroke-width="6" stroke-linecap="round"/>
+                
+                <!-- C2 C-H Bonds -->
+                <line x1="280" y1="230" x2="280" y2="180" stroke="#555555" stroke-width="6" stroke-linecap="round"/>
+                <line x1="280" y1="230" x2="310" y2="180" stroke="#555555" stroke-width="6" stroke-linecap="round"/>
+
+                <!-- O-H Bond (Fades out) -->
+                <line class="reactant-only" x1="360" y1="280" x2="430" y2="240" stroke="#555555" stroke-width="6" stroke-linecap="round"/>
+
+                <!-- Atoms -->
+                <!-- C1 & H's -->
+                <circle cx="150" cy="280" r="12" fill="url(#gradH)" filter="url(#shadow)"/>
+                <circle cx="200" cy="330" r="12" fill="url(#gradH)" filter="url(#shadow)"/>
+                <circle cx="170" cy="230" r="12" fill="url(#gradH)" filter="url(#shadow)"/>
+                <circle cx="200" cy="280" r="20" fill="url(#gradC)" filter="url(#shadow)"/>
+                
+                <!-- C2 & H's -->
+                <circle cx="280" cy="180" r="12" fill="url(#gradH)" filter="url(#shadow)"/>
+                <circle cx="310" cy="180" r="12" fill="url(#gradH)" filter="url(#shadow)"/>
+                <circle cx="280" cy="230" r="20" fill="url(#gradC)" filter="url(#shadow)"/>
+                
+                <!-- Oxygen -->
+                <circle cx="360" cy="280" r="18" fill="url(#gradO)" filter="url(#shadow)"/>
+
+                <!-- Oxygen Lone Pairs -->
+                <!-- Static LPs -->
+                <circle cx="345" cy="298" r="2.5" fill="#333333"/>
+                <circle cx="355" cy="305" r="2.5" fill="#333333"/>
+                <circle cx="375" cy="305" r="2.5" fill="#333333"/>
+                <circle cx="385" cy="298" r="2.5" fill="#333333"/>
+                
+                <!-- New LP (Fades in) -->
+                <g class="product-only">
+                    <circle cx="382" cy="265" r="2.5" fill="#333333"/>
+                    <circle cx="392" cy="255" r="2.5" fill="#333333"/>
+                </g>
+
+                <!-- Oxygen Negative Charge (Fades in) -->
+                <g class="product-only">
+                    <circle cx="395" cy="315" r="11" fill="#ffffff" stroke="#FF4444" stroke-width="1.5" filter="url(#shadow)"/>
+                    <text x="395" y="321" class="charge-text" text-anchor="middle" fill="#FF4444">-</text>
+                </g>
+
+                <!-- Ethanol/Ethoxide Labels -->
+                <g class="reactant-only">
+                    <text x="250" y="390" class="formula" text-anchor="middle">CH<tspan dy="5" font-size="12">3</tspan><tspan dy="-5">CH</tspan><tspan dy="5" font-size="12">2</tspan><tspan dy="-5">OH</tspan></text>
+                    <text x="250" y="415" class="label" text-anchor="middle" fill="#0077b6">Proton Donor (Acid)</text>
+                </g>
+                <g class="product-only">
+                    <text x="250" y="390" class="formula" text-anchor="middle">CH<tspan dy="5" font-size="12">3</tspan><tspan dy="-5">CH</tspan><tspan dy="5" font-size="12">2</tspan><tspan dy="-5">O</tspan><tspan dy="-8" font-size="12">-</tspan></text>
+                    <text x="250" y="415" class="label" text-anchor="middle" fill="#d00000">Conjugate Base</text>
+                </g>
+            </g>
+
+            <!-- ACIDIC HYDROGEN (Moves independently) -->
+            <circle class="acid-h" cx="430" cy="240" r="12" fill="url(#gradH)" filter="url(#shadow)"/>
+
+            <!-- BASE MOLECULE -->
+            <g class="base-group">
+                <!-- B-H Bond (Fades in) -->
+                <line class="product-only" x1="-25" y1="0" x2="-70" y2="0" stroke="#555555" stroke-width="6" stroke-linecap="round"/>
+
+                <!-- Base Atom -->
+                <circle cx="0" cy="0" r="25" fill="url(#gradB)" filter="url(#shadow)"/>
+
+                <!-- Base Lone Pair (Fades out) -->
+                <g class="reactant-only">
+                    <circle cx="-35" cy="-6" r="3" fill="#333333"/>
+                    <circle cx="-35" cy="6" r="3" fill="#333333"/>
+                </g>
+
+                <!-- Base Negative Charge (Fades out) -->
+                <g class="reactant-only">
+                    <circle cx="25" cy="-25" r="11" fill="#ffffff" stroke="#7209B7" stroke-width="1.5" filter="url(#shadow)"/>
+                    <text x="25" y="-19" class="charge-text" text-anchor="middle" fill="#7209B7">-</text>
+                </g>
+
+                <!-- Base/Conjugate Acid Labels -->
+                <g class="reactant-only">
+                    <text x="0" y="150" class="formula" text-anchor="middle">B<tspan dy="-8" font-size="12">-</tspan></text>
+                    <text x="0" y="175" class="label" text-anchor="middle" fill="#d00000">Proton Acceptor (Base)</text>
+                </g>
+                <g class="product-only">
+                    <text x="0" y="150" class="formula" text-anchor="middle">BH</text>
+                    <text x="0" y="175" class="label" text-anchor="middle" fill="#0077b6">Conjugate Acid</text>
+                </g>
+            </g>
+
+            <!-- MECHANISTIC ARROWS -->
+            <!-- Arrow 1: Base Lone Pair to Hydrogen -->
+            <path class="mech-arrow" d="M 465,232 C 455,200 440,200 432,225" fill="none" stroke="#F77F00" stroke-width="3" stroke-linecap="round" marker-end="url(#arrowhead-orange)"/>
+            
+            <!-- Arrow 2: O-H Bond to Oxygen -->
+            <path class="mech-arrow" d="M 395,255 C 385,230 370,240 362,265" fill="none" stroke="#F77F00" stroke-width="3" stroke-linecap="round" marker-end="url(#arrowhead-orange)"/>
+
+        </g>
+    </svg>
+</div>
+
+</body>
+</html>

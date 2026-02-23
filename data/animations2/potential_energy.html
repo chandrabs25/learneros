@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Molecular Potential Well</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            overflow: hidden;
+            color: #333;
+        }
+
+        #scene-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.03);
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            color: #1a1a1a;
+            line-height: 1.3;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0;
+            margin-bottom: 25px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            border: 1px solid rgba(255, 255, 255, 1);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        #testY::-webkit-slider-thumb { background: #FF3366; box-shadow: 0 2px 5px rgba(255, 51, 102, 0.4); }
+        #temp::-webkit-slider-thumb { background: #F77F00; box-shadow: 0 2px 5px rgba(247, 127, 0, 0.4); }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            pointer-events: none;
+            min-width: 250px;
+        }
+
+        .formula-row {
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .formula-row:last-child {
+            margin-bottom: 0;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+            color: #555;
+            display: block;
+        }
+
+        .math {
+            font-family: 'Times New Roman', serif;
+            font-size: 1.2rem;
+            font-style: italic;
+        }
+
+        .val-mono {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        #pe-val { color: #7209B7; }
+        #f-val { color: #F77F00; }
+
+        #graph-container {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 350px;
+            height: 220px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #graph-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #444;
+        }
+
+        canvas#pe-graph {
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.8rem;
+            margin-top: auto;
+            justify-content: center;
+            padding-top: 10px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    </style>
+</head>
+<body>
+
+    <div id="scene-container">
+        <div id="formula-card">
+            <div class="formula-row">
+                <span class="math">U<sub>total</sub></span>
+                <span class="val-mono" id="pe-val">-0.00 eV</span>
+            </div>
+            <div class="formula-row">
+                <span class="math">F<sub>net</sub></span>
+                <span class="val-mono" id="f-val">0.00 pN</span>
+            </div>
+            <div class="formula-row">
+                Work done to reach surface:<br>
+                <span class="math" style="color:#FF3366; font-weight:bold;">W = &Delta;U</span>
+            </div>
+        </div>
+
+        <div id="graph-container">
+            <div id="graph-title">Potential Energy vs. Y-Position</div>
+            <canvas id="pe-graph"></canvas>
+            <div class="legend">
+                <div class="legend-item"><div class="dot" style="background:#A2D2FF;"></div>Surface</div>
+                <div class="legend-item"><div class="dot" style="background:#FF3366;"></div>Test Molecule</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>The Molecular Potential Well</h1>
+        <p class="subtitle">From Bulk Liquid to Surface Tension</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Test Molecule Y-Position</label>
+                <span class="value-display" id="testY-val">-2.00</span>
+            </div>
+            <input type="range" id="testY" min="-5.0" max="5.0" step="0.01" value="-2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Interaction Strength (&epsilon;)</label>
+                <span class="value-display" id="epsilon-val">1.0</span>
+            </div>
+            <input type="range" id="epsilon" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Molecular Diameter (&sigma;)</label>
+                <span class="value-display" id="sigma-val">1.0</span>
+            </div>
+            <input type="range" id="sigma" min="0.8" max="1.2" step="0.05" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Temperature (Jiggle)</label>
+                <span class="value-display" id="temp-val">0.10</span>
+            </div>
+            <input type="range" id="temp" min="0" max="0.5" step="0.01" value="0.1">
+        </div>
+        
+        <div style="margin-top: auto; font-size: 0.8rem; color: #777; line-height: 1.4;">
+            <strong>Instructions:</strong><br>
+            Drag the Y-Position slider to move the red molecule from the bulk liquid (bottom) to the surface (y=0) and into the vapor.<br><br>
+            Observe how the Potential Energy (U) increases (becomes less negative) as it loses neighbors, illustrating the origin of <strong>Surface Tension</strong>.
+        </div>
+    </div>
+
+    <script>
+        // --- Physics & State Variables ---
+        let params = {
+            epsilon: 1.0,
+            sigma: 1.0,
+            testY: -2.0,
+            temp: 0.1
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('scene-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.03);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(12, 5, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, -1.5, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 15, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xaaddff, 0.3);
+        fillLight.position.set(-10, 5, -10);
+        scene.add(fillLight);
+
+        // --- Objects ---
+        
+        // 1. Surface Plane
+        const planeGeo = new THREE.PlaneGeometry(30, 30);
+        const planeMat = new THREE.MeshStandardMaterial({ 
+            color: 0xA2D2FF, 
+            transparent: true, 
+            opacity: 0.3,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const surfacePlane = new THREE.Mesh(planeGeo, planeMat);
+        surfacePlane.rotation.x = -Math.PI / 2;
+        surfacePlane.position.y = 0;
+        surfacePlane.receiveShadow = true;
+        scene.add(surfacePlane);
+
+        // Grid helper for surface
+        const gridHelper = new THREE.GridHelper(30, 30, 0xffffff, 0xffffff);
+        gridHelper.position.y = 0.01;
+        gridHelper.material.opacity = 0.2;
+        gridHelper.material.transparent = true;
+        scene.add(gridHelper);
+
+        // 2. Bulk Molecules (InstancedMesh)
+        // Create a 6x6x4 grid. Centered around x=0, z=0, but offset so test molecule falls in an interstitial site.
+        const gridX = 6, gridZ = 6, gridY = 4;
+        const spacing = 1.2;
+        const numBulk = gridX * gridZ * gridY;
+        
+        const sphereGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        const bulkMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4361EE, 
+            roughness: 0.3, 
+            metalness: 0.1 
+        });
+        
+        const instancedBulk = new THREE.InstancedMesh(sphereGeo, bulkMat, numBulk);
+        instancedBulk.castShadow = true;
+        instancedBulk.receiveShadow = true;
+        scene.add(instancedBulk);
+
+        const basePositions = [];
+        let idx = 0;
+        const offsetX = (gridX - 1) * spacing / 2;
+        const offsetZ = (gridZ - 1) * spacing / 2;
+        
+        for(let y=0; y<gridY; y++) {
+            for(let x=0; x<gridX; x++) {
+                for(let z=0; z<gridZ; z++) {
+                    let px = x * spacing - offsetX;
+                    let pz = z * spacing - offsetZ;
+                    let py = - (y + 1) * spacing; // Layers below surface
+                    basePositions.push(new THREE.Vector3(px, py, pz));
+                    
+                    let dummy = new THREE.Object3D();
+                    dummy.position.set(px, py, pz);
+                    dummy.updateMatrix();
+                    instancedBulk.setMatrixAt(idx, dummy.matrix);
+                    idx++;
+                }
+            }
+        }
+        instancedBulk.instanceMatrix.needsUpdate = true;
+
+        // 3. Test Molecule
+        const testGeo = new THREE.SphereGeometry(0.45, 32, 32);
+        const testMat = new THREE.MeshStandardMaterial({ 
+            color: 0xFF3366, 
+            roughness: 0.2, 
+            metalness: 0.2,
+            emissive: 0xFF3366,
+            emissiveIntensity: 0.2
+        });
+        const testMolecule = new THREE.Mesh(testGeo, testMat);
+        testMolecule.castShadow = true;
+        scene.add(testMolecule);
+
+        // 4. Interaction Radius Sphere
+        const interactionGeo = new THREE.SphereGeometry(1, 32, 32);
+        const interactionMat = new THREE.MeshBasicMaterial({
+            color: 0x7209B7,
+            transparent: true,
+            opacity: 0.08,
+            depthWrite: false,
+            wireframe: true
+        });
+        const interactionSphere = new THREE.Mesh(interactionGeo, interactionMat);
+        scene.add(interactionSphere);
+
+        // 5. Force Arrow
+        const arrowDir = new THREE.Vector3(0, 1, 0);
+        const arrowOrigin = new THREE.Vector3(0, 0, 0);
+        const forceArrow = new THREE.ArrowHelper(arrowDir, arrowOrigin, 1, 0xF77F00, 0.4, 0.2);
+        scene.add(forceArrow);
+
+        // --- UI Listeners ---
+        const uiElements = ['testY', 'epsilon', 'sigma', 'temp'];
+        uiElements.forEach(id => {
+            const el = document.getElementById(id);
+            const valEl = document.getElementById(`${id}-val`);
+            el.addEventListener('input', (e) => {
+                params[id] = parseFloat(e.target.value);
+                valEl.innerText = params[id].toFixed(id === 'epsilon' || id === 'sigma' ? 2 : 2);
+                if(id === 'epsilon' || id === 'sigma') {
+                    recalcGraphCurve();
+                }
+            });
+        });
+
+        // --- Graph Setup ---
+        const canvas = document.getElementById('pe-graph');
+        const ctx = canvas.getContext('2d');
+        let graphCurve = [];
+        
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            // Subtract padding and title height roughly
+            canvas.width = rect.width - 30; 
+            canvas.height = rect.height - 70;
+            recalcGraphCurve();
+        }
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            resizeCanvas();
+        });
+
+        // --- Physics Calculations ---
+        function calculateLennardJones(r, eps, sig) {
+            if (r < 0.5) r = 0.5; // Prevent singularity
+            const sr = sig / r;
+            const sr6 = Math.pow(sr, 6);
+            const sr12 = sr6 * sr6;
+            const u = 4 * eps * (sr12 - sr6);
+            const fMag = (24 * eps / r) * (2 * sr12 - sr6);
+            return { u, fMag };
+        }
+
+        function recalcGraphCurve() {
+            graphCurve = [];
+            const cutoff = 3 * params.sigma;
+            for(let y = -5; y <= 5; y += 0.1) {
+                let totalU = 0;
+                let testPos = new THREE.Vector3(0, y, 0);
+                for(let i=0; i<numBulk; i++) {
+                    let r = testPos.distanceTo(basePositions[i]);
+                    if(r < cutoff) {
+                        totalU += calculateLennardJones(r, params.epsilon, params.sigma).u;
+                    }
+                }
+                graphCurve.push({ y: y, u: totalU });
+            }
+        }
+
+        function drawGraph(currentY, currentU) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const padX = 10;
+            const padY = 10;
+            const w = canvas.width - padX * 2;
+            const h = canvas.height - padY * 2;
+
+            // Find min/max for scaling
+            let minU = 0, maxU = 0;
+            graphCurve.forEach(pt => {
+                if(pt.u < minU) minU = pt.u;
+                if(pt.u > maxU) maxU = pt.u;
+            });
+            // Fix maxU slightly above 0 for visual clarity
+            maxU = 2; 
+            if(minU > -5) minU = -5; // Ensure minimum depth is shown
+
+            const mapX = (y) => padX + ((y + 5) / 10) * w;
+            const mapY = (u) => padY + h - ((u - minU) / (maxU - minU)) * h;
+
+            // Draw Axes
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            // Y=0 line (Surface marker on X axis)
+            let surfaceX = mapX(0);
+            ctx.moveTo(surfaceX, padY);
+            ctx.lineTo(surfaceX, padY + h);
+            ctx.stroke();
+
+            // U=0 line
+            let zeroY = mapY(0);
+            ctx.beginPath();
+            ctx.moveTo(padX, zeroY);
+            ctx.lineTo(padX + w, zeroY);
+            ctx.stroke();
+
+            // Draw Curve
+            ctx.strokeStyle = '#4361EE';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            graphCurve.forEach((pt, i) => {
+                let cx = mapX(pt.y);
+                let cy = mapY(pt.u);
+                if(i === 0) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+            });
+            ctx.stroke();
+
+            // Draw Current Dot
+            let dotX = mapX(currentY);
+            let dotY = mapY(currentU);
+            ctx.fillStyle = '#FF3366';
+            ctx.beginPath();
+            ctx.arc(dotX, dotY, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // --- Animation Loop ---
+        const dummy = new THREE.Object3D();
+        const currentBulkPositions = new Array(numBulk).fill(0).map(()=>new THREE.Vector3());
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 1. Jiggle Bulk Molecules
+            let time = performance.now() * 0.001;
+            for(let i=0; i<numBulk; i++) {
+                let bp = basePositions[i];
+                let dx = (Math.sin(time * 5 + i) + Math.random() - 0.5) * params.temp * 0.5;
+                let dy = (Math.cos(time * 4 + i*2) + Math.random() - 0.5) * params.temp * 0.5;
+                let dz = (Math.sin(time * 6 + i*3) + Math.random() - 0.5) * params.temp * 0.5;
+                
+                currentBulkPositions[i].set(bp.x + dx, bp.y + dy, bp.z + dz);
+                
+                dummy.position.copy(currentBulkPositions[i]);
+                dummy.updateMatrix();
+                instancedBulk.setMatrixAt(i, dummy.matrix);
+            }
+            instancedBulk.instanceMatrix.needsUpdate = true;
+
+            // 2. Update Test Molecule & Interaction Sphere
+            testMolecule.position.set(0, params.testY, 0);
+            interactionSphere.position.copy(testMolecule.position);
+            const cutoff = 3 * params.sigma;
+            interactionSphere.scale.setScalar(cutoff);
+
+            // 3. Calculate Physics
+            let totalU = 0;
+            let netForce = new THREE.Vector3(0,0,0);
+            let rVec = new THREE.Vector3();
+
+            for(let i=0; i<numBulk; i++) {
+                rVec.subVectors(testMolecule.position, currentBulkPositions[i]);
+                let r = rVec.length();
+
+                if(r < cutoff) {
+                    let lj = calculateLennardJones(r, params.epsilon, params.sigma);
+                    totalU += lj.u;
+                    
+                    // Force vector: fMag is positive for repulsion, negative for attraction.
+                    // rVec points FROM bulk TO test.
+                    // If attractive (fMag < 0), force on test points TOWARDS bulk (-rVec direction).
+                    // So netForce += rVec.normalize() * fMag works perfectly.
+                    rVec.normalize().multiplyScalar(lj.fMag);
+                    netForce.add(rVec);
+                }
+            }
+
+            // 4. Update Force Arrow
+            let forceLen = netForce.length();
+            if(forceLen > 0.1) {
+                forceArrow.setDirection(netForce.clone().normalize());
+                // Scale arrow length for visualization, cap it
+                let visualLen = Math.min(forceLen * 0.2, 3);
+                forceArrow.setLength(visualLen, visualLen*0.2, visualLen*0.1);
+                forceArrow.position.copy(testMolecule.position);
+                forceArrow.visible = true;
+            } else {
+                forceArrow.visible = false;
+            }
+
+            // 5. Update UI
+            document.getElementById('pe-val').innerText = totalU.toFixed(2) + ' eV';
+            document.getElementById('f-val').innerText = forceLen.toFixed(2) + ' pN';
+
+            // 6. Draw Graph
+            drawGraph(params.testY, totalU);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        resizeCanvas();
+        animate();
+
+    </script>
+</body>
+</html>

@@ -118,6 +118,26 @@ interface SubsectionInsight {
     concept_name: string | null;
 }
 
+interface ExplainState {
+    loading: boolean;
+    text?: string;
+    points?: string[];
+    error?: string;
+}
+
+interface TestState {
+    loading: boolean;
+    question?: string;
+    options?: Record<string, string>;
+    correct_answer?: string;
+    explanation?: string;
+    selected?: string;
+    evaluating?: boolean;
+    feedback?: string;
+    done?: boolean;
+    error?: string;
+}
+
 interface TutorMessage {
     role: "user" | "assistant";
     text: string;
@@ -143,6 +163,9 @@ export default function SectionViewerPage() {
     const [insightsLoading, setInsightsLoading] = useState(false);
     const [insightsError, setInsightsError] = useState("");
     const [subsectionInsights, setSubsectionInsights] = useState<SubsectionInsight[]>([]);
+    const [subsectionInsightCount, setSubsectionInsightCount] = useState(0);
+    const [explainById, setExplainById] = useState<Record<string, ExplainState>>({});
+    const [testById, setTestById] = useState<Record<string, TestState>>({});
     const [tutorOpen, setTutorOpen] = useState(false);
     const [tutorSessionId, setTutorSessionId] = useState<string>("");
     const [tutorInput, setTutorInput] = useState("");
@@ -199,16 +222,22 @@ export default function SectionViewerPage() {
 
     const current = subsections[currentIndex];
 
-    const loadSubsectionInsights = async () => {
+    const loadSubsectionInsights = async (opts?: { silent?: boolean }) => {
+        const silent = Boolean(opts?.silent);
         if (!current?.id) return;
         if (!user) {
             setSubsectionInsights([]);
-            setInsightsError("Sign in to view your subsection insights.");
-            setInsightsLoading(false);
+            setSubsectionInsightCount(0);
+            if (!silent) {
+                setInsightsError("Sign in to view your subsection insights.");
+                setInsightsLoading(false);
+            }
             return;
         }
-        setInsightsLoading(true);
-        setInsightsError("");
+        if (!silent) {
+            setInsightsLoading(true);
+            setInsightsError("");
+        }
         try {
             const token = await getIdToken();
             const headers: Record<string, string> = {};
@@ -219,12 +248,121 @@ export default function SectionViewerPage() {
             );
             const data = await res.json();
             if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
-            setSubsectionInsights(Array.isArray(data) ? data : []);
+            const parsed = Array.isArray(data) ? data : [];
+            setSubsectionInsights(parsed);
+            setSubsectionInsightCount(parsed.length);
+            const visibleIds = new Set(parsed.map((ins) => ins.id));
+            setExplainById((prev) =>
+                Object.fromEntries(Object.entries(prev).filter(([id]) => visibleIds.has(id)))
+            );
+            setTestById((prev) =>
+                Object.fromEntries(Object.entries(prev).filter(([id]) => visibleIds.has(id)))
+            );
         } catch (e: unknown) {
             setSubsectionInsights([]);
-            setInsightsError(e instanceof Error ? e.message : "Failed to load insights.");
+            setSubsectionInsightCount(0);
+            if (!silent) {
+                setInsightsError(e instanceof Error ? e.message : "Failed to load insights.");
+            }
         } finally {
-            setInsightsLoading(false);
+            if (!silent) {
+                setInsightsLoading(false);
+            }
+        }
+    };
+
+    const runExplain = async (insightId: string) => {
+        setExplainById((prev) => ({ ...prev, [insightId]: { loading: true } }));
+        try {
+            const token = await getIdToken();
+            if (!token) throw new Error("Sign in required.");
+            const res = await fetch(`${API_URL}/api/students/me/insights/${encodeURIComponent(insightId)}/explain`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+            setExplainById((prev) => ({
+                ...prev,
+                [insightId]: {
+                    loading: false,
+                    text: data.explanation || "",
+                    points: Array.isArray(data.key_points) ? data.key_points : [],
+                },
+            }));
+        } catch (e: unknown) {
+            setExplainById((prev) => ({
+                ...prev,
+                [insightId]: { loading: false, error: e instanceof Error ? e.message : "Failed to explain." },
+            }));
+        }
+    };
+
+    const runTest = async (insightId: string) => {
+        setTestById((prev) => ({ ...prev, [insightId]: { loading: true } }));
+        try {
+            const token = await getIdToken();
+            if (!token) throw new Error("Sign in required.");
+            const res = await fetch(`${API_URL}/api/students/me/insights/${encodeURIComponent(insightId)}/test/mcq`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+            setTestById((prev) => ({
+                ...prev,
+                [insightId]: {
+                    loading: false,
+                    question: data.question || "",
+                    options: data.options || {},
+                    correct_answer: data.correct_answer || "A",
+                    explanation: data.explanation || "",
+                    selected: undefined,
+                    done: false,
+                },
+            }));
+        } catch (e: unknown) {
+            setTestById((prev) => ({
+                ...prev,
+                [insightId]: { loading: false, error: e instanceof Error ? e.message : "Failed to generate test." },
+            }));
+        }
+    };
+
+    const evaluateTest = async (insightId: string) => {
+        const t = testById[insightId];
+        if (!t?.selected || !t.question || !t.options || !t.correct_answer) return;
+        setTestById((prev) => ({ ...prev, [insightId]: { ...prev[insightId], evaluating: true, error: undefined } }));
+        try {
+            const token = await getIdToken();
+            if (!token) throw new Error("Sign in required.");
+            const res = await fetch(`${API_URL}/api/students/me/insights/${encodeURIComponent(insightId)}/test/mcq/evaluate`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: t.question,
+                    options: t.options,
+                    selected: t.selected,
+                    correct_answer: t.correct_answer,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+            setTestById((prev) => ({
+                ...prev,
+                [insightId]: {
+                    ...prev[insightId],
+                    evaluating: false,
+                    feedback: data.feedback || "",
+                    done: true,
+                },
+            }));
+            await loadSubsectionInsights();
+        } catch (e: unknown) {
+            setTestById((prev) => ({
+                ...prev,
+                [insightId]: { ...prev[insightId], evaluating: false, error: e instanceof Error ? e.message : "Failed to evaluate." },
+            }));
         }
     };
 
@@ -263,7 +401,7 @@ export default function SectionViewerPage() {
         } catch (e: unknown) {
             setTutorMessages((prev) => [
                 ...prev,
-                { role: "assistant", text: e instanceof Error ? e.message : "Failed to contact AI Tutor." },
+                { role: "assistant", text: e instanceof Error ? e.message : "Failed to contact LearnerOS Tutor." },
             ]);
         } finally {
             setTutorSending(false);
@@ -276,6 +414,15 @@ export default function SectionViewerPage() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [insightsOpen, current?.id, user]);
+
+    useEffect(() => {
+        if (!current?.id) {
+            setSubsectionInsightCount(0);
+            return;
+        }
+        loadSubsectionInsights({ silent: true });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [current?.id, user]);
 
     useEffect(() => {
         if (!tutorOpen || !current?.id || !user) return;
@@ -659,7 +806,7 @@ export default function SectionViewerPage() {
                     aria-label="Open insights panel"
                 >
                     <span className="material-symbols-outlined">auto_awesome</span>
-                    <span className="section-insights-tab-label">Insights</span>
+                    <span className="section-insights-tab-label">Insights ({subsectionInsightCount})</span>
                 </button>
             )}
 
@@ -709,6 +856,133 @@ export default function SectionViewerPage() {
                                         {ins.concept_name || ins.concept_id || "General"}
                                     </div>
                                     <p className="section-insight-content">{ins.content}</p>
+                                    {(ins.type === "PARTIAL_UNDERSTANDING" || ins.type === "MISCONCEPTION") && (
+                                        <div style={{ marginTop: "0.6rem", display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
+                                            <button
+                                                onClick={() => runExplain(ins.id)}
+                                                style={{
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: "0.25rem",
+                                                    padding: "0.36rem 0.62rem",
+                                                    borderRadius: 8,
+                                                    border: "none",
+                                                    background: "#13ecda",
+                                                    color: "#042b28",
+                                                    fontWeight: 800,
+                                                    cursor: "pointer",
+                                                    fontFamily: "var(--font-display)",
+                                                    fontSize: "0.74rem",
+                                                }}
+                                            >
+                                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>bolt</span>
+                                                Explain
+                                            </button>
+                                            <button
+                                                onClick={() => runTest(ins.id)}
+                                                style={{
+                                                    display: "inline-flex",
+                                                    alignItems: "center",
+                                                    gap: "0.25rem",
+                                                    padding: "0.36rem 0.62rem",
+                                                    borderRadius: 8,
+                                                    border: "none",
+                                                    background: "#3498db",
+                                                    color: "white",
+                                                    fontWeight: 800,
+                                                    cursor: "pointer",
+                                                    fontFamily: "var(--font-display)",
+                                                    fontSize: "0.74rem",
+                                                }}
+                                            >
+                                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>quiz</span>
+                                                Test
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {explainById[ins.id] && (
+                                        <div style={{ marginTop: "0.55rem", borderRadius: 8, border: "1px solid #bae6fd", background: "#ecfeff", padding: "0.52rem 0.6rem" }}>
+                                            {explainById[ins.id].loading ? (
+                                                <p style={{ margin: 0, fontSize: "0.78rem", color: "#0f172a" }}>Generating explanation...</p>
+                                            ) : explainById[ins.id].error ? (
+                                                <p style={{ margin: 0, fontSize: "0.78rem", color: "#b91c1c" }}>{explainById[ins.id].error}</p>
+                                            ) : (
+                                                <>
+                                                    <p style={{ margin: 0, fontSize: "0.8rem", color: "#0f172a", lineHeight: 1.45 }}>{explainById[ins.id].text}</p>
+                                                    {!!explainById[ins.id].points?.length && (
+                                                        <ul style={{ margin: "0.35rem 0 0", paddingLeft: "0.95rem" }}>
+                                                            {explainById[ins.id].points!.map((p, i) => (
+                                                                <li key={i} style={{ fontSize: "0.74rem", color: "#334155", marginBottom: "0.22rem" }}>{p}</li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {testById[ins.id] && (
+                                        <div style={{ marginTop: "0.55rem", borderRadius: 8, border: "1px solid #bfdbfe", background: "#eff6ff", padding: "0.6rem" }}>
+                                            {testById[ins.id].loading ? (
+                                                <p style={{ margin: 0, fontSize: "0.78rem", color: "#0f172a" }}>Generating MCQ...</p>
+                                            ) : testById[ins.id].error ? (
+                                                <p style={{ margin: 0, fontSize: "0.78rem", color: "#b91c1c" }}>{testById[ins.id].error}</p>
+                                            ) : (
+                                                <>
+                                                    <p style={{ margin: 0, fontSize: "0.81rem", color: "#0f172a", fontWeight: 700 }}>{testById[ins.id].question}</p>
+                                                    <div style={{ display: "grid", gap: "0.28rem", marginTop: "0.45rem" }}>
+                                                        {Object.entries(testById[ins.id].options || {}).map(([k, v]) => (
+                                                            <button
+                                                                key={k}
+                                                                onClick={() => setTestById((prev) => ({ ...prev, [ins.id]: { ...prev[ins.id], selected: k } }))}
+                                                                style={{
+                                                                    textAlign: "left",
+                                                                    borderRadius: 7,
+                                                                    border: `1px solid ${(testById[ins.id].selected === k) ? "#2563eb" : "#cbd5e1"}`,
+                                                                    background: (testById[ins.id].selected === k) ? "#dbeafe" : "white",
+                                                                    padding: "0.36rem 0.45rem",
+                                                                    cursor: "pointer",
+                                                                    fontSize: "0.74rem",
+                                                                    color: "#0f172a",
+                                                                    fontFamily: "var(--font-body)",
+                                                                }}
+                                                            >
+                                                                <strong>{k}.</strong> {v}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                    <div style={{ marginTop: "0.45rem", display: "flex", gap: "0.4rem", alignItems: "center", flexWrap: "wrap" }}>
+                                                        <button
+                                                            onClick={() => evaluateTest(ins.id)}
+                                                            disabled={!testById[ins.id].selected || !!testById[ins.id].evaluating}
+                                                            style={{
+                                                                border: "none",
+                                                                borderRadius: 7,
+                                                                background: "#1d4ed8",
+                                                                color: "white",
+                                                                fontSize: "0.72rem",
+                                                                fontWeight: 800,
+                                                                padding: "0.32rem 0.62rem",
+                                                                cursor: (!testById[ins.id].selected || !!testById[ins.id].evaluating) ? "not-allowed" : "pointer",
+                                                                opacity: (!testById[ins.id].selected || !!testById[ins.id].evaluating) ? 0.6 : 1,
+                                                            }}
+                                                        >
+                                                            {testById[ins.id].evaluating ? "Checking..." : "Submit Test"}
+                                                        </button>
+                                                        {testById[ins.id].done && (
+                                                            <span style={{ fontSize: "0.7rem", color: "#065f46", fontWeight: 700 }}>
+                                                                Reconciled and saved.
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {!!testById[ins.id].feedback && (
+                                                        <p style={{ margin: "0.38rem 0 0", fontSize: "0.74rem", color: "#1e3a8a" }}>{testById[ins.id].feedback}</p>
+                                                    )}
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -720,7 +994,7 @@ export default function SectionViewerPage() {
                 <div className="section-insights-panel" style={{ right: "20rem", width: "min(32rem, calc(100vw - 2rem))" }}>
                     <div className="section-insights-panel-header">
                         <div>
-                            <div className="section-insights-panel-kicker">AI Tutor</div>
+                            <div className="section-insights-panel-kicker">LearnerOS Tutor</div>
                             <h3 className="section-insights-panel-title">{current.title}</h3>
                         </div>
                         <button
@@ -901,7 +1175,7 @@ export default function SectionViewerPage() {
                                 fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", fontFamily: "var(--font-display)",
                             }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: "1.125rem" }}>smart_toy</span>
-                                AI Tutor
+                                LearnerOS Tutor
                             </button>
                         </div>
 

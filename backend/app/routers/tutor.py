@@ -1,5 +1,5 @@
 """
-AI Tutor Router
+LearnerOS Tutor Router
 - Stateful subsection tutor chat using LangGraph
 - Context = subsection/section content + top matched active insights (if authenticated)
 """
@@ -373,7 +373,7 @@ def _node_respond(state: TutorState) -> TutorState:
         )
 
     system_prompt = (
-        "You are the student's subsection AI Tutor. "
+        "You are the student's LearnerOS subsection tutor. "
         "Teach based on section/subsection curriculum context. "
         "Use matched insights as personalized hints, not absolute truth. "
         "If uncertain, ask one clarifying question. "
@@ -445,7 +445,7 @@ def _node_respond_global(state: GlobalTutorState) -> GlobalTutorState:
         )
 
     system_prompt = (
-        "You are the student's main AI Tutor. "
+        "You are the student's main LearnerOS tutor. "
         "You are textbook-agnostic and can explain concepts generally. "
         "If matched active insights are provided, use them as personalization hints only when relevant. "
         "Do not force unrelated insights into the answer. "

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Differential Extraction Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital,wght@0,400;0,600;1,400&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        :root {
+            --anim-duration: 12s;
+        }
+
+        .funnel-system {
+            animation: shake-anim var(--anim-duration) ease-in-out infinite;
+            transform-origin: 400px 250px;
+        }
+
+        .interface-straight {
+            animation: straight-anim var(--anim-duration) linear infinite;
+        }
+
+        .interface-wavy {
+            animation: wavy-anim var(--anim-duration) linear infinite;
+        }
+
+        .solute.migrate {
+            animation: migrate-anim var(--anim-duration) ease-in-out infinite;
+        }
+
+        .solute.stay {
+            animation: stay-anim var(--anim-duration) ease-in-out infinite;
+        }
+
+        .movement-arrows {
+            animation: arrow-fade var(--anim-duration) ease-in-out infinite;
+        }
+
+        @keyframes shake-anim {
+            0%, 16.6% { transform: translate(0, 0) rotate(0deg); }
+            18%, 22%, 26%, 30% { transform: translate(-2px, -1px) rotate(-0.5deg); }
+            20%, 24%, 28%, 32% { transform: translate(2px, 1px) rotate(0.5deg); }
+            33.3%, 100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        @keyframes straight-anim {
+            0%, 16.6% { opacity: 1; }
+            16.7%, 33.2% { opacity: 0; }
+            33.3%, 100% { opacity: 1; }
+        }
+
+        @keyframes wavy-anim {
+            0%, 16.6% { opacity: 0; transform: translateX(0); }
+            18%, 22%, 26%, 30% { opacity: 1; transform: translateX(-5px); }
+            20%, 24%, 28%, 32% { opacity: 1; transform: translateX(5px); }
+            33.3%, 100% { opacity: 0; transform: translateX(0); }
+        }
+
+        @keyframes migrate-anim {
+            0%, 1% { transform: translate(0, 0); opacity: 0; }
+            2%, 50% { transform: translate(0, 0); opacity: 1; }
+            60% { transform: translate(calc(var(--dx) * 0.3), calc(var(--dy) * 0.5)); opacity: 1; }
+            65% { transform: translate(calc(var(--dx) * 0.4), calc(var(--dy) * 0.5)); opacity: 1; }
+            83.3% { transform: translate(var(--dx), var(--dy)); opacity: 1; }
+            86% { transform: translate(calc(var(--dx) + 2px), calc(var(--dy) - 1px)); opacity: 1; }
+            89% { transform: translate(calc(var(--dx) - 1px), calc(var(--dy) + 2px)); opacity: 1; }
+            92% { transform: translate(calc(var(--dx) + 1px), calc(var(--dy) + 1px)); opacity: 1; }
+            96% { transform: translate(var(--dx), var(--dy)); opacity: 1; }
+            99%, 100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+        }
+
+        @keyframes stay-anim {
+            0%, 1% { transform: translate(0, 0); opacity: 0; }
+            2%, 83.3% { transform: translate(0, 0); opacity: 1; }
+            86% { transform: translate(2px, -1px); opacity: 1; }
+            89% { transform: translate(-1px, 2px); opacity: 1; }
+            92% { transform: translate(1px, 1px); opacity: 1; }
+            96% { transform: translate(0, 0); opacity: 1; }
+            99%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes arrow-fade {
+            0%, 49% { opacity: 0; transform: translateY(10px); }
+            55%, 75% { opacity: 0.8; transform: translateY(0); }
+            80%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <title>Differential Extraction: Partitioning of a Solute</title>
+    <desc>An animation showing benzoic acid molecules migrating from an aqueous layer to an organic ether layer in a separatory funnel during differential extraction.</desc>
+
+    <defs>
+        <!-- Arrowhead Marker -->
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#7209B7" />
+        </marker>
+
+        <!-- Benzoic Acid Molecule (C6H5COOH) -->
+        <g id="benzoic">
+            <!-- Benzene Ring -->
+            <polygon points="0,-12 10.4,-6 10.4,6 0,12 -10.4,6 -10.4,-6" fill="none" stroke="#404040" stroke-width="2"/>
+            <!-- Double bonds -->
+            <line x1="-7" y1="-4" x2="-7" y2="4" stroke="#404040" stroke-width="1.5"/>
+            <line x1="1.5" y1="-9.5" x2="7.5" y2="-6" stroke="#404040" stroke-width="1.5"/>
+            <line x1="1.5" y1="9.5" x2="7.5" y2="6" stroke="#404040" stroke-width="1.5"/>
+            <!-- Bond to Carboxyl -->
+            <line x1="0" y1="-12" x2="0" y2="-24" stroke="#404040" stroke-width="2"/>
+            <!-- Carboxyl C -->
+            <circle cx="0" cy="-24" r="3.5" fill="#404040"/>
+            <!-- C=O Double Bond -->
+            <line x1="-2" y1="-24" x2="-8" y2="-32" stroke="#404040" stroke-width="2"/>
+            <line x1="2" y1="-26" x2="-4" y2="-34" stroke="#404040" stroke-width="2"/>
+            <!-- O atom (=O) -->
+            <circle cx="-8" cy="-35" r="4.5" fill="#FF4444"/>
+            <!-- C-O Single Bond -->
+            <line x1="0" y1="-24" x2="10" y2="-28" stroke="#404040" stroke-width="2"/>
+            <!-- OH O atom -->
+            <circle cx="12" cy="-29" r="4.5" fill="#FF4444"/>
+            <!-- OH H atom -->
+            <circle cx="17" cy="-31" r="2.5" fill="#CCCCCC"/>
+            <!-- Ring Carbons -->
+            <circle cx="0" cy="-12" r="3.5" fill="#404040"/>
+            <circle cx="10.4" cy="-6" r="3.5" fill="#404040"/>
+            <circle cx="10.4" cy="6" r="3.5" fill="#404040"/>
+            <circle cx="0" cy="12" r="3.5" fill="#404040"/>
+            <circle cx="-10.4" cy="6" r="3.5" fill="#404040"/>
+            <circle cx="-10.4" cy="-6" r="3.5" fill="#404040"/>
+            <!-- Hydrogens -->
+            <circle cx="15" cy="-8.5" r="2.5" fill="#CCCCCC"/>
+            <circle cx="15" cy="8.5" r="2.5" fill="#CCCCCC"/>
+            <circle cx="0" cy="17" r="2.5" fill="#CCCCCC"/>
+            <circle cx="-15" cy="8.5" r="2.5" fill="#CCCCCC"/>
+            <circle cx="-15" cy="-8.5" r="2.5" fill="#CCCCCC"/>
+        </g>
+
+        <!-- Water Pattern -->
+        <pattern id="water-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
+            <g opacity="0.4">
+                <circle cx="20" cy="20" r="3" fill="#FF4444"/>
+                <circle cx="16" cy="24" r="2" fill="#CCCCCC"/>
+                <circle cx="24" cy="24" r="2" fill="#CCCCCC"/>
+            </g>
+        </pattern>
+
+        <!-- Ether Pattern -->
+        <pattern id="ether-pattern" x="0" y="0" width="60" height="40" patternUnits="userSpaceOnUse">
+            <g opacity="0.3">
+                <circle cx="30" cy="20" r="3.5" fill="#FF4444"/>
+                <circle cx="22" cy="16" r="3" fill="#404040"/>
+                <circle cx="14" cy="22" r="3" fill="#404040"/>
+                <circle cx="38" cy="16" r="3" fill="#404040"/>
+                <circle cx="46" cy="22" r="3" fill="#404040"/>
+                <line x1="14" y1="22" x2="22" y2="16" stroke="#404040" stroke-width="1.5"/>
+                <line x1="22" y1="16" x2="30" y2="20" stroke="#404040" stroke-width="1.5"/>
+                <line x1="30" y1="20" x2="38" y2="16" stroke="#404040" stroke-width="1.5"/>
+                <line x1="38" y1="16" x2="46" y2="22" stroke="#404040" stroke-width="1.5"/>
+            </g>
+        </pattern>
+
+        <!-- Funnel Clip Path -->
+        <clipPath id="funnel-clip">
+            <path d="M 380 80 L 420 80 L 420 120 C 520 150, 530 250, 410 380 L 410 440 L 390 440 L 390 380 C 270 250, 280 150, 380 120 Z"/>
+        </clipPath>
+    </defs>
+
+    <!-- Title -->
+    <text x="400" y="40" font-size="24" font-weight="700" text-anchor="middle" fill="#212529">Differential Extraction: Partitioning of a Solute</text>
+
+    <!-- Phase Labels -->
+    <text x="240" y="170" font-size="14" font-weight="600" fill="#404040" text-anchor="end">Organic Solvent (Ether)</text>
+    <text x="240" y="190" font-size="12" fill="#6c757d" text-anchor="end">Lower Density</text>
+
+    <text x="240" y="310" font-size="14" font-weight="600" fill="#404040" text-anchor="end">Aqueous Layer (Water)</text>
+    <text x="240" y="330" font-size="12" fill="#6c757d" text-anchor="end">Higher Density</text>
+
+    <!-- Chemical Formula -->
+    <text x="560" y="240" font-family="'Roboto Mono', monospace" font-size="15" font-weight="600" fill="#404040">C₆H₅COOH</text>
+    <text x="560" y="260" font-size="13" fill="#6c757d">(Benzoic Acid)</text>
+    <path d="M 550 265 Q 520 350, 460 350" fill="none" stroke="#7209B7" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowhead)"/>
+
+    <!-- Partition Coefficient Formula -->
+    <g transform="translate(400, 475)" font-family="'Roboto Mono', monospace" font-size="16" fill="#212529">
+        <text x="-30" y="5" text-anchor="end"><tspan font-style="italic">K</tspan><tspan baseline-shift="sub" font-size="12">D</tspan> = </text>
+        <text x="45" y="-8" text-anchor="middle">[Solute]<tspan baseline-shift="sub" font-size="12">organic</tspan></text>
+        <text x="45" y="18" text-anchor="middle">[Solute]<tspan baseline-shift="sub" font-size="12">aqueous</tspan></text>
+        <line x1="-20" y1="2" x2="110" y2="2" stroke="#212529" stroke-width="1.5"/>
+    </g>
+
+    <!-- Equilibrium Arrows -->
+    <g stroke="#F77F00" stroke-width="2" fill="none">
+        <line x1="540" y1="245" x2="570" y2="245"/>
+        <polyline points="565,240 570,245 565,250" />
+        <line x1="540" y1="255" x2="570" y2="255"/>
+        <polyline points="545,250 540,255 545,260" />
+    </g>
+
+    <!-- Legend -->
+    <g transform="translate(20, 430)" font-size="12" fill="#404040">
+        <rect x="0" y="0" width="110" height="50" fill="#ffffff" stroke="#dee2e6" rx="6"/>
+        <text x="55" y="16" text-anchor="middle" font-weight="600">Atom Key</text>
+        <circle cx="15" cy="32" r="4" fill="#404040"/> <text x="25" y="36">C</text>
+        <circle cx="45" cy="32" r="4" fill="#FF4444"/> <text x="55" y="36">O</text>
+        <circle cx="75" cy="32" r="4" fill="#CCCCCC"/> <text x="85" y="36">H</text>
+    </g>
+
+    <!-- Main Animated Funnel System -->
+    <g class="funnel-system">
+        
+        <!-- Stopper -->
+        <path d="M 375 50 L 425 50 L 415 80 L 385 80 Z" fill="#e9ecef" stroke="#555" stroke-width="2"/>
+        <rect x="390" y="40" width="20" height="10" fill="#e9ecef" stroke="#555" stroke-width="2"/>
+
+        <!-- Liquid Layers (Clipped to Funnel Shape) -->
+        <g clip-path="url(#funnel-clip)">
+            <!-- Organic Layer -->
+            <rect x="250" y="120" width="300" height="130" fill="#FFFDE7" />
+            <rect x="250" y="120" width="300" height="130" fill="url(#ether-pattern)" />
+            
+            <!-- Aqueous Layer -->
+            <rect x="250" y="250" width="300" height="130" fill="#E0F2F1" />
+            <rect x="250" y="250" width="300" height="130" fill="url(#water-pattern)" />
+
+            <!-- Interface Lines -->
+            <line class="interface-straight" x1="260" y1="250" x2="540" y2="250" stroke="#adb5bd" stroke-width="2" stroke-dasharray="6 3"/>
+            <path class="interface-wavy" d="M 250 250 Q 265 240, 280 250 T 310 250 T 340 250 T 370 250 T 400 250 T 430 250 T 460 250 T 490 250 T 520 250 T 550 250" fill="none" stroke="#adb5bd" stroke-width="2"/>
+        </g>
+
+        <!-- Funnel Glass Outline -->
+        <path d="M 380 80 L 420 80 L 420 120 C 520 150, 530 250, 410 380 L 410 440 L 390 440 L 390 380 C 270 250, 280 150, 380 120 Z" fill="rgba(255,255,255,0.15)" stroke="#555" stroke-width="2"/>
+        
+        <!-- Glass Highlight -->
+        <path d="M 390 130 C 310 170, 300 250, 395 365" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+
+        <!-- Stopcock -->
+        <rect x="385" y="410" width="30" height="10" fill="#e9ecef" stroke="#555" stroke-width="2"/>
+        <polygon points="415,410 430,405 430,425 415,420" fill="#e9ecef" stroke="#555" stroke-width="2"/>
+
+        <!-- Movement Arrows (Animated) -->
+        <g class="movement-arrows" stroke="#7209B7" stroke-width="2" stroke-dasharray="4 4" fill="none">
+            <path d="M 340 280 L 340 190" marker-end="url(#arrowhead)"/>
+            <path d="M 460 280 L 460 190" marker-end="url(#arrowhead)"/>
+            <path d="M 400 290 L 400 170" marker-end="url(#arrowhead)"/>
+        </g>
+
+        <!-- Solute Molecules -->
+        <g id="solutes">
+            <!-- Migrating Molecules (80%) -->
+            <g transform="translate(380, 280)"><g class="solute migrate" style="--dx: 0px; --dy: -110px;"><use href="#benzoic"/></g></g>
+            <g transform="translate(420, 290)"><g class="solute migrate" style="--dx: -20px; --dy: -130px;"><use href="#benzoic"/></g></g>
+            <g transform="translate(350, 310)"><g class="solute migrate" style="--dx: 30px; --dy: -150px;"><use href="#benzoic"/></g></g>
+            <g transform="translate(450, 320)"><g class="solute migrate" style="--dx: -40px; --dy: -140px;"><use href="#benzoic"/></g></g>
+            <g transform="translate(390, 340)"><g class="solute migrate" style="--dx: 10px; --dy: -170px;"><use href="#benzoic"/></g></g>
+            <g transform="translate(410, 360)"><g class="solute migrate" style="--dx: -10px; --dy: -180px;"><use href="#benzoic"/></g></g>
+            <g transform="translate(330, 270)"><g class="solute migrate" style="--dx: 50px; --dy: -100px;"><use href="#benzoic"/></g></g>
+            <g transform="translate(470, 280)"><g class="solute migrate" style="--dx: -50px; --dy: -110px;"><use href="#benzoic"/></g></g>
+
+            <!-- Staying Molecules (20%) -->
+            <g transform="translate(360, 350)"><g class="solute stay"><use href="#benzoic"/></g></g>
+            <g transform="translate(440, 350)"><g class="solute stay"><use href="#benzoic"/></g></g>
+        </g>
+
+    </g>
+</svg>
+
+</body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focal Length & Lens Power Simulation</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --accent-blue: #00D1FF;
+            --accent-red: #FF3366;
+            --accent-green: #06D6A0;
+            --accent-orange: #F77F00;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Layout */
+        #sidebar {
+            width: 320px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--panel-border);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+            padding: 2rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        #main-view {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Typography & UI Elements */
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #2d3748, #4a5568);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            font-weight: 600;
+            background: rgba(0, 209, 255, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            border: 2px solid var(--accent-blue);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #focalLength::-webkit-slider-thumb {
+            border-color: var(--accent-green);
+        }
+
+        #focalLength+.control-header .control-value {
+            color: var(--accent-green);
+            background: rgba(6, 214, 160, 0.1);
+        }
+
+        #rayHeight::-webkit-slider-thumb {
+            border-color: var(--accent-red);
+        }
+
+        #rayHeight+.control-header .control-value {
+            color: var(--accent-red);
+            background: rgba(255, 51, 102, 0.1);
+        }
+
+        /* Formula Overlay */
+        #formula-card {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            z-index: 5;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .math-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .live-stats {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.5rem 1rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+        }
+
+        .stat-val {
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .val-p {
+            color: var(--accent-blue);
+        }
+
+        .val-f {
+            color: var(--accent-green);
+        }
+
+        .val-d {
+            color: var(--accent-orange);
+        }
+
+        /* 3D Labels */
+        .html-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 1rem;
+            pointer-events: none;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
+            z-index: 2;
+            transition: opacity 0.2s;
+        }
+
+        .label-f {
+            color: var(--accent-green);
+        }
+
+        .label-lens {
+            color: #00A3C4;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .label-delta {
+            color: var(--accent-orange);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+
+            #sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 40vh;
+                overflow-y: auto;
+                padding: 1rem;
+            }
+
+            #formula-card {
+                top: 1rem;
+                left: 1rem;
+                padding: 1rem;
+                min-width: 200px;
+            }
+
+            .math-display {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="sidebar">
+        <h1>Optical Power</h1>
+        <p class="subtitle">Interactive Thin Lens Simulation. Observe how focal length affects lens power and ray
+            deviation.</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Focal Length (f)</span>
+                <span class="control-value" id="val-focal">5.0 m</span>
+            </div>
+            <input type="range" id="focalLength" min="-10" max="10" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Ray Height (h)</span>
+                <span class="control-value" id="val-height">2.0 m</span>
+            </div>
+            <input type="range" id="rayHeight" min="0.2" max="3.5" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Refractive Index (n)</span>
+                <span class="control-value" id="val-index">1.50</span>
+            </div>
+            <input type="range" id="refractiveIndex" min="1.2" max="1.9" step="0.01" value="1.5">
+        </div>
+    </div>
+
+    <div id="main-view">
+        <div id="formula-card">
+            <div class="formula-title">Lens Formulas</div>
+            <div class="math-display">
+                P = 1 / f<br>
+                &delta; = arctan(h / f)
+            </div>
+            <div class="live-stats">
+                <span class="stat-label">Power (P):</span>
+                <span class="stat-val val-p" id="stat-power">+0.20 D</span>
+
+                <span class="stat-label">Focal (f):</span>
+                <span class="stat-val val-f" id="stat-focal">5.00 m</span>
+
+                <span class="stat-label">Deviation (&delta;):</span>
+                <span class="stat-val val-d" id="stat-delta">21.8&deg;</span>
+            </div>
+        </div>
+
+        <div id="canvas-container"></div>
+
+        <!-- HTML Labels for 3D Scene -->
+        <div id="label-f1" class="html-label label-f">F</div>
+        <div id="label-f2" class="html-label label-f">F'</div>
+        <div id="label-lens" class="html-label label-lens">Lens</div>
+        <div id="label-delta" class="html-label label-delta">&delta;</div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 5, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Restrict to mostly above ground
+        controls.minPolarAngle = 0.2;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
+
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-10, 10, -15);
+        scene.add(backLight);
+
+        // --- Static Elements ---
+        // Grid
+        const gridHelper = new THREE.GridHelper(60, 60, 0xd1d9e6, 0xe2e8f0);
+        gridHelper.position.y = -5;
+        scene.add(gridHelper);
+
+        // Optical Axis
+        const axisGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-30, 0, 0),
+            new THREE.Vector3(30, 0, 0)
+        ]);
+        const axisMat = new THREE.LineDashedMaterial({ color: 0x4A5568, dashSize: 0.5, gapSize: 0.3 });
+        const axisLine = new THREE.Line(axisGeo, axisMat);
+        axisLine.computeLineDistances();
+        scene.add(axisLine);
+
+        // Center Plane Indicator (Thin lens plane)
+        const planeGeo = new THREE.PlaneGeometry(0.1, 12);
+        const planeMat = new THREE.MeshBasicMaterial({ color: 0x4A5568, transparent: true, opacity: 0.2, side: THREE.DoubleSide });
+        const centerPlane = new THREE.Mesh(planeGeo, planeMat);
+        centerPlane.rotation.y = Math.PI / 2;
+        scene.add(centerPlane);
+
+        // --- Dynamic Elements ---
+
+        // 1. Lens Mesh
+        const lensRadius = 4.0;
+        // We use a cylinder with high segments and modify its vertices to create convex/concave shapes
+        const baseLensGeo = new THREE.CylinderGeometry(lensRadius, lensRadius, 1, 64, 32);
+        baseLensGeo.rotateZ(Math.PI / 2); // Align length with X axis
+
+        const lensMat = new THREE.MeshPhongMaterial({
+            color: 0x00D1FF,
+            shininess: 120,
+            opacity: 0.35,
+            transparent: true,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const lensMesh = new THREE.Mesh(baseLensGeo.clone(), lensMat);
+        scene.add(lensMesh);
+
+        // 2. Focal Points
+        const fpGeo = new THREE.SphereGeometry(0.2, 16, 16);
+        const fpMat = new THREE.MeshBasicMaterial({ color: 0x06D6A0 });
+        const f1Mesh = new THREE.Mesh(fpGeo, fpMat);
+        const f2Mesh = new THREE.Mesh(fpGeo, fpMat);
+        scene.add(f1Mesh);
+        scene.add(f2Mesh);
+
+        // 3. Rays
+        const rayMat = new THREE.LineDashedMaterial({
+            color: 0xFF3366,
+            linewidth: 2,
+            dashSize: 0.4,
+            gapSize: 0.2
+        });
+        const virtualRayMat = new THREE.LineDashedMaterial({
+            color: 0xFF3366,
+            linewidth: 1,
+            dashSize: 0.2,
+            gapSize: 0.2,
+            transparent: true,
+            opacity: 0.5
+        });
+
+        // Create line objects
+        const numRays = 3;
+        const incidentRays = [];
+        const refractedRays = [];
+        const virtualRays = [];
+
+        for (let i = 0; i < numRays; i++) {
+            const incLine = new THREE.Line(new THREE.BufferGeometry(), rayMat.clone());
+            const refLine = new THREE.Line(new THREE.BufferGeometry(), rayMat.clone());
+            const virLine = new THREE.Line(new THREE.BufferGeometry(), virtualRayMat.clone());
+
+            scene.add(incLine);
+            scene.add(refLine);
+            scene.add(virLine);
+
+            incidentRays.push(incLine);
+            refractedRays.push(refLine);
+            virtualRays.push(virLine);
+        }
+
+        // 4. Angle Arc
+        const arcMat = new THREE.LineBasicMaterial({ color: 0xF77F00, linewidth: 2 });
+        const arcLine = new THREE.Line(new THREE.BufferGeometry(), arcMat);
+        scene.add(arcLine);
+
+        // --- UI Elements & State ---
+        const fSlider = document.getElementById('focalLength');
+        const hSlider = document.getElementById('rayHeight');
+        const nSlider = document.getElementById('refractiveIndex');
+
+        const valFocal = document.getElementById('val-focal');
+        const valHeight = document.getElementById('val-height');
+        const valIndex = document.getElementById('val-index');
+
+        const statPower = document.getElementById('stat-power');
+        const statFocal = document.getElementById('stat-focal');
+        const statDelta = document.getElementById('stat-delta');
+
+        const lblF1 = document.getElementById('label-f1');
+        const lblF2 = document.getElementById('label-f2');
+        const lblLens = document.getElementById('label-lens');
+        const lblDelta = document.getElementById('label-delta');
+
+        // --- Core Logic & Update Function ---
+        function updateSimulation() {
+            let f = parseFloat(fSlider.value);
+            const h = parseFloat(hSlider.value);
+            const n = parseFloat(nSlider.value);
+
+            // Prevent f from being too close to 0 (infinity power)
+            if (f > -1.5 && f < 0) { f = -1.5; fSlider.value = f; }
+            if (f >= 0 && f < 1.5) { f = 1.5; fSlider.value = f; }
+
+            // 1. Math Updates
+            const power = 1 / f;
+            const deltaRad = Math.atan(h / f);
+            const deltaDeg = deltaRad * (180 / Math.PI);
+
+            // Simplified Lens Maker's: R = 2f(n-1)
+            const R = 2 * f * (n - 1);
+
+            // Update UI Text
+            valFocal.innerText = f.toFixed(1) + ' m';
+            valHeight.innerText = h.toFixed(1) + ' m';
+            valIndex.innerText = n.toFixed(2);
+
+            statPower.innerText = (power > 0 ? '+' : '') + power.toFixed(2) + ' D';
+            statFocal.innerText = (f > 0 ? '+' : '') + f.toFixed(2) + ' m';
+            statDelta.innerText = Math.abs(deltaDeg).toFixed(1) + '°';
+
+            // 2. Update Lens Geometry
+            const pos = baseLensGeo.attributes.position;
+            const newGeo = baseLensGeo.clone();
+            const newPos = newGeo.attributes.position;
+
+            // Clamp R for visual geometry generation to prevent math errors if R < lensRadius
+            const geoR = Math.max(Math.abs(R), lensRadius + 0.1);
+            const minThickness = 0.4;
+
+            for (let i = 0; i < pos.count; i++) {
+                let x = pos.getX(i);
+                let y = pos.getY(i);
+                let z = pos.getZ(i);
+                let r = Math.sqrt(y * y + z * z);
+
+                if (f > 0) {
+                    // Convex: Thicker in middle. Surface is part of sphere radius geoR.
+                    // Shift x based on distance from center
+                    let shift = Math.sqrt(geoR * geoR - r * r) - Math.sqrt(geoR * geoR - lensRadius * lensRadius);
+                    x = x > 0 ? shift + minThickness / 2 : -shift - minThickness / 2;
+                } else {
+                    // Concave: Thinner in middle.
+                    let shift = Math.sqrt(geoR * geoR) - Math.sqrt(geoR * geoR - r * r);
+                    x = x > 0 ? shift + minThickness / 2 : -shift - minThickness / 2;
+                }
+                newPos.setX(i, x);
+            }
+            newGeo.computeVertexNormals();
+            lensMesh.geometry.dispose();
+            lensMesh.geometry = newGeo;
+
+            // 3. Update Focal Points
+            f1Mesh.position.set(f, 0, 0);
+            f2Mesh.position.set(-f, 0, 0);
+
+            // 4. Update Rays
+            const startX = -20;
+            const endX = 20;
+            const yOffsets = [h, 0, -h];
+
+            for (let i = 0; i < numRays; i++) {
+                const currentY = yOffsets[i];
+
+                // Incident
+                const incPts = [new THREE.Vector3(startX, currentY, 0), new THREE.Vector3(0, currentY, 0)];
+                incidentRays[i].geometry.setFromPoints(incPts);
+                incidentRays[i].computeLineDistances();
+
+                // Refracted
+                // slope = -y / f
+                const slope = -currentY / f;
+                const endY = currentY + (endX * slope);
+                const refPts = [new THREE.Vector3(0, currentY, 0), new THREE.Vector3(endX, endY, 0)];
+                refractedRays[i].geometry.setFromPoints(refPts);
+                refractedRays[i].computeLineDistances();
+
+                // Virtual (Only for concave, and only top/bottom rays)
+                if (f < 0 && currentY !== 0) {
+                    // Virtual ray goes from refraction point backwards to focal point
+                    const virPts = [new THREE.Vector3(0, currentY, 0), new THREE.Vector3(f, 0, 0)];
+                    virtualRays[i].geometry.setFromPoints(virPts);
+                    virtualRays[i].computeLineDistances();
+                    virtualRays[i].visible = true;
+                } else {
+                    virtualRays[i].visible = false;
+                }
+            }
+
+            // 5. Update Angle Arc (Deviation)
+            // Draw arc at (0, h, 0)
+            const arcRadius = 1.5;
+            // Incident direction is 0 rad. Refracted direction is atan(slope)
+            const slopeTop = -h / f;
+            const angleEnd = Math.atan(slopeTop);
+
+            const curve = new THREE.EllipseCurve(
+                0, h,            // ax, aY
+                arcRadius, arcRadius, // xRadius, yRadius
+                0, angleEnd,     // aStartAngle, aEndAngle
+                angleEnd < 0,    // aClockwise
+                0                // aRotation
+            );
+
+            const arcPts = curve.getPoints(32).map(p => new THREE.Vector3(p.x, p.y, 0));
+            arcLine.geometry.setFromPoints(arcPts);
+
+            // Position Delta Label
+            const midAngle = angleEnd / 2;
+            const lblX = (arcRadius + 0.5) * Math.cos(midAngle);
+            const lblY = h + (arcRadius + 0.5) * Math.sin(midAngle);
+            lblDelta.pos = new THREE.Vector3(lblX, lblY, 0);
+        }
+
+        // --- Event Listeners ---
+        fSlider.addEventListener('input', updateSimulation);
+        hSlider.addEventListener('input', updateSimulation);
+        nSlider.addEventListener('input', updateSimulation);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Label Projection Helper ---
+        function updateHTMLPosition(element, worldPos) {
+            if (!worldPos) return;
+            const vec = worldPos.clone();
+            vec.project(camera);
+
+            // Check if behind camera
+            if (vec.z > 1) {
+                element.style.opacity = '0';
+                return;
+            }
+
+            const x = (vec.x * 0.5 + 0.5) * container.clientWidth;
+            const y = (vec.y * -0.5 + 0.5) * container.clientHeight;
+
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+            element.style.opacity = '1';
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            const animSpeed = 4.0 * delta;
+
+            // Animate marching ants on rays
+            for (let i = 0; i < numRays; i++) {
+                // Incident moves towards lens (negative offset)
+                incidentRays[i].material.dashOffset -= animSpeed;
+                // Refracted moves away from lens
+                refractedRays[i].material.dashOffset -= animSpeed;
+                // Virtual moves towards focal point
+                if (virtualRays[i].visible) {
+                    virtualRays[i].material.dashOffset -= animSpeed;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+
+            // Update 2D Labels
+            updateHTMLPosition(lblF1, f1Mesh.position);
+            updateHTMLPosition(lblF2, f2Mesh.position);
+            updateHTMLPosition(lblLens, new THREE.Vector3(0, lensRadius + 1, 0));
+            updateHTMLPosition(lblDelta, lblDelta.pos);
+        }
+
+        // Init
+        updateSimulation();
+        animate();
+
+    </script>
+</body>
+
+</html>

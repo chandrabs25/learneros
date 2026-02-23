@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classical Redox: Oxidation of Methane</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        text {
+            user-select: none;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 18px;
+            fill: #333;
+            font-weight: 500;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            fill: #111;
+            text-anchor: middle;
+        }
+
+        .axis-label {
+            font-size: 14px;
+            fill: #666;
+            font-weight: 600;
+        }
+
+        .legend-text {
+            font-size: 12px;
+            fill: #444;
+        }
+
+        /* Atom Gradients */
+        .atom-c { fill: url(#gradC); }
+        .atom-o { fill: url(#gradO); }
+        .atom-h { fill: url(#gradH); stroke: #CCCCCC; stroke-width: 2; }
+
+        /* Bonds */
+        .bond-single { stroke: #666666; stroke-width: 4; stroke-linecap: round; }
+        .bond-double { stroke: #666666; stroke-width: 3; stroke-linecap: round; }
+
+        /* Animations */
+        .mol-methane { animation: moveMethane 12s infinite ease-in-out; }
+        .mol-o2-1 { animation: moveO2_1 12s infinite ease-in-out; }
+        .mol-o2-2 { animation: moveO2_2 12s infinite ease-in-out; }
+        
+        .mol-co2 { animation: moveCO2 12s infinite ease-in-out; }
+        .mol-h2o-1 { animation: moveH2O_1 12s infinite ease-in-out; }
+        .mol-h2o-2 { animation: moveH2O_2 12s infinite ease-in-out; }
+
+        .vibrate { animation: vibrateMol 12s infinite linear; }
+
+        .product-bond {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: growBonds 12s infinite ease-out;
+        }
+
+        .flash-effect { animation: flash 12s infinite ease-out; }
+        .pulse-effect { animation: pulse 12s infinite ease-out; }
+        
+        .energy-dot {
+            offset-path: path('M 150 480 C 300 480, 350 440, 400 440 C 450 440, 500 540, 650 540');
+            animation: moveDot 12s infinite ease-in-out;
+        }
+
+        .dynamic-label { animation: showLabels 12s infinite ease-in-out; }
+
+        /* Keyframes */
+        @keyframes moveMethane {
+            0% { transform: translate(0, 0); opacity: 1; }
+            12.5% { transform: translate(0, -4px); opacity: 1; }
+            25% { transform: translate(0, 0); opacity: 1; }
+            41.66% { transform: translate(250px, 0); opacity: 1; }
+            45.83% { transform: translate(250px, 0); opacity: 0; }
+            91.66% { transform: translate(250px, 0); opacity: 0; }
+            95% { transform: translate(0, 0); opacity: 0; }
+            100% { transform: translate(0, 0); opacity: 1; }
+        }
+
+        @keyframes moveO2_1 {
+            0% { transform: translate(0, 0); opacity: 1; }
+            12.5% { transform: translate(0, 4px); opacity: 1; }
+            25% { transform: translate(0, 0); opacity: 1; }
+            41.66% { transform: translate(250px, 120px); opacity: 1; }
+            45.83% { transform: translate(250px, 120px); opacity: 0; }
+            91.66% { transform: translate(250px, 120px); opacity: 0; }
+            95% { transform: translate(0, 0); opacity: 0; }
+            100% { transform: translate(0, 0); opacity: 1; }
+        }
+
+        @keyframes moveO2_2 {
+            0% { transform: translate(0, 0); opacity: 1; }
+            12.5% { transform: translate(0, -4px); opacity: 1; }
+            25% { transform: translate(0, 0); opacity: 1; }
+            41.66% { transform: translate(250px, -120px); opacity: 1; }
+            45.83% { transform: translate(250px, -120px); opacity: 0; }
+            91.66% { transform: translate(250px, -120px); opacity: 0; }
+            95% { transform: translate(0, 0); opacity: 0; }
+            100% { transform: translate(0, 0); opacity: 1; }
+        }
+
+        @keyframes moveCO2 {
+            0%, 41.66% { transform: translate(-250px, 0); opacity: 0; }
+            45.83% { transform: translate(-250px, 0); opacity: 1; }
+            50% { transform: translate(-250px, 0); opacity: 1; }
+            58.33%, 83.33% { transform: translate(0, 0); opacity: 1; }
+            91.66%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes moveH2O_1 {
+            0%, 41.66% { transform: translate(-250px, 120px); opacity: 0; }
+            45.83% { transform: translate(-250px, 120px); opacity: 1; }
+            50% { transform: translate(-250px, 120px); opacity: 1; }
+            58.33%, 83.33% { transform: translate(0, 0); opacity: 1; }
+            91.66%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes moveH2O_2 {
+            0%, 41.66% { transform: translate(-250px, -120px); opacity: 0; }
+            45.83% { transform: translate(-250px, -120px); opacity: 1; }
+            50% { transform: translate(-250px, -120px); opacity: 1; }
+            58.33%, 83.33% { transform: translate(0, 0); opacity: 1; }
+            91.66%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes vibrateMol {
+            0%, 25% { transform: translate(0, 0); }
+            26%, 30%, 34%, 38% { transform: translate(2px, -2px); }
+            28%, 32%, 36%, 40% { transform: translate(-2px, 2px); }
+            41.66%, 100% { transform: translate(0, 0); }
+        }
+
+        @keyframes growBonds {
+            0%, 58.33% { stroke-dashoffset: 100; opacity: 0; }
+            60% { opacity: 1; stroke-dashoffset: 100; }
+            75%, 83.33% { stroke-dashoffset: 0; opacity: 1; }
+            91.66%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes flash {
+            0%, 41.66% { r: 0; opacity: 0; stroke-width: 0; }
+            42% { r: 15; opacity: 1; stroke-width: 10; }
+            50% { r: 150; opacity: 0; stroke-width: 0; }
+            100% { r: 0; opacity: 0; }
+        }
+
+        @keyframes pulse {
+            0%, 74% { r: 0; opacity: 0; }
+            75% { r: 25; opacity: 0.8; }
+            83.33% { r: 90; opacity: 0; }
+            100% { r: 0; opacity: 0; }
+        }
+
+        @keyframes moveDot {
+            0%, 25% { offset-distance: 0%; }
+            41.66% { offset-distance: 50%; }
+            58.33%, 83.33% { offset-distance: 100%; }
+            91.66%, 100% { offset-distance: 0%; }
+        }
+
+        @keyframes showLabels {
+            0%, 58.33% { opacity: 0; }
+            62%, 83.33% { opacity: 1; }
+            91.66%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Atom Gradients -->
+            <radialGradient id="gradC" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#777777"/>
+                <stop offset="100%" stop-color="#404040"/>
+            </radialGradient>
+            <radialGradient id="gradO" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FF8888"/>
+                <stop offset="100%" stop-color="#FF4444"/>
+            </radialGradient>
+            <radialGradient id="gradH" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FFFFFF"/>
+                <stop offset="100%" stop-color="#EEEEEE"/>
+            </radialGradient>
+
+            <!-- Arrow Markers -->
+            <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7"/>
+            </marker>
+            <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00"/>
+            </marker>
+
+            <!-- Curved Paths for Text -->
+            <path id="oxPath" d="M 150 300 Q 400 400 650 300" fill="none" />
+            <path id="redPath" d="M 150 100 Q 400 10 650 100" fill="none" />
+        </defs>
+
+        <!-- Title and Formulas -->
+        <text x="400" y="35" class="title">Classical Redox: Oxidation of Methane</text>
+        
+        <text x="250" y="75" class="formula" text-anchor="middle">CH<tspan baseline-shift="sub" font-size="0.7em">4</tspan> + 2O<tspan baseline-shift="sub" font-size="0.7em">2</tspan></text>
+        <line x1="330" y1="70" x2="470" y2="70" stroke="#7209B7" stroke-width="4" marker-end="url(#arrow-purple)" />
+        <text x="550" y="75" class="formula" text-anchor="middle">CO<tspan baseline-shift="sub" font-size="0.7em">2</tspan> + 2H<tspan baseline-shift="sub" font-size="0.7em">2</tspan>O</text>
+
+        <!-- Legend -->
+        <g transform="translate(680, 15)">
+            <rect x="0" y="0" width="105" height="85" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1"/>
+            <circle cx="20" cy="20" r="8" class="atom-c" />
+            <text x="35" y="24" class="legend-text">Carbon (C)</text>
+            <circle cx="20" cy="42" r="7" class="atom-o" />
+            <text x="35" y="46" class="legend-text">Oxygen (O)</text>
+            <circle cx="20" cy="64" r="5" class="atom-h" />
+            <text x="35" y="68" class="legend-text">Hydrogen (H)</text>
+        </g>
+
+        <!-- Dynamic Arrows (Oxidation / Reduction) -->
+        <g class="dynamic-label">
+            <path d="M 150 300 Q 400 400 650 300" fill="none" stroke="#F77F00" stroke-width="3" stroke-dasharray="6,6" marker-end="url(#arrow-orange)" />
+            <text font-family="Inter" font-size="14" font-weight="600" fill="#F77F00" dy="-10">
+                <textPath href="#oxPath" startOffset="50%" text-anchor="middle">Oxidation (Loss of H, Gain of O)</textPath>
+            </text>
+
+            <path d="M 150 100 Q 400 10 650 100" fill="none" stroke="#F77F00" stroke-width="3" stroke-dasharray="6,6" marker-end="url(#arrow-orange)" />
+            <text font-family="Inter" font-size="14" font-weight="600" fill="#F77F00" dy="-10">
+                <textPath href="#redPath" startOffset="50%" text-anchor="middle">Reduction (Gain of H)</textPath>
+            </text>
+        </g>
+
+        <!-- Energy Release Pulses -->
+        <circle cx="650" cy="250" r="0" fill="#FF8800" class="pulse-effect" />
+        <circle cx="650" cy="130" r="0" fill="#FF8800" class="pulse-effect" />
+        <circle cx="650" cy="370" r="0" fill="#FF8800" class="pulse-effect" />
+
+        <!-- Transition State Flash -->
+        <circle cx="400" cy="250" r="0" fill="#FFCC00" stroke="#FF8800" class="flash-effect" />
+
+        <!-- REACTANTS -->
+        <!-- Methane (CH4) -->
+        <g class="mol-methane">
+            <g class="vibrate">
+                <!-- Bonds -->
+                <line x1="150" y1="250" x2="150" y2="210" class="bond-single" />
+                <line x1="150" y1="250" x2="190" y2="250" class="bond-single" />
+                <line x1="150" y1="250" x2="150" y2="290" class="bond-single" />
+                <line x1="150" y1="250" x2="110" y2="250" class="bond-single" />
+                <!-- Atoms -->
+                <circle cx="150" cy="210" r="10" class="atom-h" />
+                <circle cx="190" cy="250" r="10" class="atom-h" />
+                <circle cx="150" cy="290" r="10" class="atom-h" />
+                <circle cx="110" cy="250" r="10" class="atom-h" />
+                <circle cx="150" cy="250" r="18" class="atom-c" />
+            </g>
+        </g>
+
+        <!-- Dioxygen 1 (O2) -->
+        <g class="mol-o2-1">
+            <g class="vibrate">
+                <!-- Double Bond -->
+                <line x1="130" y1="126" x2="170" y2="126" class="bond-double" />
+                <line x1="130" y1="134" x2="170" y2="134" class="bond-double" />
+                <!-- Atoms -->
+                <circle cx="130" cy="130" r="16" class="atom-o" />
+                <circle cx="170" cy="130" r="16" class="atom-o" />
+            </g>
+        </g>
+
+        <!-- Dioxygen 2 (O2) -->
+        <g class="mol-o2-2">
+            <g class="vibrate">
+                <!-- Double Bond -->
+                <line x1="130" y1="366" x2="170" y2="366" class="bond-double" />
+                <line x1="130" y1="374" x2="170" y2="374" class="bond-double" />
+                <!-- Atoms -->
+                <circle cx="130" cy="370" r="16" class="atom-o" />
+                <circle cx="170" cy="370" r="16" class="atom-o" />
+            </g>
+        </g>
+
+
+        <!-- PRODUCTS -->
+        <!-- Carbon Dioxide (CO2) -->
+        <g class="mol-co2">
+            <!-- Growing Bonds -->
+            <line x1="650" y1="246" x2="600" y2="246" class="bond-double product-bond" />
+            <line x1="650" y1="254" x2="600" y2="254" class="bond-double product-bond" />
+            <line x1="650" y1="246" x2="700" y2="246" class="bond-double product-bond" />
+            <line x1="650" y1="254" x2="700" y2="254" class="bond-double product-bond" />
+            <!-- Atoms -->
+            <circle cx="600" cy="250" r="16" class="atom-o" />
+            <circle cx="700" cy="250" r="16" class="atom-o" />
+            <circle cx="650" cy="250" r="18" class="atom-c" />
+        </g>
+
+        <!-- Water 1 (H2O) -->
+        <g class="mol-h2o-1">
+            <!-- Growing Bonds -->
+            <line x1="650" y1="130" x2="625" y2="155" class="bond-single product-bond" />
+            <line x1="650" y1="130" x2="675" y2="155" class="bond-single product-bond" />
+            <!-- Atoms -->
+            <circle cx="625" cy="155" r="10" class="atom-h" />
+            <circle cx="675" cy="155" r="10" class="atom-h" />
+            <circle cx="650" cy="130" r="16" class="atom-o" />
+        </g>
+
+        <!-- Water 2 (H2O) -->
+        <g class="mol-h2o-2">
+            <!-- Growing Bonds -->
+            <line x1="650" y1="370" x2="625" y2="395" class="bond-single product-bond" />
+            <line x1="650" y1="370" x2="675" y2="395" class="bond-single product-bond" />
+            <!-- Atoms -->
+            <circle cx="625" cy="395" r="10" class="atom-h" />
+            <circle cx="675" cy="395" r="10" class="atom-h" />
+            <circle cx="650" cy="370" r="16" class="atom-o" />
+        </g>
+
+        <!-- Energy Coordinate Graph -->
+        <g transform="translate(0, 10)">
+            <!-- Grid/Axes -->
+            <line x1="100" y1="540" x2="700" y2="540" stroke="#ccc" stroke-width="2" />
+            <line x1="100" y1="400" x2="100" y2="540" stroke="#ccc" stroke-width="2" />
+            
+            <!-- Axis Labels -->
+            <text x="400" y="565" class="axis-label" text-anchor="middle">Reaction Progress</text>
+            <text x="80" y="470" class="axis-label" text-anchor="middle" transform="rotate(-90 80 470)">Potential Energy</text>
+
+            <!-- Energy Curve (Exothermic) -->
+            <path d="M 150 480 C 300 480, 350 440, 400 440 C 450 440, 500 540, 650 540" fill="none" stroke="#4444FF" stroke-width="4" stroke-linecap="round" />
+            
+            <!-- Dashed reference lines -->
+            <line x1="100" y1="480" x2="150" y2="480" stroke="#999" stroke-width="1" stroke-dasharray="4,4" />
+            <line x1="100" y1="540" x2="650" y2="540" stroke="#999" stroke-width="1" stroke-dasharray="4,4" />
+
+            <!-- Moving Energy Dot -->
+            <circle cx="0" cy="0" r="8" fill="#FF4444" stroke="#fff" stroke-width="2" class="energy-dot" />
+        </g>
+    </svg>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Real Battery & Kirchhoff Cube</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #1a1a1a;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            position: absolute;
+            z-index: 10;
+        }
+        #controls {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            min-width: 280px;
+        }
+        h1, h2 {
+            margin: 0 0 10px 0;
+            font-weight: 800;
+            color: #1a1a1a;
+        }
+        h1 { font-size: 1.2rem; }
+        h2 { font-size: 1rem; color: #4361EE; }
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #FF3366;
+            font-weight: 700;
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+        input[type=range]:focus { outline: none; }
+        
+        .formula-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            align-items: center;
+        }
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            color: #4361EE;
+        }
+        .math-symbol {
+            font-family: 'Times New Roman', serif;
+            font-style: italic;
+            font-size: 1.1rem;
+            color: #1a1a1a;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            appearance: none;
+            width: 40px;
+            height: 20px;
+            background: #d1d8e0;
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            outline: none;
+            transition: background 0.3s;
+        }
+        input[type="checkbox"]::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type="checkbox"]:checked {
+            background: #06D6A0;
+        }
+        input[type="checkbox"]:checked::after {
+            transform: translateX(20px);
+        }
+        
+        .legend {
+            display: flex;
+            gap: 10px;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .color-box {
+            width: 12px; height: 12px; border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h1>Live Circuit Physics</h1>
+        <div class="formula-line">
+            <span>EMF (<span class="math-symbol">&epsilon;</span>)</span>
+            <span class="math" id="val-emf">12.00 V</span>
+        </div>
+        <div class="formula-line">
+            <span>Equivalent Resistance (R<sub>eq</sub> = 5/6 R)</span>
+            <span class="math" id="val-req">8.33 &Omega;</span>
+        </div>
+        <div class="formula-line">
+            <span>Total Resistance (R<sub>tot</sub> = R<sub>eq</sub> + r)</span>
+            <span class="math" id="val-rtot">9.33 &Omega;</span>
+        </div>
+        <div class="formula-line" style="border-top: 1px solid #ddd; padding-top: 8px; margin-top: 8px;">
+            <span>Current (I = <span class="math-symbol">&epsilon;</span> / R<sub>tot</sub>)</span>
+            <span class="math" style="color: #06D6A0; font-size: 1.1rem;" id="val-i">1.29 A</span>
+        </div>
+        <div class="formula-line">
+            <span>Terminal Voltage (V<sub>term</sub> = <span class="math-symbol">&epsilon;</span> - Ir)</span>
+            <span class="math" style="color: #FF3366; font-size: 1.1rem;" id="val-vterm">10.71 V</span>
+        </div>
+        <div class="formula-line">
+            <span>Lost Power (P = I&sup2;r)</span>
+            <span class="math" style="color: #F77F00;" id="val-plost">1.65 W</span>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> High V</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Low V</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Current (e⁻)</div>
+        </div>
+    </div>
+
+    <div id="controls" class="glass-panel">
+        <h2>Circuit Parameters</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>EMF (<span class="math-symbol">&epsilon;</span>)</span>
+                <span class="value-display" id="disp-emf">12.0 V</span>
+            </div>
+            <input type="range" id="slider-emf" min="1.0" max="24.0" step="0.5" value="12.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Internal Resistance (r)</span>
+                <span class="value-display" id="disp-r" style="color: #F77F00;">1.0 &Omega;</span>
+            </div>
+            <input type="range" id="slider-r" min="0.1" max="10.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Edge Resistance (R<sub>edge</sub>)</span>
+                <span class="value-display" id="disp-redge" style="color: #1a1a1a;">10.0 &Omega;</span>
+            </div>
+            <input type="range" id="slider-redge" min="1.0" max="50.0" step="1.0" value="10.0">
+        </div>
+
+        <label class="toggle-container">
+            <input type="checkbox" id="toggle-paths">
+            Highlight Kirchhoff Symmetry
+        </label>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-10, -10, -10);
+        scene.add(backLight);
+
+        // --- Colors ---
+        const colorHigh = new THREE.Color("#FF3366"); // Red
+        const colorLow = new THREE.Color("#4361EE");  // Blue
+        const colorEMF = new THREE.Color("#FFD700");  // Gold
+        const colorParticle = new THREE.Color("#06D6A0"); // Green
+        const colorHeat = new THREE.Color("#F77F00"); // Orange
+
+        // --- Materials ---
+        const wireMaterial = new THREE.MeshStandardMaterial({ color: 0x888888, roughness: 0.4, metalness: 0.6 });
+        const batteryGlassMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff, transmission: 0.8, opacity: 1, transparent: true,
+            roughness: 0.1, ior: 1.5, thickness: 0.5, side: THREE.DoubleSide
+        });
+        const emfMaterial = new THREE.MeshStandardMaterial({ color: colorEMF, emissive: colorEMF, emissiveIntensity: 0.5 });
+        const intResMaterial = new THREE.MeshStandardMaterial({ color: 0x444444, emissive: colorHeat, emissiveIntensity: 0 });
+
+        // --- Geometry Helpers ---
+        function createCylinder(p1, p2, radius, material) {
+            const distance = p1.distanceTo(p2);
+            const geometry = new THREE.CylinderGeometry(1, 1, distance, 12);
+            geometry.translate(0, distance / 2, 0);
+            const mesh = new THREE.Mesh(geometry, material.clone());
+            mesh.position.copy(p1);
+            mesh.lookAt(p2);
+            mesh.rotateX(Math.PI / 2);
+            mesh.scale.set(radius, 1, radius);
+            scene.add(mesh);
+            return { mesh, p1, p2, length: distance, baseRadius: radius };
+        }
+
+        // --- Build The Real Battery (Left) ---
+        const batteryCenter = new THREE.Vector3(-10, 0, 0);
+        
+        // Casing
+        const casingGeo = new THREE.BoxGeometry(8, 6, 6);
+        const casing = new THREE.Mesh(casingGeo, batteryGlassMat);
+        casing.position.copy(batteryCenter);
+        scene.add(casing);
+
+        // EMF Sphere
+        const emfGeo = new THREE.SphereGeometry(1.2, 32, 32);
+        const emfSphere = new THREE.Mesh(emfGeo, emfMaterial);
+        emfSphere.position.set(-12, 0, 0);
+        scene.add(emfSphere);
+        
+        const emfLight = new THREE.PointLight(colorEMF, 1, 10);
+        emfSphere.add(emfLight);
+
+        // Internal Resistor (Zig-Zag)
+        const intResPoints = [
+            new THREE.Vector3(-12, 0, 0), // from EMF
+            new THREE.Vector3(-11, 0, 0),
+            new THREE.Vector3(-10.5, 1, 0),
+            new THREE.Vector3(-9.5, -1, 0),
+            new THREE.Vector3(-8.5, 1, 0),
+            new THREE.Vector3(-7.5, -1, 0),
+            new THREE.Vector3(-7, 0, 0),
+            new THREE.Vector3(-6, 0, 0)   // to positive terminal
+        ];
+        const intResSegments = [];
+        for(let i=0; i<intResPoints.length-1; i++) {
+            intResSegments.push(createCylinder(intResPoints[i], intResPoints[i+1], 0.15, intResMaterial));
+        }
+
+        // Battery Terminals
+        const termPos = createCylinder(new THREE.Vector3(-6, 0, 0), new THREE.Vector3(-6, 2, 0), 0.2, wireMaterial);
+        const termNeg = createCylinder(new THREE.Vector3(-14, 0, 0), new THREE.Vector3(-14, -2, 0), 0.2, wireMaterial);
+
+        // --- Build The Resistor Cube (Right) ---
+        const cubeCenter = new THREE.Vector3(8, 0, 0);
+        const s = 4; // half size
+        const v = [
+            new THREE.Vector3(cubeCenter.x - s, cubeCenter.y + s, cubeCenter.z + s), // v0 (Entry)
+            new THREE.Vector3(cubeCenter.x + s, cubeCenter.y + s, cubeCenter.z + s), // v1
+            new THREE.Vector3(cubeCenter.x - s, cubeCenter.y - s, cubeCenter.z + s), // v2
+            new THREE.Vector3(cubeCenter.x - s, cubeCenter.y + s, cubeCenter.z - s), // v3
+            new THREE.Vector3(cubeCenter.x + s, cubeCenter.y - s, cubeCenter.z + s), // v4
+            new THREE.Vector3(cubeCenter.x + s, cubeCenter.y + s, cubeCenter.z - s), // v5
+            new THREE.Vector3(cubeCenter.x - s, cubeCenter.y - s, cubeCenter.z - s), // v6
+            new THREE.Vector3(cubeCenter.x + s, cubeCenter.y - s, cubeCenter.z - s)  // v7 (Exit)
+        ];
+
+        const edgeDefs = [
+            {a: 0, b: 1, type: 'entry'}, {a: 0, b: 2, type: 'entry'}, {a: 0, b: 3, type: 'entry'},
+            {a: 1, b: 4, type: 'mid'}, {a: 1, b: 5, type: 'mid'},
+            {a: 2, b: 4, type: 'mid'}, {a: 2, b: 6, type: 'mid'},
+            {a: 3, b: 5, type: 'mid'}, {a: 3, b: 6, type: 'mid'},
+            {a: 4, b: 7, type: 'exit'}, {a: 5, b: 7, type: 'exit'}, {a: 6, b: 7, type: 'exit'}
+        ];
+
+        const cubeEdges = [];
+        edgeDefs.forEach(def => {
+            let edge = createCylinder(v[def.a], v[def.b], 0.2, wireMaterial);
+            edge.type = def.type;
+            edge.vA = def.a;
+            edge.vB = def.b;
+            cubeEdges.push(edge);
+        });
+
+        // --- Connecting Wires ---
+        const wires = [];
+        // Positive wire: Battery to v0
+        wires.push(createCylinder(new THREE.Vector3(-6, 2, 0), new THREE.Vector3(-6, 6, 0), 0.15, wireMaterial));
+        wires.push(createCylinder(new THREE.Vector3(-6, 6, 0), new THREE.Vector3(v[0].x, 6, 0), 0.15, wireMaterial));
+        wires.push(createCylinder(new THREE.Vector3(v[0].x, 6, 0), new THREE.Vector3(v[0].x, v[0].y, 0), 0.15, wireMaterial));
+        wires.push(createCylinder(new THREE.Vector3(v[0].x, v[0].y, 0), v[0], 0.15, wireMaterial));
+
+        // Negative wire: v7 to Battery
+        wires.push(createCylinder(v[7], new THREE.Vector3(v[7].x, v[7].y, 0), 0.15, wireMaterial));
+        wires.push(createCylinder(new THREE.Vector3(v[7].x, v[7].y, 0), new THREE.Vector3(v[7].x, -6, 0), 0.15, wireMaterial));
+        wires.push(createCylinder(new THREE.Vector3(v[7].x, -6, 0), new THREE.Vector3(-14, -6, 0), 0.15, wireMaterial));
+        wires.push(createCylinder(new THREE.Vector3(-14, -6, 0), new THREE.Vector3(-14, -2, 0), 0.15, wireMaterial));
+        // Return through battery to EMF
+        wires.push(createCylinder(new THREE.Vector3(-14, -2, 0), new THREE.Vector3(-14, 0, 0), 0.15, wireMaterial));
+        wires.push(createCylinder(new THREE.Vector3(-14, 0, 0), new THREE.Vector3(-12, 0, 0), 0.15, wireMaterial));
+
+        // --- Particle System (Current) ---
+        // Define the 6 symmetric paths through the circuit
+        const commonStart = [
+            new THREE.Vector3(-12, 0, 0), ...intResPoints.slice(1),
+            new THREE.Vector3(-6, 2, 0), new THREE.Vector3(-6, 6, 0), 
+            new THREE.Vector3(v[0].x, 6, 0), new THREE.Vector3(v[0].x, v[0].y, 0), v[0]
+        ];
+        const commonEnd = [
+            v[7], new THREE.Vector3(v[7].x, v[7].y, 0), new THREE.Vector3(v[7].x, -6, 0),
+            new THREE.Vector3(-14, -6, 0), new THREE.Vector3(-14, -2, 0), 
+            new THREE.Vector3(-14, 0, 0), new THREE.Vector3(-12, 0, 0)
+        ];
+
+        const paths = [
+            [...commonStart, v[1], v[4], ...commonEnd],
+            [...commonStart, v[1], v[5], ...commonEnd],
+            [...commonStart, v[2], v[4], ...commonEnd],
+            [...commonStart, v[2], v[6], ...commonEnd],
+            [...commonStart, v[3], v[5], ...commonEnd],
+            [...commonStart, v[3], v[6], ...commonEnd]
+        ];
+
+        // Calculate lengths for uniform speed
+        const pathData = paths.map(path => {
+            let totalLength = 0;
+            let segments = [];
+            for(let i=0; i<path.length-1; i++) {
+                let l = path[i].distanceTo(path[i+1]);
+                segments.push(l);
+                totalLength += l;
+            }
+            return { path, segments, totalLength };
+        });
+
+        const numParticles = 600; // 100 per path
+        const particleGeo = new THREE.SphereGeometry(0.15, 8, 8);
+        const particleMat = new THREE.MeshBasicMaterial({ color: colorParticle });
+        const instancedMesh = new THREE.InstancedMesh(particleGeo, particleMat, numParticles);
+        scene.add(instancedMesh);
+
+        const particles = [];
+        for(let i=0; i<numParticles; i++) {
+            particles.push({
+                pathIndex: i % 6,
+                progress: Math.random() // 0 to 1
+            });
+        }
+        const dummy = new THREE.Object3D();
+
+        function getPointOnPath(pData, progress) {
+            let targetLength = progress * pData.totalLength;
+            let currentLength = 0;
+            for(let i=0; i<pData.segments.length; i++) {
+                if (currentLength + pData.segments[i] >= targetLength) {
+                    let t = (targetLength - currentLength) / pData.segments[i];
+                    let p = new THREE.Vector3().copy(pData.path[i]);
+                    p.lerp(pData.path[i+1], t);
+                    return p;
+                }
+                currentLength += pData.segments[i];
+            }
+            return pData.path[pData.path.length-1];
+        }
+
+        // --- UI Elements ---
+        const slEmf = document.getElementById('slider-emf');
+        const slR = document.getElementById('slider-r');
+        const slRedge = document.getElementById('slider-redge');
+        const chkPaths = document.getElementById('toggle-paths');
+
+        const dEmf = document.getElementById('disp-emf');
+        const dR = document.getElementById('disp-r');
+        const dRedge = document.getElementById('disp-redge');
+
+        const vEmf = document.getElementById('val-emf');
+        const vReq = document.getElementById('val-req');
+        const vRtot = document.getElementById('val-rtot');
+        const vI = document.getElementById('val-i');
+        const vVterm = document.getElementById('val-vterm');
+        const vPlost = document.getElementById('val-plost');
+
+        function getColorForV(V, Vmax) {
+            let c = new THREE.Color();
+            let t = Math.max(0, Math.min(1, V / Vmax));
+            c.lerpColors(colorLow, colorHigh, t);
+            return c;
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            // 1. Read Inputs
+            const emf = parseFloat(slEmf.value);
+            const r = parseFloat(slR.value);
+            const R_edge = parseFloat(slRedge.value);
+            const showSymmetry = chkPaths.checked;
+
+            // Update displays
+            dEmf.innerText = emf.toFixed(1) + " V";
+            dR.innerText = r.toFixed(1) + " Ω";
+            dRedge.innerText = R_edge.toFixed(1) + " Ω";
+
+            // 2. Physics Calculations
+            const R_eq = (5/6) * R_edge;
+            const R_total = R_eq + r;
+            const I = emf / R_total;
+            const V_term = emf - I * r;
+            const P_lost = I * I * r;
+
+            // Update Formula Card
+            vEmf.innerText = emf.toFixed(2) + " V";
+            vReq.innerText = R_eq.toFixed(2) + " Ω";
+            vRtot.innerText = R_total.toFixed(2) + " Ω";
+            vI.innerText = I.toFixed(2) + " A";
+            vVterm.innerText = Math.max(0, V_term).toFixed(2) + " V";
+            vPlost.innerText = P_lost.toFixed(2) + " W";
+
+            // 3. Visual Updates - Geometries
+            // EMF Sphere size/glow
+            emfSphere.scale.setScalar(0.8 + (emf / 24) * 0.5);
+            emfLight.intensity = 0.5 + (emf / 24) * 1.5;
+
+            // Internal Resistor thickness & glow
+            const rRadius = 0.05 + (r / 10) * 0.2;
+            intResSegments.forEach(seg => seg.mesh.scale.set(rRadius, 1, rRadius));
+            
+            // Map P_lost (max ~50W) to emissive intensity
+            const heatGlow = Math.min(1, P_lost / 25);
+            intResMaterial.emissiveIntensity = heatGlow * 3;
+
+            // Cube Edges thickness
+            const edgeRadius = 0.05 + (R_edge / 50) * 0.25;
+            cubeEdges.forEach(edge => edge.mesh.scale.set(edgeRadius, 1, edgeRadius));
+
+            // 4. Visual Updates - Colors (Potential Mapping)
+            // Potentials at vertices
+            const pot = [];
+            pot[0] = V_term;
+            pot[1] = V_term - (I/3)*R_edge;
+            pot[2] = pot[1];
+            pot[3] = pot[1];
+            pot[4] = (I/3)*R_edge;
+            pot[5] = pot[4];
+            pot[6] = pot[4];
+            pot[7] = 0;
+
+            if (showSymmetry) {
+                // Highlight symmetry paths
+                cubeEdges.forEach(edge => {
+                    if(edge.type === 'entry') edge.mesh.material.color.setHex(0xFFD166); // Yellow
+                    else if(edge.type === 'mid') edge.mesh.material.color.setHex(0xEF476F); // Pinkish
+                    else edge.mesh.material.color.setHex(0x118AB2); // Teal
+                });
+            } else {
+                // Potential gradient
+                cubeEdges.forEach(edge => {
+                    let avgV = (pot[edge.vA] + pot[edge.vB]) / 2;
+                    edge.mesh.material.color.copy(getColorForV(avgV, emf));
+                });
+            }
+
+            // Update wire colors based on potential
+            wires.forEach(wire => {
+                // Simplistic: if x < 0 and y > 0 it's positive wire
+                if(wire.mesh.position.y > 0 && wire.mesh.position.x < 8) {
+                    wire.mesh.material.color.copy(getColorForV(V_term, emf));
+                } else {
+                    wire.mesh.material.color.copy(getColorForV(0, emf));
+                }
+            });
+
+            // Internal resistor gradient (approximate)
+            intResSegments.forEach((seg, idx) => {
+                let frac = 1 - (idx / intResSegments.length); // 1 at EMF, 0 at terminal
+                let vLocal = V_term + frac * (emf - V_term);
+                seg.mesh.material.color.copy(getColorForV(vLocal, emf));
+            });
+
+            // 5. Particle Animation
+            // Speed proportional to Current (I)
+            const baseSpeed = 0.15;
+            const currentSpeed = I * baseSpeed;
+
+            for(let i=0; i<numParticles; i++) {
+                let p = particles[i];
+                p.progress += currentSpeed * delta;
+                if(p.progress > 1) p.progress -= 1;
+                
+                let pos = getPointOnPath(pathData[p.pathIndex], p.progress);
+                dummy.position.copy(pos);
+                
+                // Scale particles slightly based on current
+                let pScale = 0.5 + Math.min(1, I/2) * 0.8;
+                dummy.scale.setScalar(pScale);
+                
+                dummy.updateMatrix();
+                instancedMesh.setMatrixAt(i, dummy.matrix);
+            }
+            instancedMesh.instanceMatrix.needsUpdate = true;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        animate();
+    </script>
+</body>
+</html>

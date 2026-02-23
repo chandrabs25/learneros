@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lewis Structure Formation: CO2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        /* Animations */
+        .scene {
+            animation: scene-fade 10s infinite linear;
+        }
+        .migrate-bond {
+            animation: migrate-bond 10s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .migrate-lone {
+            animation: migrate-lone 10s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .bonds {
+            animation: show-bonds 10s infinite ease-in-out;
+            opacity: 0;
+        }
+        .arrows {
+            animation: hide-arrows 10s infinite ease-in-out;
+        }
+        .halo-L {
+            animation: pulse-octet-L 10s infinite ease-in-out;
+            opacity: 0;
+            transform-origin: 250px 250px;
+        }
+        .halo-R {
+            animation: pulse-octet-R 10s infinite ease-in-out;
+            opacity: 0;
+            transform-origin: 550px 250px;
+        }
+        .halo-C {
+            animation: pulse-octet-C 10s infinite ease-in-out;
+            opacity: 0;
+            transform-origin: 400px 250px;
+        }
+        .label-early {
+            animation: fade-out-early 10s infinite ease-in-out;
+        }
+        .label-late {
+            animation: fade-in-late 10s infinite ease-in-out;
+            opacity: 0;
+        }
+        .octet-note {
+            animation: fade-in-octet 10s infinite ease-in-out;
+            opacity: 0;
+        }
+
+        /* Keyframes */
+        @keyframes scene-fade {
+            0%, 90% { opacity: 1; }
+            95%, 98% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        @keyframes migrate-bond {
+            0%, 20% { transform: translate(0, 0); opacity: 1; }
+            50% { transform: translate(var(--dx), var(--dy)); opacity: 1; }
+            55%, 90% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+            95%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+        @keyframes migrate-lone {
+            0%, 20% { transform: translate(0, 0); }
+            50%, 95% { transform: translate(var(--dx), var(--dy)); }
+            100% { transform: translate(0, 0); }
+        }
+        @keyframes show-bonds {
+            0%, 50% { opacity: 0; }
+            55%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+        @keyframes hide-arrows {
+            0%, 15% { opacity: 1; }
+            20%, 100% { opacity: 0; }
+        }
+        @keyframes pulse-octet-L {
+            0%, 65% { opacity: 0; transform: scale(0.9); stroke-width: 2px; }
+            68% { opacity: 0.8; transform: scale(1); stroke-width: 4px; }
+            72%, 90% { opacity: 0.3; transform: scale(1); stroke-width: 2px; }
+            95%, 100% { opacity: 0; }
+        }
+        @keyframes pulse-octet-R {
+            0%, 70% { opacity: 0; transform: scale(0.9); stroke-width: 2px; }
+            73% { opacity: 0.8; transform: scale(1); stroke-width: 4px; }
+            77%, 90% { opacity: 0.3; transform: scale(1); stroke-width: 2px; }
+            95%, 100% { opacity: 0; }
+        }
+        @keyframes pulse-octet-C {
+            0%, 75% { opacity: 0; transform: scale(0.9); stroke-width: 2px; }
+            78% { opacity: 0.8; transform: scale(1); stroke-width: 4px; }
+            82%, 90% { opacity: 0.3; transform: scale(1); stroke-width: 2px; }
+            95%, 100% { opacity: 0; }
+        }
+        @keyframes fade-out-early {
+            0%, 45% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        @keyframes fade-in-late {
+            0%, 50% { opacity: 0; }
+            55%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+        @keyframes fade-in-octet {
+            0%, 65% { opacity: 0; transform: translateY(10px); }
+            70%, 90% { opacity: 1; transform: translateY(0); }
+            95%, 100% { opacity: 0; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+            </marker>
+            <marker id="arrow-small" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#888" />
+            </marker>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#ffffff"/>
+
+        <!-- Title -->
+        <text x="400" y="50" text-anchor="middle" font-family="Inter" font-size="24" font-weight="700" fill="#333">
+            Lewis Structure Formation: CO<tspan dy="5" font-size="16">2</tspan>
+        </text>
+
+        <!-- Global Scene Group for Reset -->
+        <g class="scene">
+            
+            <!-- Octet Halos -->
+            <circle cx="250" cy="250" r="85" class="halo-L" fill="none" stroke="#44CC44" stroke-dasharray="8 6" filter="url(#glow)" />
+            <circle cx="550" cy="250" r="85" class="halo-R" fill="none" stroke="#44CC44" stroke-dasharray="8 6" filter="url(#glow)" />
+            <circle cx="400" cy="250" r="85" class="halo-C" fill="none" stroke="#44CC44" stroke-dasharray="8 6" filter="url(#glow)" />
+
+            <!-- Bonds -->
+            <g class="bonds">
+                <!-- Left double bond -->
+                <line x1="285" y1="242" x2="365" y2="242" stroke="#404040" stroke-width="6" stroke-linecap="round"/>
+                <line x1="285" y1="258" x2="365" y2="258" stroke="#404040" stroke-width="6" stroke-linecap="round"/>
+                <!-- Right double bond -->
+                <line x1="435" y1="242" x2="515" y2="242" stroke="#404040" stroke-width="6" stroke-linecap="round"/>
+                <line x1="435" y1="258" x2="515" y2="258" stroke="#404040" stroke-width="6" stroke-linecap="round"/>
+            </g>
+
+            <!-- Electron Flow Arrows -->
+            <g class="arrows" stroke="#F77F00" stroke-width="2" fill="none" marker-end="url(#arrow)">
+                <path d="M 285 250 L 305 250" />
+                <path d="M 515 250 L 495 250" />
+                <path d="M 380 235 Q 365 220 345 235" />
+                <path d="M 420 235 Q 435 220 455 235" />
+            </g>
+
+            <!-- Atoms -->
+            <g id="atoms">
+                <text x="250" y="264" font-family="Roboto Mono" font-size="44" font-weight="700" fill="#FF4444" text-anchor="middle">O</text>
+                <text x="400" y="264" font-family="Roboto Mono" font-size="44" font-weight="700" fill="#404040" text-anchor="middle">C</text>
+                <text x="550" y="264" font-family="Roboto Mono" font-size="44" font-weight="700" fill="#FF4444" text-anchor="middle">O</text>
+            </g>
+
+            <!-- Electrons -->
+            <g class="electrons" fill="#FFD700" stroke="#B8860B" stroke-width="1">
+                <!-- Left O Electrons -->
+                <circle cx="240" cy="225" r="4" />
+                <circle cx="260" cy="225" r="4" />
+                <circle cx="225" cy="240" r="4" class="migrate-lone" style="--dx: 15px; --dy: 35px;" />
+                <circle cx="225" cy="260" r="4" class="migrate-lone" style="--dx: 35px; --dy: 15px;" />
+                <circle cx="275" cy="240" r="4" class="migrate-bond" style="--dx: 40px; --dy: 0px;" />
+                <circle cx="275" cy="260" r="4" class="migrate-bond" style="--dx: 40px; --dy: 0px;" />
+                
+                <!-- Center C Electrons -->
+                <circle cx="375" cy="250" r="4" class="migrate-bond" style="--dx: -40px; --dy: -10px;" />
+                <circle cx="400" cy="225" r="4" class="migrate-bond" style="--dx: -65px; --dy: 35px;" />
+                <circle cx="425" cy="250" r="4" class="migrate-bond" style="--dx: 40px; --dy: -10px;" />
+                <circle cx="400" cy="275" r="4" class="migrate-bond" style="--dx: 65px; --dy: -15px;" />
+
+                <!-- Right O Electrons -->
+                <circle cx="540" cy="225" r="4" />
+                <circle cx="560" cy="225" r="4" />
+                <circle cx="575" cy="240" r="4" class="migrate-lone" style="--dx: -35px; --dy: 35px;" />
+                <circle cx="575" cy="260" r="4" class="migrate-lone" style="--dx: -15px; --dy: 15px;" />
+                <circle cx="525" cy="240" r="4" class="migrate-bond" style="--dx: -40px; --dy: 0px;" />
+                <circle cx="525" cy="260" r="4" class="migrate-bond" style="--dx: -40px; --dy: 0px;" />
+            </g>
+
+            <!-- Labels -->
+            <!-- Early Labels -->
+            <g class="label-early">
+                <text x="250" y="150" font-family="Inter" font-size="14" font-weight="600" fill="#666" text-anchor="middle">Valence Electrons</text>
+                <path d="M 250 155 L 250 210" stroke="#aaa" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arrow-small)"/>
+            </g>
+
+            <!-- Late Labels -->
+            <g class="label-late">
+                <text x="400" y="150" font-family="Inter" font-size="14" font-weight="600" fill="#666" text-anchor="middle">Shared Pairs (Double Bonds)</text>
+                <path d="M 380 155 L 325 225" stroke="#aaa" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arrow-small)"/>
+                <path d="M 420 155 L 475 225" stroke="#aaa" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arrow-small)"/>
+                
+                <text x="250" y="360" font-family="Inter" font-size="14" font-weight="600" fill="#666" text-anchor="middle">Lone Pairs</text>
+                <path d="M 250 345 L 250 295" stroke="#aaa" stroke-width="1.5" stroke-dasharray="3 3" marker-end="url(#arrow-small)"/>
+
+                <text x="400" y="460" font-family="Roboto Mono" font-size="32" font-weight="700" fill="#404040" text-anchor="middle">O = C = O</text>
+            </g>
+
+            <!-- Octet Validation Note -->
+            <text x="400" y="380" font-family="Inter" font-size="18" font-weight="700" fill="#44CC44" text-anchor="middle" class="octet-note">Octet Complete (8e⁻)</text>
+
+        </g>
+
+        <!-- Legend -->
+        <g id="legend" transform="translate(20, 400)">
+            <rect width="160" height="80" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))"/>
+            <text x="12" y="20" font-family="Inter" font-size="12" font-weight="700" fill="#333">Legend</text>
+            
+            <circle cx="18" cy="35" r="4" fill="#FFD700" stroke="#B8860B" stroke-width="1"/>
+            <text x="32" y="39" font-family="Inter" font-size="11" fill="#555">Valence Electron</text>
+            
+            <line x1="12" y1="52" x2="24" y2="52" stroke="#404040" stroke-width="3"/>
+            <line x1="12" y1="56" x2="24" y2="56" stroke="#404040" stroke-width="3"/>
+            <text x="32" y="58" font-family="Inter" font-size="11" fill="#555">Double Bond</text>
+            
+            <circle cx="18" cy="70" r="5" fill="none" stroke="#44CC44" stroke-dasharray="2 2" stroke-width="2"/>
+            <text x="32" y="74" font-family="Inter" font-size="11" fill="#555">Completed Octet</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

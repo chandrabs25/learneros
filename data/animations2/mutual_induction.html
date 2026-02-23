@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformer Physics Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --core-color: #CED4DA;
+            --primary-color: #4361EE;
+            --secondary-color: #FF3366;
+            --electron-color: #06D6A0;
+            --flux-color: #7209B7;
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            width: 25%;
+            min-width: 300px;
+            max-width: 400px;
+            height: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--glass-border);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin: 0 0 5px 0;
+            background: linear-gradient(45deg, var(--primary-color), var(--flux-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0 0 25px 0;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e9ecef;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        #Ns::-webkit-slider-thumb { background: var(--secondary-color); }
+        #freq::-webkit-slider-thumb { background: var(--electron-color); }
+        #mu::-webkit-slider-thumb { background: var(--flux-color); }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            z-index: 5;
+            min-width: 250px;
+        }
+
+        .card-title {
+            font-weight: 800;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .math-line span {
+            font-weight: 700;
+        }
+
+        .math-line.primary span { color: var(--primary-color); }
+        .math-line.secondary span { color: var(--secondary-color); }
+        .math-line.flux span { color: var(--flux-color); }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: rgba(0,0,0,0.1);
+            margin: 12px 0;
+        }
+
+        .highlight-box {
+            background: rgba(67, 97, 238, 0.05);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            border: 1px dashed rgba(67, 97, 238, 0.3);
+        }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 0.85rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: white;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            transition: opacity 0.2s;
+        }
+        #label-primary { background: var(--primary-color); }
+        #label-secondary { background: var(--secondary-color); }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #ui-panel { width: 100%; height: 40%; max-width: none; border-left: none; border-top: 1px solid var(--glass-border); }
+            #canvas-container { height: 60%; }
+            #formula-card { transform: scale(0.8); top: 10px; left: 10px; transform-origin: top left; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="card-title">Live Physics</div>
+            <div class="math-line flux">Φ(t) <span>∝ -cos(2πft)</span></div>
+            <div class="math-line primary">Vₚ(t) = <span><span id="val-vp-live">0.00</span> V</span></div>
+            <div class="math-line secondary">Vₛ(t) = -Nₛ(dΦ/dt) = <span><span id="val-vs-live">0.00</span> V</span></div>
+            <hr>
+            <div class="highlight-box">
+                <div class="math-line">Turns Ratio (k) <span><span id="val-k">2.00</span></span></div>
+                <div class="math-line">Voltage |Vₛ/Vₚ| <span><span id="val-vratio">2.00</span></span></div>
+            </div>
+        </div>
+        
+        <div id="label-primary" class="scene-label">Primary</div>
+        <div id="label-secondary" class="scene-label">Secondary</div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Mutual Induction</h1>
+        <p class="subtitle">Interactive Transformer Simulation. Observe how AC voltage creates changing magnetic flux, inducing voltage in the secondary coil.</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Primary Turns (Nₚ)</span>
+                <span class="control-value" id="val-Np">10</span>
+            </div>
+            <input type="range" id="Np" min="5" max="50" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Secondary Turns (Nₛ)</span>
+                <span class="control-value" style="color: var(--secondary-color); background: rgba(255, 51, 102, 0.1);" id="val-Ns">20</span>
+            </div>
+            <input type="range" id="Ns" min="5" max="50" step="1" value="20">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Input Voltage (Vₚ amp)</span>
+                <span class="control-value" id="val-Vp_amp">5.0 V</span>
+            </div>
+            <input type="range" id="Vp_amp" min="1" max="10" step="0.5" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">AC Frequency (f)</span>
+                <span class="control-value" style="color: #05b083; background: rgba(6, 214, 160, 0.1);" id="val-freq">0.5 Hz</span>
+            </div>
+            <input type="range" id="freq" min="0.0" max="2.0" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Core Permeability (μ)</span>
+                <span class="control-value" style="color: var(--flux-color); background: rgba(114, 9, 183, 0.1);" id="val-mu">1.0</span>
+            </div>
+            <input type="range" id="mu" min="0.1" max="1.0" step="0.1" value="1.0">
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Setup & Initialization ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 5, 45);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 1.5;
+        controls.minDistance = 20;
+        controls.maxDistance = 80;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 15);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-10, -10, -15);
+        scene.add(backLight);
+
+        // --- Materials ---
+        const coreMat = new THREE.MeshStandardMaterial({ 
+            color: 0xCED4DA, metalness: 0.5, roughness: 0.4 
+        });
+        const primaryMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4361EE, metalness: 0.3, roughness: 0.2 
+        });
+        const secondaryMat = new THREE.MeshStandardMaterial({ 
+            color: 0xFF3366, metalness: 0.3, roughness: 0.2 
+        });
+        const electronMat = new THREE.MeshBasicMaterial({ 
+            color: 0x06D6A0 
+        });
+        const fluxMat = new THREE.MeshBasicMaterial({ 
+            color: 0x7209B7, transparent: true, opacity: 0.8 
+        });
+
+        // --- Geometry Generation ---
+        const coreWidth = 14;
+        const coreHeight = 18;
+        const coreRadius = 2;
+        const coreThickness = 2.5;
+
+        // 1. Generate Core Path
+        function getCoreCurve() {
+            const pts = [];
+            const w = coreWidth, h = coreHeight, r = coreRadius;
+            const res = 10; // points per segment
+
+            // Top edge
+            for(let i=0; i<=res; i++) pts.push(new THREE.Vector3(-w/2+r + (w-2*r)*(i/res), h/2, 0));
+            // Top right corner
+            for(let i=1; i<=res; i++) {
+                const a = Math.PI/2 - (Math.PI/2)*(i/res);
+                pts.push(new THREE.Vector3(w/2-r + r*Math.cos(a), h/2-r + r*Math.sin(a), 0));
+            }
+            // Right edge
+            for(let i=1; i<=res; i++) pts.push(new THREE.Vector3(w/2, h/2-r - (h-2*r)*(i/res), 0));
+            // Bottom right corner
+            for(let i=1; i<=res; i++) {
+                const a = 0 - (Math.PI/2)*(i/res);
+                pts.push(new THREE.Vector3(w/2-r + r*Math.cos(a), -h/2+r + r*Math.sin(a), 0));
+            }
+            // Bottom edge
+            for(let i=1; i<=res; i++) pts.push(new THREE.Vector3(w/2-r - (w-2*r)*(i/res), -h/2, 0));
+            // Bottom left corner
+            for(let i=1; i<=res; i++) {
+                const a = -Math.PI/2 - (Math.PI/2)*(i/res);
+                pts.push(new THREE.Vector3(-w/2+r + r*Math.cos(a), -h/2+r + r*Math.sin(a), 0));
+            }
+            // Left edge
+            for(let i=1; i<=res; i++) pts.push(new THREE.Vector3(-w/2, -h/2+r + (h-2*r)*(i/res), 0));
+            // Top left corner
+            for(let i=1; i<res; i++) { // < res to avoid duplicating first point
+                const a = Math.PI - (Math.PI/2)*(i/res);
+                pts.push(new THREE.Vector3(-w/2+r + r*Math.cos(a), h/2-r + r*Math.sin(a), 0));
+            }
+            return new THREE.CatmullRomCurve3(pts, true);
+        }
+
+        const coreCurve = getCoreCurve();
+        const coreGeo = new THREE.TubeGeometry(coreCurve, 200, coreThickness, 16, true);
+        const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+        coreMesh.castShadow = true;
+        coreMesh.receiveShadow = true;
+        scene.add(coreMesh);
+
+        // 2. Generate Coils
+        function createCoilCurve(xOffset, turns) {
+            const pts = [];
+            const radius = coreThickness + 0.8;
+            const height = coreHeight - 4;
+            const segments = turns * 20;
+            
+            for(let i=0; i<=segments; i++) {
+                const t = i / segments;
+                const y = (t - 0.5) * height;
+                const angle = t * turns * Math.PI * 2;
+                const x = xOffset + Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                pts.push(new THREE.Vector3(x, y, z));
+            }
+            return new THREE.CatmullRomCurve3(pts);
+        }
+
+        let pCoilMesh, sCoilMesh;
+        let pCoilCurve, sCoilCurve;
+        let pElecInst, sElecInst;
+        const electronGeo = new THREE.SphereGeometry(0.25, 8, 8);
+        const dummy = new THREE.Object3D();
+
+        function buildCoils() {
+            const Np = parseInt(document.getElementById('Np').value);
+            const Ns = parseInt(document.getElementById('Ns').value);
+
+            // Remove old
+            if(pCoilMesh) { scene.remove(pCoilMesh); pCoilMesh.geometry.dispose(); }
+            if(sCoilMesh) { scene.remove(sCoilMesh); sCoilMesh.geometry.dispose(); }
+            if(pElecInst) { scene.remove(pElecInst); }
+            if(sElecInst) { scene.remove(sElecInst); }
+
+            // Primary
+            pCoilCurve = createCoilCurve(-coreWidth/2, Np);
+            const pGeo = new THREE.TubeGeometry(pCoilCurve, Np*20, 0.4, 8, false);
+            pCoilMesh = new THREE.Mesh(pGeo, primaryMat);
+            pCoilMesh.castShadow = true;
+            scene.add(pCoilMesh);
+
+            // Secondary
+            sCoilCurve = createCoilCurve(coreWidth/2, Ns);
+            const sGeo = new THREE.TubeGeometry(sCoilCurve, Ns*20, 0.4, 8, false);
+            sCoilMesh = new THREE.Mesh(sGeo, secondaryMat);
+            sCoilMesh.castShadow = true;
+            scene.add(sCoilMesh);
+
+            // Electrons (Instanced)
+            const pElecCount = Np * 3;
+            pElecInst = new THREE.InstancedMesh(electronGeo, electronMat, pElecCount);
+            scene.add(pElecInst);
+
+            const sElecCount = Ns * 3;
+            sElecInst = new THREE.InstancedMesh(electronGeo, electronMat, sElecCount);
+            scene.add(sElecInst);
+        }
+
+        // 3. Flux Particles
+        const fluxCount = 120;
+        const fluxGeo = new THREE.SphereGeometry(0.3, 8, 8);
+        const fluxInst = new THREE.InstancedMesh(fluxGeo, fluxMat, fluxCount);
+        scene.add(fluxInst);
+
+        // 4. Vector Arrows
+        const arrowVp = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(-coreWidth/2 - 5, 0, 0), 1, 0x4361EE, 0.8, 0.6);
+        const arrowVs = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(coreWidth/2 + 5, 0, 0), 1, 0xFF3366, 0.8, 0.6);
+        const arrowB = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0, coreHeight/2 + 3, 0), 1, 0x7209B7, 0.8, 0.6);
+        scene.add(arrowVp);
+        scene.add(arrowVs);
+        scene.add(arrowB);
+
+        // Initial Build
+        buildCoils();
+
+        // --- Event Listeners for UI ---
+        const inputs = ['Np', 'Ns', 'Vp_amp', 'freq', 'mu'];
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', (e) => {
+                let val = e.target.value;
+                let displayVal = val;
+                if(id === 'Vp_amp') displayVal += ' V';
+                if(id === 'freq') displayVal += ' Hz';
+                document.getElementById(`val-${id}`).innerText = displayVal;
+                
+                if(id === 'Np' || id === 'Ns') {
+                    buildCoils();
+                }
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation & Physics Loop ---
+        const clock = new THREE.Clock();
+        let globalTime = 0;
+        let pElecOffset = 0;
+        let sElecOffset = 0;
+        let fluxOffset = 0;
+
+        const labelPrimary = document.getElementById('label-primary');
+        const labelSecondary = document.getElementById('label-secondary');
+
+        function updateLabels() {
+            const pPos = new THREE.Vector3(-coreWidth/2, coreHeight/2 + 2, 0).project(camera);
+            const sPos = new THREE.Vector3(coreWidth/2, coreHeight/2 + 2, 0).project(camera);
+            
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+
+            labelPrimary.style.left = `${(pPos.x * .5 + .5) * w}px`;
+            labelPrimary.style.top = `${(pPos.y * -.5 + .5) * h}px`;
+            
+            labelSecondary.style.left = `${(sPos.x * .5 + .5) * w}px`;
+            labelSecondary.style.top = `${(sPos.y * -.5 + .5) * h}px`;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            globalTime += delta;
+
+            // Read Parameters
+            const Np = parseInt(document.getElementById('Np').value);
+            const Ns = parseInt(document.getElementById('Ns').value);
+            const Vp_amp = parseFloat(document.getElementById('Vp_amp').value);
+            const freq = parseFloat(document.getElementById('freq').value);
+            const mu = parseFloat(document.getElementById('mu').value);
+
+            // Physics Calculations
+            const omega = 2 * Math.PI * freq;
+            const Vp = Vp_amp * Math.sin(omega * globalTime);
+            const k = Ns / Np;
+            const Vs = -k * Vp; // Faraday's Law & Lenz's Law
+
+            // Flux is integral of Vp -> -cos
+            const phi_norm = -Math.cos(omega * globalTime); 
+            const fluxIntensity = Math.abs(phi_norm) * mu;
+
+            // Update UI Math
+            document.getElementById('val-vp-live').innerText = Vp.toFixed(2);
+            document.getElementById('val-vs-live').innerText = Vs.toFixed(2);
+            document.getElementById('val-k').innerText = k.toFixed(2);
+            document.getElementById('val-vratio').innerText = k.toFixed(2);
+
+            // 1. Animate Electrons
+            // Velocity proportional to Voltage
+            const v_ep = Vp * 0.05; 
+            const v_es = Vs * 0.05;
+
+            pElecOffset = (pElecOffset + v_ep * delta) % 1.0;
+            if(pElecOffset < 0) pElecOffset += 1.0;
+            
+            sElecOffset = (sElecOffset + v_es * delta) % 1.0;
+            if(sElecOffset < 0) sElecOffset += 1.0;
+
+            const pCount = Np * 3;
+            for(let i=0; i<pCount; i++) {
+                let u = (i / pCount + pElecOffset) % 1.0;
+                dummy.position.copy(pCoilCurve.getPoint(u));
+                dummy.updateMatrix();
+                pElecInst.setMatrixAt(i, dummy.matrix);
+            }
+            pElecInst.instanceMatrix.needsUpdate = true;
+
+            const sCount = Ns * 3;
+            for(let i=0; i<sCount; i++) {
+                let u = (i / sCount + sElecOffset) % 1.0;
+                dummy.position.copy(sCoilCurve.getPoint(u));
+                dummy.updateMatrix();
+                sElecInst.setMatrixAt(i, dummy.matrix);
+            }
+            sElecInst.instanceMatrix.needsUpdate = true;
+
+            // 2. Animate Flux Particles
+            // Flux particles move with dPhi/dt (which is proportional to Vp)
+            const v_flux = Vp * 0.08;
+            fluxOffset = (fluxOffset + v_flux * delta) % 1.0;
+            if(fluxOffset < 0) fluxOffset += 1.0;
+
+            for(let i=0; i<fluxCount; i++) {
+                let u = (i / fluxCount + fluxOffset) % 1.0;
+                dummy.position.copy(coreCurve.getPoint(u));
+                // Scale based on instantaneous flux magnitude
+                const scale = 0.2 + fluxIntensity * 1.5;
+                dummy.scale.setScalar(scale);
+                dummy.updateMatrix();
+                fluxInst.setMatrixAt(i, dummy.matrix);
+            }
+            fluxInst.instanceMatrix.needsUpdate = true;
+            fluxMat.opacity = 0.2 + fluxIntensity * 0.8;
+
+            // 3. Update Arrows
+            // Vp Arrow
+            if (Vp >= 0) {
+                arrowVp.setDirection(new THREE.Vector3(0, 1, 0));
+                arrowVp.setLength(Math.max(0.1, Vp * 0.6));
+            } else {
+                arrowVp.setDirection(new THREE.Vector3(0, -1, 0));
+                arrowVp.setLength(Math.max(0.1, -Vp * 0.6));
+            }
+
+            // Vs Arrow
+            if (Vs >= 0) {
+                arrowVs.setDirection(new THREE.Vector3(0, 1, 0));
+                arrowVs.setLength(Math.max(0.1, Vs * 0.6));
+            } else {
+                arrowVs.setDirection(new THREE.Vector3(0, -1, 0));
+                arrowVs.setLength(Math.max(0.1, -Vs * 0.6));
+            }
+
+            // B (Flux) Arrow
+            if (phi_norm >= 0) {
+                arrowB.setDirection(new THREE.Vector3(1, 0, 0));
+                arrowB.setLength(Math.max(0.1, phi_norm * mu * 4));
+            } else {
+                arrowB.setDirection(new THREE.Vector3(-1, 0, 0));
+                arrowB.setLength(Math.max(0.1, -phi_norm * mu * 4));
+            }
+
+            updateLabels();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Start animation
+        animate();
+
+    </script>
+</body>
+</html>

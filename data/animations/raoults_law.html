@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raoult's Law and Deviations</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        svg {
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            max-width: 100%;
+            max-height: 100vh;
+        }
+        .title { font-size: 24px; font-weight: 700; fill: #2c3e50; text-anchor: middle; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #7f8c8d; text-anchor: middle; }
+        .axis-label { font-size: 14px; font-weight: 600; fill: #34495e; text-anchor: middle; }
+        .tick-label { font-size: 12px; font-weight: 400; fill: #7f8c8d; text-anchor: middle; }
+        .formula { font-family: 'Roboto Mono', monospace; font-size: 13px; fill: #2c3e50; }
+        .legend-text { font-size: 12px; font-weight: 500; fill: #34495e; }
+        
+        /* State Label Styling */
+        .state-label { font-size: 18px; font-weight: 700; text-anchor: middle; }
+        .text-ideal { fill: #27ae60; }
+        .text-pos { fill: #e67e22; }
+        .text-neg { fill: #2980b9; }
+
+        /* Graph Lines */
+        .line-pa { fill: none; stroke: #3498db; stroke-width: 3; stroke-dasharray: 6,6; }
+        .line-pb { fill: none; stroke: #e74c3c; stroke-width: 3; stroke-dasharray: 6,6; }
+        .line-ptot { fill: none; stroke: #8e44ad; stroke-width: 4; }
+        .grid-line { fill: none; stroke: #ecf0f1; stroke-width: 1; }
+        .axis-line { fill: none; stroke: #34495e; stroke-width: 2; }
+        .indicator-line { fill: none; stroke: #95a5a6; stroke-width: 2; stroke-dasharray: 4,4; }
+
+        /* Animations */
+        @keyframes ideal-state {
+            0%, 25% { opacity: 1; }
+            33%, 92% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        @keyframes pos-state {
+            0%, 25% { opacity: 0; }
+            33%, 58% { opacity: 1; }
+            67%, 100% { opacity: 0; }
+        }
+        @keyframes neg-state {
+            0%, 58% { opacity: 0; }
+            67%, 92% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes imf-ab-anim {
+            0%, 25% { stroke: #9b59b6; stroke-width: 2.5px; stroke-dasharray: 5,5; opacity: 0.6; }
+            33%, 58% { stroke: #9b59b6; stroke-width: 1px; stroke-dasharray: 8,8; opacity: 0.2; }
+            67%, 92% { stroke: #8e44ad; stroke-width: 4.5px; stroke-dasharray: 2,2; opacity: 1; }
+            100% { stroke: #9b59b6; stroke-width: 2.5px; stroke-dasharray: 5,5; opacity: 0.6; }
+        }
+        @keyframes dot-move {
+            0%, 25% { transform: translateY(210px); }
+            33%, 58% { transform: translateY(165px); }
+            67%, 92% { transform: translateY(255px); }
+            100% { transform: translateY(210px); }
+        }
+        
+        /* Brownian Motion Simulation */
+        @keyframes float1 {
+            0% { transform: translate(0px, 0px); }
+            33% { transform: translate(2px, -3px); }
+            66% { transform: translate(-2px, 1px); }
+            100% { transform: translate(0px, 0px); }
+        }
+        @keyframes float2 {
+            0% { transform: translate(0px, 0px); }
+            33% { transform: translate(-3px, 2px); }
+            66% { transform: translate(1px, -2px); }
+            100% { transform: translate(0px, 0px); }
+        }
+        @keyframes float3 {
+            0% { transform: translate(0px, 0px); }
+            33% { transform: translate(1px, 3px); }
+            66% { transform: translate(-2px, -1px); }
+            100% { transform: translate(0px, 0px); }
+        }
+
+        .ideal-anim { animation: ideal-state 30s infinite ease-in-out; }
+        .pos-anim { animation: pos-state 30s infinite ease-in-out; }
+        .neg-anim { animation: neg-state 30s infinite ease-in-out; }
+        .imf-ab { animation: imf-ab-anim 30s infinite ease-in-out; }
+        .dynamic-dot { animation: dot-move 30s infinite ease-in-out; }
+        
+        .f1 { animation: float1 3s infinite ease-in-out alternate; }
+        .f2 { animation: float2 4s infinite ease-in-out alternate-reverse; }
+        .f3 { animation: float3 3.5s infinite ease-in-out alternate; }
+
+        .imf-static { stroke: #bdc3c7; stroke-width: 2px; stroke-dasharray: 4,4; opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" width="800" height="500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Gradients for Molecules -->
+        <radialGradient id="gradA" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#5dade2" />
+            <stop offset="100%" stop-color="#2980b9" />
+        </radialGradient>
+        <radialGradient id="gradB" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#f1948a" />
+            <stop offset="100%" stop-color="#c0392b" />
+        </radialGradient>
+        <radialGradient id="gradDot" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#af7ac5" />
+            <stop offset="100%" stop-color="#8e44ad" />
+        </radialGradient>
+
+        <!-- Molecule Symbols -->
+        <symbol id="molA" viewBox="-10 -10 20 20">
+            <circle cx="0" cy="0" r="8" fill="url(#gradA)" />
+        </symbol>
+        <symbol id="molB" viewBox="-10 -10 20 20">
+            <circle cx="0" cy="0" r="8" fill="url(#gradB)" />
+        </symbol>
+    </defs>
+
+    <!-- Header -->
+    <text x="400" y="35" class="title">Raoult's Law: Ideal vs. Non-Ideal Behavior</text>
+    
+    <!-- Dynamic State Labels -->
+    <text x="400" y="65" class="state-label text-ideal ideal-anim">Ideal Solution: ΔH<tspan baseline-shift="sub" font-size="0.7em">mix</tspan> = 0</text>
+    <text x="400" y="65" class="state-label text-pos pos-anim">Positive Deviation: ΔH<tspan baseline-shift="sub" font-size="0.7em">mix</tspan> &gt; 0 (Endothermic)</text>
+    <text x="400" y="65" class="state-label text-neg neg-anim">Negative Deviation: ΔH<tspan baseline-shift="sub" font-size="0.7em">mix</tspan> &lt; 0 (Exothermic)</text>
+
+    <!-- ========================================== -->
+    <!-- LEFT PANEL: MOLECULAR VIEW                 -->
+    <!-- ========================================== -->
+    
+    <!-- Container -->
+    <rect x="50" y="110" width="260" height="280" rx="8" fill="#fdfefe" stroke="#2c3e50" stroke-width="4" />
+    <line x1="50" y1="110" x2="310" y2="110" stroke="#2c3e50" stroke-width="8" stroke-linecap="round" /> <!-- Lid -->
+    
+    <!-- Liquid Phase Background -->
+    <rect x="52" y="260" width="256" height="128" rx="4" fill="#f4f0f8" opacity="0.8" />
+    <line x1="52" y1="260" x2="308" y2="260" stroke="#bdc3c7" stroke-width="2" /> <!-- Meniscus -->
+
+    <!-- Intermolecular Forces (IMFs) -->
+    <g>
+        <!-- Static A-A and B-B IMFs -->
+        <line x1="150" y1="280" x2="120" y2="310" class="imf-static" />
+        <line x1="230" y1="280" x2="200" y2="310" class="imf-static" />
+        <line x1="190" y1="280" x2="160" y2="310" class="imf-static" />
+        <line x1="110" y1="340" x2="80" y2="370" class="imf-static" />
+        <line x1="230" y1="340" x2="280" y2="370" class="imf-static" />
+        
+        <!-- Dynamic A-B IMFs -->
+        <line x1="110" y1="280" x2="150" y2="280" class="imf-ab" />
+        <line x1="190" y1="280" x2="230" y2="280" class="imf-ab" />
+        <line x1="80" y1="310" x2="120" y2="310" class="imf-ab" />
+        <line x1="160" y1="310" x2="200" y2="310" class="imf-ab" />
+        <line x1="240" y1="310" x2="280" y2="310" class="imf-ab" />
+        <line x1="110" y1="340" x2="150" y2="340" class="imf-ab" />
+        <line x1="190" y1="340" x2="230" y2="340" class="imf-ab" />
+        <line x1="120" y1="370" x2="160" y2="370" class="imf-ab" />
+        <line x1="200" y1="370" x2="240" y2="370" class="imf-ab" />
+        
+        <!-- Diagonal Dynamic A-B IMFs -->
+        <line x1="150" y1="280" x2="160" y2="310" class="imf-ab" />
+        <line x1="230" y1="280" x2="240" y2="310" class="imf-ab" />
+        <line x1="120" y1="310" x2="110" y2="340" class="imf-ab" />
+        <line x1="200" y1="310" x2="190" y2="340" class="imf-ab" />
+        <line x1="150" y1="340" x2="160" y2="370" class="imf-ab" />
+    </g>
+
+    <!-- Liquid Molecules -->
+    <g>
+        <!-- Row 1 -->
+        <g transform="translate(70, 280)"><use href="#molA" class="f1" /></g>
+        <g transform="translate(110, 280)"><use href="#molB" class="f2" /></g>
+        <g transform="translate(150, 280)"><use href="#molA" class="f3" /></g>
+        <g transform="translate(190, 280)"><use href="#molB" class="f1" /></g>
+        <g transform="translate(230, 280)"><use href="#molA" class="f2" /></g>
+        <g transform="translate(270, 280)"><use href="#molB" class="f3" /></g>
+        <!-- Row 2 -->
+        <g transform="translate(80, 310)"><use href="#molB" class="f3" /></g>
+        <g transform="translate(120, 310)"><use href="#molA" class="f1" /></g>
+        <g transform="translate(160, 310)"><use href="#molB" class="f2" /></g>
+        <g transform="translate(200, 310)"><use href="#molA" class="f3" /></g>
+        <g transform="translate(240, 310)"><use href="#molB" class="f1" /></g>
+        <g transform="translate(280, 310)"><use href="#molA" class="f2" /></g>
+        <!-- Row 3 -->
+        <g transform="translate(70, 340)"><use href="#molA" class="f2" /></g>
+        <g transform="translate(110, 340)"><use href="#molB" class="f3" /></g>
+        <g transform="translate(150, 340)"><use href="#molA" class="f1" /></g>
+        <g transform="translate(190, 340)"><use href="#molB" class="f2" /></g>
+        <g transform="translate(230, 340)"><use href="#molA" class="f3" /></g>
+        <g transform="translate(270, 340)"><use href="#molB" class="f1" /></g>
+        <!-- Row 4 -->
+        <g transform="translate(80, 370)"><use href="#molB" class="f1" /></g>
+        <g transform="translate(120, 370)"><use href="#molA" class="f2" /></g>
+        <g transform="translate(160, 370)"><use href="#molB" class="f3" /></g>
+        <g transform="translate(200, 370)"><use href="#molA" class="f1" /></g>
+        <g transform="translate(240, 370)"><use href="#molB" class="f2" /></g>
+        <g transform="translate(280, 370)"><use href="#molA" class="f3" /></g>
+    </g>
+
+    <!-- Vapor Molecules -->
+    <g>
+        <!-- Always visible (Base vapor pressure) -->
+        <g transform="translate(100, 150)"><use href="#molA" class="f1" /></g>
+        <g transform="translate(220, 180)"><use href="#molB" class="f2" /></g>
+
+        <!-- Visible in Ideal and Positive (Hidden in Negative) -->
+        <g class="ideal-anim">
+            <g transform="translate(160, 140)"><use href="#molA" class="f3" /></g>
+            <g transform="translate(130, 200)"><use href="#molB" class="f1" /></g>
+            <g transform="translate(250, 160)"><use href="#molA" class="f2" /></g>
+            <g transform="translate(80, 220)"><use href="#molB" class="f3" /></g>
+            <g transform="translate(190, 210)"><use href="#molA" class="f1" /></g>
+            <g transform="translate(260, 230)"><use href="#molB" class="f2" /></g>
+        </g>
+        <g class="pos-anim">
+            <g transform="translate(160, 140)"><use href="#molA" class="f3" /></g>
+            <g transform="translate(130, 200)"><use href="#molB" class="f1" /></g>
+            <g transform="translate(250, 160)"><use href="#molA" class="f2" /></g>
+            <g transform="translate(80, 220)"><use href="#molB" class="f3" /></g>
+            <g transform="translate(190, 210)"><use href="#molA" class="f1" /></g>
+            <g transform="translate(260, 230)"><use href="#molB" class="f2" /></g>
+        </g>
+
+        <!-- Visible ONLY in Positive (Extra vapor pressure) -->
+        <g class="pos-anim">
+            <g transform="translate(70, 170)"><use href="#molA" class="f2" /></g>
+            <g transform="translate(110, 130)"><use href="#molB" class="f3" /></g>
+            <g transform="translate(140, 180)"><use href="#molA" class="f1" /></g>
+            <g transform="translate(180, 150)"><use href="#molB" class="f2" /></g>
+            <g transform="translate(210, 130)"><use href="#molA" class="f3" /></g>
+            <g transform="translate(240, 200)"><use href="#molB" class="f1" /></g>
+            <g transform="translate(280, 150)"><use href="#molA" class="f2" /></g>
+            <g transform="translate(90, 190)"><use href="#molB" class="f3" /></g>
+        </g>
+    </g>
+
+    <!-- Legend -->
+    <rect x="50" y="410" width="260" height="60" rx="6" fill="#ffffff" stroke="#ecf0f1" stroke-width="2" />
+    <use href="#molA" x="70" y="425" />
+    <text x="85" y="429" class="legend-text">Component A</text>
+    <use href="#molB" x="180" y="425" />
+    <text x="195" y="429" class="legend-text">Component B</text>
+    <line x1="65" y1="450" x2="85" y2="450" stroke="#8e44ad" stroke-width="4" />
+    <text x="95" y="454" class="legend-text">Total Vapor Pressure (P<tspan baseline-shift="sub" font-size="0.7em">tot</tspan>)</text>
+
+    <!-- ========================================== -->
+    <!-- RIGHT PANEL: VAPOR PRESSURE GRAPH          -->
+    <!-- ========================================== -->
+    
+    <!-- Grid Lines -->
+    <line x1="450" y1="180" x2="750" y2="180" class="grid-line" />
+    <line x1="450" y1="240" x2="750" y2="240" class="grid-line" />
+    <line x1="450" y1="310" x2="750" y2="310" class="grid-line" />
+    <line x1="525" y1="120" x2="525" y2="380" class="grid-line" />
+    <line x1="600" y1="120" x2="600" y2="380" class="grid-line" />
+    <line x1="675" y1="120" x2="675" y2="380" class="grid-line" />
+
+    <!-- Current State Indicator (Vertical Line at x=600 for 50/50 mix) -->
+    <line x1="600" y1="120" x2="600" y2="380" class="indicator-line" />
+    <text x="600" y="110" class="tick-label" fill="#95a5a6">Current Mix</text>
+
+    <!-- Axes -->
+    <line x1="450" y1="380" x2="750" y2="380" class="axis-line" /> <!-- X Axis -->
+    <line x1="450" y1="380" x2="450" y2="120" class="axis-line" /> <!-- Y Axis Left -->
+    <line x1="750" y1="380" x2="750" y2="120" class="axis-line" /> <!-- Y Axis Right -->
+
+    <!-- Axis Labels -->
+    <text x="600" y="425" class="axis-label">Mole Fraction χ<tspan baseline-shift="sub" font-size="0.7em">B</tspan> →</text>
+    <text x="415" y="250" class="axis-label" transform="rotate(-90 415 250)">Vapor Pressure P</text>
+    
+    <!-- Tick Labels -->
+    <text x="450" y="400" class="tick-label">χ<tspan baseline-shift="sub" font-size="0.7em">B</tspan> = 0</text>
+    <text x="450" y="415" class="tick-label">χ<tspan baseline-shift="sub" font-size="0.7em">A</tspan> = 1</text>
+    <text x="750" y="400" class="tick-label">χ<tspan baseline-shift="sub" font-size="0.7em">B</tspan> = 1</text>
+    <text x="750" y="415" class="tick-label">χ<tspan baseline-shift="sub" font-size="0.7em">A</tspan> = 0</text>
+    
+    <text x="435" y="184" class="tick-label" fill="#3498db" font-weight="600">P<tspan baseline-shift="sub" font-size="0.7em">A</tspan><tspan baseline-shift="super" font-size="0.7em">0</tspan></text>
+    <text x="765" y="244" class="tick-label" fill="#e74c3c" font-weight="600">P<tspan baseline-shift="sub" font-size="0.7em">B</tspan><tspan baseline-shift="super" font-size="0.7em">0</tspan></text>
+
+    <!-- Graph Curves -->
+    <g>
+        <!-- Ideal State Lines -->
+        <g class="ideal-anim">
+            <path d="M 450,180 L 750,380" class="line-pa" />
+            <path d="M 450,380 L 750,240" class="line-pb" />
+            <path d="M 450,180 L 750,240" class="line-ptot" />
+        </g>
+
+        <!-- Positive Deviation Curves (Bowing Up / Lower Y) -->
+        <g class="pos-anim">
+            <path d="M 450,180 Q 600,180 750,380" class="line-pa" />
+            <path d="M 450,380 Q 600,240 750,240" class="line-pb" />
+            <path d="M 450,180 Q 600,120 750,240" class="line-ptot" />
+        </g>
+
+        <!-- Negative Deviation Curves (Bowing Down / Higher Y) -->
+        <g class="neg-anim">
+            <path d="M 450,180 Q 600,380 750,380" class="line-pa" />
+            <path d="M 450,380 Q 600,380 750,240" class="line-pb" />
+            <path d="M 450,180 Q 600,300 750,240" class="line-ptot" />
+        </g>
+    </g>
+
+    <!-- Dynamic Point on Total Pressure Line -->
+    <circle cx="600" cy="0" r="7" fill="url(#gradDot)" stroke="#ffffff" stroke-width="2" class="dynamic-dot" />
+
+    <!-- Formulas Box -->
+    <rect x="620" y="130" width="120" height="75" rx="4" fill="#ffffff" stroke="#ecf0f1" stroke-width="1" opacity="0.9" />
+    <text x="630" y="150" class="formula">P<tspan baseline-shift="sub" font-size="0.7em">A</tspan> = P<tspan baseline-shift="sub" font-size="0.7em">A</tspan><tspan baseline-shift="super" font-size="0.7em">0</tspan> χ<tspan baseline-shift="sub" font-size="0.7em">A</tspan></text>
+    <text x="630" y="170" class="formula">P<tspan baseline-shift="sub" font-size="0.7em">B</tspan> = P<tspan baseline-shift="sub" font-size="0.7em">B</tspan><tspan baseline-shift="super" font-size="0.7em">0</tspan> χ<tspan baseline-shift="sub" font-size="0.7em">B</tspan></text>
+    <text x="630" y="190" class="formula">P<tspan baseline-shift="sub" font-size="0.7em">tot</tspan> = P<tspan baseline-shift="sub" font-size="0.7em">A</tspan> + P<tspan baseline-shift="sub" font-size="0.7em">B</tspan></text>
+
+</svg>
+
+</body>
+</html>

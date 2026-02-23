@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Friction & Aristotle's Fallacy</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 320px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            padding: 25px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin: 0 0 10px 0;
+            color: #1e293b;
+            line-height: 1.2;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Specific slider colors */
+        #f_app::-webkit-slider-thumb { background: #4361EE; }
+        #mass::-webkit-slider-thumb { background: #F77F00; }
+        #mu_s::-webkit-slider-thumb { background: #FF3366; }
+        #mu_k::-webkit-slider-thumb { background: #FF3366; }
+
+        .radio-group {
+            display: flex;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 5px;
+            border-radius: 8px;
+        }
+        .radio-group label {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .radio-group input[type="radio"] {
+            display: none;
+        }
+        .radio-group input[type="radio"]:checked + label {
+            background: #4361EE;
+            color: white;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.3);
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            font-family: 'Roboto Mono', monospace;
+            min-width: 250px;
+        }
+
+        .formula-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            border-bottom: 1px dashed #cbd5e1;
+            padding-bottom: 4px;
+        }
+        .formula-row:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+        .f-label { color: #64748b; }
+        .f-val { font-weight: 700; }
+        
+        .c-blue { color: #4361EE; }
+        .c-red { color: #FF3366; }
+        .c-green { color: #06D6A0; }
+
+        /* 3D Labels */
+        .vector-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 5;
+            transform: translate(-50%, -50%);
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        /* Instructions */
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #64748b;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            #ui-panel { width: 100%; height: 40vh; top: auto; bottom: 0; border-left: none; border-top: 1px solid rgba(255,255,255,0.8); }
+            #formula-card { top: 10px; left: 10px; padding: 10px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-row"><span class="f-label">F_app:</span> <span class="f-val c-blue" id="val-fapp">0.00 N</span></div>
+        <div class="formula-row"><span class="f-label">Friction (f):</span> <span class="f-val c-red" id="val-ffric">0.00 N</span></div>
+        <div class="formula-row"><span class="f-label">Net Force:</span> <span class="f-val" id="val-fnet">0.00 N</span></div>
+        <div class="formula-row"><span class="f-label">Acceleration:</span> <span class="f-val" id="val-acc">0.00 m/s²</span></div>
+        <div class="formula-row"><span class="f-label">Velocity:</span> <span class="f-val c-green" id="val-vel">0.00 m/s</span></div>
+        <div class="formula-row" style="margin-top: 15px; font-size: 0.8rem; color: #94a3b8;">
+            <span id="friction-state">Static Friction Mode</span>
+        </div>
+    </div>
+
+    <div id="instructions">Left Click + Drag to Rotate | Scroll to Zoom</div>
+
+    <div id="ui-panel">
+        <h1>Physics Controls</h1>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Physics Model</span>
+            </div>
+            <div class="radio-group">
+                <input type="radio" id="mode-newton" name="mode" value="newton" checked>
+                <label for="mode-newton">Newtonian</label>
+                <input type="radio" id="mode-aristotle" name="mode" value="aristotle">
+                <label for="mode-aristotle">Aristotelian</label>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Applied Force (F_app)</span>
+                <span class="value-display" id="disp-fapp">0 N</span>
+            </div>
+            <input type="range" id="f_app" min="-100" max="100" value="0" step="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Mass (m)</span>
+                <span class="value-display" id="disp-mass">5 kg</span>
+            </div>
+            <input type="range" id="mass" min="1" max="20" value="5" step="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Static Friction (μ_s)</span>
+                <span class="value-display" id="disp-mus">0.50</span>
+            </div>
+            <input type="range" id="mu_s" min="0.1" max="0.9" value="0.5" step="0.01">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Kinetic Friction (μ_k)</span>
+                <span class="value-display" id="disp-muk">0.30</span>
+            </div>
+            <input type="range" id="mu_k" min="0.05" max="0.8" value="0.3" step="0.01">
+        </div>
+        
+        <button id="reset-btn" style="padding: 10px; background: #e2e8f0; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: #475569; margin-top: auto;">Reset Position</button>
+    </div>
+
+    <!-- 3D Labels -->
+    <div id="label-fapp" class="vector-label c-blue">F_app</div>
+    <div id="label-ffric" class="vector-label c-red">f</div>
+    <div id="label-vel" class="vector-label c-green">v</div>
+    <div id="label-norm" class="vector-label" style="color:#F77F00;">N</div>
+    <div id="label-grav" class="vector-label" style="color:#7209B7;">mg</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.Fog(0xf0f4f8, 20, 100);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 8, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.minDistance = 5;
+        controls.maxDistance = 50;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 50;
+        dirLight.shadow.camera.left = -20;
+        dirLight.shadow.camera.right = 20;
+        dirLight.shadow.camera.top = 20;
+        dirLight.shadow.camera.bottom = -20;
+        scene.add(dirLight);
+
+        // --- Objects ---
+        // Floor
+        const floorGeo = new THREE.PlaneGeometry(200, 200);
+        const floorMat = new THREE.MeshStandardMaterial({ 
+            color: 0xE2E8F0,
+            roughness: 0.8,
+            metalness: 0.1
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const gridHelper = new THREE.GridHelper(200, 200, 0xcbd5e1, 0xe2e8f0);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
+
+        // Block
+        const blockSize = 2;
+        const blockGeo = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
+        const blockMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4361EE,
+            roughness: 0.3,
+            metalness: 0.2
+        });
+        const block = new THREE.Mesh(blockGeo, blockMat);
+        block.position.y = blockSize / 2;
+        block.castShadow = true;
+        block.receiveShadow = true;
+        scene.add(block);
+
+        // --- Vectors (Arrows) ---
+        const arrowOrigin = new THREE.Vector3(0, 0, 0);
+        const arrowFapp = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), arrowOrigin, 1, 0x4361EE, 0.5, 0.3);
+        const arrowFric = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), arrowOrigin, 1, 0xFF3366, 0.5, 0.3);
+        const arrowVel  = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), arrowOrigin, 1, 0x06D6A0, 0.5, 0.3);
+        const arrowNorm = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), arrowOrigin, 1, 0xF77F00, 0.5, 0.3);
+        const arrowGrav = new THREE.ArrowHelper(new THREE.Vector3(0,-1,0), arrowOrigin, 1, 0x7209B7, 0.5, 0.3);
+        
+        // Thicker lines for arrows
+        [arrowFapp, arrowFric, arrowVel, arrowNorm, arrowGrav].forEach(arrow => {
+            arrow.line.material.linewidth = 3; 
+            scene.add(arrow);
+        });
+
+        // --- Particle System (Dust) ---
+        const particleCount = 100;
+        const particlesGeo = new THREE.BufferGeometry();
+        const particlesPos = new Float32Array(particleCount * 3);
+        const particlesVel = [];
+        const particlesLife = [];
+        
+        for(let i=0; i<particleCount; i++) {
+            particlesPos[i*3] = 0;
+            particlesPos[i*3+1] = -100; // hidden initially
+            particlesPos[i*3+2] = 0;
+            particlesVel.push(new THREE.Vector3());
+            particlesLife.push(0);
+        }
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(particlesPos, 3));
+        
+        const particleMat = new THREE.PointsMaterial({
+            color: 0x94a3b8,
+            size: 0.2,
+            transparent: true,
+            opacity: 0.6,
+            depthWrite: false
+        });
+        const particleSystem = new THREE.Points(particlesGeo, particleMat);
+        scene.add(particleSystem);
+
+        let particleIndex = 0;
+        function emitDust(x, z, speed, direction) {
+            if(Math.random() > 0.3) return; // limit emission rate
+            const i = particleIndex;
+            particlesPos[i*3] = x + (Math.random() - 0.5) * blockSize;
+            particlesPos[i*3+1] = 0.1;
+            particlesPos[i*3+2] = z + (Math.random() - 0.5) * blockSize;
+            
+            particlesVel[i].set(
+                -direction * speed * 0.2 + (Math.random() - 0.5) * 0.5,
+                Math.random() * 0.5 + 0.2,
+                (Math.random() - 0.5) * 0.5
+            );
+            particlesLife[i] = 1.0;
+            
+            particleIndex = (particleIndex + 1) % particleCount;
+        }
+
+        // --- Physics Variables ---
+        const g = 9.81;
+        let state = {
+            pos: 0,
+            vel: 0,
+            acc: 0,
+            f_app: 0,
+            mass: 5,
+            mu_s: 0.5,
+            mu_k: 0.3,
+            mode: 'newton',
+            f_fric: 0,
+            f_net: 0,
+            isMoving: false
+        };
+
+        // --- UI Elements ---
+        const inputs = {
+            f_app: document.getElementById('f_app'),
+            mass: document.getElementById('mass'),
+            mu_s: document.getElementById('mu_s'),
+            mu_k: document.getElementById('mu_k')
+        };
+        const displays = {
+            f_app: document.getElementById('disp-fapp'),
+            mass: document.getElementById('disp-mass'),
+            mu_s: document.getElementById('disp-mus'),
+            mu_k: document.getElementById('disp-muk')
+        };
+        const readouts = {
+            fapp: document.getElementById('val-fapp'),
+            ffric: document.getElementById('val-ffric'),
+            fnet: document.getElementById('val-fnet'),
+            acc: document.getElementById('val-acc'),
+            vel: document.getElementById('val-vel'),
+            state: document.getElementById('friction-state')
+        };
+        const labels = {
+            fapp: document.getElementById('label-fapp'),
+            ffric: document.getElementById('label-ffric'),
+            vel: document.getElementById('label-vel'),
+            norm: document.getElementById('label-norm'),
+            grav: document.getElementById('label-grav')
+        };
+
+        // --- Event Listeners ---
+        function updateInputs() {
+            state.f_app = parseFloat(inputs.f_app.value);
+            state.mass = parseFloat(inputs.mass.value);
+            
+            // Ensure mu_k is never greater than mu_s
+            let ms = parseFloat(inputs.mu_s.value);
+            let mk = parseFloat(inputs.mu_k.value);
+            if(mk > ms) {
+                if(this.id === 'mu_k') {
+                    inputs.mu_s.value = mk;
+                    ms = mk;
+                } else {
+                    inputs.mu_k.value = ms;
+                    mk = ms;
+                }
+            }
+            state.mu_s = ms;
+            state.mu_k = mk;
+
+            displays.f_app.innerText = state.f_app + ' N';
+            displays.mass.innerText = state.mass + ' kg';
+            displays.mu_s.innerText = state.mu_s.toFixed(2);
+            displays.mu_k.innerText = state.mu_k.toFixed(2);
+        }
+
+        Object.values(inputs).forEach(input => {
+            input.addEventListener('input', updateInputs);
+        });
+
+        document.querySelectorAll('input[name="mode"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                state.mode = e.target.value;
+                if(state.mode === 'aristotle') {
+                    state.vel = 0; // Reset velocity on mode switch
+                }
+            });
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            state.pos = 0;
+            state.vel = 0;
+            camera.position.set(0, 8, 20);
+            controls.target.set(0, 0, 0);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Helper for 3D to 2D Projection ---
+        function updateLabelPosition(label, worldPos, isVisible) {
+            if (!isVisible) {
+                label.style.opacity = 0;
+                return;
+            }
+            const tempV = worldPos.clone();
+            tempV.project(camera);
+            
+            // Check if behind camera
+            if (tempV.z > 1) {
+                label.style.opacity = 0;
+                return;
+            }
+
+            const x = (tempV.x *  .5 + .5) * window.innerWidth;
+            const y = (tempV.y * -.5 + .5) * window.innerHeight;
+            
+            label.style.transform = `translate(-50%, -50%) translate(${x}px,${y}px)`;
+            label.style.opacity = 1;
+        }
+
+        // --- Main Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            let dt = clock.getDelta();
+            if (dt > 0.1) dt = 0.1; // Cap dt to prevent huge jumps
+
+            // --- PHYSICS ENGINE ---
+            const N = state.mass * g;
+            const fs_max = state.mu_s * N;
+            const fk = state.mu_k * N;
+
+            if (state.mode === 'newton') {
+                // Newtonian Physics
+                if (Math.abs(state.vel) < 0.05) {
+                    // At rest (or very close to it)
+                    if (Math.abs(state.f_app) <= fs_max) {
+                        // Static friction holds
+                        state.vel = 0;
+                        state.f_fric = -state.f_app;
+                        state.f_net = 0;
+                        state.acc = 0;
+                        state.isMoving = false;
+                        readouts.state.innerText = "Static Friction (v = 0)";
+                        readouts.state.style.color = "#64748b";
+                    } else {
+                        // Breakout!
+                        state.f_fric = -fk * Math.sign(state.f_app);
+                        state.f_net = state.f_app + state.f_fric;
+                        state.acc = state.f_net / state.mass;
+                        state.isMoving = true;
+                        readouts.state.innerText = "Kinetic Friction (Sliding)";
+                        readouts.state.style.color = "#FF3366";
+                    }
+                } else {
+                    // In motion
+                    state.f_fric = -fk * Math.sign(state.vel);
+                    state.f_net = state.f_app + state.f_fric;
+                    state.acc = state.f_net / state.mass;
+                    state.isMoving = true;
+                    readouts.state.innerText = "Kinetic Friction (Sliding)";
+                    readouts.state.style.color = "#FF3366";
+                }
+
+                // Integration
+                let old_vel = state.vel;
+                state.vel += state.acc * dt;
+
+                // Stop condition (prevent jittering when friction stops the block)
+                if (old_vel !== 0 && Math.sign(old_vel) !== Math.sign(state.vel)) {
+                    if (Math.abs(state.f_app) <= fs_max) {
+                        state.vel = 0;
+                        state.acc = 0;
+                        state.f_fric = -state.f_app;
+                        state.f_net = 0;
+                        state.isMoving = false;
+                    }
+                }
+
+            } else {
+                // Aristotle's Fallacy: v ∝ F
+                // Here we make velocity directly proportional to applied force.
+                // We use mu_k, m, g as resistance factors to scale it reasonably.
+                const resistance = fk; 
+                if (state.f_app === 0) {
+                    state.vel = 0;
+                    state.f_fric = 0;
+                } else {
+                    // Arbitrary scaling to make it look decent on screen
+                    state.vel = (state.f_app / resistance) * 5; 
+                    state.f_fric = -state.f_app; // "Resistance" equals push
+                }
+                state.f_net = 0; // In Aristotle's mind, constant v means forces balance
+                state.acc = 0;
+                state.isMoving = Math.abs(state.vel) > 0;
+                readouts.state.innerText = "Aristotelian Fallacy (v ∝ F)";
+                readouts.state.style.color = "#7209B7";
+            }
+
+            state.pos += state.vel * dt;
+
+            // --- VISUAL UPDATES ---
+            
+            // Block
+            block.position.x = state.pos;
+            // Scale block slightly based on mass
+            const scale = Math.pow(state.mass / 5, 1/3);
+            block.scale.set(scale, scale, scale);
+            block.position.y = (blockSize * scale) / 2;
+
+            // Camera follow (soft)
+            controls.target.x += (state.pos - controls.target.x) * 0.1;
+            camera.position.x += (state.pos - camera.position.x) * 0.1;
+            controls.update();
+
+            // Arrows
+            const forceScale = 0.05;
+            const velScale = 0.5;
+            const bY = block.position.y;
+            const bS = blockSize * scale;
+
+            // F_app (Center)
+            if (Math.abs(state.f_app) > 0.1) {
+                arrowFapp.position.set(state.pos, bY, 0);
+                arrowFapp.setDirection(new THREE.Vector3(Math.sign(state.f_app), 0, 0));
+                arrowFapp.setLength(Math.abs(state.f_app) * forceScale + 0.5, 0.5, 0.3);
+                arrowFapp.visible = true;
+                updateLabelPosition(labels.fapp, new THREE.Vector3(state.pos + (Math.abs(state.f_app)*forceScale + 1)*Math.sign(state.f_app), bY, 0), true);
+            } else {
+                arrowFapp.visible = false;
+                updateLabelPosition(labels.fapp, arrowOrigin, false);
+            }
+
+            // Friction (Bottom)
+            if (Math.abs(state.f_fric) > 0.1) {
+                arrowFric.position.set(state.pos, 0.1, 0);
+                arrowFric.setDirection(new THREE.Vector3(Math.sign(state.f_fric), 0, 0));
+                arrowFric.setLength(Math.abs(state.f_fric) * forceScale + 0.5, 0.5, 0.3);
+                arrowFric.visible = true;
+                updateLabelPosition(labels.ffric, new THREE.Vector3(state.pos + (Math.abs(state.f_fric)*forceScale + 1)*Math.sign(state.f_fric), 0.1, 0), true);
+            } else {
+                arrowFric.visible = false;
+                updateLabelPosition(labels.ffric, arrowOrigin, false);
+            }
+
+            // Velocity (Top)
+            if (Math.abs(state.vel) > 0.1) {
+                arrowVel.position.set(state.pos, bY + bS/2 + 0.2, 0);
+                arrowVel.setDirection(new THREE.Vector3(Math.sign(state.vel), 0, 0));
+                arrowVel.setLength(Math.abs(state.vel) * velScale + 0.5, 0.5, 0.3);
+                arrowVel.visible = true;
+                updateLabelPosition(labels.vel, new THREE.Vector3(state.pos + (Math.abs(state.vel)*velScale + 1)*Math.sign(state.vel), bY + bS/2 + 0.2, 0), true);
+            } else {
+                arrowVel.visible = false;
+                updateLabelPosition(labels.vel, arrowOrigin, false);
+            }
+
+            // Normal & Gravity
+            const nLen = N * forceScale;
+            arrowNorm.position.set(state.pos, bY, 0);
+            arrowNorm.setLength(nLen, 0.5, 0.3);
+            updateLabelPosition(labels.norm, new THREE.Vector3(state.pos, bY + nLen + 0.5, 0), true);
+
+            arrowGrav.position.set(state.pos, bY, 0);
+            arrowGrav.setLength(nLen, 0.5, 0.3);
+            updateLabelPosition(labels.grav, new THREE.Vector3(state.pos, bY - nLen - 0.5, 0), true);
+
+            // Particles
+            if (state.isMoving) {
+                emitDust(state.pos, 0, Math.abs(state.vel), Math.sign(state.vel));
+            }
+            
+            const positions = particleSystem.geometry.attributes.position.array;
+            for(let i=0; i<particleCount; i++) {
+                if(particlesLife[i] > 0) {
+                    particlesLife[i] -= dt * 2;
+                    positions[i*3] += particlesVel[i].x * dt;
+                    positions[i*3+1] += particlesVel[i].y * dt;
+                    positions[i*3+2] += particlesVel[i].z * dt;
+                    if(particlesLife[i] <= 0) {
+                        positions[i*3+1] = -100; // hide
+                    }
+                }
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+
+            // UI Readouts
+            readouts.fapp.innerText = state.f_app.toFixed(2) + ' N';
+            readouts.ffric.innerText = Math.abs(state.f_fric).toFixed(2) + ' N';
+            readouts.fnet.innerText = state.f_net.toFixed(2) + ' N';
+            readouts.acc.innerText = state.acc.toFixed(2) + ' m/s²';
+            readouts.vel.innerText = state.vel.toFixed(2) + ' m/s';
+
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        updateInputs();
+        animate();
+
+    </script>
+</body>
+</html>

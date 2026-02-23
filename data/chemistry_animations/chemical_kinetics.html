@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemical Kinetics: Collision Theory & Transition State</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            background-color: #f8f9fa;
+            overflow: hidden;
+        }
+
+        /* CSS Animations for Molecules */
+        @keyframes move-h-left {
+            0%, 5% { transform: translate(0, -130px); opacity: 0; }
+            10% { transform: translate(0, -130px); opacity: 1; animation-timing-function: ease-out; }
+            30% { transform: translate(0, 0); opacity: 1; }
+            35% { transform: translate(-2px, 1px); }
+            40% { transform: translate(2px, -1px); }
+            45% { transform: translate(-1px, 2px); }
+            50% { transform: translate(0, 0); animation-timing-function: ease-in; }
+            80%, 90% { transform: translate(-80px, -80px); opacity: 1; }
+            95%, 100% { transform: translate(-80px, -80px); opacity: 0; }
+        }
+
+        @keyframes move-h-right {
+            0%, 5% { transform: translate(0, -130px); opacity: 0; }
+            10% { transform: translate(0, -130px); opacity: 1; animation-timing-function: ease-out; }
+            30% { transform: translate(0, 0); opacity: 1; }
+            35% { transform: translate(2px, 1px); }
+            40% { transform: translate(-2px, -1px); }
+            45% { transform: translate(1px, 2px); }
+            50% { transform: translate(0, 0); animation-timing-function: ease-in; }
+            80%, 90% { transform: translate(80px, 80px); opacity: 1; }
+            95%, 100% { transform: translate(80px, 80px); opacity: 0; }
+        }
+
+        @keyframes move-i-left {
+            0%, 5% { transform: translate(0, 110px); opacity: 0; }
+            10% { transform: translate(0, 110px); opacity: 1; animation-timing-function: ease-out; }
+            30% { transform: translate(0, 0); opacity: 1; }
+            35% { transform: translate(-1px, -2px); }
+            40% { transform: translate(1px, 2px); }
+            45% { transform: translate(-2px, -1px); }
+            50% { transform: translate(0, 0); animation-timing-function: ease-in; }
+            80%, 90% { transform: translate(-80px, -80px); opacity: 1; }
+            95%, 100% { transform: translate(-80px, -80px); opacity: 0; }
+        }
+
+        @keyframes move-i-right {
+            0%, 5% { transform: translate(0, 110px); opacity: 0; }
+            10% { transform: translate(0, 110px); opacity: 1; animation-timing-function: ease-out; }
+            30% { transform: translate(0, 0); opacity: 1; }
+            35% { transform: translate(1px, -2px); }
+            40% { transform: translate(-1px, 2px); }
+            45% { transform: translate(2px, -1px); }
+            50% { transform: translate(0, 0); animation-timing-function: ease-in; }
+            80%, 90% { transform: translate(80px, 80px); opacity: 1; }
+            95%, 100% { transform: translate(80px, 80px); opacity: 0; }
+        }
+
+        @keyframes bond-hh {
+            0%, 5% { transform: translate(0, -130px); opacity: 0; }
+            10% { transform: translate(0, -130px); opacity: 1; animation-timing-function: ease-out; }
+            30% { transform: translate(0, 0); opacity: 1; }
+            32%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes bond-ii {
+            0%, 5% { transform: translate(0, 110px); opacity: 0; }
+            10% { transform: translate(0, 110px); opacity: 1; animation-timing-function: ease-out; }
+            30% { transform: translate(0, 0); opacity: 1; }
+            32%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes bond-partial {
+            0%, 28% { opacity: 0; }
+            30%, 50% { opacity: 1; }
+            52%, 100% { opacity: 0; }
+        }
+
+        @keyframes bond-hi-left {
+            0%, 48% { opacity: 0; transform: translate(0,0); }
+            50% { opacity: 1; transform: translate(0,0); animation-timing-function: ease-in; }
+            80%, 90% { opacity: 1; transform: translate(-80px, -80px); }
+            95%, 100% { opacity: 0; transform: translate(-80px, -80px); }
+        }
+
+        @keyframes bond-hi-right {
+            0%, 48% { opacity: 0; transform: translate(0,0); }
+            50% { opacity: 1; transform: translate(0,0); animation-timing-function: ease-in; }
+            80%, 90% { opacity: 1; transform: translate(80px, 80px); }
+            95%, 100% { opacity: 0; transform: translate(80px, 80px); }
+        }
+
+        @keyframes arrows {
+            0%, 30% { opacity: 0; }
+            35%, 45% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        @keyframes label-reactants {
+            0%, 5% { opacity: 0; }
+            10%, 25% { opacity: 1; }
+            30%, 100% { opacity: 0; }
+        }
+
+        @keyframes label-ts {
+            0%, 28% { opacity: 0; }
+            30%, 50% { opacity: 1; }
+            52%, 100% { opacity: 0; }
+        }
+
+        @keyframes label-products {
+            0%, 48% { opacity: 0; }
+            50%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        /* Apply Animations */
+        .h-left { animation: move-h-left 10s infinite; }
+        .h-right { animation: move-h-right 10s infinite; }
+        .i-left { animation: move-i-left 10s infinite; }
+        .i-right { animation: move-i-right 10s infinite; }
+        .bond-hh { animation: bond-hh 10s infinite; }
+        .bond-ii { animation: bond-ii 10s infinite; }
+        .bond-partial { animation: bond-partial 10s infinite; }
+        .bond-hi-left { animation: bond-hi-left 10s infinite; }
+        .bond-hi-right { animation: bond-hi-right 10s infinite; }
+        .arrows { animation: arrows 10s infinite; }
+        .label-reactants { animation: label-reactants 10s infinite; }
+        .label-ts { animation: label-ts 10s infinite; }
+        .label-products { animation: label-products 10s infinite; }
+
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <title>The Anatomy of a Collision: Activation Energy and the Transition State</title>
+        <desc>An animated diagram showing the reaction of hydrogen and iodine to form hydrogen iodide. The left pane shows the molecular collision and transition state, while the right pane tracks the potential energy on a reaction coordinate diagram.</desc>
+
+        <!-- Definitions for Gradients, Markers, and Filters -->
+        <defs>
+            <radialGradient id="grad-H" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FFFFFF" />
+                <stop offset="100%" stop-color="#CCCCCC" />
+            </radialGradient>
+            
+            <radialGradient id="grad-I" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#D499FF" />
+                <stop offset="100%" stop-color="#9933FF" />
+            </radialGradient>
+
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+
+            <marker id="arrow-axis" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#333333"/>
+            </marker>
+
+            <marker id="arrow-ea" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#333333"/>
+            </marker>
+
+            <marker id="arrow-curly" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00"/>
+            </marker>
+        </defs>
+
+        <!-- Main Title -->
+        <text x="400" y="35" font-family="Inter" font-size="20" font-weight="600" fill="#2B2D42" text-anchor="middle">Chemical Kinetics: Collision Theory &amp; Transition State</text>
+
+        <!-- Left Pane: Molecular Collision Space -->
+        <rect x="20" y="60" width="360" height="420" rx="10" fill="#ffffff" stroke="#e0e0e0" stroke-width="2"/>
+        <text x="200" y="90" font-family="Inter" font-size="16" font-weight="600" fill="#555555" text-anchor="middle">Molecular Collision Space</text>
+
+        <!-- Legend -->
+        <rect x="35" y="415" width="130" height="50" rx="5" fill="#f8f9fa" stroke="#dddddd" stroke-width="1"/>
+        <circle cx="55" cy="430" r="6" fill="url(#grad-H)"/>
+        <text x="70" y="434" font-family="Inter" font-size="11" fill="#555555">Hydrogen (H)</text>
+        <circle cx="55" cy="450" r="8" fill="url(#grad-I)"/>
+        <text x="70" y="454" font-family="Inter" font-size="11" fill="#555555">Iodine (I)</text>
+
+        <!-- Molecular Animation Group -->
+        <g id="molecular-space">
+            <!-- Solid Bonds (Reactants) -->
+            <line class="bond-hh" x1="180" y1="260" x2="220" y2="260" stroke="#404040" stroke-width="4" stroke-linecap="round"/>
+            <line class="bond-ii" x1="180" y1="300" x2="220" y2="300" stroke="#404040" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- Partial Bonds (Transition State) -->
+            <g class="bond-partial">
+                <line x1="180" y1="260" x2="220" y2="260" stroke="#888888" stroke-width="3" stroke-dasharray="5,4" stroke-linecap="round"/>
+                <line x1="180" y1="300" x2="220" y2="300" stroke="#888888" stroke-width="3" stroke-dasharray="5,4" stroke-linecap="round"/>
+                <line x1="180" y1="260" x2="180" y2="300" stroke="#888888" stroke-width="3" stroke-dasharray="5,4" stroke-linecap="round"/>
+                <line x1="220" y1="260" x2="220" y2="300" stroke="#888888" stroke-width="3" stroke-dasharray="5,4" stroke-linecap="round"/>
+            </g>
+
+            <!-- Solid Bonds (Products) -->
+            <line class="bond-hi-left" x1="180" y1="260" x2="180" y2="300" stroke="#404040" stroke-width="4" stroke-linecap="round"/>
+            <line class="bond-hi-right" x1="220" y1="260" x2="220" y2="300" stroke="#404040" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- Curly Arrows for Electron Flow -->
+            <g class="arrows">
+                <path d="M 200 255 Q 170 240 175 275" fill="none" stroke="#F77F00" stroke-width="2.5" marker-end="url(#arrow-curly)"/>
+                <path d="M 200 305 Q 230 320 225 285" fill="none" stroke="#F77F00" stroke-width="2.5" marker-end="url(#arrow-curly)"/>
+            </g>
+
+            <!-- Atoms -->
+            <g class="h-left"><circle cx="180" cy="260" r="12" fill="url(#grad-H)"/></g>
+            <g class="h-right"><circle cx="220" cy="260" r="12" fill="url(#grad-H)"/></g>
+            <g class="i-left"><circle cx="180" cy="300" r="22" fill="url(#grad-I)"/></g>
+            <g class="i-right"><circle cx="220" cy="300" r="22" fill="url(#grad-I)"/></g>
+
+            <!-- Dynamic Labels -->
+            <text class="label-reactants" x="200" y="380" font-family="Roboto Mono" font-size="18" font-weight="600" fill="#333333" text-anchor="middle">H<tspan baseline-shift="sub" font-size="12">2</tspan> + I<tspan baseline-shift="sub" font-size="12">2</tspan></text>
+            <text class="label-ts" x="200" y="380" font-family="Roboto Mono" font-size="18" font-weight="600" fill="#FF4444" text-anchor="middle">[H<tspan baseline-shift="sub" font-size="12">2</tspan>···I<tspan baseline-shift="sub" font-size="12">2</tspan>]<tspan baseline-shift="super" font-size="12">‡</tspan></text>
+            <text class="label-products" x="200" y="380" font-family="Roboto Mono" font-size="18" font-weight="600" fill="#9933FF" text-anchor="middle">2HI</text>
+        </g>
+
+        <!-- Right Pane: Reaction Coordinate Diagram -->
+        <rect x="400" y="60" width="380" height="420" rx="10" fill="#ffffff" stroke="#e0e0e0" stroke-width="2"/>
+        <text x="590" y="90" font-family="Inter" font-size="16" font-weight="600" fill="#555555" text-anchor="middle">Reaction Coordinate Diagram</text>
+
+        <g id="graph-space">
+            <!-- Axes -->
+            <line x1="430" y1="420" x2="760" y2="420" stroke="#333333" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            <line x1="450" y1="440" x2="450" y2="120" stroke="#333333" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            
+            <text x="595" y="455" font-family="Inter" font-size="14" fill="#333333" text-anchor="middle">Reaction Coordinate</text>
+            <text x="430" y="280" font-family="Inter" font-size="14" fill="#333333" text-anchor="middle" transform="rotate(-90 430 280)">Potential Energy</text>
+
+            <!-- Activation Energy Shaded Area -->
+            <path d="M 470 280 C 520 280, 540 140, 600 140 C 630 140, 645 210, 655 280 Z" fill="#FF4444" opacity="0.12"/>
+
+            <!-- Baselines -->
+            <line x1="470" y1="280" x2="600" y2="280" stroke="#888888" stroke-dasharray="4" stroke-width="1.5"/>
+            <line x1="600" y1="140" x2="650" y2="140" stroke="#888888" stroke-dasharray="4" stroke-width="1.5"/>
+            <line x1="450" y1="360" x2="730" y2="360" stroke="#888888" stroke-dasharray="4" stroke-width="1.5"/>
+
+            <!-- Energy Curve -->
+            <path d="M 430 280 L 470 280 C 520 280, 540 140, 600 140 C 660 140, 680 360, 730 360 L 770 360" fill="none" stroke="#2B2D42" stroke-width="3.5" stroke-linecap="round"/>
+
+            <!-- Arrows for Ea and dH -->
+            <line x1="600" y1="280" x2="600" y2="140" stroke="#333333" stroke-width="1.5" marker-start="url(#arrow-ea)" marker-end="url(#arrow-ea)"/>
+            <line x1="740" y1="280" x2="740" y2="360" stroke="#333333" stroke-width="1.5" marker-start="url(#arrow-ea)" marker-end="url(#arrow-ea)"/>
+
+            <!-- Graph Labels -->
+            <text x="580" y="215" font-family="Inter" font-size="14" font-weight="600" fill="#333333">E<tspan baseline-shift="sub" font-size="10">a</tspan></text>
+            <text x="750" y="325" font-family="Inter" font-size="14" font-weight="600" fill="#333333">ΔH</text>
+            
+            <text x="600" y="125" font-family="Roboto Mono" font-size="14" font-weight="600" fill="#FF4444" text-anchor="middle">[H<tspan baseline-shift="sub" font-size="10">2</tspan>···I<tspan baseline-shift="sub" font-size="10">2</tspan>]<tspan baseline-shift="super" font-size="10">‡</tspan></text>
+            <text x="470" y="270" font-family="Roboto Mono" font-size="14" font-weight="600" fill="#555555" text-anchor="middle">H<tspan baseline-shift="sub" font-size="10">2</tspan> + I<tspan baseline-shift="sub" font-size="10">2</tspan></text>
+            <text x="730" y="385" font-family="Roboto Mono" font-size="14" font-weight="600" fill="#9933FF" text-anchor="middle">2HI</text>
+
+            <!-- Animated Red Dot -->
+            <circle r="7" fill="#FF4444" filter="url(#glow)">
+                <!-- Motion Path perfectly tracing the curve -->
+                <animateMotion 
+                    dur="10s" 
+                    repeatCount="indefinite" 
+                    path="M 430 280 L 470 280 C 520 280, 540 140, 600 140 C 660 140, 680 360, 730 360 L 770 360"
+                    keyTimes="0; 0.1; 0.3; 0.5; 0.8; 0.9; 1"
+                    keyPoints="0.07; 0.07; 0.438; 0.438; 0.93; 0.96; 0.96"
+                    calcMode="spline"
+                    keySplines="0 0 1 1; 0.25 0.1 0.25 1; 0 0 1 1; 0.42 0 1 1; 0 0 1 1; 0 0 1 1"
+                />
+                <!-- Opacity animation to match the molecular fade in/out -->
+                <animate 
+                    attributeName="opacity" 
+                    values="0; 1; 1; 1; 1; 1; 0; 0" 
+                    keyTimes="0; 0.05; 0.1; 0.8; 0.9; 0.95; 0.96; 1" 
+                    dur="10s" 
+                    repeatCount="indefinite"
+                />
+            </circle>
+        </g>
+    </svg>
+</div>
+
+</body>
+</html>

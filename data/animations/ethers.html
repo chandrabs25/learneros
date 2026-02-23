@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Williamson Ether Synthesis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+
+        /* CSS Animations */
+        @keyframes globalFade {
+            0%, 85% { opacity: 1; }
+            90%, 100% { opacity: 0; }
+        }
+
+        @keyframes moveEthoxide {
+            0%, 20% { transform: translateX(150px); }
+            30%, 50% { transform: translateX(380px); }
+            60%, 85% { transform: translateX(420px); }
+            90%, 100% { transform: translateX(420px); }
+        }
+
+        @keyframes moveBr {
+            0%, 20% { transform: translateX(600px); }
+            30%, 50% { transform: translateX(640px); }
+            60%, 85% { transform: translateX(720px); }
+            90%, 100% { transform: translateX(720px); }
+        }
+
+        @keyframes drawAttackArrow {
+            0%, 10% { stroke-dashoffset: 350; opacity: 1; }
+            20% { stroke-dashoffset: 0; opacity: 1; }
+            25%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes drawLeaveArrow {
+            0%, 12% { stroke-dashoffset: 150; opacity: 0; }
+            15% { stroke-dashoffset: 150; opacity: 1; }
+            22% { stroke-dashoffset: 0; opacity: 1; }
+            28%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes fadeReactantBonds {
+            0%, 20% { opacity: 1; }
+            25%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeTSBonds {
+            0%, 22% { opacity: 0; }
+            30%, 50% { opacity: 1; }
+            58%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeProductBonds {
+            0%, 52% { opacity: 0; }
+            60%, 100% { opacity: 1; }
+        }
+
+        @keyframes fadeReactantCharge {
+            0%, 20% { opacity: 1; }
+            30%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeTSCharge {
+            0%, 22% { opacity: 0; }
+            30%, 50% { opacity: 1; }
+            58%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeProductCharge {
+            0%, 52% { opacity: 0; }
+            60%, 100% { opacity: 1; }
+        }
+
+        @keyframes progressReactants {
+            0%, 20% { fill: #4444FF; }
+            25%, 100% { fill: #CCCCCC; }
+        }
+
+        @keyframes progressTS {
+            0%, 25% { fill: #CCCCCC; }
+            30%, 50% { fill: #44CC44; }
+            55%, 100% { fill: #CCCCCC; }
+        }
+
+        @keyframes progressProducts {
+            0%, 55% { fill: #CCCCCC; }
+            60%, 85% { fill: #7209B7; }
+            90%, 100% { fill: #CCCCCC; }
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            fill: #555;
+        }
+
+        .label {
+            font-size: 14px;
+            font-weight: 600;
+            fill: #666;
+            text-anchor: middle;
+        }
+
+        .ts-label {
+            font-size: 16px;
+            font-weight: 700;
+            fill: #44CC44;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Atom Gradients -->
+        <radialGradient id="gradC" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#777777" />
+            <stop offset="100%" stop-color="#404040" />
+        </radialGradient>
+        <radialGradient id="gradO" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FF8888" />
+            <stop offset="100%" stop-color="#FF4444" />
+        </radialGradient>
+        <radialGradient id="gradH" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="100%" stop-color="#CCCCCC" />
+        </radialGradient>
+        <radialGradient id="gradBr" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#CC5555" />
+            <stop offset="100%" stop-color="#992222" />
+        </radialGradient>
+
+        <!-- Arrowheads -->
+        <marker id="arrowheadOrange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#F77F00" />
+        </marker>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#ffffff" rx="12" />
+
+    <!-- Title & Equation -->
+    <text x="400" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#222">
+        Williamson Ether Synthesis (S<tspan baseline-shift="sub" font-size="0.7em">N</tspan>2 Mechanism)
+    </text>
+    <text x="400" y="75" text-anchor="middle" class="formula">
+        CH<tspan baseline-shift="sub">3</tspan>CH<tspan baseline-shift="sub">2</tspan>O<tspan baseline-shift="super">-</tspan> + CH<tspan baseline-shift="sub">3</tspan>Br → CH<tspan baseline-shift="sub">3</tspan>CH<tspan baseline-shift="sub">2</tspan>OCH<tspan baseline-shift="sub">3</tspan> + Br<tspan baseline-shift="super">-</tspan>
+    </text>
+
+    <!-- Legend -->
+    <g transform="translate(150, 470)" font-size="12" fill="#555">
+        <circle cx="0" cy="-4" r="6" fill="url(#gradC)" /> <text x="10" y="0">Carbon</text>
+        <circle cx="80" cy="-4" r="6" fill="url(#gradO)" /> <text x="90" y="0">Oxygen</text>
+        <circle cx="160" cy="-4" r="6" fill="url(#gradBr)" /> <text x="170" y="0">Bromine</text>
+        <circle cx="240" cy="-4" r="6" fill="url(#gradH)" /> <text x="250" y="0">Hydrogen</text>
+        <line x1="330" y1="-4" x2="350" y2="-4" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowheadOrange)" /> <text x="360" y="0">Electron Flow</text>
+    </g>
+
+    <!-- Progress Bar -->
+    <g transform="translate(0, 420)">
+        <line x1="200" y1="0" x2="600" y2="0" stroke="#DDDDDD" stroke-width="4" />
+        <circle cx="200" cy="0" r="8" style="animation: progressReactants 8s infinite;" />
+        <text x="200" y="25" class="label">Reactants</text>
+        <circle cx="400" cy="0" r="8" style="animation: progressTS 8s infinite;" />
+        <text x="400" y="25" class="label">Transition State</text>
+        <circle cx="600" cy="0" r="8" style="animation: progressProducts 8s infinite;" />
+        <text x="600" y="25" class="label">Products</text>
+    </g>
+
+    <!-- Main Reaction Area -->
+    <g style="animation: globalFade 8s infinite;">
+        
+        <!-- Connecting Bonds (Animated with SMIL for coordinate tracking) -->
+        <!-- Solid Reactant C-Br Bond -->
+        <line x1="500" y1="260" x2="600" y2="260" stroke="#666666" stroke-width="6" style="animation: fadeReactantBonds 8s infinite;" />
+        
+        <!-- Dashed TS Bonds -->
+        <g style="animation: fadeTSBonds 8s infinite;">
+            <line y1="260" y2="260" stroke="#999999" stroke-width="5" stroke-dasharray="6,6">
+                <animate attributeName="x1" values="150;150;380;380;420;420" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                <animate attributeName="x2" values="500;500;500;500;500;500" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+            </line>
+            <line x1="500" y1="260" y2="260" stroke="#999999" stroke-width="5" stroke-dasharray="6,6">
+                <animate attributeName="x2" values="600;600;640;640;720;720" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+            </line>
+        </g>
+
+        <!-- Solid Product O-C Bond -->
+        <line y1="260" x2="500" y2="260" stroke="#666666" stroke-width="6" style="animation: fadeProductBonds 8s infinite;">
+            <animate attributeName="x1" values="150;150;380;380;420;420" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+        </line>
+
+        <!-- Electron Flow Arrows -->
+        <!-- Attack Arrow -->
+        <path d="M 170 250 Q 330 140 490 250" fill="none" stroke="#F77F00" stroke-width="3" stroke-dasharray="350" marker-end="url(#arrowheadOrange)" style="animation: drawAttackArrow 8s infinite;" />
+        <text x="330" y="130" font-size="14" font-weight="bold" fill="#F77F00" style="animation: drawAttackArrow 8s infinite;">Backside Attack</text>
+        
+        <!-- Leaving Arrow -->
+        <path d="M 550 250 Q 575 210 600 240" fill="none" stroke="#F77F00" stroke-width="3" stroke-dasharray="150" marker-end="url(#arrowheadOrange)" style="animation: drawLeaveArrow 8s infinite;" />
+
+        <!-- Ethoxide Group (Nucleophile) -->
+        <g style="animation: moveEthoxide 8s infinite;">
+            <!-- Ethyl Group -->
+            <line x1="-50" y1="30" x2="-100" y2="0" stroke="#666666" stroke-width="6" />
+            <line x1="0" y1="0" x2="-50" y2="30" stroke="#666666" stroke-width="6" />
+            
+            <!-- H's on C2 -->
+            <line x1="-100" y1="0" x2="-100" y2="-40" stroke="#666666" stroke-width="4" />
+            <line x1="-100" y1="0" x2="-135" y2="20" stroke="#666666" stroke-width="4" />
+            <line x1="-100" y1="0" x2="-120" y2="-25" stroke="#666666" stroke-width="4" />
+            <circle cx="-100" cy="-40" r="10" fill="url(#gradH)" />
+            <circle cx="-135" cy="20" r="10" fill="url(#gradH)" />
+            <circle cx="-120" cy="-25" r="10" fill="url(#gradH)" />
+            <circle cx="-100" cy="0" r="16" fill="url(#gradC)" />
+
+            <!-- H's on C1 -->
+            <line x1="-50" y1="30" x2="-50" y2="70" stroke="#666666" stroke-width="4" />
+            <line x1="-50" y1="30" x2="-30" y2="65" stroke="#666666" stroke-width="4" />
+            <circle cx="-50" cy="70" r="10" fill="url(#gradH)" />
+            <circle cx="-30" cy="65" r="10" fill="url(#gradH)" />
+            <circle cx="-50" cy="30" r="16" fill="url(#gradC)" />
+
+            <!-- Oxygen Atom -->
+            <circle cx="0" cy="0" r="18" fill="url(#gradO)" />
+            
+            <!-- Lone Pairs -->
+            <g fill="#333333">
+                <circle cx="-8" cy="-22" r="2.5" /> <circle cx="8" cy="-22" r="2.5" />
+                <circle cx="-8" cy="22" r="2.5" /> <circle cx="8" cy="22" r="2.5" />
+                <!-- Reactive Lone Pair (disappears in product) -->
+                <g style="animation: fadeReactantCharge 8s infinite;">
+                    <circle cx="22" cy="-8" r="2.5" /> <circle cx="22" cy="8" r="2.5" />
+                </g>
+            </g>
+
+            <!-- Formal Charge (-) -->
+            <g style="animation: fadeReactantCharge 8s infinite;">
+                <circle cx="25" cy="-25" r="10" fill="#ffffff" stroke="#FF4444" stroke-width="1.5" />
+                <line x1="20" y1="-25" x2="30" y2="-25" stroke="#FF4444" stroke-width="2" />
+            </g>
+
+            <!-- Partial Charge (delta -) -->
+            <text x="15" y="-25" font-family="Inter" font-style="italic" font-weight="bold" fill="#FF4444" style="animation: fadeTSCharge 8s infinite;">&#948;<tspan baseline-shift="super">-</tspan></text>
+            
+            <text x="-50" y="100" class="label" style="animation: fadeReactantCharge 8s infinite;">Nucleophile</text>
+            <text x="-50" y="100" class="label" style="animation: fadeProductBonds 8s infinite;">Ether</text>
+        </g>
+
+        <!-- Bromomethane (Electrophile) -->
+        <g transform="translate(500, 260)">
+            
+            <!-- Inverting Methyl Hydrogens (Using SMIL for precise 2D projection) -->
+            <g>
+                <!-- H1 (Top) -->
+                <line x1="0" y1="0" stroke="#666666" stroke-width="4">
+                    <animate attributeName="x2" values="-35;-35;0;35;35;-35" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                    <animate attributeName="y2" values="-50;-50;-65;-50;-50;-50" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                </line>
+                <circle r="12" fill="url(#gradH)">
+                    <animate attributeName="cx" values="-35;-35;0;35;35;-35" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="-50;-50;-65;-50;-50;-50" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                </circle>
+
+                <!-- H2 (Bottom) -->
+                <line x1="0" y1="0" stroke="#666666" stroke-width="4">
+                    <animate attributeName="x2" values="-35;-35;0;35;35;-35" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                    <animate attributeName="y2" values="50;50;65;50;50;50" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                </line>
+                <circle r="12" fill="url(#gradH)">
+                    <animate attributeName="cx" values="-35;-35;0;35;35;-35" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="50;50;65;50;50;50" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                </circle>
+
+                <!-- H3 (Middle/Wedge) -->
+                <line x1="0" y1="0" stroke="#666666" stroke-width="4">
+                    <animate attributeName="x2" values="-60;-60;0;60;60;-60" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                    <animate attributeName="y2" values="0;0;25;0;0;0" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                </line>
+                <circle r="12" fill="url(#gradH)">
+                    <animate attributeName="cx" values="-60;-60;0;60;60;-60" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                    <animate attributeName="cy" values="0;0;25;0;0;0" keyTimes="0;0.2;0.3;0.5;0.6;1" dur="8s" repeatCount="indefinite" />
+                </circle>
+            </g>
+
+            <!-- Central Carbon Atom -->
+            <circle cx="0" cy="0" r="18" fill="url(#gradC)" />
+            
+            <!-- Partial Charge (delta +) -->
+            <text x="-15" y="-25" font-family="Inter" font-style="italic" font-weight="bold" fill="#4444FF" style="animation: fadeTSCharge 8s infinite;">&#948;<tspan baseline-shift="super">+</tspan></text>
+
+            <text x="0" y="100" class="label" style="animation: fadeReactantCharge 8s infinite;">Alkyl Halide</text>
+            <text x="0" y="100" class="label" fill="#7209B7" style="animation: fadeProductBonds 8s infinite;">Walden Inversion</text>
+        </g>
+
+        <!-- Leaving Group (Bromine) -->
+        <g style="animation: moveBr 8s infinite;">
+            <!-- Bromine Atom -->
+            <circle cx="0" cy="260" r="22" fill="url(#gradBr)" />
+            
+            <!-- Lone Pairs -->
+            <g fill="#333333">
+                <circle cx="-10" cy="235" r="2.5" /> <circle cx="10" cy="235" r="2.5" />
+                <circle cx="-10" cy="285" r="2.5" /> <circle cx="10" cy="285" r="2.5" />
+                <circle cx="26" cy="252" r="2.5" /> <circle cx="26" cy="268" r="2.5" />
+                <!-- New Lone Pair (appears in product) -->
+                <g style="animation: fadeProductCharge 8s infinite;">
+                    <circle cx="-26" cy="252" r="2.5" /> <circle cx="-26" cy="268" r="2.5" />
+                </g>
+            </g>
+
+            <!-- Formal Charge (-) -->
+            <g style="animation: fadeProductCharge 8s infinite;">
+                <circle cx="25" cy="235" r="10" fill="#ffffff" stroke="#992222" stroke-width="1.5" />
+                <line x1="20" y1="235" x2="30" y2="235" stroke="#992222" stroke-width="2" />
+            </g>
+
+            <!-- Partial Charge (delta -) -->
+            <text x="15" y="235" font-family="Inter" font-style="italic" font-weight="bold" fill="#992222" style="animation: fadeTSCharge 8s infinite;">&#948;<tspan baseline-shift="super">-</tspan></text>
+
+            <text x="0" y="360" class="label" style="animation: fadeProductCharge 8s infinite;">Leaving Group</text>
+        </g>
+
+        <!-- Transition State Label -->
+        <text x="440" y="150" class="ts-label" style="animation: fadeTSCharge 8s infinite;">Transition State [‡]</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

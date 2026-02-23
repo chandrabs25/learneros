@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Harmonic Motion & Uniform Circular Motion</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #1a1a2e;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            position: absolute;
+            z-index: 10;
+        }
+
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            width: 280px;
+        }
+
+        #controls-panel {
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a1a2e;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            background: rgba(114, 9, 183, 0.08);
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            text-align: center;
+            color: #7209B7;
+            font-weight: 700;
+        }
+
+        .live-values {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .value-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .val-label { font-weight: 700; }
+        .val-x { color: #FF3366; }
+        .val-v { color: #06D6A0; }
+        .val-a { color: #F77F00; }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            color: #555;
+        }
+
+        input[type=range] {
+            width: 100%;
+            appearance: none;
+            background: #e2e8f0;
+            height: 6px;
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #amplitude::-webkit-slider-thumb { background: #FF3366; }
+        #frequency::-webkit-slider-thumb { background: #7209B7; }
+        #phase::-webkit-slider-thumb { background: #4361EE; }
+        #timeScale::-webkit-slider-thumb { background: #1a1a2e; }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        input[type=checkbox] {
+            width: 18px;
+            height: 18px;
+            accent-color: #06D6A0;
+            cursor: pointer;
+        }
+
+        .marker-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1a1a2e;
+            background: rgba(255,255,255,0.7);
+            padding: 2px 6px;
+            border-radius: 4px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- 3D to 2D Labels -->
+    <div id="label-origin" class="marker-label">0</div>
+    <div id="label-pos-a" class="marker-label">+A</div>
+    <div id="label-neg-a" class="marker-label">-A</div>
+
+    <!-- Formula & Live Values Card -->
+    <div id="formula-card" class="glass-panel">
+        <h2>Kinematics</h2>
+        <div class="formula">x(t) = A cos(ωt + φ)</div>
+        <div class="live-values">
+            <div class="value-row val-x">
+                <span class="val-label">Position (x):</span>
+                <span id="val-x">0.00 m</span>
+            </div>
+            <div class="value-row val-v">
+                <span class="val-label">Velocity (v):</span>
+                <span id="val-v">0.00 m/s</span>
+            </div>
+            <div class="value-row val-a">
+                <span class="val-label">Accel (a):</span>
+                <span id="val-a">0.00 m/s²</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls Panel -->
+    <div id="controls-panel" class="glass-panel">
+        <h2>Simulation Parameters</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Amplitude (A)</span>
+                <span class="control-value" id="amplitude-val">3.0 m</span>
+            </div>
+            <input type="range" id="amplitude" min="1.0" max="5.0" step="0.1" value="3.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Frequency (f)</span>
+                <span class="control-value" id="frequency-val">0.5 Hz</span>
+            </div>
+            <input type="range" id="frequency" min="0.1" max="2.0" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Initial Phase (φ)</span>
+                <span class="control-value" id="phase-val">0.0 rad</span>
+            </div>
+            <input type="range" id="phase" min="0" max="6.28" step="0.1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Time Speed</span>
+                <span class="control-value" id="timeScale-val">1.0x</span>
+            </div>
+            <input type="range" id="timeScale" min="0" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="showVectors" checked>
+            Show Velocity & Acceleration Vectors
+        </label>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(6, 6, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
+
+        // --- Grid & Axes ---
+        const gridHelper = new THREE.GridHelper(20, 20, 0xd1d9e6, 0xd1d9e6);
+        gridHelper.position.y = -0.01; // Slightly below to prevent z-fighting
+        scene.add(gridHelper);
+
+        const xAxisMat = new THREE.LineBasicMaterial({ color: 0x1a1a2e, linewidth: 2 });
+        const xAxisGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-10, 0, 0),
+            new THREE.Vector3(10, 0, 0)
+        ]);
+        const xAxis = new THREE.Line(xAxisGeo, xAxisMat);
+        scene.add(xAxis);
+
+        // --- Materials ---
+        const matPurple = new THREE.MeshPhongMaterial({ color: 0x7209B7, shininess: 100 });
+        const matRed = new THREE.MeshPhongMaterial({ color: 0xFF3366, shininess: 100 });
+        const matSpring = new THREE.LineBasicMaterial({ color: 0x8892b0, linewidth: 2 });
+        const matTrail = new THREE.PointsMaterial({ color: 0x4361EE, size: 0.12, sizeAttenuation: true });
+
+        // --- Objects ---
+        
+        // 1. Reference Circle
+        const circleGeo = new THREE.BufferGeometry();
+        const circlePoints = new THREE.Path().absarc(0, 0, 1, 0, Math.PI * 2).getPoints(64);
+        circleGeo.setFromPoints(circlePoints);
+        const circleMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+        const refCircle = new THREE.LineLoop(circleGeo, circleMat);
+        scene.add(refCircle);
+
+        // 2. Reference Particle (UCM)
+        const refParticle = new THREE.Mesh(new THREE.SphereGeometry(0.2, 32, 32), matPurple);
+        scene.add(refParticle);
+
+        // 3. Phasor (Rotating Vector)
+        const phasorGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(1,0,0)]);
+        const phasorMat = new THREE.LineBasicMaterial({ color: 0x7209B7, linewidth: 2 });
+        const phasor = new THREE.Line(phasorGeo, phasorMat);
+        scene.add(phasor);
+
+        // 4. Oscillating Mass (SHM)
+        const mass = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), matRed);
+        scene.add(mass);
+
+        // 5. Projection Line (Connecting UCM and SHM)
+        const projLineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+        const projLineMat = new THREE.LineDashedMaterial({ color: 0x7209B7, dashSize: 0.15, gapSize: 0.1 });
+        const projLine = new THREE.Line(projLineGeo, projLineMat);
+        scene.add(projLine);
+
+        // 6. Spring
+        const springGeo = new THREE.BufferGeometry();
+        const spring = new THREE.Line(springGeo, matSpring);
+        scene.add(spring);
+
+        // 7. Vectors (Velocity & Acceleration)
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0x06D6A0, 0.3, 0.2);
+        const accArrow = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0,0,0), 1, 0xF77F00, 0.3, 0.2);
+        scene.add(velArrow);
+        scene.add(accArrow);
+
+        // 8. Time-Trace (Sine Wave Trail)
+        const trailGeo = new THREE.BufferGeometry();
+        const trail = new THREE.Points(trailGeo, matTrail);
+        scene.add(trail);
+
+        // --- State Variables ---
+        let t = 0;
+        const clock = new THREE.Clock();
+        const trailData = [];
+        const MAX_TRAIL_POINTS = 600;
+        const TRACE_SPEED = 2.5; // Speed at which the trail moves along Z axis
+
+        // --- UI Elements ---
+        const elAmp = document.getElementById('amplitude');
+        const elFreq = document.getElementById('frequency');
+        const elPhase = document.getElementById('phase');
+        const elTimeScale = document.getElementById('timeScale');
+        const elShowVectors = document.getElementById('showVectors');
+
+        const valX = document.getElementById('val-x');
+        const valV = document.getElementById('val-v');
+        const valA = document.getElementById('val-a');
+
+        const labelOrigin = document.getElementById('label-origin');
+        const labelPosA = document.getElementById('label-pos-a');
+        const labelNegA = document.getElementById('label-neg-a');
+
+        // Update UI Text for Sliders
+        ['amplitude', 'frequency', 'phase', 'timeScale'].forEach(id => {
+            const el = document.getElementById(id);
+            const disp = document.getElementById(id + '-val');
+            el.addEventListener('input', () => {
+                let unit = id === 'amplitude' ? ' m' : id === 'frequency' ? ' Hz' : id === 'phase' ? ' rad' : 'x';
+                disp.innerText = parseFloat(el.value).toFixed(1) + unit;
+            });
+        });
+
+        // --- Helper: Update 2D Labels ---
+        function updateLabel(element, position, text) {
+            if(text) element.innerText = text;
+            const vector = position.clone();
+            vector.project(camera);
+            
+            // Check if behind camera
+            if (vector.z > 1) {
+                element.style.display = 'none';
+                return;
+            }
+
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (vector.y * -0.5 + 0.5) * window.innerHeight;
+            
+            element.style.display = 'block';
+            element.style.left = `${x}px`;
+            element.style.top = `${y}px`;
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const timeScale = parseFloat(elTimeScale.value);
+            const dt = clock.getDelta() * timeScale;
+            t += dt;
+
+            // Physics Parameters
+            const A = parseFloat(elAmp.value);
+            const f = parseFloat(elFreq.value);
+            const phi = parseFloat(elPhase.value);
+            const showVectors = elShowVectors.checked;
+
+            const w = 2 * Math.PI * f; // Angular frequency
+            
+            // SHM Equations
+            const x = A * Math.cos(w * t + phi);
+            const y = A * Math.sin(w * t + phi);
+            const v = -A * w * Math.sin(w * t + phi);
+            const a = -w * w * x;
+
+            // 1. Update Reference Circle
+            refCircle.scale.set(A, A, 1);
+
+            // 2. Update Particles
+            refParticle.position.set(x, y, 0);
+            mass.position.set(x, 0, 0);
+
+            // 3. Update Phasor
+            phasorGeo.attributes.position.setXYZ(1, x, y, 0);
+            phasorGeo.attributes.position.needsUpdate = true;
+
+            // 4. Update Projection Line
+            projLineGeo.attributes.position.setXYZ(0, x, y, 0);
+            projLineGeo.attributes.position.setXYZ(1, x, 0, 0);
+            projLineGeo.attributes.position.needsUpdate = true;
+            projLine.computeLineDistances();
+
+            // 5. Update Spring (Coiled geometry)
+            const springPoints = [];
+            const coils = 12;
+            const radius = 0.25;
+            const segments = 200;
+            for(let i = 0; i <= segments; i++) {
+                const pct = i / segments;
+                const px = pct * x;
+                const py = radius * Math.cos(pct * coils * Math.PI * 2);
+                const pz = radius * Math.sin(pct * coils * Math.PI * 2);
+                springPoints.push(new THREE.Vector3(px, py, pz));
+            }
+            springGeo.setFromPoints(springPoints);
+
+            // 6. Update Vectors
+            if(showVectors) {
+                velArrow.visible = true;
+                accArrow.visible = true;
+
+                // Scale factors for visual representation
+                const vScale = 0.15;
+                const aScale = 0.015;
+
+                const vLen = Math.abs(v) * vScale;
+                const safeVLen = Math.max(vLen, 0.001);
+                velArrow.setDirection(new THREE.Vector3(Math.sign(v) || 1, 0, 0));
+                velArrow.setLength(safeVLen, safeVLen * 0.25, safeVLen * 0.25);
+                velArrow.position.set(x, 0, 0);
+
+                const aLen = Math.abs(a) * aScale;
+                const safeALen = Math.max(aLen, 0.001);
+                accArrow.setDirection(new THREE.Vector3(Math.sign(a) || 1, 0, 0));
+                accArrow.setLength(safeALen, safeALen * 0.25, safeALen * 0.25);
+                accArrow.position.set(x, 0, 0);
+            } else {
+                velArrow.visible = false;
+                accArrow.visible = false;
+            }
+
+            // 7. Update Time-Trace (Sine Wave)
+            // Only push points if time is moving
+            if (dt > 0) {
+                trailData.push({ x: x, t: t });
+                if(trailData.length > MAX_TRAIL_POINTS) {
+                    trailData.shift();
+                }
+            }
+
+            const trailPoints = [];
+            for(let i = 0; i < trailData.length; i++) {
+                const pt = trailData[i];
+                const z = -(t - pt.t) * TRACE_SPEED;
+                trailPoints.push(new THREE.Vector3(pt.x, 0, z));
+            }
+            trailGeo.setFromPoints(trailPoints);
+
+            // 8. Update UI Values
+            valX.innerText = x.toFixed(2) + ' m';
+            valV.innerText = v.toFixed(2) + ' m/s';
+            valA.innerText = a.toFixed(2) + ' m/s²';
+
+            // 9. Update 2D Labels
+            updateLabel(labelOrigin, new THREE.Vector3(0, -0.6, 0));
+            updateLabel(labelPosA, new THREE.Vector3(A, -0.6, 0), `+${A.toFixed(1)}`);
+            updateLabel(labelNegA, new THREE.Vector3(-A, -0.6, 0), `-${A.toFixed(1)}`);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Window Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start Animation
+        animate();
+    </script>
+</body>
+</html>

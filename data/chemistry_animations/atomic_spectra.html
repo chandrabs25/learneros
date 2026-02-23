@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atomic Spectra and the Bohr Model</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        text {
+            fill: #404040;
+        }
+
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* --- Animations --- */
+
+        /* 1. Electron Rotation (4s loop to sync with 12s main loop perfectly: 3 full rotations) */
+        .electron-rotator {
+            transform-origin: 0 0;
+            animation: rotate-anim 4s linear infinite;
+        }
+
+        @keyframes rotate-anim {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 2. Electron Radius & Energy State (12s loop) */
+        .electron-radius {
+            animation: radius-anim 12s step-end infinite;
+        }
+
+        @keyframes radius-anim {
+            0% {
+                transform: translateX(12px);
+            }
+
+            20.83% {
+                transform: translateX(12px);
+            }
+
+            /* 2.5s: Jump to n=3 */
+            20.84% {
+                transform: translateX(108px);
+            }
+
+            41.66% {
+                transform: translateX(108px);
+            }
+
+            /* 5.0s: Drop to n=2 */
+            41.67% {
+                transform: translateX(48px);
+            }
+
+            66.66% {
+                transform: translateX(48px);
+            }
+
+            /* 8.0s: Drop to n=1 */
+            66.67% {
+                transform: translateX(12px);
+            }
+
+            100% {
+                transform: translateX(12px);
+            }
+        }
+
+        /* 3. Electron Pulse & Color (Energy representation) */
+        .electron-pulse {
+            transform-origin: 0 0;
+            animation: pulse-anim 12s infinite;
+        }
+
+        @keyframes pulse-anim {
+
+            0%,
+            20.83% {
+                transform: scale(1);
+                fill: #4444FF;
+                filter: drop-shadow(0 0 2px rgba(68, 68, 255, 0.5));
+            }
+
+            20.84%,
+            41.66% {
+                transform: scale(1.4);
+                fill: #FF4444;
+                filter: drop-shadow(0 0 6px rgba(255, 68, 68, 0.8));
+            }
+
+            /* High Energy */
+            41.67%,
+            66.66% {
+                transform: scale(1.2);
+                fill: #44CC44;
+                filter: drop-shadow(0 0 4px rgba(68, 204, 68, 0.8));
+            }
+
+            /* Intermediate */
+            66.67%,
+            100% {
+                transform: scale(1);
+                fill: #4444FF;
+                filter: drop-shadow(0 0 2px rgba(68, 68, 255, 0.5));
+            }
+
+            /* Low Energy */
+        }
+
+        /* 4. Photons */
+        .photon-in {
+            stroke-dasharray: 220;
+            stroke-dashoffset: 220;
+            animation: photon-in-anim 12s linear infinite;
+        }
+
+        @keyframes photon-in-anim {
+            0% {
+                stroke-dashoffset: 220;
+                opacity: 0;
+            }
+
+            5% {
+                opacity: 1;
+                stroke-dashoffset: 220;
+            }
+
+            20.83% {
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+
+            /* Hits at 2.5s */
+            20.84%,
+            100% {
+                opacity: 0;
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .photon-red {
+            stroke-dasharray: 160;
+            stroke-dashoffset: 160;
+            animation: photon-red-anim 12s linear infinite;
+        }
+
+        @keyframes photon-red-anim {
+
+            0%,
+            41.66% {
+                stroke-dashoffset: 160;
+                opacity: 0;
+            }
+
+            41.67% {
+                stroke-dashoffset: 160;
+                opacity: 1;
+            }
+
+            50.00% {
+                stroke-dashoffset: 80;
+                opacity: 1;
+            }
+
+            52.00% {
+                stroke-dashoffset: 60;
+                opacity: 0;
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 0;
+            }
+        }
+
+        .photon-uv {
+            stroke-dasharray: 160;
+            stroke-dashoffset: 160;
+            animation: photon-uv-anim 12s linear infinite;
+        }
+
+        @keyframes photon-uv-anim {
+
+            0%,
+            66.66% {
+                stroke-dashoffset: 160;
+                opacity: 0;
+            }
+
+            66.67% {
+                stroke-dashoffset: 160;
+                opacity: 1;
+            }
+
+            75.00% {
+                stroke-dashoffset: 80;
+                opacity: 1;
+            }
+
+            77.00% {
+                stroke-dashoffset: 60;
+                opacity: 0;
+            }
+
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 0;
+            }
+        }
+
+        /* 5. Energy Diagram Arrows */
+        .arrow-red {
+            stroke-dasharray: 45;
+            stroke-dashoffset: 45;
+            animation: arrow-red-anim 12s ease-out infinite;
+        }
+
+        @keyframes arrow-red-anim {
+
+            0%,
+            41.66% {
+                stroke-dashoffset: 45;
+                opacity: 0;
+            }
+
+            41.67% {
+                stroke-dashoffset: 45;
+                opacity: 1;
+            }
+
+            45.00%,
+            91.67% {
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+
+            91.68%,
+            100% {
+                opacity: 0;
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .arrow-uv {
+            stroke-dasharray: 230;
+            stroke-dashoffset: 230;
+            animation: arrow-uv-anim 12s ease-out infinite;
+        }
+
+        @keyframes arrow-uv-anim {
+
+            0%,
+            66.66% {
+                stroke-dashoffset: 230;
+                opacity: 0;
+            }
+
+            66.67% {
+                stroke-dashoffset: 230;
+                opacity: 1;
+            }
+
+            70.00%,
+            91.67% {
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+
+            91.68%,
+            100% {
+                opacity: 0;
+                stroke-dashoffset: 0;
+            }
+        }
+
+        /* 6. Emission Spectrum Plate */
+        .spectrum-red {
+            animation: spectrum-red-anim 12s infinite;
+        }
+
+        @keyframes spectrum-red-anim {
+
+            0%,
+            41.66% {
+                opacity: 0.1;
+                filter: none;
+            }
+
+            41.67%,
+            91.67% {
+                opacity: 1;
+                filter: drop-shadow(0 0 6px #FF4444);
+            }
+
+            91.68%,
+            100% {
+                opacity: 0.1;
+                filter: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 550" xmlns="http://www.w3.org/2000/svg">
+            <title>Atomic Emission Spectrum: Hydrogen Balmer Series</title>
+            <desc>Animation showing an electron absorbing a photon, jumping to a higher energy level, and subsequently
+                emitting photons as it drops back to lower energy levels, producing spectral lines.</desc>
+
+            <defs>
+                <!-- Arrowheads -->
+                <marker id="arrow-axis" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5"
+                    orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#404040" />
+                </marker>
+                <marker id="arrow-orange" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6"
+                    orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+                </marker>
+                <marker id="arrow-purple" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6"
+                    orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7" />
+                </marker>
+
+                <!-- Wavy Photon Path Template -->
+                <path id="wavy-photon"
+                    d="M 0 0 Q 10 -15, 20 0 T 40 0 T 60 0 T 80 0 T 100 0 T 120 0 T 140 0 T 160 0 T 180 0 T 200 0"
+                    fill="none" stroke-width="2.5" stroke-linecap="round" />
+            </defs>
+
+            <!-- ================= HEADER & LABELS ================= -->
+            <text x="400" y="35" text-anchor="middle" font-size="22" font-weight="700" fill="#404040">Atomic Emission
+                Spectrum: Hydrogen Atom</text>
+
+            <text x="600" y="45" class="mono" font-size="14" fill="#404040" text-anchor="middle">
+                ΔE = hν = E<tspan baseline-shift="sub" font-size="10">final</tspan> - E<tspan baseline-shift="sub"
+                    font-size="10">initial</tspan>
+            </text>
+
+            <!-- Legend -->
+            <g transform="translate(20, 20)">
+                <rect x="0" y="0" width="130" height="75" fill="#ffffff" stroke="#e0e0e0" rx="6" />
+                <circle cx="15" cy="15" r="4" fill="#FFD700" />
+                <text x="25" y="19" font-size="11">Nucleus (+)</text>
+                <circle cx="15" cy="32" r="3" fill="#4444FF" />
+                <text x="25" y="36" font-size="11">Electron (-)</text>
+                <path d="M 10 49 Q 13 45, 16 49 T 22 49" fill="none" stroke="#FF4444" stroke-width="2" />
+                <text x="25" y="53" font-size="11">Photon</text>
+                <line x1="8" y1="65" x2="22" y2="65" stroke="#CCCCCC" stroke-width="1.5" stroke-dasharray="3 2" />
+                <text x="25" y="69" font-size="11">Bohr Orbit</text>
+            </g>
+
+            <!-- ================= LEFT PANE: BOHR MODEL ================= -->
+            <g id="bohr-model">
+                <!-- Orbits (Radii proportional to n^2: 12, 48, 108, 192) -->
+                <circle cx="220" cy="220" r="12" fill="none" stroke="#CCCCCC" stroke-width="1.5"
+                    stroke-dasharray="4 4" />
+                <circle cx="220" cy="220" r="48" fill="none" stroke="#CCCCCC" stroke-width="1.5"
+                    stroke-dasharray="4 4" />
+                <circle cx="220" cy="220" r="108" fill="none" stroke="#CCCCCC" stroke-width="1.5"
+                    stroke-dasharray="4 4" />
+                <circle cx="220" cy="220" r="192" fill="none" stroke="#CCCCCC" stroke-width="1.5"
+                    stroke-dasharray="4 4" />
+
+                <!-- Orbit Labels -->
+                <text x="220" y="242" font-size="10" class="mono" fill="#888" text-anchor="middle">n=1</text>
+                <text x="220" y="280" font-size="11" class="mono" fill="#888" text-anchor="middle">n=2</text>
+                <text x="220" y="342" font-size="12" class="mono" fill="#888" text-anchor="middle">n=3</text>
+                <text x="220" y="428" font-size="12" class="mono" fill="#888" text-anchor="middle">n=4</text>
+
+                <!-- Nucleus -->
+                <circle cx="220" cy="220" r="6" fill="#FFCC00" stroke="#E6B800" stroke-width="1" />
+                <text x="220" y="223.5" font-size="10" font-weight="bold" text-anchor="middle" fill="#B38F00">+</text>
+
+                <!-- Electron -->
+                <g transform="translate(220, 220)">
+                    <g class="electron-rotator">
+                        <g class="electron-radius">
+                            <circle cx="0" cy="0" r="4" class="electron-pulse" />
+                        </g>
+                    </g>
+                </g>
+
+                <!-- Photons (Transform calculations based on 4s rotation sync) -->
+                <!-- Incoming (Hits at 2.5s -> 225 deg -> x=211.5, y=211.5) -->
+                <use href="#wavy-photon" class="photon-in" stroke="#A0A0A0" transform="translate(70, 70) rotate(45)" />
+
+                <!-- Red Emission (Emits at 5.0s -> 90 deg -> x=220, y=328) -->
+                <use href="#wavy-photon" class="photon-red" stroke="#FF4444"
+                    transform="translate(220, 328) rotate(90)" />
+
+                <!-- UV Emission (Emits at 8.0s -> 0 deg -> x=268, y=220) -->
+                <use href="#wavy-photon" class="photon-uv" stroke="#7209B7" transform="translate(268, 220) rotate(0)" />
+            </g>
+
+            <!-- ================= RIGHT PANE: ENERGY DIAGRAM ================= -->
+            <g id="energy-diagram">
+                <!-- Y Axis -->
+                <line x1="450" y1="380" x2="450" y2="60" stroke="#404040" stroke-width="2"
+                    marker-end="url(#arrow-axis)" />
+                <text x="435" y="220" transform="rotate(-90 435 220)" text-anchor="middle" font-weight="600">Energy
+                    (E)</text>
+
+                <!-- Energy Levels (Spacing proportional to -1/n^2) -->
+                <!-- E1 (n=1) -->
+                <line x1="450" y1="350" x2="680" y2="350" stroke="#333333" stroke-width="2" />
+                <text x="440" y="354" text-anchor="end" class="mono" font-size="13">n=1</text>
+                <text x="690" y="354" text-anchor="start" class="mono" font-size="13">-13.60 eV</text>
+
+                <!-- E2 (n=2) -->
+                <line x1="450" y1="125" x2="680" y2="125" stroke="#333333" stroke-width="2" />
+                <text x="440" y="129" text-anchor="end" class="mono" font-size="13">n=2</text>
+                <text x="690" y="129" text-anchor="start" class="mono" font-size="13">-3.40 eV</text>
+
+                <!-- E3 (n=3) -->
+                <line x1="450" y1="83.3" x2="680" y2="83.3" stroke="#333333" stroke-width="2" />
+                <text x="440" y="87.3" text-anchor="end" class="mono" font-size="13">n=3</text>
+                <text x="690" y="87.3" text-anchor="start" class="mono" font-size="13">-1.51 eV</text>
+
+                <!-- E4 (n=4) -->
+                <line x1="450" y1="68.75" x2="680" y2="68.75" stroke="#333333" stroke-width="2" />
+                <text x="440" y="72.75" text-anchor="end" class="mono" font-size="13">n=4</text>
+                <text x="690" y="72.75" text-anchor="start" class="mono" font-size="13">-0.85 eV</text>
+
+                <!-- E_infinity -->
+                <line x1="450" y1="50" x2="680" y2="50" stroke="#888888" stroke-width="1" stroke-dasharray="4 4" />
+                <text x="440" y="54" text-anchor="end" class="mono" font-size="13">n=∞</text>
+                <text x="690" y="54" text-anchor="start" class="mono" font-size="13">0.00 eV</text>
+
+                <!-- Transition Arrows -->
+                <!-- n=3 to n=2 (Balmer Alpha - Red) -->
+                <line x1="550" y1="83.3" x2="550" y2="122" stroke="#F77F00" stroke-width="2.5" class="arrow-red"
+                    marker-end="url(#arrow-orange)" />
+                <text x="558" y="108" font-size="11" fill="#F77F00" class="arrow-red mono">Hα (656nm)</text>
+
+                <!-- n=2 to n=1 (Lyman Alpha - UV) -->
+                <line x1="600" y1="125" x2="600" y2="347" stroke="#7209B7" stroke-width="2.5" class="arrow-uv"
+                    marker-end="url(#arrow-purple)" />
+                <text x="608" y="240" font-size="11" fill="#7209B7" class="arrow-uv mono">Lyman α (UV)</text>
+            </g>
+
+            <!-- ================= BOTTOM PANE: EMISSION SPECTRUM ================= -->
+            <g id="spectrum" transform="translate(0, 10)">
+                <text x="400" y="410" text-anchor="middle" font-size="14" font-weight="600">Photographic Plate: Balmer
+                    Series (Visible)</text>
+
+                <!-- Black Plate -->
+                <rect x="150" y="420" width="500" height="45" fill="#111111" rx="4" />
+
+                <!-- Spectral Lines (Calculated positions based on 400nm-700nm scale) -->
+                <!-- Violet (H-delta, 410nm) -->
+                <rect x="166" y="420" width="2" height="45" fill="#8A2BE2" opacity="0.15" />
+                <!-- Blue (H-gamma, 434nm) -->
+                <rect x="206" y="420" width="2.5" height="45" fill="#4444FF" opacity="0.15" />
+                <!-- Cyan (H-beta, 486nm) -->
+                <rect x="293" y="420" width="3" height="45" fill="#44CC44" opacity="0.15" />
+                <!-- Red (H-alpha, 656nm) - Animated -->
+                <rect x="575" y="420" width="4" height="45" fill="#FF4444" class="spectrum-red" />
+
+                <!-- Wavelength Axis -->
+                <line x1="150" y1="475" x2="650" y2="475" stroke="#888" stroke-width="1" />
+                <line x1="150" y1="475" x2="150" y2="480" stroke="#888" stroke-width="1" />
+                <line x1="650" y1="475" x2="650" y2="480" stroke="#888" stroke-width="1" />
+
+                <text x="150" y="495" text-anchor="middle" font-size="12" class="mono" fill="#666">400 nm</text>
+                <text x="650" y="495" text-anchor="middle" font-size="12" class="mono" fill="#666">700 nm</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+
+</html>

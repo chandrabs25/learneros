@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Model: Radial Probability & Electron Configuration</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .math {
+            font-family: 'Roboto Mono', monospace;
+        }
+        
+        /* CSS Animations */
+        .cloud-1s {
+            animation: anim-cloud-1s 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .graph-1s {
+            stroke-dasharray: 300;
+            animation: anim-graph-1s 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .elec-1s-1 {
+            animation: anim-e1s1 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .elec-1s-2 {
+            animation: anim-e1s2 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .cloud-2s {
+            animation: anim-cloud-2s 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .graph-2s {
+            stroke-dasharray: 500;
+            animation: anim-graph-2s 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .elec-2s-1 {
+            animation: anim-e2s1 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .elec-2s-2 {
+            animation: anim-e2s2 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .compare-label {
+            animation: anim-compare 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Keyframes */
+        @keyframes anim-cloud-1s {
+            0%, 5% { opacity: 0; }
+            15%, 33% { opacity: 1; }
+            38%, 66% { opacity: 0.2; }
+            71%, 95% { opacity: 0.8; }
+            100% { opacity: 0; }
+        }
+        @keyframes anim-graph-1s {
+            0% { stroke-dashoffset: 300; opacity: 1; }
+            15%, 33% { stroke-dashoffset: 0; opacity: 1; }
+            38%, 66% { stroke-dashoffset: 0; opacity: 0.2; }
+            71%, 95% { stroke-dashoffset: 0; opacity: 0.8; }
+            100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes anim-e1s1 {
+            0%, 5% { transform: translateY(-40px); opacity: 0; }
+            10%, 95% { transform: translateY(0); opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes anim-e1s2 {
+            0%, 10% { transform: translateY(-40px); opacity: 0; }
+            15%, 95% { transform: translateY(0); opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes anim-cloud-2s {
+            0%, 33% { opacity: 0; }
+            43%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes anim-graph-2s {
+            0%, 33% { stroke-dashoffset: 500; opacity: 0; }
+            34% { stroke-dashoffset: 500; opacity: 1; }
+            48%, 95% { stroke-dashoffset: 0; opacity: 1; }
+            100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes anim-e2s1 {
+            0%, 38% { transform: translateY(-40px); opacity: 0; }
+            43%, 95% { transform: translateY(0); opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes anim-e2s2 {
+            0%, 43% { transform: translateY(-40px); opacity: 0; }
+            48%, 95% { transform: translateY(0); opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes anim-compare {
+            0%, 66% { opacity: 0; transform: translateY(10px); }
+            71%, 95% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" aria-label="Animated diagram showing the radial probability and energy levels of 1s and 2s atomic orbitals.">
+        <defs>
+            <!-- 1s Orbital Gradient -->
+            <radialGradient id="grad1s" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#4444FF" stop-opacity="0.9" />
+                <stop offset="100%" stop-color="#4444FF" stop-opacity="0" />
+            </radialGradient>
+            
+            <!-- 2s Orbital Gradient (with Radial Node) -->
+            <radialGradient id="grad2s" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#4444FF" stop-opacity="0.9" />
+                <stop offset="15%" stop-color="#4444FF" stop-opacity="0.6" />
+                <stop offset="25%" stop-color="#4444FF" stop-opacity="0" /> <!-- Radial Node -->
+                <stop offset="56%" stop-color="#4444FF" stop-opacity="0.5" /> <!-- Outer Peak -->
+                <stop offset="100%" stop-color="#4444FF" stop-opacity="0" />
+            </radialGradient>
+
+            <!-- Arrow Markers -->
+            <marker id="arrow-axis" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#404040" />
+            </marker>
+            <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7" />
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Title -->
+        <text x="400" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#404040">Quantum Model: Radial Probability &amp; Electron Configuration</text>
+
+        <!-- ========================================== -->
+        <!-- LEFT PANEL: SPATIAL CLOUDS & GRAPH         -->
+        <!-- ========================================== -->
+        
+        <!-- Spatial Clouds -->
+        <g id="spatial-clouds">
+            <!-- 2s Cloud (Larger, drawn first so 1s is on top) -->
+            <circle cx="150" cy="200" r="160" fill="url(#grad2s)" class="cloud-2s" />
+            <!-- 1s Cloud (Smaller) -->
+            <circle cx="150" cy="200" r="80" fill="url(#grad1s)" class="cloud-1s" />
+            <!-- Nucleus -->
+            <circle cx="150" cy="200" r="2.5" fill="#ffffff" stroke="#404040" stroke-width="1.5" />
+            <!-- Alignment Line -->
+            <line x1="150" y1="200" x2="150" y2="450" stroke="#404040" stroke-dasharray="4 4" opacity="0.3" />
+        </g>
+
+        <!-- Graph Axes -->
+        <g id="graph-axes">
+            <!-- X Axis (Radius) -->
+            <line x1="150" y1="450" x2="480" y2="450" stroke="#404040" stroke-width="2" marker-end="url(#arrow-axis)" />
+            <text x="315" y="485" text-anchor="middle" font-size="14" fill="#404040" font-weight="600">Distance from nucleus (r)</text>
+            
+            <!-- Y Axis (Probability) -->
+            <line x1="150" y1="450" x2="150" y2="280" stroke="#404040" stroke-width="2" marker-end="url(#arrow-axis)" />
+            <text x="-365" y="120" transform="rotate(-90)" text-anchor="middle" font-size="14" fill="#404040" font-weight="600">
+                Radial Probability (4πr<tspan dy="-5" font-size="10">2</tspan><tspan dy="5">|ψ|</tspan><tspan dy="-5" font-size="10">2</tspan><tspan dy="5">)</tspan>
+            </text>
+        </g>
+
+        <!-- Probability Curves -->
+        <g id="graph-curves" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <!-- 1s Curve -->
+            <path d="M 150 450 C 160 350, 170 350, 180 350 C 200 350, 220 450, 280 450" stroke="#4444FF" class="graph-1s" />
+            <!-- 2s Curve -->
+            <path d="M 150 450 C 155 410, 160 410, 165 410 C 175 410, 180 450, 190 450 C 210 450, 210 320, 240 320 C 280 320, 320 450, 400 450" stroke="#4444FF" class="graph-2s" />
+        </g>
+
+        <!-- Compare Stage Annotations -->
+        <g class="compare-label">
+            <!-- Node Annotation -->
+            <text x="250" y="385" font-size="14" font-weight="600" fill="#7209B7">Radial Node</text>
+            <text x="250" y="405" font-size="12" fill="#7209B7" class="math">n-1 = 1 node</text>
+            
+            <!-- Arrow to Graph Node -->
+            <path d="M 245 395 L 195 445" stroke="#7209B7" stroke-width="2" fill="none" marker-end="url(#arrow-purple)" />
+            <!-- Arrow to Spatial Node -->
+            <path d="M 245 375 L 190 240" stroke="#7209B7" stroke-width="2" fill="none" marker-end="url(#arrow-purple)" />
+            
+            <!-- Dashed alignment lines for peaks -->
+            <line x1="180" y1="350" x2="180" y2="450" stroke="#4444FF" stroke-dasharray="3 3" opacity="0.5" />
+            <line x1="240" y1="320" x2="240" y2="450" stroke="#4444FF" stroke-dasharray="3 3" opacity="0.5" />
+        </g>
+
+        <!-- ========================================== -->
+        <!-- RIGHT PANEL: ENERGY LEVELS                 -->
+        <!-- ========================================== -->
+        
+        <!-- Energy Axis -->
+        <g id="energy-axis">
+            <line x1="580" y1="450" x2="580" y2="120" stroke="#404040" stroke-width="2" marker-end="url(#arrow-axis)" />
+            <text x="570" y="110" text-anchor="end" font-size="16" font-weight="600" fill="#404040">Energy (E)</text>
+        </g>
+
+        <!-- Energy Levels -->
+        <g id="energy-levels">
+            <!-- 1s Level (Low Energy, Blue) -->
+            <line x1="610" y1="380" x2="710" y2="380" stroke="#4444FF" stroke-width="4" stroke-linecap="round" />
+            <text x="725" y="385" font-size="16" font-weight="700" fill="#4444FF">1s</text>
+            <text x="725" y="405" font-size="12" fill="#404040" class="math">n=1, l=0</text>
+
+            <!-- 2s Level (Higher Energy, Red) -->
+            <line x1="610" y1="220" x2="710" y2="220" stroke="#FF4444" stroke-width="4" stroke-linecap="round" />
+            <text x="725" y="225" font-size="16" font-weight="700" fill="#FF4444">2s</text>
+            <text x="725" y="245" font-size="12" fill="#404040" class="math">n=2, l=0</text>
+        </g>
+
+        <!-- Electrons -->
+        <g id="electrons">
+            <!-- 1s Electron 1 (Spin Up) -->
+            <g class="elec-1s-1">
+                <circle cx="640" cy="370" r="10" fill="#FFD700" stroke="#404040" stroke-width="1.5" />
+                <path d="M 640 376 L 640 364 M 636 368 L 640 364 L 644 368" stroke="#F77F00" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+            <!-- 1s Electron 2 (Spin Down) -->
+            <g class="elec-1s-2">
+                <circle cx="680" cy="370" r="10" fill="#FFD700" stroke="#404040" stroke-width="1.5" />
+                <path d="M 680 364 L 680 376 M 676 372 L 680 376 L 684 372" stroke="#F77F00" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+
+            <!-- 2s Electron 1 (Spin Up) -->
+            <g class="elec-2s-1">
+                <circle cx="640" cy="210" r="10" fill="#FFD700" stroke="#404040" stroke-width="1.5" />
+                <path d="M 640 216 L 640 204 M 636 208 L 640 204 L 644 208" stroke="#F77F00" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+            <!-- 2s Electron 2 (Spin Down) -->
+            <g class="elec-2s-2">
+                <circle cx="680" cy="210" r="10" fill="#FFD700" stroke="#404040" stroke-width="1.5" />
+                <path d="M 680 204 L 680 216 M 676 212 L 680 216 L 684 212" stroke="#F77F00" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            </g>
+        </g>
+
+        <!-- Legend -->
+        <g id="legend" transform="translate(610, 60)">
+            <rect x="0" y="0" width="160" height="70" fill="#ffffff" stroke="#cccccc" rx="6" />
+            <text x="10" y="20" font-size="12" font-weight="700" fill="#404040">Legend</text>
+            
+            <!-- Electron Legend -->
+            <circle cx="20" cy="35" r="6" fill="#FFD700" stroke="#404040" stroke-width="1" />
+            <path d="M 20 39 L 20 31 M 17 34 L 20 31 L 23 34" stroke="#F77F00" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+            <text x="35" y="39" font-size="12" fill="#404040">Electron (Spin)</text>
+            
+            <!-- Node Pointer Legend -->
+            <path d="M 12 55 L 28 55" stroke="#7209B7" stroke-width="2" fill="none" marker-end="url(#arrow-purple)" />
+            <text x="35" y="59" font-size="12" fill="#404040">Node Pointer</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

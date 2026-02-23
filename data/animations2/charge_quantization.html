@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charge Quantization Simulation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --pos-color: #FF3366;
+            --neg-color: #4361EE;
+            --field-color: #06D6A0;
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: var(--glass-shadow);
+            z-index: 10;
+            min-width: 300px;
+            max-width: 400px;
+            pointer-events: none;
+        }
+
+        #formula-card h2 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .math-block {
+            font-family: 'Roboto Mono', monospace;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .math-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .math-line:last-child {
+            margin-bottom: 0;
+        }
+
+        .math-label {
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+
+        .math-value {
+            color: var(--pos-color);
+            font-weight: 700;
+            transition: color 0.3s;
+        }
+
+        .math-value.negative {
+            color: var(--neg-color);
+        }
+
+        .explanation {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            padding-top: 12px;
+        }
+
+        /* Control Panel */
+        #control-panel {
+            width: 350px;
+            height: 100%;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid var(--glass-border);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 30px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(0, 0, 0, 0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--pos-color);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .slider-neg::-webkit-slider-thumb {
+            background: var(--neg-color) !important;
+        }
+
+        /* Select & Buttons */
+        select,
+        button {
+            font-family: 'Inter', sans-serif;
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: #ffffff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+            transition: all 0.2s;
+        }
+
+        select:hover,
+        button:hover {
+            border-color: #a0aec0;
+        }
+
+        button {
+            background: var(--pos-color);
+            color: white;
+            border: none;
+            padding: 12px;
+            font-size: 1rem;
+            box-shadow: 0 4px 12px rgba(255, 51, 102, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 51, 102, 0.4);
+        }
+
+        button.btn-neg {
+            background: var(--neg-color);
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        button.btn-neg:hover {
+            box-shadow: 0 6px 16px rgba(67, 97, 238, 0.4);
+        }
+
+        .legend {
+            margin-top: auto;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+            }
+
+            #control-panel {
+                width: 100%;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid var(--glass-border);
+                padding: 15px;
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+
+            .control-group {
+                width: calc(50% - 12px);
+            }
+
+            #formula-card {
+                top: 10px;
+                left: 10px;
+                min-width: 250px;
+                padding: 12px;
+            }
+
+            .legend {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <h2>Physics Data</h2>
+            <div class="math-block">
+                <div class="math-line">
+                    <span class="math-label">Q = n·e</span>
+                    <span class="math-value" id="calcQ">0 C</span>
+                </div>
+                <div class="math-line">
+                    <span class="math-label">σ = Q / 4πR²</span>
+                    <span class="math-value" id="calcSigma">0 C/m²</span>
+                </div>
+                <div class="math-line">
+                    <span class="math-label">E = σ / ε₀</span>
+                    <span class="math-value" id="calcE" style="color: var(--field-color);">0 N/C</span>
+                </div>
+            </div>
+            <div class="explanation">
+                At macroscopic scales, <strong>ΔQ</strong> is large enough that charge appears continuous. Zoom in to
+                reveal the discrete elementary charges.
+            </div>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <div class="control-group">
+            <div class="control-header">
+                <label for="chargeN">Number of Charges (n)</label>
+                <span class="val-display" id="valN">10</span>
+            </div>
+            <input type="range" id="chargeN" min="1" max="2000" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="radiusR">Sphere Radius (R) [m]</label>
+                <span class="val-display" id="valR">5.0</span>
+            </div>
+            <input type="range" id="radiusR" min="2" max="8" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="zoomLevel">Magnifier (Zoom)</label>
+                <span class="val-display" id="valZoom">1x</span>
+            </div>
+            <input type="range" id="zoomLevel" min="1" max="50" step="1" value="1">
+        </div>
+
+        <div class="control-group">
+            <label for="viewMode">Visualization Mode</label>
+            <select id="viewMode">
+                <option value="discrete">Discrete Particles</option>
+                <option value="continuous">Continuous Density</option>
+                <option value="comparison">Comparison</option>
+            </select>
+        </div>
+
+        <div class="control-group" style="margin-top: 10px;">
+            <button id="togglePolarity">Polarity: Positive (+)</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--pos-color);" id="leg-charge"></div>
+                <span id="leg-text">Positive Charge (+e)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--field-color);"></div>
+                <span>Electric Field (E)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Physics Constants ---
+        const e_charge = 1.602e-19; // Elementary charge (C)
+        const epsilon_0 = 8.854e-12; // Vacuum permittivity (F/m)
+        const MAX_PARTICLES = 2000;
+        const NUM_ARROWS = 120; // Fixed number of representative field lines
+
+        // --- State Variables ---
+        let params = {
+            n: 10,
+            R: 5.0,
+            zoom: 1,
+            mode: 'discrete',
+            isPositive: true
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.enablePan = false;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight1.position.set(10, 20, 10);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+        dirLight2.position.set(-10, -10, -10);
+        scene.add(dirLight2);
+
+        // --- Objects ---
+
+        // 1. Base Macroscopic Sphere (Glassy)
+        const sphereGeo = new THREE.SphereGeometry(1, 64, 64);
+        const baseMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.15,
+            roughness: 0.1,
+            metalness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1,
+            side: THREE.DoubleSide
+        });
+        const baseSphere = new THREE.Mesh(sphereGeo, baseMat);
+        scene.add(baseSphere);
+
+        // 2. Continuous Density Sphere (Heatmap)
+        const contMat = new THREE.MeshPhongMaterial({
+            color: 0xFF3366,
+            transparent: true,
+            opacity: 0.0,
+            shininess: 80,
+            side: THREE.DoubleSide
+        });
+        const contSphere = new THREE.Mesh(sphereGeo, contMat);
+        // Slightly larger to avoid z-fighting with base sphere
+        contSphere.scale.set(1.005, 1.005, 1.005);
+        baseSphere.add(contSphere);
+
+        // 3. Discrete Particles (InstancedMesh for performance)
+        const particleGeo = new THREE.SphereGeometry(0.08, 16, 16);
+        const particleMat = new THREE.MeshPhongMaterial({
+            color: 0xFF3366,
+            shininess: 100
+        });
+        const particlesMesh = new THREE.InstancedMesh(particleGeo, particleMat, MAX_PARTICLES);
+        particlesMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        scene.add(particlesMesh);
+
+        // 4. Electric Field Arrows
+        const arrowsGroup = new THREE.Group();
+        scene.add(arrowsGroup);
+
+        // Generate fixed arrow directions using Fibonacci sphere
+        const arrowDirs = getFibonacciPoints(NUM_ARROWS, 1);
+        arrowDirs.forEach(dir => {
+            // ArrowHelper(dir, origin, length, color, headLength, headWidth)
+            const arrow = new THREE.ArrowHelper(dir, new THREE.Vector3(), 1, 0x06D6A0, 0.3, 0.15);
+            arrowsGroup.add(arrow);
+        });
+
+        // --- Math / Geometry Functions ---
+
+        // Fibonacci lattice to distribute points evenly on a sphere
+        function getFibonacciPoints(samples, radius) {
+            const points = [];
+            const phi = Math.PI * (3 - Math.sqrt(5)); // Golden angle
+            for (let i = 0; i < samples; i++) {
+                const y = 1 - (i / (samples - 1)) * 2; // y goes from 1 to -1
+                const r = Math.sqrt(1 - y * y); // radius at y
+                const theta = phi * i; // golden angle increment
+                const x = Math.cos(theta) * r;
+                const z = Math.sin(theta) * r;
+                points.push(new THREE.Vector3(x * radius, y * radius, z * radius));
+            }
+            return points;
+        }
+
+        // --- Core Update Logic ---
+        function updateSimulation() {
+            // 1. Calculate Physics Values
+            const Q_mag = params.n * e_charge;
+            const Q = params.isPositive ? Q_mag : -Q_mag;
+            const area = 4 * Math.PI * params.R * params.R;
+            const sigma_mag = Q_mag / area;
+            const sigma = Q / area;
+            const E_mag = sigma_mag / epsilon_0;
+            const E = sigma / epsilon_0;
+
+            // Update UI Text
+            document.getElementById('valN').innerText = params.n;
+            document.getElementById('valR').innerText = params.R.toFixed(1);
+            document.getElementById('valZoom').innerText = params.zoom + 'x';
+
+            const qStr = (params.isPositive ? '+' : '-') + params.n + 'e';
+            document.getElementById('calcQ').innerText = qStr;
+            document.getElementById('calcSigma').innerText = sigma.toExponential(2) + ' C/m²';
+            document.getElementById('calcE').innerText = E.toExponential(2) + ' N/C';
+
+            // Update Colors based on polarity
+            const mainColor = params.isPositive ? 0xFF3366 : 0x4361EE;
+            const mathValues = document.querySelectorAll('.math-value:not(#calcE)');
+            mathValues.forEach(el => {
+                if (params.isPositive) el.classList.remove('negative');
+                else el.classList.add('negative');
+            });
+
+            // 2. Update Base Sphere
+            baseSphere.scale.set(params.R, params.R, params.R);
+
+            // 3. Update Particles (Discrete)
+            const points = getFibonacciPoints(params.n, params.R);
+            const dummy = new THREE.Object3D();
+
+            for (let i = 0; i < MAX_PARTICLES; i++) {
+                if (i < params.n) {
+                    dummy.position.copy(points[i]);
+                    dummy.scale.set(1, 1, 1);
+                } else {
+                    dummy.scale.set(0, 0, 0); // Hide unused instances
+                }
+                dummy.updateMatrix();
+                particlesMesh.setMatrixAt(i, dummy.matrix);
+            }
+            particlesMesh.instanceMatrix.needsUpdate = true;
+            particlesMesh.material.color.setHex(mainColor);
+
+            // 4. Update Continuous Sphere
+            // Normalize sigma for visual opacity. Max sigma is at n=2000, R=2
+            const maxSigma = (MAX_PARTICLES * e_charge) / (4 * Math.PI * 2 * 2);
+            const intensity = Math.min(1, sigma_mag / maxSigma);
+
+            contSphere.material.color.setHex(mainColor);
+
+            // 5. Update Visibility based on Mode
+            if (params.mode === 'discrete') {
+                particlesMesh.visible = true;
+                contSphere.material.opacity = 0;
+                baseMat.opacity = 0.15;
+            } else if (params.mode === 'continuous') {
+                particlesMesh.visible = false;
+                // Opacity scales with charge density
+                contSphere.material.opacity = 0.2 + (0.7 * intensity);
+                baseMat.opacity = 0.05;
+            } else if (params.mode === 'comparison') {
+                particlesMesh.visible = true;
+                contSphere.material.opacity = 0.1 + (0.4 * intensity);
+                baseMat.opacity = 0.1;
+            }
+
+            // 6. Update Electric Field Arrows
+            // Scale arrow length based on E field magnitude relative to max possible E
+            const maxE = maxSigma / epsilon_0;
+            const arrowScale = 0.5 + 2.5 * (E_mag / maxE); // Length between 0.5 and 3.0
+
+            arrowsGroup.children.forEach((arrow, i) => {
+                const baseDir = arrowDirs[i].clone();
+                const pos = baseDir.clone().multiplyScalar(params.R);
+
+                // Direction: outward if positive, inward if negative
+                const dir = params.isPositive ? baseDir : baseDir.multiplyScalar(-1);
+
+                arrow.position.copy(pos);
+                arrow.setDirection(dir);
+                arrow.setLength(arrowScale, arrowScale * 0.25, arrowScale * 0.15);
+            });
+
+            // 7. Update Camera Zoom
+            // Calculate target distance based on zoom level.
+            // Zoom 1x: distance = R + 12
+            // Zoom 50x: distance = R + 0.5
+            const minZoomDist = 0.5;
+            const maxZoomDist = 12.0;
+            // Linear interpolation for distance offset
+            const distOffset = maxZoomDist - ((params.zoom - 1) / 49) * (maxZoomDist - minZoomDist);
+            const targetDistance = params.R + distOffset;
+
+            // Move camera along its current line of sight to the origin
+            const currentDir = camera.position.clone().normalize();
+            camera.position.copy(currentDir.multiplyScalar(targetDistance));
+            controls.target.set(0, 0, 0);
+            controls.minDistance = params.R + 0.2; // Prevent clipping inside
+            controls.maxDistance = params.R + 20;
+            controls.update();
+        }
+
+        // --- Event Listeners ---
+
+        const sliderN = document.getElementById('chargeN');
+        const sliderR = document.getElementById('radiusR');
+        const sliderZoom = document.getElementById('zoomLevel');
+        const selectMode = document.getElementById('viewMode');
+        const btnPolarity = document.getElementById('togglePolarity');
+
+        function updateSliderColors() {
+            const color = params.isPositive ? 'var(--pos-color)' : 'var(--neg-color)';
+            if (params.isPositive) {
+                sliderN.classList.remove('slider-neg');
+                sliderR.classList.remove('slider-neg');
+                sliderZoom.classList.remove('slider-neg');
+            } else {
+                sliderN.classList.add('slider-neg');
+                sliderR.classList.add('slider-neg');
+                sliderZoom.classList.add('slider-neg');
+            }
+        }
+
+        sliderN.addEventListener('input', (e) => {
+            params.n = parseInt(e.target.value);
+            updateSimulation();
+        });
+
+        sliderR.addEventListener('input', (e) => {
+            params.R = parseFloat(e.target.value);
+            updateSimulation();
+        });
+
+        sliderZoom.addEventListener('input', (e) => {
+            params.zoom = parseInt(e.target.value);
+            updateSimulation();
+        });
+
+        selectMode.addEventListener('change', (e) => {
+            params.mode = e.target.value;
+            updateSimulation();
+        });
+
+        btnPolarity.addEventListener('click', () => {
+            params.isPositive = !params.isPositive;
+            if (params.isPositive) {
+                btnPolarity.innerText = "Polarity: Positive (+)";
+                btnPolarity.classList.remove('btn-neg');
+                document.getElementById('leg-charge').style.background = 'var(--pos-color)';
+                document.getElementById('leg-text').innerText = 'Positive Charge (+e)';
+            } else {
+                btnPolarity.innerText = "Polarity: Negative (-)";
+                btnPolarity.classList.add('btn-neg');
+                document.getElementById('leg-charge').style.background = 'var(--neg-color)';
+                document.getElementById('leg-text').innerText = 'Negative Charge (-e)';
+            }
+            updateSliderColors();
+            updateSimulation();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Initialization ---
+        // Set initial camera position
+        camera.position.set(12, 8, 12);
+        updateSimulation();
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            // Subtle rotation of the base sphere for dynamic feel
+            baseSphere.rotation.y += 0.001;
+            particlesMesh.rotation.y += 0.001;
+            arrowsGroup.rotation.y += 0.001;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+    </script>
+</body>
+
+</html>

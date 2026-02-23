@@ -109,7 +109,7 @@ export default function TutorPage() {
       setMatchedInsights(matched);
       setMessages((prev) => [...prev, { role: "assistant", text: data?.response || "I could not generate a response." }]);
     } catch (e: unknown) {
-      setMessages((prev) => [...prev, { role: "assistant", text: e instanceof Error ? e.message : "Failed to contact AI Tutor." }]);
+      setMessages((prev) => [...prev, { role: "assistant", text: e instanceof Error ? e.message : "Failed to contact LearnerOS Tutor." }]);
     } finally {
       setSending(false);
     }

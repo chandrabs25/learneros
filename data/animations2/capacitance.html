@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parallel Plate Capacitor Physics Simulator</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            color: #333;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 25%;
+            min-width: 300px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 1.5rem;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #1a202c;
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: #4a5568;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .control-value {
+            font-size: 0.85rem;
+            font-weight: 700;
+            background: #edf2f7;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            color: #2b6cb0;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Custom Slider Colors */
+        #voltage::-webkit-slider-thumb { background: #FF3366; }
+        #area::-webkit-slider-thumb { background: #805AD5; }
+        #separation::-webkit-slider-thumb { background: #4361EE; }
+        #dielectric::-webkit-slider-thumb { background: #06D6A0; }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            min-width: 280px;
+        }
+
+        .formula-row {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .formula-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .math {
+            font-family: 'Times New Roman', Times, serif;
+            font-style: italic;
+            font-size: 1.2rem;
+        }
+
+        .math-symbol {
+            font-family: 'Times New Roman', Times, serif;
+            font-weight: bold;
+        }
+
+        .val-highlight {
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            font-style: normal;
+        }
+
+        .val-c { color: #805AD5; }
+        .val-q { color: #FF3366; }
+        .val-e { color: #F77F00; }
+        .val-u { color: #06D6A0; }
+
+        hr {
+            border: 0;
+            height: 1px;
+            background: #e2e8f0;
+            margin: 1rem 0;
+        }
+
+        /* 3D Labels */
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .label-3d {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-weight: 700;
+            font-size: 1rem;
+            text-shadow: 0 2px 4px rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.6);
+            padding: 2px 6px;
+            border-radius: 4px;
+            backdrop-filter: blur(4px);
+            transition: opacity 0.2s;
+        }
+
+        .label-pos { color: #FF3366; }
+        .label-neg { color: #4361EE; }
+        .label-e { color: #F77F00; }
+
+        @media (max-width: 768px) {
+            #ui-panel { width: 100%; height: 40%; top: auto; bottom: 0; border-left: none; border-top: 1px solid rgba(255,255,255,0.5); padding: 1rem; }
+            #formula-card { top: 10px; left: 10px; padding: 1rem; font-size: 0.9rem; }
+            .math { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="labels-container">
+        <div id="label-pos" class="label-3d label-pos">+Q</div>
+        <div id="label-neg" class="label-3d label-neg">-Q</div>
+        <div id="label-e" class="label-3d label-e">E</div>
+    </div>
+
+    <div id="formula-card">
+        <div class="formula-row">
+            <span class="math">C = &kappa; &epsilon;<sub>0</sub> A / d</span><br>
+            <span class="math">C</span> = <span id="out-c" class="val-highlight val-c">0.00</span> pF
+        </div>
+        <hr>
+        <div class="formula-row">
+            <span class="math">Q = C V</span><br>
+            <span class="math">Q</span> = <span id="out-q" class="val-highlight val-q">0.00</span> pC
+        </div>
+        <hr>
+        <div class="formula-row">
+            <span class="math">E = V / d</span><br>
+            <span class="math">E</span> = <span id="out-e" class="val-highlight val-e">0.00</span> V/m
+        </div>
+        <hr>
+        <div class="formula-row">
+            <span class="math">U = &frac12; C V<sup>2</sup></span><br>
+            <span class="math">U</span> = <span id="out-u" class="val-highlight val-u">0.00</span> pJ
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Capacitor Physics</h1>
+        <p class="subtitle">Interactive Parallel Plate Simulation</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Battery Voltage (V)</span>
+                <span class="control-value" id="val-voltage">5.0 V</span>
+            </div>
+            <input type="range" id="voltage" min="0" max="10" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Plate Area (A)</span>
+                <span class="control-value" id="val-area">200 cm&sup2;</span>
+            </div>
+            <input type="range" id="area" min="100" max="500" step="10" value="200">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Separation (d)</span>
+                <span class="control-value" id="val-separation">2.0 cm</span>
+            </div>
+            <input type="range" id="separation" min="1" max="5" step="0.1" value="2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Dielectric Constant (&kappa;)</span>
+                <span class="control-value" id="val-dielectric">1.0</span>
+            </div>
+            <input type="range" id="dielectric" min="1" max="5" step="0.1" value="1">
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Constants & State ---
+        const EPSILON_0 = 8.85; // pF/m
+        const MAX_CHARGES = 1500;
+        const GRID_SIZE = 7; // 7x7 grid for electric field arrows
+
+        const state = {
+            V: 5.0,
+            A: 200, // cm^2
+            d: 2.0, // cm
+            k: 1.0,
+            // Calculated
+            C: 0,
+            Q: 0,
+            E: 0,
+            U: 0,
+            sideLength: 0
+        };
+
+        // --- DOM Elements ---
+        const elVoltage = document.getElementById('voltage');
+        const elArea = document.getElementById('area');
+        const elSeparation = document.getElementById('separation');
+        const elDielectric = document.getElementById('dielectric');
+
+        const valVoltage = document.getElementById('val-voltage');
+        const valArea = document.getElementById('val-area');
+        const valSeparation = document.getElementById('val-separation');
+        const valDielectric = document.getElementById('val-dielectric');
+
+        const outC = document.getElementById('out-c');
+        const outQ = document.getElementById('out-q');
+        const outE = document.getElementById('out-e');
+        const outU = document.getElementById('out-u');
+
+        const labelPos = document.getElementById('label-pos');
+        const labelNeg = document.getElementById('label-neg');
+        const labelE = document.getElementById('label-e');
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.Fog('#f0f4f8', 20, 60);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 12, 18);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Allow slightly below ground
+        controls.minDistance = 5;
+        controls.maxDistance = 40;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 50;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -15;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe2e8f0, 0.4);
+        fillLight.position.set(-10, 5, -10);
+        scene.add(fillLight);
+
+        // --- Environment ---
+        const gridHelper = new THREE.GridHelper(50, 50, 0xd1d9e6, 0xe2e8f0);
+        gridHelper.position.y = -4;
+        scene.add(gridHelper);
+
+        // --- Materials ---
+        const matTopPlate = new THREE.MeshPhysicalMaterial({
+            color: 0xFF3366,
+            metalness: 0.2,
+            roughness: 0.2,
+            transparent: true,
+            opacity: 0.85,
+            transmission: 0.2,
+            side: THREE.DoubleSide
+        });
+
+        const matBottomPlate = new THREE.MeshPhysicalMaterial({
+            color: 0x4361EE,
+            metalness: 0.2,
+            roughness: 0.2,
+            transparent: true,
+            opacity: 0.85,
+            transmission: 0.2,
+            side: THREE.DoubleSide
+        });
+
+        const matDielectric = new THREE.MeshPhysicalMaterial({
+            color: 0x06D6A0,
+            metalness: 0.1,
+            roughness: 0.1,
+            transparent: true,
+            opacity: 0.0,
+            transmission: 0.6,
+            depthWrite: false
+        });
+
+        const matPosCharge = new THREE.MeshPhongMaterial({ color: 0xFF3366, shininess: 100 });
+        const matNegCharge = new THREE.MeshPhongMaterial({ color: 0x4361EE, shininess: 100 });
+        
+        const matArrow = new THREE.MeshBasicMaterial({ 
+            color: 0xF77F00, 
+            transparent: true, 
+            opacity: 1,
+            depthWrite: false
+        });
+
+        const matWire = new THREE.MeshPhongMaterial({ color: 0x718096 });
+        const matBatteryPos = new THREE.MeshPhongMaterial({ color: 0xFF3366 });
+        const matBatteryNeg = new THREE.MeshPhongMaterial({ color: 0x4361EE });
+
+        // --- Geometries ---
+        const plateGeo = new THREE.BoxGeometry(1, 0.2, 1);
+        const dielectricGeo = new THREE.BoxGeometry(1, 1, 1);
+        const chargeGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        const arrowShaftGeo = new THREE.CylinderGeometry(0.04, 0.04, 1, 8);
+        arrowShaftGeo.translate(0, -0.5, 0); // Origin at top
+        const arrowHeadGeo = new THREE.ConeGeometry(0.15, 0.4, 12);
+        arrowHeadGeo.translate(0, -0.2, 0); // Origin at top
+
+        // --- Meshes ---
+        const topPlate = new THREE.Mesh(plateGeo, matTopPlate);
+        topPlate.castShadow = true;
+        topPlate.receiveShadow = true;
+        scene.add(topPlate);
+
+        const bottomPlate = new THREE.Mesh(plateGeo, matBottomPlate);
+        bottomPlate.castShadow = true;
+        bottomPlate.receiveShadow = true;
+        scene.add(bottomPlate);
+
+        const dielectric = new THREE.Mesh(dielectricGeo, matDielectric);
+        scene.add(dielectric);
+
+        // Instanced Meshes for Charges
+        const posCharges = new THREE.InstancedMesh(chargeGeo, matPosCharge, MAX_CHARGES);
+        const negCharges = new THREE.InstancedMesh(chargeGeo, matNegCharge, MAX_CHARGES);
+        posCharges.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        negCharges.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        scene.add(posCharges);
+        scene.add(negCharges);
+
+        // Instanced Meshes for Electric Field Arrows
+        const numArrows = GRID_SIZE * GRID_SIZE;
+        const arrowShafts = new THREE.InstancedMesh(arrowShaftGeo, matArrow, numArrows);
+        const arrowHeads = new THREE.InstancedMesh(arrowHeadGeo, matArrow, numArrows);
+        arrowShafts.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        arrowHeads.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        scene.add(arrowShafts);
+        scene.add(arrowHeads);
+
+        // Circuit & Battery
+        const batteryGroup = new THREE.Group();
+        batteryGroup.position.set(12, 0, 0);
+        
+        const battCylGeo = new THREE.CylinderGeometry(1, 1, 4, 32);
+        const battTop = new THREE.Mesh(battCylGeo, matBatteryPos);
+        battTop.scale.set(1, 0.5, 1);
+        battTop.position.y = 1;
+        battTop.castShadow = true;
+        
+        const battBot = new THREE.Mesh(battCylGeo, matBatteryNeg);
+        battBot.scale.set(1, 0.5, 1);
+        battBot.position.y = -1;
+        battBot.castShadow = true;
+
+        const battNubGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.4, 16);
+        const battNub = new THREE.Mesh(battNubGeo, matBatteryPos);
+        battNub.position.y = 2.2;
+
+        batteryGroup.add(battTop);
+        batteryGroup.add(battBot);
+        batteryGroup.add(battNub);
+        scene.add(batteryGroup);
+
+        // Wires (using TubeGeometry rebuilt dynamically)
+        let topWireMesh, bottomWireMesh;
+
+        function createWire(points) {
+            const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.1);
+            const geo = new THREE.TubeGeometry(curve, 20, 0.1, 8, false);
+            const mesh = new THREE.Mesh(geo, matWire);
+            mesh.castShadow = true;
+            return mesh;
+        }
+
+        // --- Physics & Update Logic ---
+
+        function updatePhysics() {
+            // Read State
+            state.V = parseFloat(elVoltage.value);
+            state.A = parseFloat(elArea.value);
+            state.d = parseFloat(elSeparation.value);
+            state.k = parseFloat(elDielectric.value);
+
+            // Calculate Physics
+            // A in m^2 = A(cm^2) / 10000
+            // d in m = d(cm) / 100
+            // C = k * e0 * A_m2 / d_m = k * 8.85 * (A/10000) / (d/100) = k * 0.0885 * A / d  (pF)
+            state.C = state.k * 0.0885 * state.A / state.d;
+            state.Q = state.C * state.V; // pC
+            state.E = state.V * 100 / state.d; // V/m
+            state.U = 0.5 * state.C * Math.pow(state.V, 2); // pJ
+
+            // Update UI Text
+            valVoltage.innerText = state.V.toFixed(1) + ' V';
+            valArea.innerText = state.A.toFixed(0) + ' cm\u00B2';
+            valSeparation.innerText = state.d.toFixed(1) + ' cm';
+            valDielectric.innerText = state.k.toFixed(1);
+
+            outC.innerText = state.C.toFixed(2);
+            outQ.innerText = state.Q.toFixed(2);
+            outE.innerText = state.E.toFixed(0);
+            outU.innerText = state.U.toFixed(2);
+
+            // Visual Scaling
+            // Map Area 100-500 to side length in 3D units. 
+            // Let 100cm^2 = 10x10 units. 500cm^2 = ~22.36x22.36 units.
+            // Scale down by factor of 1.5 to fit screen better.
+            state.sideLength = Math.sqrt(state.A) / 1.2; 
+            const s = state.sideLength;
+            const d = state.d * 1.5; // Scale separation for visibility
+
+            // Update Plates
+            topPlate.scale.set(s, 1, s);
+            topPlate.position.y = d / 2;
+            
+            bottomPlate.scale.set(s, 1, s);
+            bottomPlate.position.y = -d / 2;
+
+            // Update Dielectric
+            dielectric.scale.set(s, d - 0.2, s);
+            dielectric.position.y = 0;
+            matDielectric.opacity = state.k > 1 ? 0.1 + (state.k - 1) * 0.15 : 0;
+            matDielectric.visible = state.k > 1;
+
+            // Update Charges
+            // Max Q is approx 2212 pC. Map to MAX_CHARGES.
+            const maxTheoreticalQ = 5 * 0.0885 * 500 / 1 * 10;
+            let numCharges = Math.floor((state.Q / maxTheoreticalQ) * MAX_CHARGES);
+            numCharges = Math.min(Math.max(numCharges, 0), MAX_CHARGES);
+
+            posCharges.count = numCharges;
+            negCharges.count = numCharges;
+
+            const dummy = new THREE.Object3D();
+            
+            // Seeded random for stable charge positions
+            let seed = 12345;
+            function random() {
+                seed = (seed * 9301 + 49297) % 233280;
+                return seed / 233280;
+            }
+
+            for (let i = 0; i < numCharges; i++) {
+                // Random position within plate bounds
+                const x = (random() - 0.5) * (s - 0.4);
+                const z = (random() - 0.5) * (s - 0.4);
+                
+                // Positive charges on inner bottom of top plate
+                dummy.position.set(x, d/2 - 0.22, z);
+                dummy.updateMatrix();
+                posCharges.setMatrixAt(i, dummy.matrix);
+
+                // Negative charges on inner top of bottom plate
+                dummy.position.set(x, -d/2 + 0.22, z);
+                dummy.updateMatrix();
+                negCharges.setMatrixAt(i, dummy.matrix);
+            }
+            posCharges.instanceMatrix.needsUpdate = true;
+            negCharges.instanceMatrix.needsUpdate = true;
+
+            // Update Electric Field Arrows
+            // Max E is 1000 V/m.
+            const eRatio = state.E / 1000;
+            matArrow.opacity = Math.min(Math.max(eRatio * 1.5, 0), 1);
+            
+            if (state.V === 0) {
+                arrowShafts.count = 0;
+                arrowHeads.count = 0;
+                labelE.style.opacity = 0;
+            } else {
+                arrowShafts.count = numArrows;
+                arrowHeads.count = numArrows;
+                labelE.style.opacity = 1;
+                
+                let idx = 0;
+                const step = (s - 1) / (GRID_SIZE - 1);
+                const startOff = -(s - 1) / 2;
+                const arrowLen = d - 0.4;
+
+                for (let i = 0; i < GRID_SIZE; i++) {
+                    for (let j = 0; j < GRID_SIZE; j++) {
+                        const ax = startOff + i * step;
+                        const az = startOff + j * step;
+
+                        // Shaft
+                        dummy.position.set(ax, d/2 - 0.2, az);
+                        dummy.scale.set(1, arrowLen, 1);
+                        dummy.updateMatrix();
+                        arrowShafts.setMatrixAt(idx, dummy.matrix);
+
+                        // Head
+                        dummy.position.set(ax, -d/2 + 0.2 + 0.4, az); // 0.4 is head height
+                        dummy.scale.set(1, 1, 1);
+                        dummy.updateMatrix();
+                        arrowHeads.setMatrixAt(idx, dummy.matrix);
+
+                        idx++;
+                    }
+                }
+                arrowShafts.instanceMatrix.needsUpdate = true;
+                arrowHeads.instanceMatrix.needsUpdate = true;
+            }
+
+            // Update Wires
+            if (topWireMesh) scene.remove(topWireMesh);
+            if (bottomWireMesh) scene.remove(bottomWireMesh);
+
+            const topWirePts = [
+                new THREE.Vector3(s/2, d/2, 0),
+                new THREE.Vector3(s/2 + 2, d/2, 0),
+                new THREE.Vector3(12, 2.2, 0)
+            ];
+            topWireMesh = createWire(topWirePts);
+            scene.add(topWireMesh);
+
+            const bottomWirePts = [
+                new THREE.Vector3(s/2, -d/2, 0),
+                new THREE.Vector3(s/2 + 2, -d/2, 0),
+                new THREE.Vector3(12, -1, 0)
+            ];
+            bottomWireMesh = createWire(bottomWirePts);
+            scene.add(bottomWireMesh);
+        }
+
+        // --- Event Listeners ---
+        elVoltage.addEventListener('input', updatePhysics);
+        elArea.addEventListener('input', updatePhysics);
+        elSeparation.addEventListener('input', updatePhysics);
+        elDielectric.addEventListener('input', updatePhysics);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 3D to 2D Projection for Labels ---
+        function updateLabels() {
+            const d = state.d * 1.5;
+            const s = state.sideLength;
+
+            const posVec = new THREE.Vector3(-s/2 - 1, d/2, 0);
+            const negVec = new THREE.Vector3(-s/2 - 1, -d/2, 0);
+            const eVec = new THREE.Vector3(0, 0, s/2 + 1);
+
+            posVec.project(camera);
+            negVec.project(camera);
+            eVec.project(camera);
+
+            const hw = window.innerWidth / 2;
+            const hh = window.innerHeight / 2;
+
+            if (state.Q > 0) {
+                labelPos.style.opacity = 1;
+                labelNeg.style.opacity = 1;
+                labelPos.style.left = (posVec.x * hw + hw) + 'px';
+                labelPos.style.top = (-posVec.y * hh + hh) + 'px';
+                labelNeg.style.left = (negVec.x * hw + hw) + 'px';
+                labelNeg.style.top = (-negVec.y * hh + hh) + 'px';
+            } else {
+                labelPos.style.opacity = 0;
+                labelNeg.style.opacity = 0;
+            }
+
+            if (state.V > 0) {
+                labelE.style.left = (eVec.x * hw + hw) + 'px';
+                labelE.style.top = (-eVec.y * hh + hh) + 'px';
+            }
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

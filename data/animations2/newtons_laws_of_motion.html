@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Mechanics Laboratory: Newton's Laws in Action</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #1a1a1a;
+            --text-accent: #4361EE;
+            --vel-color: #06D6A0;
+            --force-color: #F77F00;
+            --spring-color: #7209B7;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        #ui-panel {
+            width: 320px;
+            min-width: 320px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            line-height: 1.3;
+            color: var(--text-main);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--text-accent);
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--text-accent);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d9e6;
+            border-radius: 2px;
+        }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #d1d9e6;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            cursor: pointer;
+            outline: none;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+        }
+
+        #btn-play {
+            background: var(--text-accent);
+            color: white;
+            box-shadow: 0 4px 10px rgba(67, 97, 238, 0.3);
+        }
+
+        #btn-play:hover { background: #324ed4; }
+
+        #btn-reset {
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        #btn-reset:hover { background: #cbd5e1; }
+
+        #formula-card {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+            border: 1px solid rgba(255,255,255,1);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .formula-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+
+        .live-data {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--text-accent);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .legend {
+            margin-top: auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+        }
+        .legend-item:last-child { margin-bottom: 0; }
+        
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Governing Equation</div>
+            <div class="math-text" id="eq-display">F = m &middot; a</div>
+            <div class="live-data">
+                <div id="live-force">Force: 0.00 N</div>
+                <div id="live-accel">Accel: 0.00 m/s&sup2;</div>
+                <div id="live-vel">Vel: 0.00 m/s</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Newton's Laws<br>Interactive Lab</h1>
+        
+        <div class="control-group">
+            <label>Motion Mode</label>
+            <select id="mode-select">
+                <option value="shm" selected>Simple Harmonic Motion</option>
+                <option value="linear">Linear Acceleration</option>
+                <option value="circular">Uniform Circular Motion</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Mass (m) <span class="val-display" id="val-mass">1.0 kg</span></label>
+            <input type="range" id="slider-mass" min="0.5" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label id="label-force">Stiffness (k) <span class="val-display" id="val-force">5.0 N/m</span></label>
+            <input type="range" id="slider-force" min="1.0" max="10.0" step="0.5" value="5.0">
+        </div>
+
+        <div class="control-group" id="group-damping">
+            <label>Damping (b) <span class="val-display" id="val-damping">0.00</span></label>
+            <input type="range" id="slider-damping" min="0.0" max="0.5" step="0.01" value="0.00">
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-play">Pause</button>
+            <button id="btn-reset">Reset</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--force-color)"></div>
+                <span>Force / Acceleration (&Sigma;F=ma)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--vel-color)"></div>
+                <span>Velocity (v)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--spring-color)"></div>
+                <span>Path Trace</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Setup Three.js Scene ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.Fog('#f0f4f8', 20, 60);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 12, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -15;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+
+        // --- Environment ---
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({ color: '#f0f4f8', depthWrite: false });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const gridHelper = new THREE.GridHelper(40, 40, '#d1d9e6', '#e2e8f0');
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
+
+        // --- Physics Objects ---
+        const baseRadius = 0.5;
+        const massGeo = new THREE.SphereGeometry(baseRadius, 32, 32);
+        const massMat = new THREE.MeshStandardMaterial({ 
+            color: '#4361EE', 
+            roughness: 0.2, 
+            metalness: 0.1 
+        });
+        const massMesh = new THREE.Mesh(massGeo, massMat);
+        massMesh.castShadow = true;
+        scene.add(massMesh);
+
+        // Wall for SHM
+        const wallGeo = new THREE.BoxGeometry(1, 4, 4);
+        const wallMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1' });
+        const wall = new THREE.Mesh(wallGeo, wallMat);
+        wall.position.set(-10, 2, 0);
+        wall.castShadow = true;
+        wall.receiveShadow = true;
+        scene.add(wall);
+
+        // Center post for UCM
+        const postGeo = new THREE.CylinderGeometry(0.2, 0.2, 2, 16);
+        const postMat = new THREE.MeshStandardMaterial({ color: '#cbd5e1' });
+        const post = new THREE.Mesh(postGeo, postMat);
+        post.position.set(0, 1, 0);
+        post.castShadow = true;
+        scene.add(post);
+
+        // --- Vectors (ArrowHelpers) ---
+        const velColor = new THREE.Color('#06D6A0');
+        const forceColor = new THREE.Color('#F77F00');
+        
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 0, velColor, 0.4, 0.3);
+        const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 0, forceColor, 0.5, 0.4);
+        
+        // Make lines thicker visually by adding a slight emissive property if possible, or just rely on bright colors
+        velArrow.line.material.linewidth = 3; // Note: WebGL linewidth is often ignored, but good practice
+        forceArrow.line.material.linewidth = 4;
+        
+        scene.add(velArrow);
+        scene.add(forceArrow);
+
+        // --- Spring (SHM) ---
+        class HelixCurve extends THREE.Curve {
+            constructor(turns, radius) {
+                super();
+                this.turns = turns;
+                this.radius = radius;
+            }
+            getPoint(t, optionalTarget = new THREE.Vector3()) {
+                const x = t; // 0 to 1
+                const angle = t * Math.PI * 2 * this.turns;
+                const y = Math.sin(angle) * this.radius;
+                const z = Math.cos(angle) * this.radius;
+                return optionalTarget.set(x, y, z);
+            }
+        }
+        const springCurve = new HelixCurve(15, 0.4);
+        const springGeo = new THREE.TubeGeometry(springCurve, 100, 0.08, 8, false);
+        const springMat = new THREE.MeshStandardMaterial({ color: '#7209B7', roughness: 0.4, metalness: 0.2 });
+        const springMesh = new THREE.Mesh(springGeo, springMat);
+        springMesh.position.set(-9.5, baseRadius, 0); // Attach to wall
+        springMesh.castShadow = true;
+        scene.add(springMesh);
+
+        // --- Tether (UCM) ---
+        const tetherGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 8);
+        // Rotate geometry so it aligns with Z axis for easier LookAt scaling
+        tetherGeo.rotateX(Math.PI / 2);
+        const tetherMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.5 });
+        const tetherMesh = new THREE.Mesh(tetherGeo, tetherMat);
+        scene.add(tetherMesh);
+
+        // --- Trail ---
+        const maxTrail = 150;
+        const trailPositions = new Float32Array(maxTrail * 3);
+        const trailGeo = new THREE.BufferGeometry();
+        trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+        const trailMat = new THREE.LineBasicMaterial({ color: '#7209B7', transparent: true, opacity: 0.4 });
+        const trailLine = new THREE.Line(trailGeo, trailMat);
+        scene.add(trailLine);
+        let trailCount = 0;
+
+        // --- Physics State ---
+        let state = {
+            mode: 'shm', // 'shm', 'linear', 'circular'
+            mass: 1.0,
+            forceConst: 5.0,
+            damping: 0.0,
+            pos: new THREE.Vector3(5, baseRadius, 0),
+            vel: new THREE.Vector3(0, 0, 0),
+            acc: new THREE.Vector3(0, 0, 0),
+            force: new THREE.Vector3(0, 0, 0),
+            time: 0,
+            isPlaying: true
+        };
+
+        // --- UI Elements ---
+        const ui = {
+            mode: document.getElementById('mode-select'),
+            mass: document.getElementById('slider-mass'),
+            force: document.getElementById('slider-force'),
+            damping: document.getElementById('slider-damping'),
+            valMass: document.getElementById('val-mass'),
+            valForce: document.getElementById('val-force'),
+            valDamping: document.getElementById('val-damping'),
+            labelForce: document.getElementById('label-force'),
+            groupDamping: document.getElementById('group-damping'),
+            btnPlay: document.getElementById('btn-play'),
+            btnReset: document.getElementById('btn-reset'),
+            eqDisplay: document.getElementById('eq-display'),
+            liveForce: document.getElementById('live-force'),
+            liveAccel: document.getElementById('live-accel'),
+            liveVel: document.getElementById('live-vel')
+        };
+
+        // --- UI Event Listeners ---
+        ui.mass.addEventListener('input', (e) => {
+            state.mass = parseFloat(e.target.value);
+            ui.valMass.textContent = state.mass.toFixed(1) + ' kg';
+            massMesh.scale.setScalar(Math.pow(state.mass, 1/3)); // Volume proportional to mass
+            massMesh.position.y = baseRadius * massMesh.scale.y;
+        });
+
+        ui.force.addEventListener('input', (e) => {
+            state.forceConst = parseFloat(e.target.value);
+            let unit = state.mode === 'shm' ? ' N/m' : (state.mode === 'circular' ? ' rad/s' : ' N');
+            if(state.mode === 'circular') {
+                // Map 1-10 to 1-4 rad/s for better visual speed
+                let w = 1 + (state.forceConst - 1) * (3 / 9);
+                ui.valForce.textContent = w.toFixed(1) + unit;
+            } else {
+                ui.valForce.textContent = state.forceConst.toFixed(1) + unit;
+            }
+        });
+
+        ui.damping.addEventListener('input', (e) => {
+            state.damping = parseFloat(e.target.value);
+            ui.valDamping.textContent = state.damping.toFixed(2);
+        });
+
+        ui.mode.addEventListener('change', (e) => {
+            state.mode = e.target.value;
+            resetSimulation();
+            updateUILabel();
+        });
+
+        ui.btnPlay.addEventListener('click', () => {
+            state.isPlaying = !state.isPlaying;
+            ui.btnPlay.textContent = state.isPlaying ? 'Pause' : 'Play';
+            ui.btnPlay.style.background = state.isPlaying ? 'var(--text-accent)' : '#ef476f';
+        });
+
+        ui.btnReset.addEventListener('click', resetSimulation);
+
+        function updateUILabel() {
+            if (state.mode === 'shm') {
+                ui.labelForce.innerHTML = `Stiffness (k) <span class="val-display" id="val-force">${state.forceConst.toFixed(1)} N/m</span>`;
+                ui.groupDamping.style.display = 'flex';
+                ui.eqDisplay.innerHTML = 'F = -kx - bv = ma';
+                wall.visible = true;
+                post.visible = false;
+            } else if (state.mode === 'linear') {
+                ui.labelForce.innerHTML = `Applied Force (F) <span class="val-display" id="val-force">${state.forceConst.toFixed(1)} N</span>`;
+                ui.groupDamping.style.display = 'none';
+                ui.eqDisplay.innerHTML = 'F = m &middot; a';
+                wall.visible = false;
+                post.visible = false;
+            } else if (state.mode === 'circular') {
+                let w = 1 + (state.forceConst - 1) * (3 / 9);
+                ui.labelForce.innerHTML = `Angular Vel (&omega;) <span class="val-display" id="val-force">${w.toFixed(1)} rad/s</span>`;
+                ui.groupDamping.style.display = 'none';
+                ui.eqDisplay.innerHTML = 'F<sub>c</sub> = m &middot; v&sup2; / r';
+                wall.visible = false;
+                post.visible = true;
+            }
+            // Re-bind the dynamic span
+            ui.valForce = document.getElementById('val-force');
+        }
+
+        function resetSimulation() {
+            state.time = 0;
+            state.vel.set(0, 0, 0);
+            state.acc.set(0, 0, 0);
+            state.force.set(0, 0, 0);
+            trailCount = 0;
+            trailGeo.attributes.position.array.fill(0);
+            trailGeo.attributes.position.needsUpdate = true;
+
+            if (state.mode === 'shm') {
+                state.pos.set(5, massMesh.position.y, 0);
+            } else if (state.mode === 'linear') {
+                state.pos.set(-8, massMesh.position.y, 0);
+            } else if (state.mode === 'circular') {
+                state.pos.set(5, massMesh.position.y, 0);
+            }
+        }
+
+        // --- Physics Engine ---
+        const dt = 1 / 60;
+
+        function updatePhysics() {
+            if (!state.isPlaying) return;
+
+            state.time += dt;
+            let yPos = massMesh.position.y;
+
+            if (state.mode === 'shm') {
+                // F = -kx - bv
+                let f_x = -state.forceConst * state.pos.x - state.damping * state.vel.x;
+                let a_x = f_x / state.mass;
+                
+                // Semi-implicit Euler
+                state.vel.x += a_x * dt;
+                state.pos.x += state.vel.x * dt;
+                
+                state.acc.set(a_x, 0, 0);
+                state.force.set(f_x, 0, 0);
+
+            } else if (state.mode === 'linear') {
+                // Constant Force
+                let f_x = state.forceConst;
+                let a_x = f_x / state.mass;
+                
+                state.vel.x += a_x * dt;
+                state.pos.x += state.vel.x * dt;
+
+                // Bounce at boundaries
+                if (state.pos.x > 12) {
+                    state.pos.x = 12;
+                    state.vel.x *= -0.8; // Energy loss
+                } else if (state.pos.x < -12) {
+                    state.pos.x = -12;
+                    state.vel.x *= -0.8;
+                }
+
+                state.acc.set(a_x, 0, 0);
+                state.force.set(f_x, 0, 0);
+
+            } else if (state.mode === 'circular') {
+                // Analytical update for perfect circle stability
+                let r = 5;
+                // Map slider 1-10 to omega 1-4
+                let w = 1 + (state.forceConst - 1) * (3 / 9); 
+                
+                state.pos.x = r * Math.cos(w * state.time);
+                state.pos.z = -r * Math.sin(w * state.time); // Negative for standard counter-clockwise in top-down
+                
+                state.vel.x = -r * w * Math.sin(w * state.time);
+                state.vel.z = -r * w * Math.cos(w * state.time);
+                
+                state.acc.x = -r * w * w * Math.cos(w * state.time);
+                state.acc.z = r * w * w * Math.sin(w * state.time);
+                
+                state.force.copy(state.acc).multiplyScalar(state.mass);
+            }
+
+            state.pos.y = yPos; // Keep on floor
+        }
+
+        function updateVisuals() {
+            // Update Mass Position
+            massMesh.position.copy(state.pos);
+
+            // Update Vectors
+            const vLen = state.vel.length();
+            if (vLen > 0.01) {
+                velArrow.setDirection(state.vel.clone().normalize());
+                velArrow.setLength(vLen * 0.5 + 0.5, 0.4, 0.3);
+                velArrow.position.copy(state.pos);
+                velArrow.visible = true;
+            } else {
+                velArrow.visible = false;
+            }
+
+            const fLen = state.force.length();
+            if (fLen > 0.01) {
+                forceArrow.setDirection(state.force.clone().normalize());
+                // Scale force arrow length. F=ma, so if mass increases, F increases for same a.
+                forceArrow.setLength(fLen * 0.2 + 0.5, 0.5, 0.4); 
+                forceArrow.position.copy(state.pos);
+                forceArrow.visible = true;
+            } else {
+                forceArrow.visible = false;
+            }
+
+            // Update Spring
+            if (state.mode === 'shm') {
+                springMesh.visible = true;
+                // Spring base is at x = -9.5. Target is pos.x.
+                // Original curve is length 1.
+                let stretch = state.pos.x - (-9.5);
+                if(stretch < 0.1) stretch = 0.1; // Prevent inversion/zero scale
+                springMesh.scale.set(stretch, 1, 1);
+            } else {
+                springMesh.visible = false;
+            }
+
+            // Update Tether
+            if (state.mode === 'circular') {
+                tetherMesh.visible = true;
+                let center = new THREE.Vector3(0, massMesh.position.y, 0);
+                let dist = state.pos.distanceTo(center);
+                tetherMesh.position.copy(center).lerp(state.pos, 0.5);
+                tetherMesh.lookAt(state.pos);
+                tetherMesh.scale.set(1, 1, dist);
+            } else {
+                tetherMesh.visible = false;
+            }
+
+            // Update Trail
+            if (state.isPlaying) {
+                const positions = trailGeo.attributes.position.array;
+                
+                // Shift array
+                for (let i = maxTrail - 1; i > 0; i--) {
+                    positions[i * 3] = positions[(i - 1) * 3];
+                    positions[i * 3 + 1] = positions[(i - 1) * 3 + 1];
+                    positions[i * 3 + 2] = positions[(i - 1) * 3 + 2];
+                }
+                
+                // Add new
+                positions[0] = state.pos.x;
+                positions[1] = 0.1; // slightly above ground
+                positions[2] = state.pos.z;
+
+                if (trailCount < maxTrail) {
+                    trailCount++;
+                    trailGeo.setDrawRange(0, trailCount);
+                }
+                
+                trailGeo.attributes.position.needsUpdate = true;
+            }
+
+            // Update Live Data UI
+            ui.liveForce.textContent = `Force: ${fLen.toFixed(2)} N`;
+            ui.liveAccel.textContent = `Accel: ${state.acc.length().toFixed(2)} m/s²`;
+            ui.liveVel.textContent   = `Vel  : ${vLen.toFixed(2)} m/s`;
+        }
+
+        // --- Main Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePhysics();
+            updateVisuals();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Initialize
+        updateUILabel();
+        resetSimulation();
+        animate();
+
+    </script>
+</body>
+</html>

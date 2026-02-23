@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nucleophilic Addition Mechanism</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-color: #404040;
+            --o-color: #FF4444;
+            --n-color: #4444FF;
+            --h-color: #CCCCCC;
+            --nu-color: #9B59B6;
+            --arrow-color: #F77F00;
+            --bond-color: #333333;
+            --pi-bond-color: #555555;
+            --bg-color: #f8f9fa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        text {
+            user-select: none;
+        }
+
+        .title { font-size: 24px; font-weight: 700; fill: #222; text-anchor: middle; }
+        .formula { font-family: 'Roboto Mono', monospace; font-size: 16px; fill: #555; text-anchor: middle; }
+        .atom-text { font-size: 16px; font-weight: 600; fill: #fff; text-anchor: middle; dominant-baseline: central; }
+        .atom-text-dark { font-size: 16px; font-weight: 600; fill: #333; text-anchor: middle; dominant-baseline: central; }
+        .charge-text { font-size: 14px; font-weight: 700; text-anchor: middle; dominant-baseline: central; }
+        .delta { font-size: 16px; font-style: italic; font-weight: 600; }
+        .delta-plus { fill: var(--n-color); }
+        .delta-minus { fill: var(--o-color); }
+        .label-text { font-size: 14px; fill: #666; font-weight: 600; }
+
+        /* Animations */
+        .scene { animation: sceneFade 10s infinite; }
+        .pi-bond { animation: piVibrate 10s infinite; }
+        .delta-labels { animation: pulseDelta 10s infinite; }
+        .nu-group { animation: moveNu 10s infinite; }
+        .arrow-1 { animation: drawArrow1 10s infinite; stroke-dasharray: 150; stroke-dashoffset: 150; }
+        .arrow-2 { animation: drawArrow2 10s infinite; stroke-dasharray: 100; stroke-dashoffset: 100; }
+        .arc-107 { animation: showArc 10s infinite; }
+        .c-nu-bond { animation: drawCNBond 10s infinite; stroke-dasharray: 120; stroke-dashoffset: 120; }
+        .group-ch3r { animation: rotateCH3R 10s infinite; transform-origin: 400px 260px; }
+        .group-ch3l { animation: rotateCH3L 10s infinite; transform-origin: 400px 260px; }
+        .solid-bond-r { animation: fadeOutBond 10s infinite; }
+        .wedge-bond-r { animation: fadeInBond 10s infinite; opacity: 0; }
+        .solid-bond-l { animation: fadeOutBond 10s infinite; }
+        .dash-bond-l { animation: fadeInBond 10s infinite; opacity: 0; }
+        .o-charge { animation: showOCharge 10s infinite; opacity: 0; }
+        .nu-charge { animation: hideNuCharge 10s infinite; }
+        .hyb-sp2 { animation: fadeOutBond 10s infinite; }
+        .hyb-sp3 { animation: fadeInBond 10s infinite; opacity: 0; }
+
+        @keyframes sceneFade {
+            0%, 85% { opacity: 1; }
+            90%, 95% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes piVibrate {
+            0%, 10% { transform: translateY(0); opacity: 1; }
+            15% { transform: translateY(-4px); opacity: 1; }
+            20% { transform: translateY(0); opacity: 1; }
+            25% { transform: translateY(-4px); opacity: 1; }
+            30%, 50% { transform: translateY(0); opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @keyframes pulseDelta {
+            0%, 5% { opacity: 0.4; transform: scale(0.9); transform-origin: 420px 270px; }
+            15% { opacity: 1; transform: scale(1.1); transform-origin: 420px 270px; }
+            25%, 50% { opacity: 0.8; transform: scale(1); transform-origin: 420px 270px; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @keyframes moveNu {
+            0%, 20% { transform: translate(125px, 38px); }
+            35%, 50% { transform: translate(36px, 12px); }
+            55%, 85% { transform: translate(0, 0); }
+            100% { transform: translate(125px, 38px); }
+        }
+
+        @keyframes drawArrow1 {
+            0%, 35% { stroke-dashoffset: 150; opacity: 1; }
+            50% { stroke-dashoffset: 0; opacity: 1; }
+            51%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes drawArrow2 {
+            0%, 35% { stroke-dashoffset: 100; opacity: 1; }
+            50% { stroke-dashoffset: 0; opacity: 1; }
+            51%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes showArc {
+            0%, 35% { opacity: 0; }
+            40%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        @keyframes drawCNBond {
+            0%, 50% { stroke-dashoffset: 120; opacity: 0; }
+            55%, 85% { stroke-dashoffset: 0; opacity: 1; }
+            100% { stroke-dashoffset: 120; opacity: 0; }
+        }
+
+        @keyframes rotateCH3R {
+            0%, 50% { transform: rotate(0deg); }
+            55%, 85% { transform: rotate(60deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        @keyframes rotateCH3L {
+            0%, 50% { transform: rotate(0deg); }
+            55%, 85% { transform: rotate(40deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        @keyframes fadeOutBond {
+            0%, 50% { opacity: 1; }
+            55%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeInBond {
+            0%, 50% { opacity: 0; }
+            55%, 85% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes showOCharge {
+            0%, 50% { opacity: 0; }
+            55%, 85% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes hideNuCharge {
+            0%, 50% { opacity: 1; }
+            55%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <title>Nucleophilic Addition to Carbonyl Group</title>
+    <desc>Animated chemical mechanism showing a cyanide nucleophile attacking propanone at the Bürgi-Dunitz angle, transitioning from a planar sp2 state to a tetrahedral sp3 state.</desc>
+
+    <defs>
+        <!-- Gradients for 2.5D Atom Spheres -->
+        <radialGradient id="grad-C" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#777777" />
+            <stop offset="100%" stop-color="#404040" />
+        </radialGradient>
+        <radialGradient id="grad-O" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FF8888" />
+            <stop offset="100%" stop-color="#FF4444" />
+        </radialGradient>
+        <radialGradient id="grad-N" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#8888FF" />
+            <stop offset="100%" stop-color="#4444FF" />
+        </radialGradient>
+        <radialGradient id="grad-H" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFFFFF" />
+            <stop offset="100%" stop-color="#CCCCCC" />
+        </radialGradient>
+        <radialGradient id="grad-Nu" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#C39BD3" />
+            <stop offset="100%" stop-color="#9B59B6" />
+        </radialGradient>
+
+        <!-- Drop Shadow Filter -->
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.25" />
+        </filter>
+
+        <!-- Arrowhead Marker -->
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00" />
+        </marker>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#ffffff" rx="12" />
+
+    <!-- Title and Formula -->
+    <text x="400" y="40" class="title">Nucleophilic Addition: Formation of Cyanohydrin</text>
+    <text x="400" y="75" class="formula">
+        CH<tspan baseline-shift="sub" font-size="12">3</tspan>COCH<tspan baseline-shift="sub" font-size="12">3</tspan> + CN<tspan baseline-shift="super" font-size="12">-</tspan> → (CH<tspan baseline-shift="sub" font-size="12">3</tspan>)<tspan baseline-shift="sub" font-size="12">2</tspan>C(O<tspan baseline-shift="super" font-size="12">-</tspan>)CN
+    </text>
+
+    <!-- Legend -->
+    <g transform="translate(30, 440)">
+        <rect x="0" y="0" width="380" height="40" fill="#f8f9fa" rx="6" stroke="#eee" />
+        <circle cx="20" cy="20" r="8" fill="url(#grad-C)" />
+        <text x="35" y="20" class="label-text" dominant-baseline="central">Carbon</text>
+        
+        <circle cx="100" cy="20" r="8" fill="url(#grad-O)" />
+        <text x="115" y="20" class="label-text" dominant-baseline="central">Oxygen</text>
+        
+        <circle cx="185" cy="20" r="8" fill="url(#grad-Nu)" />
+        <text x="200" y="20" class="label-text" dominant-baseline="central">Nucleophile</text>
+        
+        <line x1="295" y1="20" x2="325" y2="20" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowhead)" />
+        <text x="335" y="20" class="label-text" dominant-baseline="central">e⁻ Flow</text>
+    </g>
+
+    <!-- Main Animation Scene -->
+    <g class="scene">
+        
+        <!-- Hybridization Labels -->
+        <text x="230" y="260" class="label-text hyb-sp2" text-anchor="end">sp² (Trigonal Planar)</text>
+        <text x="230" y="260" class="label-text hyb-sp3" text-anchor="end" fill="#9B59B6">sp³ (Tetrahedral)</text>
+
+        <!-- Static Bonds -->
+        <line x1="400" y1="260" x2="400" y2="140" stroke="var(--bond-color)" stroke-width="6" stroke-linecap="round" />
+        <line x1="392" y1="250" x2="392" y2="150" stroke="var(--pi-bond-color)" stroke-width="6" stroke-linecap="round" class="pi-bond" />
+        
+        <!-- C-Nu Bond (Fades in) -->
+        <line x1="400" y1="260" x2="514" y2="295" stroke="var(--bond-color)" stroke-width="6" stroke-linecap="round" class="c-nu-bond" />
+
+        <!-- Left Methyl Group (Rotates +40deg) -->
+        <g class="group-ch3l">
+            <line x1="400" y1="260" x2="296" y2="320" stroke="var(--bond-color)" stroke-width="6" stroke-linecap="round" class="solid-bond-l" />
+            <line x1="400" y1="260" x2="296" y2="320" stroke="var(--bond-color)" stroke-width="4" stroke-linecap="round" stroke-dasharray="6,6" class="dash-bond-l" />
+            <circle cx="296" cy="320" r="20" fill="url(#grad-H)" filter="url(#shadow)" />
+            <text x="296" y="320" class="atom-text-dark" transform="rotate(-40, 296, 320)">H<tspan baseline-shift="sub" font-size="11">3</tspan>C</text>
+        </g>
+
+        <!-- Right Methyl Group (Rotates +60deg) -->
+        <g class="group-ch3r">
+            <line x1="400" y1="260" x2="504" y2="320" stroke="var(--bond-color)" stroke-width="6" stroke-linecap="round" class="solid-bond-r" />
+            <!-- Wedge approximation: Polygon from C to CH3 -->
+            <polygon points="400,260 499,328 509,312" fill="var(--bond-color)" class="wedge-bond-r" />
+            <circle cx="504" cy="320" r="20" fill="url(#grad-H)" filter="url(#shadow)" />
+            <text x="504" y="320" class="atom-text-dark" transform="rotate(-60, 504, 320)">CH<tspan baseline-shift="sub" font-size="11">3</tspan></text>
+        </g>
+
+        <!-- Central Carbon Atom -->
+        <circle cx="400" cy="260" r="22" fill="url(#grad-C)" filter="url(#shadow)" />
+        <text x="400" y="260" class="atom-text">C</text>
+
+        <!-- Oxygen Atom -->
+        <circle cx="400" cy="140" r="22" fill="url(#grad-O)" filter="url(#shadow)" />
+        <text x="400" y="140" class="atom-text">O</text>
+        
+        <!-- Oxygen Lone Pairs -->
+        <circle cx="382" cy="122" r="2.5" fill="#555" />
+        <circle cx="390" cy="116" r="2.5" fill="#555" />
+        <circle cx="418" cy="122" r="2.5" fill="#555" />
+        <circle cx="410" cy="116" r="2.5" fill="#555" />
+        <!-- 3rd Lone Pair (Fades in) -->
+        <g class="o-charge">
+            <circle cx="396" cy="108" r="2.5" fill="#555" />
+            <circle cx="404" cy="108" r="2.5" fill="#555" />
+            <!-- Negative Charge on Oxygen -->
+            <circle cx="428" cy="115" r="9" fill="#fff" stroke="var(--o-color)" stroke-width="1.5" />
+            <text x="428" y="115" class="charge-text" fill="var(--o-color)">-</text>
+        </g>
+
+        <!-- Partial Charges (Fade out) -->
+        <g class="delta-labels">
+            <text x="430" y="275" class="delta delta-plus">δ+</text>
+            <text x="430" y="135" class="delta delta-minus">δ-</text>
+        </g>
+
+        <!-- Nucleophile Group (Moves in) -->
+        <g class="nu-group">
+            <!-- CN Atom -->
+            <circle cx="514" cy="295" r="22" fill="url(#grad-Nu)" filter="url(#shadow)" />
+            <text x="514" y="295" class="atom-text">CN</text>
+            <!-- Lone Pair on C -->
+            <circle cx="486" cy="291" r="2.5" fill="#555" />
+            <circle cx="486" cy="299" r="2.5" fill="#555" />
+            <!-- Negative Charge on CN (Fades out when bonded) -->
+            <g class="nu-charge">
+                <circle cx="542" cy="275" r="9" fill="#fff" stroke="var(--nu-color)" stroke-width="1.5" />
+                <text x="542" y="275" class="charge-text" fill="var(--nu-color)">-</text>
+            </g>
+        </g>
+
+        <!-- Electron Flow Arrows -->
+        <!-- Arrow 1: From CN lone pair to C -->
+        <path d="M 530 307 Q 480 340 420 280" fill="none" stroke="var(--arrow-color)" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-1" />
+        
+        <!-- Arrow 2: From Pi bond to O -->
+        <path d="M 385 210 Q 340 180 375 145" fill="none" stroke="var(--arrow-color)" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-2" />
+
+        <!-- Bürgi-Dunitz Angle Arc -->
+        <g class="arc-107">
+            <path d="M 400 190 A 70 70 0 0 1 467 280" fill="none" stroke="#888" stroke-width="1.5" stroke-dasharray="4,4" />
+            <text x="450" y="230" class="label-text" fill="#888">107°</text>
+        </g>
+
+    </g>
+</svg>
+
+</body>
+</html>

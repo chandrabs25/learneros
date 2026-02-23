@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synergic Bonding & Geometric Isomerism</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-main: #2b2b2b;
+            --text-muted: #555555;
+            --cyan: #48CAE4;
+            --magenta: #F72585;
+            --flow-sigma: #FFD700;
+            --flow-pi: #7209B7;
+            --bond-single: #333333;
+            --bond-double: #555555;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            box-sizing: border-box;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1100px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: var(--text-main);
+        }
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            fill: var(--text-muted);
+        }
+        .title { font-size: 26px; font-weight: 700; }
+        .subtitle { font-size: 18px; font-weight: 600; fill: #444; }
+        .label { font-size: 13px; font-weight: 500; }
+        .atom-label { font-size: 16px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+        .atom-label.light { fill: #ffffff; }
+        .atom-label.dark { fill: #111111; }
+
+        /* Animations - Synergic Bonding */
+        .flow-sigma {
+            stroke-dasharray: 8, 6;
+            animation: flow-fwd 1s linear infinite, fade-sigma 4s ease-in-out infinite;
+        }
+        .flow-pi {
+            stroke-dasharray: 8, 6;
+            animation: flow-fwd 1s linear infinite, fade-pi 4s ease-in-out infinite;
+        }
+        
+        @keyframes flow-fwd {
+            from { stroke-dashoffset: 28; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes fade-sigma {
+            0%, 40% { opacity: 1; }
+            50%, 100% { opacity: 0.15; }
+        }
+
+        @keyframes fade-pi {
+            0%, 30% { opacity: 0.15; }
+            40%, 90% { opacity: 1; }
+            100% { opacity: 0.15; }
+        }
+
+        .mc-bond {
+            animation: mc-thicken 4s ease-in-out infinite;
+        }
+        @keyframes mc-thicken {
+            0%, 30% { stroke-width: 4; stroke: var(--bond-single); }
+            50%, 80% { stroke-width: 8; stroke: var(--flow-pi); }
+            100% { stroke-width: 4; stroke: var(--bond-single); }
+        }
+
+        .co-bond-pi {
+            animation: co-weaken 4s ease-in-out infinite;
+        }
+        @keyframes co-weaken {
+            0%, 30% { stroke-width: 4; opacity: 1; stroke-dasharray: none; }
+            50%, 80% { stroke-width: 2; opacity: 0.3; stroke-dasharray: 4, 3; }
+            100% { stroke-width: 4; opacity: 1; stroke-dasharray: none; }
+        }
+
+        .pi-orbital-anim {
+            animation: pulse-pi 4s ease-in-out infinite;
+        }
+        @keyframes pulse-pi {
+            0%, 30% { transform: scale(1); }
+            50%, 80% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+
+        /* Animations - Geometric Isomerism */
+        .rotate-cl {
+            transform-origin: 0px 0px;
+            animation: rot-cl 10s ease-in-out infinite;
+        }
+        .rotate-nh3 {
+            transform-origin: 0px 0px;
+            animation: rot-nh3 10s ease-in-out infinite;
+        }
+
+        @keyframes rot-cl {
+            0%, 20% { transform: rotate(0deg); }
+            40%, 70% { transform: rotate(90deg); }
+            90%, 100% { transform: rotate(0deg); }
+        }
+        @keyframes rot-nh3 {
+            0%, 20% { transform: rotate(0deg); }
+            40%, 70% { transform: rotate(-90deg); }
+            90%, 100% { transform: rotate(0deg); }
+        }
+
+        .label-cis { animation: fade-cis 10s ease-in-out infinite; }
+        .label-trans { animation: fade-trans 10s ease-in-out infinite; }
+
+        @keyframes fade-cis {
+            0%, 25% { opacity: 1; }
+            35%, 75% { opacity: 0; }
+            85%, 100% { opacity: 1; }
+        }
+        @keyframes fade-trans {
+            0%, 25% { opacity: 0; }
+            35%, 75% { opacity: 1; }
+            85%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 1100 650" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Gradients for Atoms -->
+            <radialGradient id="grad-pt" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#e8e8e8"/>
+                <stop offset="100%" stop-color="#808080"/>
+            </radialGradient>
+            <radialGradient id="grad-c" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#777777"/>
+                <stop offset="100%" stop-color="#222222"/>
+            </radialGradient>
+            <radialGradient id="grad-o" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#ff7777"/>
+                <stop offset="100%" stop-color="#cc0000"/>
+            </radialGradient>
+            <radialGradient id="grad-n" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#7777ff"/>
+                <stop offset="100%" stop-color="#0000cc"/>
+            </radialGradient>
+            <radialGradient id="grad-cl" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#77ff77"/>
+                <stop offset="100%" stop-color="#00aa00"/>
+            </radialGradient>
+            <radialGradient id="grad-h" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#cccccc"/>
+            </radialGradient>
+
+            <!-- Orbital Path -->
+            <path id="orbital-lobe" d="M 0,0 C 35,-40 75,-20 75,0 C 75,20 35,40 0,0" />
+
+            <!-- Arrowheads -->
+            <marker id="arrow-yellow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0,1 L 10,5 L 0,9 z" fill="#FFD700" />
+            </marker>
+            <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0,1 L 10,5 L 0,9 z" fill="#7209B7" />
+            </marker>
+
+            <!-- Glow Filter -->
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+        </defs>
+
+        <!-- Background & Dividers -->
+        <rect width="1100" height="650" fill="#ffffff" />
+        <line x1="550" y1="80" x2="550" y2="520" stroke="#e0e0e0" stroke-width="2" stroke-dasharray="8,8" />
+
+        <!-- Header -->
+        <text x="550" y="45" text-anchor="middle" class="title">Coordination Compounds: Bonding &amp; Isomerism</text>
+        
+        <!-- ========================================== -->
+        <!-- LEFT PANE: SYNERGIC BONDING                -->
+        <!-- ========================================== -->
+        <text x="275" y="90" text-anchor="middle" class="subtitle">Synergic Bonding in Metal Carbonyls</text>
+        <text x="275" y="115" text-anchor="middle" class="formula">[M(CO)<tspan dy="4" font-size="11">n</tspan><tspan dy="-4">]</tspan></text>
+
+        <g transform="translate(275, 330)">
+            <!-- Bonds -->
+            <line x1="-110" y1="0" x2="40" y2="0" class="mc-bond" />
+            <line x1="40" y1="-8" x2="120" y2="-8" stroke="var(--bond-double)" class="co-bond-pi" />
+            <line x1="40" y1="0" x2="120" y2="0" stroke="var(--bond-single)" stroke-width="4" />
+            <line x1="40" y1="8" x2="120" y2="8" stroke="var(--bond-double)" class="co-bond-pi" />
+
+            <!-- Metal d-orbitals (d_xy) -->
+            <g opacity="0.85">
+                <use href="#orbital-lobe" transform="rotate(-45)" fill="var(--cyan)" />
+                <use href="#orbital-lobe" transform="rotate(135)" fill="var(--cyan)" />
+                <use href="#orbital-lobe" transform="rotate(45)" fill="var(--magenta)" />
+                <use href="#orbital-lobe" transform="rotate(225)" fill="var(--magenta)" />
+            </g>
+
+            <!-- Carbon sp orbital -->
+            <use href="#orbital-lobe" transform="translate(40,0) rotate(180) scale(0.6)" fill="#d0d0d0" opacity="0.7" />
+
+            <!-- Carbon pi* orbitals -->
+            <g transform="translate(40,0)" opacity="0.85">
+                <g class="pi-orbital-anim">
+                    <use href="#orbital-lobe" transform="rotate(-90) scale(0.85)" fill="var(--cyan)" />
+                    <use href="#orbital-lobe" transform="rotate(90) scale(0.85)" fill="var(--magenta)" />
+                </g>
+            </g>
+
+            <!-- Electron Flow Arrows -->
+            <!-- Sigma Donation (C to M) -->
+            <path d="M 15,0 L -60,0" stroke="var(--flow-sigma)" stroke-width="4" fill="none" class="flow-sigma" marker-end="url(#arrow-yellow)" filter="url(#glow)" />
+            
+            <!-- Pi Backbonding (M to C) -->
+            <path d="M -40,-40 Q 0,-75 35,-45" stroke="var(--flow-pi)" stroke-width="3" fill="none" class="flow-pi" marker-end="url(#arrow-purple)" filter="url(#glow)" />
+            <path d="M -40,40 Q 0,75 35,45" stroke="var(--flow-pi)" stroke-width="3" fill="none" class="flow-pi" marker-end="url(#arrow-purple)" filter="url(#glow)" />
+
+            <!-- Atoms -->
+            <!-- Metal -->
+            <circle cx="-110" cy="0" r="35" fill="url(#grad-pt)" />
+            <text cx="-110" cy="0" x="-110" y="0" class="atom-label dark">M</text>
+            
+            <!-- Carbon -->
+            <circle cx="40" cy="0" r="22" fill="url(#grad-c)" />
+            <text cx="40" cy="0" x="40" y="0" class="atom-label light">C</text>
+            
+            <!-- Oxygen -->
+            <circle cx="120" cy="0" r="24" fill="url(#grad-o)" />
+            <text cx="120" cy="0" x="120" y="0" class="atom-label light">O</text>
+
+            <!-- Annotations -->
+            <text x="-120" y="-95" class="label" fill="var(--cyan)">Filled Metal d-orbital</text>
+            <path d="M -80,-90 L -50,-60" stroke="#888" stroke-width="1.5" marker-end="url(#arrow-purple)" opacity="0.5"/>
+
+            <text x="70" y="-110" class="label" fill="var(--cyan)">Empty π* orbital of CO</text>
+            <path d="M 90,-105 L 55,-75" stroke="#888" stroke-width="1.5" marker-end="url(#arrow-purple)" opacity="0.5"/>
+
+            <text x="-15" y="20" class="label" fill="#b89b00" text-anchor="middle" font-weight="600">σ-donation</text>
+            <text x="0" y="-85" class="label" fill="var(--flow-pi)" text-anchor="middle" font-weight="600">π-backbonding</text>
+        </g>
+
+
+        <!-- ========================================== -->
+        <!-- RIGHT PANE: GEOMETRIC ISOMERISM            -->
+        <!-- ========================================== -->
+        <text x="825" y="90" text-anchor="middle" class="subtitle">Geometric Isomerism (Square Planar)</text>
+        <text x="825" y="115" text-anchor="middle" class="formula">[Pt(NH<tspan dy="4" font-size="11">3</tspan><tspan dy="-4">)</tspan><tspan dy="4" font-size="11">2</tspan><tspan dy="-4">Cl</tspan><tspan dy="4" font-size="11">2</tspan><tspan dy="-4">]</tspan></text>
+
+        <g transform="translate(825, 330)">
+            <!-- Static Ligands -->
+            <!-- Cl (Left) -->
+            <g>
+                <line x1="0" y1="0" x2="-100" y2="0" stroke="var(--bond-single)" stroke-width="4" />
+                <circle cx="-100" cy="0" r="24" fill="url(#grad-cl)" />
+                <text x="-100" y="0" class="atom-label dark">Cl</text>
+            </g>
+            
+            <!-- NH3 (Bottom) -->
+            <g>
+                <line x1="0" y1="0" x2="0" y2="100" stroke="var(--bond-single)" stroke-width="4" />
+                <circle cx="0" cy="100" r="20" fill="url(#grad-n)" />
+                <text x="0" y="100" class="atom-label light">N</text>
+                <!-- Hydrogens -->
+                <circle cx="-14" cy="114" r="8" fill="url(#grad-h)" />
+                <circle cx="14" cy="114" r="8" fill="url(#grad-h)" />
+                <circle cx="0" cy="124" r="8" fill="url(#grad-h)" />
+            </g>
+
+            <!-- Rotating Ligands -->
+            <!-- Cl (Starts Top, moves to Right) -->
+            <g class="rotate-cl">
+                <line x1="0" y1="0" x2="0" y2="-100" stroke="var(--bond-single)" stroke-width="4" />
+                <circle cx="0" cy="-100" r="24" fill="url(#grad-cl)" />
+                <text x="0" y="-100" class="atom-label dark" transform="rotate(0, 0, -100)">Cl</text>
+            </g>
+
+            <!-- NH3 (Starts Right, moves to Top) -->
+            <g class="rotate-nh3">
+                <line x1="0" y1="0" x2="100" y2="0" stroke="var(--bond-single)" stroke-width="4" />
+                <circle cx="100" cy="0" r="20" fill="url(#grad-n)" />
+                <text x="100" y="0" class="atom-label light" transform="rotate(0, 100, 0)">N</text>
+                <!-- Hydrogens -->
+                <circle cx="114" cy="-14" r="8" fill="url(#grad-h)" />
+                <circle cx="114" cy="14" r="8" fill="url(#grad-h)" />
+                <circle cx="124" cy="0" r="8" fill="url(#grad-h)" />
+            </g>
+
+            <!-- Central Platinum (Drawn last to be on top of bonds) -->
+            <circle cx="0" cy="0" r="30" fill="url(#grad-pt)" />
+            <text x="0" y="0" class="atom-label dark" font-size="18">Pt</text>
+
+            <!-- Dynamic Labels -->
+            <text x="0" y="170" text-anchor="middle" class="subtitle label-cis" fill="#005f73">Cis-isomer (90°)</text>
+            <text x="0" y="170" text-anchor="middle" class="subtitle label-trans" fill="#9b2226">Trans-isomer (180°)</text>
+            <text x="0" y="195" text-anchor="middle" class="label label-cis" fill="#666">Cis-diamminedichloridoplatinum(II)</text>
+            <text x="0" y="195" text-anchor="middle" class="label label-trans" fill="#666">Trans-diamminedichloridoplatinum(II)</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- LEGEND                                     -->
+        <!-- ========================================== -->
+        <g transform="translate(150, 560)">
+            <rect x="0" y="0" width="800" height="70" rx="10" fill="#ffffff" stroke="#e0e0e0" stroke-width="1.5" />
+            
+            <!-- Phases -->
+            <rect x="30" y="25" width="20" height="20" rx="4" fill="var(--cyan)" opacity="0.85" />
+            <text x="60" y="40" class="label">Positive Phase</text>
+            
+            <rect x="170" y="25" width="20" height="20" rx="4" fill="var(--magenta)" opacity="0.85" />
+            <text x="200" y="40" class="label">Negative Phase</text>
+
+            <!-- Arrows -->
+            <line x1="320" y1="35" x2="360" y2="35" stroke="var(--flow-sigma)" stroke-width="3" stroke-dasharray="6,4" marker-end="url(#arrow-yellow)" />
+            <text x="375" y="40" class="label">σ-Donation</text>
+
+            <line x1="465" y1="35" x2="505" y2="35" stroke="var(--flow-pi)" stroke-width="3" stroke-dasharray="6,4" marker-end="url(#arrow-purple)" />
+            <text x="520" y="40" class="label">π-Backbonding</text>
+
+            <!-- Atoms -->
+            <circle cx="640" cy="35" r="10" fill="url(#grad-pt)" />
+            <text x="655" y="40" class="label">Pt/M</text>
+
+            <circle cx="700" cy="35" r="10" fill="url(#grad-c)" />
+            <circle cx="715" cy="35" r="10" fill="url(#grad-o)" />
+            <text x="730" y="40" class="label">CO</text>
+
+            <circle cx="765" cy="35" r="10" fill="url(#grad-cl)" />
+            <text x="780" y="40" class="label">Cl</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

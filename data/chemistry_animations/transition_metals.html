@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Synergic Bonding in Metal Carbonyls</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            fill: #212529;
+        }
+        .subtitle {
+            font-size: 14px;
+            fill: #6c757d;
+        }
+        .atom-label {
+            font-size: 20px;
+            font-weight: 600;
+            fill: #ffffff;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        .atom-sublabel {
+            font-size: 12px;
+            fill: #495057;
+            text-anchor: middle;
+        }
+        .orbital-label {
+            font-size: 12px;
+            fill: #495057;
+            font-family: 'Roboto Mono', monospace;
+        }
+        .phase-text {
+            font-size: 14px;
+            text-anchor: middle;
+            transition: all 0.3s ease;
+        }
+
+        /* Animations */
+        @keyframes flow {
+            0% { offset-distance: 0%; opacity: 0; transform: scale(0.5); }
+            15% { opacity: 1; transform: scale(1); }
+            85% { opacity: 1; transform: scale(1); }
+            100% { offset-distance: 100%; opacity: 0; transform: scale(0.5); }
+        }
+
+        @keyframes vis-sigma {
+            0%, 30% { opacity: 1; }
+            33%, 63% { opacity: 0; }
+            66%, 97% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes vis-pi {
+            0%, 30% { opacity: 0; }
+            33%, 63% { opacity: 1; }
+            66%, 97% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes shift-c {
+            0%, 63% { transform: translateX(0); }
+            70%, 95% { transform: translateX(-12px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes shift-o {
+            0%, 63% { transform: translateX(0); }
+            70%, 95% { transform: translateX(8px); }
+            100% { transform: translateX(0); }
+        }
+
+        @keyframes shift-cobond {
+            0%, 63% { transform: translateX(0) scaleX(1); }
+            70%, 95% { transform: translateX(-2px) scaleX(1.1); }
+            100% { transform: translateX(0) scaleX(1); }
+        }
+
+        @keyframes shift-mcbond {
+            0%, 63% { transform: scaleX(1); }
+            70%, 95% { transform: scaleX(0.952); }
+            100% { transform: scaleX(1); }
+        }
+
+        @keyframes pulse-sigma-empty {
+            0%, 30% { filter: drop-shadow(0 0 8px rgba(162, 210, 255, 0.8)); }
+            33%, 63% { filter: drop-shadow(0 0 0px rgba(162, 210, 255, 0)); }
+            66%, 97% { filter: drop-shadow(0 0 8px rgba(162, 210, 255, 0.8)); }
+            100% { filter: drop-shadow(0 0 0px rgba(162, 210, 255, 0)); }
+        }
+
+        @keyframes pulse-pi-star {
+            0%, 30% { filter: drop-shadow(0 0 0px rgba(255, 194, 209, 0)); }
+            33%, 63% { filter: drop-shadow(0 0 8px rgba(255, 194, 209, 0.8)); }
+            66%, 97% { filter: drop-shadow(0 0 8px rgba(255, 194, 209, 0.8)); }
+            100% { filter: drop-shadow(0 0 0px rgba(255, 194, 209, 0)); }
+        }
+
+        @keyframes highlight-p1 {
+            0%, 30% { fill: #7209B7; font-weight: 700; opacity: 1; }
+            33%, 100% { fill: #adb5bd; font-weight: 400; opacity: 0.6; }
+        }
+        @keyframes highlight-p2 {
+            0%, 30% { fill: #adb5bd; font-weight: 400; opacity: 0.6; }
+            33%, 63% { fill: #F77F00; font-weight: 700; opacity: 1; }
+            66%, 100% { fill: #adb5bd; font-weight: 400; opacity: 0.6; }
+        }
+        @keyframes highlight-p3 {
+            0%, 63% { fill: #adb5bd; font-weight: 400; opacity: 0.6; }
+            66%, 97% { fill: #00A86B; font-weight: 700; opacity: 1; }
+            100% { fill: #adb5bd; font-weight: 400; opacity: 0.6; }
+        }
+
+        /* Applying Animations */
+        .e-sigma {
+            offset-path: path('M 380 250 L 270 250');
+            animation: flow 1.5s linear infinite;
+        }
+        .e-pi-top {
+            offset-path: path('M 250 200 Q 340 160 430 170');
+            animation: flow 1.5s linear infinite;
+        }
+        .e-pi-bot {
+            offset-path: path('M 250 300 Q 340 340 430 330');
+            animation: flow 1.5s linear infinite;
+        }
+        
+        .delay-1 { animation-delay: 0s; }
+        .delay-2 { animation-delay: 0.75s; }
+
+        .group-sigma { animation: vis-sigma 12s infinite; }
+        .group-pi { animation: vis-pi 12s infinite; }
+
+        #carbon-group { animation: shift-c 12s infinite; }
+        #oxygen-group { animation: shift-o 12s infinite; }
+        #co-bond-group { animation: shift-cobond 12s infinite; transform-origin: 550px 250px; }
+        #mc-bond-group { animation: shift-mcbond 12s infinite; transform-origin: 200px 250px; }
+
+        .metal-empty { animation: pulse-sigma-empty 12s infinite; }
+        .carbon-pi { animation: pulse-pi-star 12s infinite; }
+
+        .p1 { animation: highlight-p1 12s infinite; }
+        .p2 { animation: highlight-p2 12s infinite; }
+        .p3 { animation: highlight-p3 12s infinite; }
+
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Gradients for Atoms -->
+            <radialGradient id="metal-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#A2C4C9" />
+                <stop offset="100%" stop-color="#5E97A2" />
+            </radialGradient>
+            <radialGradient id="carbon-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#777777" />
+                <stop offset="100%" stop-color="#333333" />
+            </radialGradient>
+            <radialGradient id="oxygen-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FF8888" />
+                <stop offset="100%" stop-color="#CC0000" />
+            </radialGradient>
+            <radialGradient id="electron-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FFFFFF" />
+                <stop offset="100%" stop-color="#FFD700" />
+            </radialGradient>
+
+            <!-- Arrowhead Markers -->
+            <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7" />
+            </marker>
+            <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Header -->
+        <text x="400" y="40" text-anchor="middle" class="title">Synergic Bonding in Metal Carbonyls</text>
+        <text x="400" y="60" text-anchor="middle" class="subtitle">The interplay of σ-donation and π-back-donation strengthens the M-C bond</text>
+
+        <!-- Phase Indicators -->
+        <g class="phase-indicators">
+            <text x="180" y="100" class="phase-text p1">1. σ-Donation (C → M)</text>
+            <text x="400" y="100" class="phase-text p2">2. π-Back-Bonding (M → C)</text>
+            <text x="620" y="100" class="phase-text p3">3. Synergic Effect</text>
+        </g>
+
+        <!-- Bonds (Drawn behind atoms) -->
+        <g id="mc-bond-group">
+            <line x1="200" y1="250" x2="450" y2="250" stroke="#495057" stroke-width="4" />
+        </g>
+        <g id="co-bond-group">
+            <line x1="450" y1="240" x2="650" y2="240" stroke="#868e96" stroke-width="4" />
+            <line x1="450" y1="250" x2="650" y2="250" stroke="#343a40" stroke-width="4" />
+            <line x1="450" y1="260" x2="650" y2="260" stroke="#868e96" stroke-width="4" />
+        </g>
+
+        <!-- Metal Orbitals (Static relative to M) -->
+        <g id="metal-orbitals">
+            <!-- Empty sigma orbital -->
+            <ellipse cx="270" cy="250" rx="50" ry="22" fill="#ffffff" stroke="#A2D2FF" stroke-width="2" stroke-dasharray="4" opacity="0.8" class="metal-empty" />
+            
+            <!-- Filled d-orbitals (d_xy) -->
+            <!-- Top Right (Blue) -->
+            <ellipse cx="200" cy="180" rx="20" ry="55" transform="rotate(45 200 250)" fill="#A2D2FF" opacity="0.85" />
+            <!-- Bottom Left (Blue) -->
+            <ellipse cx="200" cy="320" rx="20" ry="55" transform="rotate(45 200 250)" fill="#A2D2FF" opacity="0.85" />
+            <!-- Top Left (Pink) -->
+            <ellipse cx="200" cy="180" rx="20" ry="55" transform="rotate(-45 200 250)" fill="#FFC2D1" opacity="0.85" />
+            <!-- Bottom Right (Pink) -->
+            <ellipse cx="200" cy="320" rx="20" ry="55" transform="rotate(-45 200 250)" fill="#FFC2D1" opacity="0.85" />
+        </g>
+
+        <!-- Carbon Group (Moves during synergic phase) -->
+        <g id="carbon-group">
+            <!-- Carbon sp lone pair orbital -->
+            <ellipse cx="380" cy="250" rx="50" ry="22" fill="#e9ecef" stroke="#ced4da" stroke-width="2" opacity="0.9" />
+            
+            <!-- Carbon empty pi* orbitals -->
+            <!-- Top (Blue to match TR d-orbital) -->
+            <ellipse cx="440" cy="180" rx="22" ry="50" transform="rotate(-20 450 250)" fill="#A2D2FF" opacity="0.85" class="carbon-pi" />
+            <!-- Bottom (Pink to match BR d-orbital) -->
+            <ellipse cx="440" cy="320" rx="22" ry="50" transform="rotate(20 450 250)" fill="#FFC2D1" opacity="0.85" class="carbon-pi" />
+
+            <!-- Carbon Atom -->
+            <circle cx="450" cy="250" r="30" fill="url(#carbon-grad)" />
+            <text x="450" y="250" class="atom-label">C</text>
+        </g>
+
+        <!-- Oxygen Group (Moves during synergic phase) -->
+        <g id="oxygen-group">
+            <!-- Oxygen Atom -->
+            <circle cx="650" cy="250" r="30" fill="url(#oxygen-grad)" />
+            <text x="650" y="250" class="atom-label">O</text>
+            
+            <!-- Oxygen lone pair (decorative) -->
+            <ellipse cx="700" cy="250" rx="25" ry="15" fill="#e9ecef" stroke="#ced4da" stroke-width="1" opacity="0.6" />
+            <circle cx="695" cy="246" r="3" fill="#adb5bd" />
+            <circle cx="695" cy="254" r="3" fill="#adb5bd" />
+        </g>
+
+        <!-- Metal Atom -->
+        <circle cx="200" cy="250" r="40" fill="url(#metal-grad)" />
+        <text x="200" y="250" class="atom-label">M</text>
+
+        <!-- Labels -->
+        <text x="200" y="310" class="atom-sublabel">Transition Metal</text>
+        <text x="200" y="325" class="atom-sublabel">(e.g., Ni, Fe, Cr)</text>
+        <text x="550" y="310" class="atom-sublabel">Carbonyl Ligand (CO)</text>
+
+        <text x="120" y="160" class="orbital-label">Filled d-orbital</text>
+        <path d="M 120 165 L 150 190" stroke="#adb5bd" stroke-width="1" fill="none" />
+
+        <text x="520" y="150" class="orbital-label">Empty π* orbital</text>
+        <path d="M 520 155 L 480 180" stroke="#adb5bd" stroke-width="1" fill="none" />
+
+        <text x="380" y="215" class="orbital-label" text-anchor="middle">sp lone pair</text>
+
+        <!-- Arrows & Electron Flow -->
+        <!-- Phase 1: Sigma Donation -->
+        <g class="group-sigma">
+            <path d="M 380 275 Q 325 295 270 275" fill="none" stroke="#7209B7" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow-purple)" />
+            <text x="325" y="310" class="orbital-label" fill="#7209B7" text-anchor="middle">σ-donation</text>
+            
+            <!-- Electrons -->
+            <circle class="e-sigma delay-1" r="5" fill="url(#electron-grad)" filter="drop-shadow(0 0 2px #FFD700)" />
+            <circle class="e-sigma delay-2" r="5" fill="url(#electron-grad)" filter="drop-shadow(0 0 2px #FFD700)" />
+        </g>
+
+        <!-- Phase 2: Pi Back-Bonding -->
+        <g class="group-pi">
+            <!-- Top Arrow -->
+            <path d="M 240 160 Q 340 110 440 130" fill="none" stroke="#F77F00" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow-orange)" />
+            <text x="340" y="105" class="orbital-label" fill="#F77F00" text-anchor="middle">π-back-bonding</text>
+            
+            <!-- Bottom Arrow -->
+            <path d="M 240 340 Q 340 390 440 370" fill="none" stroke="#F77F00" stroke-width="2" stroke-dasharray="4" marker-end="url(#arrow-orange)" />
+            <text x="340" y="405" class="orbital-label" fill="#F77F00" text-anchor="middle">π-back-bonding</text>
+
+            <!-- Electrons Top -->
+            <circle class="e-pi-top delay-1" r="5" fill="url(#electron-grad)" filter="drop-shadow(0 0 2px #FFD700)" />
+            <circle class="e-pi-top delay-2" r="5" fill="url(#electron-grad)" filter="drop-shadow(0 0 2px #FFD700)" />
+            
+            <!-- Electrons Bottom -->
+            <circle class="e-pi-bot delay-1" r="5" fill="url(#electron-grad)" filter="drop-shadow(0 0 2px #FFD700)" />
+            <circle class="e-pi-bot delay-2" r="5" fill="url(#electron-grad)" filter="drop-shadow(0 0 2px #FFD700)" />
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

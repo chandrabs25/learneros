@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Broglie Standing Waves in Bohr Orbits</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2c3e50;
+            --text-muted: #7f8c8d;
+            --accent-n: #7209B7;
+            --accent-r: #3A0CA3;
+            --accent-a: #F72585;
+            --accent-w: #FF9E00;
+            --success: #06D6A0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            padding: 20px 24px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            pointer-events: none;
+            min-width: 280px;
+        }
+
+        #formula-card h2 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--accent-n);
+            letter-spacing: -0.5px;
+        }
+
+        .math-equation {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 1.4rem;
+            font-style: italic;
+            margin-bottom: 16px;
+            text-align: center;
+            padding: 10px;
+            background: rgba(114, 9, 183, 0.05);
+            border-radius: 8px;
+        }
+
+        .live-values {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .live-values span {
+            font-weight: 600;
+            font-family: monospace;
+            font-size: 1rem;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: rgba(6, 214, 160, 0.15);
+            color: #049670;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(6, 214, 160, 0.3);
+        }
+
+        /* Control Panel */
+        #control-panel {
+            width: 320px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.03);
+            padding: 30px 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            z-index: 10;
+        }
+
+        .panel-header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            line-height: 1.2;
+        }
+
+        .panel-header p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-size: 0.85rem;
+            font-family: monospace;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            margin: 8px 0;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #dfe6e9;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Slider Accents */
+        #slider-n::-webkit-slider-thumb { background: var(--accent-n); }
+        #slider-r::-webkit-slider-thumb { background: var(--accent-r); }
+        #slider-a::-webkit-slider-thumb { background: var(--accent-a); }
+        #slider-w::-webkit-slider-thumb { background: var(--accent-w); }
+
+        /* Checkbox */
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 12px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 8px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .checkbox-group input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--success);
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #control-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.8); padding: 20px; }
+            #canvas-container { height: 60%; }
+            #formula-card { top: 10px; left: 10px; padding: 15px; min-width: 240px; }
+            .math-equation { font-size: 1.2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <h2>De Broglie Condition</h2>
+            <div class="math-equation">
+                2πr = nλ
+            </div>
+            <div class="live-values">
+                Orbit Radius (r): <span id="val-r">5.0</span><br>
+                Quantum Number (n): <span id="val-n">3</span><br>
+                Wavelength (λ): <span id="val-lambda">10.47</span>
+            </div>
+            <div class="status-badge">
+                Constructive Interference
+            </div>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <div class="panel-header">
+            <h1>Wave Mechanics</h1>
+            <p>Interactive Bohr-De Broglie Model</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label" style="color: var(--accent-n);">Quantum Number (n)</span>
+                <span class="control-value" id="disp-n">3</span>
+            </div>
+            <input type="range" id="slider-n" min="1" max="10" step="1" value="3">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label" style="color: var(--accent-r);">Orbit Radius (r)</span>
+                <span class="control-value" id="disp-r">5.0</span>
+            </div>
+            <input type="range" id="slider-r" min="2" max="8" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label" style="color: var(--accent-a);">Wave Amplitude (A)</span>
+                <span class="control-value" id="disp-a">0.40</span>
+            </div>
+            <input type="range" id="slider-a" min="0.1" max="1.0" step="0.05" value="0.4">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label" style="color: var(--accent-w);">Animation Speed (ω)</span>
+                <span class="control-value" id="disp-w">1.0</span>
+            </div>
+            <input type="range" id="slider-w" min="0" max="5" step="0.1" value="1">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="check-particle" checked>
+            <span>Show Electron Particle</span>
+        </label>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Parameters ---
+        const params = {
+            n: 3,
+            radius: 5.0,
+            amplitude: 0.4,
+            speed: 1.0,
+            showParticle: true
+        };
+
+        // --- DOM Elements ---
+        const container = document.getElementById('canvas-container');
+        const sliderN = document.getElementById('slider-n');
+        const sliderR = document.getElementById('slider-r');
+        const sliderA = document.getElementById('slider-a');
+        const sliderW = document.getElementById('slider-w');
+        const checkParticle = document.getElementById('check-particle');
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        // Bright light background
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, -8, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        // Prevent camera from going below the XY plane
+        controls.maxPolarAngle = Math.PI / 2;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 0.8);
+        pointLight.position.set(5, 5, 10);
+        scene.add(pointLight);
+
+        const pointLight2 = new THREE.PointLight(0xffffff, 0.4);
+        pointLight2.position.set(-5, -5, 5);
+        scene.add(pointLight2);
+
+        // --- Materials ---
+        const nucleusMat = new THREE.MeshPhongMaterial({ 
+            color: 0xFF3366, 
+            shininess: 100,
+            specular: 0xffffff
+        });
+
+        const waveMat = new THREE.MeshStandardMaterial({
+            color: 0x7209B7,
+            emissive: 0x7209B7,
+            emissiveIntensity: 0.6,
+            roughness: 0.2,
+            metalness: 0.1
+        });
+
+        const electronMat = new THREE.MeshStandardMaterial({
+            color: 0x06D6A0,
+            emissive: 0x06D6A0,
+            emissiveIntensity: 0.8,
+            roughness: 0.1,
+            metalness: 0.3
+        });
+
+        const lineMat = new THREE.LineBasicMaterial({
+            color: 0xBDC3C7,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        const envMat = new THREE.LineBasicMaterial({
+            color: 0xBDC3C7,
+            transparent: true,
+            opacity: 0.2
+        });
+
+        // --- 3D Objects ---
+        // 1. Nucleus
+        const nucleusGeom = new THREE.SphereGeometry(1, 32, 32);
+        const nucleus = new THREE.Mesh(nucleusGeom, nucleusMat);
+        scene.add(nucleus);
+
+        // 2. Electron
+        const electronGeom = new THREE.SphereGeometry(0.3, 32, 32);
+        const electron = new THREE.Mesh(electronGeom, electronMat);
+        scene.add(electron);
+
+        // 3. Static Rings (Reference Orbit & Envelopes)
+        let refOrbit, maxEnv, minEnv;
+
+        function createCircleGeometry(radius) {
+            const points = [];
+            const segments = 128;
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                points.push(new THREE.Vector3(radius * Math.cos(theta), radius * Math.sin(theta), 0));
+            }
+            return new THREE.BufferGeometry().setFromPoints(points);
+        }
+
+        function initStaticRings() {
+            refOrbit = new THREE.Line(createCircleGeometry(params.radius), lineMat);
+            maxEnv = new THREE.Line(createCircleGeometry(params.radius + params.amplitude), envMat);
+            minEnv = new THREE.Line(createCircleGeometry(params.radius - params.amplitude), envMat);
+            
+            // Make reference orbit dashed
+            const dashedMat = new THREE.LineDashedMaterial({
+                color: 0xBDC3C7,
+                dashSize: 0.2,
+                gapSize: 0.2,
+                transparent: true,
+                opacity: 0.8
+            });
+            refOrbit.material = dashedMat;
+            refOrbit.computeLineDistances();
+
+            scene.add(refOrbit);
+            scene.add(maxEnv);
+            scene.add(minEnv);
+        }
+        initStaticRings();
+
+        function updateStaticRings() {
+            refOrbit.geometry.dispose();
+            refOrbit.geometry = createCircleGeometry(params.radius);
+            refOrbit.computeLineDistances();
+
+            maxEnv.geometry.dispose();
+            maxEnv.geometry = createCircleGeometry(params.radius + params.amplitude);
+
+            minEnv.geometry.dispose();
+            minEnv.geometry = createCircleGeometry(params.radius - params.amplitude);
+
+            // Scale nucleus based on orbit radius
+            const nucScale = Math.max(0.3, params.radius * 0.15);
+            nucleus.scale.setScalar(nucScale);
+            
+            // Scale electron
+            const elecScale = Math.max(0.5, params.radius * 0.1);
+            electron.scale.setScalar(elecScale);
+        }
+        updateStaticRings(); // Initial scale
+
+        // 4. De Broglie Wave (Dynamic Tube)
+        class DeBroglieCurve extends THREE.Curve {
+            constructor(r, n, A, w, t) {
+                super();
+                this.r = r;
+                this.n = n;
+                this.A = A;
+                this.w = w;
+                this.t = t;
+            }
+            getPoint(t, optionalTarget = new THREE.Vector3()) {
+                const theta = t * Math.PI * 2;
+                // Radial displacement
+                const dr = this.A * Math.sin(this.n * theta - this.w * this.t);
+                const x = (this.r + dr) * Math.cos(theta);
+                const y = (this.r + dr) * Math.sin(theta);
+                return optionalTarget.set(x, y, 0);
+            }
+        }
+
+        let waveMesh = new THREE.Mesh(new THREE.BufferGeometry(), waveMat);
+        scene.add(waveMesh);
+
+        // --- UI Update Logic ---
+        function updateUI() {
+            document.getElementById('disp-n').innerText = params.n;
+            document.getElementById('disp-r').innerText = params.radius.toFixed(1);
+            document.getElementById('disp-a').innerText = params.amplitude.toFixed(2);
+            document.getElementById('disp-w').innerText = params.speed.toFixed(1);
+
+            document.getElementById('val-n').innerText = params.n;
+            document.getElementById('val-r').innerText = params.radius.toFixed(1);
+            
+            const lambda = (2 * Math.PI * params.radius) / params.n;
+            document.getElementById('val-lambda').innerText = lambda.toFixed(2);
+        }
+
+        // --- Event Listeners ---
+        sliderN.addEventListener('input', (e) => { params.n = parseInt(e.target.value); updateUI(); });
+        sliderR.addEventListener('input', (e) => { params.radius = parseFloat(e.target.value); updateUI(); updateStaticRings(); });
+        sliderA.addEventListener('input', (e) => { params.amplitude = parseFloat(e.target.value); updateUI(); updateStaticRings(); });
+        sliderW.addEventListener('input', (e) => { params.speed = parseFloat(e.target.value); updateUI(); });
+        checkParticle.addEventListener('change', (e) => { params.showParticle = e.target.checked; });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = clock.getElapsedTime();
+
+            // 1. Update Wave Geometry
+            const curve = new DeBroglieCurve(params.radius, params.n, params.amplitude, params.speed, time);
+            const tubeRadius = Math.max(0.05, params.radius * 0.02);
+            const newGeometry = new THREE.TubeGeometry(curve, 250, tubeRadius, 8, true);
+            
+            waveMesh.geometry.dispose();
+            waveMesh.geometry = newGeometry;
+
+            // 2. Update Electron Position
+            if (params.showParticle) {
+                electron.visible = true;
+                // The wave equation is sin(n*theta - w*t). 
+                // A peak occurs when n*theta - w*t = pi/2.
+                // Solving for theta gives the position of the peak:
+                const theta = (params.speed * time + Math.PI / 2) / params.n;
+                const r = params.radius + params.amplitude; // Peak radius
+                
+                electron.position.set(
+                    r * Math.cos(theta),
+                    r * Math.sin(theta),
+                    0
+                );
+            } else {
+                electron.visible = false;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize and start
+        updateUI();
+        animate();
+
+    </script>
+</body>
+</html>

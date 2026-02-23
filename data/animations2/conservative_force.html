@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conservative Forces & Path Independence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --primary: #4361EE;
+            --spring: #64748b;
+            --force: #FF3366;
+            --velocity: #06D6A0;
+            --energy-e: #7209B7;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+
+        /* Glassmorphic UI Panels */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 16px;
+        }
+
+        /* Control Panel (Right) */
+        #control-panel {
+            width: 25%;
+            height: 100%;
+            border-left: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--primary);
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #304ffe;
+            transform: translateY(-1px);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background: rgba(67, 97, 238, 0.1);
+        }
+
+        /* Formula Card (Top Left) */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 15px 20px;
+            min-width: 250px;
+            z-index: 10;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .math-label { font-weight: 700; }
+        .math-val { font-weight: 400; }
+
+        .color-k { color: var(--velocity); }
+        .color-u { color: var(--force); }
+        .color-e { color: var(--energy-e); }
+
+        hr {
+            border: none;
+            border-top: 1px solid var(--glass-border);
+            margin: 10px 0;
+        }
+
+        /* Energy Monitor (Bottom Left) */
+        #energy-monitor {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            height: 180px;
+            z-index: 10;
+        }
+
+        .bar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            justify-content: flex-end;
+            gap: 8px;
+            width: 40px;
+        }
+
+        .bar-bg {
+            width: 20px;
+            height: 100px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            border-radius: 10px;
+            transition: height 0.05s linear;
+        }
+
+        #bar-k { background: var(--velocity); }
+        #bar-u { background: var(--force); }
+        #bar-e { background: var(--energy-e); }
+
+        .bar-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            background: rgba(255,255,255,0.9);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        /* Path Independence UI */
+        #path-ui {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .path-btn {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-main);
+            transition: all 0.2s;
+        }
+
+        .path-btn:hover, .path-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        #instructions {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.8);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #control-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid var(--glass-border); }
+            #formula-card { display: none; } /* Hide on small screens to save space */
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="instructions">🖱️ Drag mass to displace • Scroll to zoom</div>
+        
+        <div id="formula-card" class="glass-panel">
+            <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">System Energy</div>
+            <div class="math-line color-k">
+                <span class="math-label">K = ½mv²</span>
+                <span class="math-val" id="val-k">0.00 J</span>
+            </div>
+            <div class="math-line color-u">
+                <span class="math-label">U = ½kx²</span>
+                <span class="math-val" id="val-u">0.00 J</span>
+            </div>
+            <hr>
+            <div class="math-line color-e">
+                <span class="math-label">E = K + U</span>
+                <span class="math-val" id="val-e">0.00 J</span>
+            </div>
+            <div id="path-math" style="display: none; margin-top: 10px;">
+                <hr>
+                <div style="font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Work Done (W = ∫F·dr)</div>
+                <div class="math-line color-u">
+                    <span class="math-label">W</span>
+                    <span class="math-val" id="val-w">0.00 J</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="energy-monitor" class="glass-panel">
+            <div class="bar-container">
+                <div class="bar-bg"><div class="bar-fill" id="bar-k"></div></div>
+                <span class="bar-label color-k">K</span>
+            </div>
+            <div class="bar-container">
+                <div class="bar-bg"><div class="bar-fill" id="bar-u"></div></div>
+                <span class="bar-label color-u">U</span>
+            </div>
+            <div class="bar-container">
+                <div class="bar-bg"><div class="bar-fill" id="bar-e"></div></div>
+                <span class="bar-label color-e">E</span>
+            </div>
+        </div>
+
+        <div id="label-mass" class="scene-label">Mass (m)</div>
+        <div id="label-eq" class="scene-label" style="color: var(--text-muted);">x = 0</div>
+    </div>
+
+    <div id="control-panel">
+        <div>
+            <h1>Conservative Forces</h1>
+            <p class="subtitle">Interactive Physics Simulation</p>
+        </div>
+
+        <div id="spring-controls">
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Spring Constant (k)</span>
+                    <span class="val-display" id="disp-k">5.0 N/m</span>
+                </div>
+                <input type="range" id="slider-k" min="1" max="20" step="0.1" value="5">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Mass (m)</span>
+                    <span class="val-display" id="disp-m">1.0 kg</span>
+                </div>
+                <input type="range" id="slider-m" min="0.5" max="5" step="0.1" value="1">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Initial Displacement (x₀)</span>
+                    <span class="val-display" id="disp-x0">3.0 m</span>
+                </div>
+                <input type="range" id="slider-x0" min="-5" max="5" step="0.1" value="3">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Damping (ζ) - Non-Conservative</span>
+                    <span class="val-display" id="disp-zeta">0.00</span>
+                </div>
+                <input type="range" id="slider-zeta" min="0" max="0.5" step="0.01" value="0">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Time Scale</span>
+                <span class="val-display" id="disp-time">1.0x</span>
+            </div>
+            <input type="range" id="slider-time" min="0" max="2" step="0.1" value="1">
+        </div>
+
+        <button class="btn btn-outline" id="btn-reset">Reset Simulation</button>
+        <button class="btn" id="btn-mode">Switch to Path Independence</button>
+
+        <div id="path-ui">
+            <div style="font-size: 0.9rem; font-weight: 600; margin-bottom: 5px;">Select Path (A to B)</div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px;">Uniform Force Field F = (0, -10, 0)</p>
+            <button class="path-btn active" data-path="1">Path 1: Straight Line</button>
+            <button class="path-btn" data-path="2">Path 2: Parabolic Arc</button>
+            <button class="path-btn" data-path="3">Path 3: Wiggly Spline</button>
+            <button class="btn" id="btn-animate-path" style="margin-top: 10px;">Animate Particle</button>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State & Parameters ---
+        const params = {
+            k: 5.0,
+            m: 1.0,
+            x0: 3.0,
+            zeta: 0.0,
+            timeScale: 1.0,
+            mode: 'spring', // 'spring' or 'path'
+            maxEnergy: 250 // Reference for UI bars (0.5 * k_max * x_max^2 = 0.5 * 20 * 25)
+        };
+
+        const state = {
+            x: params.x0,
+            v: 0.0,
+            isDragging: false,
+            pathT: 0,
+            isAnimatingPath: false,
+            currentPath: 1,
+            workDone: 0
+        };
+
+        // --- DOM Elements ---
+        const ui = {
+            k: document.getElementById('slider-k'), dispK: document.getElementById('disp-k'),
+            m: document.getElementById('slider-m'), dispM: document.getElementById('disp-m'),
+            x0: document.getElementById('slider-x0'), dispX0: document.getElementById('disp-x0'),
+            zeta: document.getElementById('slider-zeta'), dispZeta: document.getElementById('disp-zeta'),
+            time: document.getElementById('slider-time'), dispTime: document.getElementById('disp-time'),
+            valK: document.getElementById('val-k'), valU: document.getElementById('val-u'), valE: document.getElementById('val-e'),
+            barK: document.getElementById('bar-k'), barU: document.getElementById('bar-u'), barE: document.getElementById('bar-e'),
+            labelMass: document.getElementById('label-mass'), labelEq: document.getElementById('label-eq'),
+            btnMode: document.getElementById('btn-mode'), btnReset: document.getElementById('btn-reset'),
+            springControls: document.getElementById('spring-controls'), pathUI: document.getElementById('path-ui'),
+            energyMonitor: document.getElementById('energy-monitor'),
+            pathMath: document.getElementById('path-math'), valW: document.getElementById('val-w'),
+            pathBtns: document.querySelectorAll('.path-btn'), btnAnimatePath: document.getElementById('btn-animate-path'),
+            instructions: document.getElementById('instructions')
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 4, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below ground
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        scene.add(dirLight);
+
+        // --- Scene Objects: Spring Mode ---
+        const springGroup = new THREE.Group();
+        scene.add(springGroup);
+
+        // Floor
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcbd5e1, 0xcbd5e1);
+        gridHelper.position.y = -0.5;
+        springGroup.add(gridHelper);
+
+        const floorPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(20, 20),
+            new THREE.MeshStandardMaterial({ color: 0xf0f4f8, depthWrite: false })
+        );
+        floorPlane.rotation.x = -Math.PI / 2;
+        floorPlane.position.y = -0.51;
+        floorPlane.receiveShadow = true;
+        springGroup.add(floorPlane);
+
+        // Wall
+        const wallX = -6;
+        const wall = new THREE.Mesh(
+            new THREE.BoxGeometry(0.5, 3, 3),
+            new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.7 })
+        );
+        wall.position.set(wallX - 0.25, 1, 0);
+        wall.castShadow = true;
+        wall.receiveShadow = true;
+        springGroup.add(wall);
+
+        // Equilibrium Line
+        const eqLine = new THREE.Line(
+            new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, -0.5, -2), new THREE.Vector3(0, -0.5, 2)]),
+            new THREE.LineDashedMaterial({ color: 0x64748b, dashSize: 0.2, gapSize: 0.1 })
+        );
+        eqLine.computeLineDistances();
+        springGroup.add(eqLine);
+
+        // Mass
+        const massRadius = 0.5;
+        const massMesh = new THREE.Mesh(
+            new THREE.SphereGeometry(massRadius, 32, 32),
+            new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.2, metalness: 0.3 })
+        );
+        massMesh.position.set(params.x0, 0, 0);
+        massMesh.castShadow = true;
+        springGroup.add(massMesh);
+
+        // Spring Geometry (Custom Line)
+        const springMaterial = new THREE.LineBasicMaterial({ color: 0x64748b, linewidth: 2 });
+        const springPoints = 200;
+        const springGeo = new THREE.BufferGeometry();
+        const springPositions = new Float32Array(springPoints * 3);
+        springGeo.setAttribute('position', new THREE.BufferAttribute(springPositions, 3));
+        const springLine = new THREE.Line(springGeo, springMaterial);
+        springGroup.add(springLine);
+
+        function updateSpringGeometry() {
+            const startX = wallX;
+            const endX = massMesh.position.x - massRadius;
+            const coils = 10 + params.k * 0.5; // Visual density based on k
+            const radius = 0.3;
+
+            for (let i = 0; i < springPoints; i++) {
+                const t = i / (springPoints - 1);
+                const x = startX + (endX - startX) * t;
+                const angle = t * Math.PI * 2 * coils;
+                const y = Math.cos(angle) * radius;
+                const z = Math.sin(angle) * radius;
+                
+                springPositions[i * 3] = x;
+                springPositions[i * 3 + 1] = y;
+                springPositions[i * 3 + 2] = z;
+            }
+            springGeo.attributes.position.needsUpdate = true;
+        }
+
+        // Vectors
+        const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(-1, 0, 0), massMesh.position, 1, 0xFF3366, 0.3, 0.2);
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0), massMesh.position, 1, 0x06D6A0, 0.3, 0.2);
+        springGroup.add(forceArrow);
+        springGroup.add(velArrow);
+
+        // Invisible plane for raycasting (dragging)
+        const dragPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(100, 100),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        dragPlane.rotation.x = -Math.PI / 2;
+        springGroup.add(dragPlane);
+
+        // --- Scene Objects: Path Mode ---
+        const pathGroup = new THREE.Group();
+        pathGroup.visible = false;
+        scene.add(pathGroup);
+
+        const pointA = new THREE.Vector3(-4, 0, 0);
+        const pointB = new THREE.Vector3(4, 4, 0);
+
+        // Markers for A and B
+        const markerMat = new THREE.MeshStandardMaterial({ color: 0x1e293b });
+        const markerA = new THREE.Mesh(new THREE.SphereGeometry(0.2), markerMat);
+        markerA.position.copy(pointA);
+        const markerB = new THREE.Mesh(new THREE.SphereGeometry(0.2), markerMat);
+        markerB.position.copy(pointB);
+        pathGroup.add(markerA, markerB);
+
+        // Force Field Visuals (Gravity-like down)
+        for(let i=-5; i<=5; i+=2) {
+            for(let j=0; j<=4; j+=2) {
+                const fArrow = new THREE.ArrowHelper(new THREE.Vector3(0, -1, 0), new THREE.Vector3(i, j, -1), 0.8, 0x94a3b8, 0.2, 0.1);
+                pathGroup.add(fArrow);
+            }
+        }
+
+        // Paths
+        const pathMat = new THREE.LineBasicMaterial({ color: 0xcbd5e1, transparent: true, opacity: 0.5 });
+        const activePathMat = new THREE.LineBasicMaterial({ color: varColor('--primary', 0x4361EE), linewidth: 3 });
+
+        // Path 1: Straight
+        const geo1 = new THREE.BufferGeometry().setFromPoints([pointA, pointB]);
+        const line1 = new THREE.Line(geo1, activePathMat);
+        pathGroup.add(line1);
+
+        // Path 2: Parabola
+        const curve2 = new THREE.QuadraticBezierCurve3(
+            pointA,
+            new THREE.Vector3(0, -2, 0), // Control point pulls it down
+            pointB
+        );
+        const line2 = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve2.getPoints(50)), pathMat);
+        pathGroup.add(line2);
+
+        // Path 3: Spline
+        const curve3 = new THREE.CatmullRomCurve3([
+            pointA,
+            new THREE.Vector3(-2, 3, 1),
+            new THREE.Vector3(1, 1, -1),
+            new THREE.Vector3(3, 5, 0),
+            pointB
+        ]);
+        const line3 = new THREE.Line(new THREE.BufferGeometry().setFromPoints(curve3.getPoints(50)), pathMat);
+        pathGroup.add(line3);
+
+        const paths = [null, curve1Func, curve2, curve3]; // 1-indexed
+
+        function curve1Func(t) {
+            return new THREE.Vector3().lerpVectors(pointA, pointB, t);
+        }
+
+        // Moving Particle
+        const particle = new THREE.Mesh(
+            new THREE.SphereGeometry(0.3, 16, 16),
+            new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.2 })
+        );
+        particle.position.copy(pointA);
+        pathGroup.add(particle);
+
+
+        // --- Interaction Logic ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        container.addEventListener('pointerdown', (e) => {
+            if (params.mode !== 'spring') return;
+            
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(massMesh);
+
+            if (intersects.length > 0) {
+                state.isDragging = true;
+                controls.enabled = false;
+                state.v = 0; // Stop motion
+            }
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!state.isDragging) return;
+            
+            const rect = container.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(dragPlane);
+
+            if (intersects.length > 0) {
+                let newX = intersects[0].point.x;
+                // Clamp displacement
+                newX = Math.max(-5, Math.min(5, newX));
+                state.x = newX;
+                
+                // Update UI slider to match
+                ui.x0.value = newX;
+                params.x0 = newX;
+                ui.dispX0.textContent = newX.toFixed(1) + ' m';
+            }
+        });
+
+        window.addEventListener('pointerup', () => {
+            if (state.isDragging) {
+                state.isDragging = false;
+                controls.enabled = true;
+            }
+        });
+
+        // --- UI Event Listeners ---
+        function updateParam(key, uiElem, dispElem, unit) {
+            uiElem.addEventListener('input', (e) => {
+                params[key] = parseFloat(e.target.value);
+                dispElem.textContent = params[key].toFixed(key === 'zeta' ? 2 : 1) + unit;
+                
+                if (key === 'm') {
+                    massMesh.scale.setScalar(0.8 + params.m * 0.2);
+                }
+                if (key === 'x0' && !state.isDragging) {
+                    state.x = params.x0;
+                    state.v = 0;
+                }
+            });
+        }
+
+        updateParam('k', ui.k, ui.dispK, ' N/m');
+        updateParam('m', ui.m, ui.dispM, ' kg');
+        updateParam('x0', ui.x0, ui.dispX0, ' m');
+        updateParam('zeta', ui.zeta, ui.dispZeta, '');
+        updateParam('timeScale', ui.time, ui.dispTime, 'x');
+
+        ui.btnReset.addEventListener('click', () => {
+            state.x = params.x0;
+            state.v = 0;
+            state.pathT = 0;
+            particle.position.copy(pointA);
+        });
+
+        ui.btnMode.addEventListener('click', () => {
+            if (params.mode === 'spring') {
+                params.mode = 'path';
+                springGroup.visible = false;
+                pathGroup.visible = true;
+                ui.springControls.style.display = 'none';
+                ui.pathUI.style.display = 'flex';
+                ui.energyMonitor.style.display = 'none';
+                ui.btnMode.textContent = 'Switch to Mass-Spring';
+                ui.instructions.textContent = 'Observe Work Done along different paths';
+                ui.pathMath.style.display = 'block';
+                
+                // Hide specific math lines
+                document.querySelector('.color-k').style.display = 'none';
+                document.querySelector('.color-e').style.display = 'none';
+                
+                state.pathT = 0;
+                particle.position.copy(pointA);
+            } else {
+                params.mode = 'spring';
+                springGroup.visible = true;
+                pathGroup.visible = false;
+                ui.springControls.style.display = 'flex';
+                ui.pathUI.style.display = 'none';
+                ui.energyMonitor.style.display = 'flex';
+                ui.btnMode.textContent = 'Switch to Path Independence';
+                ui.instructions.textContent = '🖱️ Drag mass to displace • Scroll to zoom';
+                ui.pathMath.style.display = 'none';
+                
+                document.querySelector('.color-k').style.display = 'flex';
+                document.querySelector('.color-e').style.display = 'flex';
+                
+                state.x = params.x0;
+                state.v = 0;
+            }
+        });
+
+        ui.pathBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                ui.pathBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                state.currentPath = parseInt(e.target.dataset.path);
+                
+                // Update visual active line
+                line1.material = pathMat;
+                line2.material = pathMat;
+                line3.material = pathMat;
+                if(state.currentPath === 1) line1.material = activePathMat;
+                if(state.currentPath === 2) line2.material = activePathMat;
+                if(state.currentPath === 3) line3.material = activePathMat;
+
+                state.pathT = 0;
+                particle.position.copy(pointA);
+                ui.valW.textContent = '0.00 J';
+            });
+        });
+
+        ui.btnAnimatePath.addEventListener('click', () => {
+            state.pathT = 0;
+            state.isAnimatingPath = true;
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Helper to get CSS variable colors
+        function varColor(name, fallback) {
+            const val = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+            return val ? new THREE.Color(val) : new THREE.Color(fallback);
+        }
+
+        // --- Physics & Render Loop ---
+        const clock = new THREE.Clock();
+
+        function updateLabels() {
+            if (params.mode !== 'spring') {
+                ui.labelMass.style.opacity = 0;
+                ui.labelEq.style.opacity = 0;
+                return;
+            }
+
+            ui.labelMass.style.opacity = 1;
+            ui.labelEq.style.opacity = 1;
+
+            const massPos = massMesh.position.clone();
+            massPos.y += 0.8; // Above mass
+            massPos.project(camera);
+            
+            const xM = (massPos.x * .5 + .5) * container.clientWidth;
+            const yM = (massPos.y * -.5 + .5) * container.clientHeight;
+            ui.labelMass.style.left = `${xM}px`;
+            ui.labelMass.style.top = `${yM}px`;
+
+            const eqPos = new THREE.Vector3(0, -0.5, 2.2);
+            eqPos.project(camera);
+            const xE = (eqPos.x * .5 + .5) * container.clientWidth;
+            const yE = (eqPos.y * -.5 + .5) * container.clientHeight;
+            ui.labelEq.style.left = `${xE}px`;
+            ui.labelEq.style.top = `${yE}px`;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = Math.min(clock.getDelta(), 0.1); // Cap dt to prevent explosions on lag
+
+            if (params.mode === 'spring') {
+                // Physics Integration (Semi-Implicit Euler)
+                if (!state.isDragging && params.timeScale > 0) {
+                    const simDt = dt * params.timeScale;
+                    
+                    // F = -kx - cv
+                    const c = 2 * params.zeta * Math.sqrt(params.m * params.k);
+                    const F = -params.k * state.x - c * state.v;
+                    const a = F / params.m;
+                    
+                    state.v += a * simDt;
+                    state.x += state.v * simDt;
+                }
+
+                // Update Visuals
+                massMesh.position.x = state.x;
+                updateSpringGeometry();
+
+                // Update Vectors
+                const fMag = -params.k * state.x;
+                if (Math.abs(fMag) > 0.01) {
+                    forceArrow.visible = true;
+                    forceArrow.position.copy(massMesh.position);
+                    forceArrow.setDirection(new THREE.Vector3(Math.sign(fMag), 0, 0));
+                    forceArrow.setLength(Math.min(Math.abs(fMag) * 0.2, 5), 0.3, 0.2); // Scale length visually
+                } else {
+                    forceArrow.visible = false;
+                }
+
+                if (Math.abs(state.v) > 0.01) {
+                    velArrow.visible = true;
+                    velArrow.position.copy(massMesh.position);
+                    velArrow.position.y = 0.5; // Offset slightly above force
+                    velArrow.setDirection(new THREE.Vector3(Math.sign(state.v), 0, 0));
+                    velArrow.setLength(Math.min(Math.abs(state.v) * 0.5, 5), 0.3, 0.2);
+                } else {
+                    velArrow.visible = false;
+                }
+
+                // Energy Calculations
+                const U = 0.5 * params.k * state.x * state.x;
+                const K = 0.5 * params.m * state.v * state.v;
+                const E = U + K;
+
+                // Update UI
+                ui.valK.textContent = K.toFixed(2) + ' J';
+                ui.valU.textContent = U.toFixed(2) + ' J';
+                ui.valE.textContent = E.toFixed(2) + ' J';
+
+                ui.barK.style.height = `${(K / params.maxEnergy) * 100}%`;
+                ui.barU.style.height = `${(U / params.maxEnergy) * 100}%`;
+                ui.barE.style.height = `${(E / params.maxEnergy) * 100}%`;
+
+            } else if (params.mode === 'path') {
+                
+                if (state.isAnimatingPath) {
+                    state.pathT += dt * 0.5 * params.timeScale;
+                    if (state.pathT >= 1) {
+                        state.pathT = 1;
+                        state.isAnimatingPath = false;
+                    }
+
+                    let pos;
+                    const pathObj = paths[state.currentPath];
+                    if (typeof pathObj === 'function') {
+                        pos = pathObj(state.pathT);
+                    } else {
+                        pos = pathObj.getPoint(state.pathT);
+                    }
+                    
+                    particle.position.copy(pos);
+
+                    // Work Done W = F_y * delta_y (since F is uniform (0, -10, 0))
+                    // F = -10.  W = -10 * (pos.y - pointA.y)
+                    const F_y = -10;
+                    const W = F_y * (pos.y - pointA.y);
+                    ui.valW.textContent = W.toFixed(2) + ' J';
+                }
+            }
+
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updateSpringGeometry();
+        animate();
+
+    </script>
+</body>
+</html>

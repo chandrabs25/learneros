@@ -1,5 +1,5 @@
 """
-AI Tutor — FastAPI Application Entry Point
+LearnerOS — FastAPI Application Entry Point
 """
 
 from contextlib import asynccontextmanager
@@ -35,15 +35,15 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     # Startup: initialize connections
     setup_mlflow_tracing()
-    print(f"🚀 AI Tutor Backend starting up (env: {settings.ENVIRONMENT})")
+    print(f"🚀 LearnerOS Backend starting up (env: {settings.ENVIRONMENT})")
     yield
     # Shutdown: close connections
     close_driver()
-    print("👋 AI Tutor Backend shutting down")
+    print("👋 LearnerOS Backend shutting down")
 
 
 app = FastAPI(
-    title="AI Tutor API",
+    title="LearnerOS API",
     version="0.1.0",
     description="Adaptive learning platform backend",
     lifespan=lifespan,

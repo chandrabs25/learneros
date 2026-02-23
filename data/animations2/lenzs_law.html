@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lenz's Law Interactive Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+            border-radius: 12px;
+            position: absolute;
+            z-index: 10;
+        }
+
+        #controls {
+            right: 20px;
+            top: 20px;
+            width: 300px;
+            padding: 20px;
+            max-height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+
+        #formulas {
+            left: 20px;
+            top: 20px;
+            padding: 20px;
+            min-width: 250px;
+        }
+
+        h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            color: #111;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        .formula-line {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .math-symbol {
+            font-weight: bold;
+            font-style: italic;
+            margin-right: 10px;
+            width: 60px;
+        }
+
+        .math-value {
+            font-weight: bold;
+            color: #4361EE;
+        }
+
+        .legend {
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formulas" class="glass-panel">
+        <h2>Real-time Physics</h2>
+        <div class="formula-line">
+            <span class="math-symbol">&Phi;<sub>B</sub> =</span>
+            <span class="math-value" id="valFlux">0.000</span> Wb
+        </div>
+        <div class="formula-line">
+            <span class="math-symbol">d&Phi;/dt =</span>
+            <span class="math-value" id="valRate">0.000</span> Wb/s
+        </div>
+        <div class="formula-line">
+            <span class="math-symbol" style="color: #06D6A0;">I =</span>
+            <span class="math-value" id="valCurrent" style="color: #06D6A0;">0.000</span> A
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> External B-Field (B<sub>ext</sub>)</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Induced B-Field (B<sub>ind</sub>)</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Induced Current (I) & Velocity (v)</div>
+        </div>
+    </div>
+
+    <div id="controls" class="glass-panel">
+        <h2>Simulation Controls</h2>
+        
+        <div class="control-group">
+            <label>Magnet Position (z) <span id="lblPos">-5.0 m</span></label>
+            <input type="range" id="posZ" min="-10" max="10" step="0.1" value="-5">
+        </div>
+
+        <div class="control-group">
+            <label>Magnet Velocity (v) <span id="lblVel">0.0 m/s</span></label>
+            <input type="range" id="velZ" min="-5" max="5" step="0.1" value="0">
+        </div>
+
+        <div class="control-group">
+            <label>Dipole Strength (m) <span id="lblMag">5.0 A·m²</span></label>
+            <input type="range" id="magDipole" min="1" max="10" step="0.5" value="5">
+        </div>
+
+        <div class="control-group">
+            <label>Loop Resistance (R) <span id="lblRes">1.0 &Omega;</span></label>
+            <input type="range" id="resistance" min="0.1" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label>Loop Radius (r) <span id="lblRad">2.0 m</span></label>
+            <input type="range" id="radius" min="1" max="4" step="0.1" value="2.0">
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const params = {
+            posZ: -5.0,
+            velZ: 0.0,
+            magDipole: 5.0,
+            resistance: 1.0,
+            radius: 2.0
+        };
+
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(8, 6, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Grid ---
+        const gridHelper = new THREE.GridHelper(20, 20, 0xd1d9e6, 0xd1d9e6);
+        gridHelper.position.y = -4;
+        scene.add(gridHelper);
+
+        // --- Helper: Text Texture ---
+        function createTextTexture(text, bgColor) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, 256, 256);
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 120px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 128, 128);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- Objects: Magnet ---
+        const magnetGroup = new THREE.Group();
+        
+        const magnetGeo = new THREE.BoxGeometry(1.2, 1.2, 2);
+        
+        // North Pole (+Z)
+        const texN = createTextTexture('N', '#FF3366');
+        const matN = [
+            new THREE.MeshPhongMaterial({color: 0xFF3366}), // right
+            new THREE.MeshPhongMaterial({color: 0xFF3366}), // left
+            new THREE.MeshPhongMaterial({color: 0xFF3366}), // top
+            new THREE.MeshPhongMaterial({color: 0xFF3366}), // bottom
+            new THREE.MeshPhongMaterial({map: texN}),       // front (+Z)
+            new THREE.MeshPhongMaterial({color: 0xFF3366})  // back
+        ];
+        const meshN = new THREE.Mesh(magnetGeo, matN);
+        meshN.position.z = 1;
+
+        // South Pole (-Z)
+        const texS = createTextTexture('S', '#4361EE');
+        const matS = [
+            new THREE.MeshPhongMaterial({color: 0x4361EE}),
+            new THREE.MeshPhongMaterial({color: 0x4361EE}),
+            new THREE.MeshPhongMaterial({color: 0x4361EE}),
+            new THREE.MeshPhongMaterial({color: 0x4361EE}),
+            new THREE.MeshPhongMaterial({color: 0x4361EE}),
+            new THREE.MeshPhongMaterial({map: texS})        // back (-Z)
+        ];
+        const meshS = new THREE.Mesh(magnetGeo, matS);
+        meshS.position.z = -1;
+
+        magnetGroup.add(meshN);
+        magnetGroup.add(meshS);
+        scene.add(magnetGroup);
+
+        // --- Objects: External Magnetic Field (Purple) ---
+        const extFieldGroup = new THREE.Group();
+        const extMat = new THREE.LineBasicMaterial({ color: 0x7209B7, transparent: true, opacity: 0.4, linewidth: 2 });
+        
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const points = [];
+            // Create elliptical arcs from N to S
+            for (let t = 0; t <= Math.PI; t += 0.05) {
+                const z = 2.5 * Math.cos(t); // stretches from z=2.5 to z=-2.5
+                const r = 4.0 * Math.sin(t); // bulges out to r=4
+                const x = r * Math.cos(angle);
+                const y = r * Math.sin(angle);
+                points.push(new THREE.Vector3(x, y, z));
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            extFieldGroup.add(new THREE.Line(geo, extMat));
+        }
+        magnetGroup.add(extFieldGroup);
+
+        // --- Velocity Arrow ---
+        const velArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 1, 0x06D6A0, 0.6, 0.4);
+        scene.add(velArrow);
+
+        // --- Objects: Conducting Loop ---
+        let loopGeo = new THREE.TorusGeometry(params.radius, 0.15, 16, 100);
+        const loopMat = new THREE.MeshStandardMaterial({ 
+            color: 0xBDC3C7, 
+            metalness: 0.9, 
+            roughness: 0.2,
+            emissive: 0x06D6A0,
+            emissiveIntensity: 0
+        });
+        const loopMesh = new THREE.Mesh(loopGeo, loopMat);
+        scene.add(loopMesh);
+
+        // --- Objects: Induced Current Arrows (Green) ---
+        const currentGroup = new THREE.Group();
+        const numArrows = 8;
+        for(let i=0; i<numArrows; i++) {
+            const arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, 0x06D6A0, 0.5, 0.3);
+            currentGroup.add(arrow);
+        }
+        scene.add(currentGroup);
+
+        // --- Objects: Induced Magnetic Field (Orange) ---
+        const indFieldGroup = new THREE.Group();
+        const indArrow = new THREE.ArrowHelper(new THREE.Vector3(0,0,1), new THREE.Vector3(0,0,0), 4, 0xF77F00, 0.8, 0.5);
+        indFieldGroup.add(indArrow);
+        
+        // Add a couple of loops for induced field
+        const indMat = new THREE.LineBasicMaterial({ color: 0xF77F00, transparent: true, opacity: 0.8 });
+        for(let i=0; i<4; i++) {
+            const angle = (i/4)*Math.PI*2;
+            const points = [];
+            for(let t=-Math.PI/2; t<=Math.PI/2; t+=0.1) {
+                const z = 3 * Math.sin(t);
+                const r = 2 * Math.cos(t);
+                const x = r * Math.cos(angle);
+                const y = r * Math.sin(angle);
+                points.push(new THREE.Vector3(x, y, z));
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            indFieldGroup.add(new THREE.Line(geo, indMat));
+        }
+        scene.add(indFieldGroup);
+
+
+        // --- UI Event Listeners ---
+        const uiElements = ['posZ', 'velZ', 'magDipole', 'resistance', 'radius'];
+        uiElements.forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', (e) => {
+                params[id] = parseFloat(e.target.value);
+                
+                // Update labels
+                let unit = '';
+                if(id==='posZ') unit = 'm';
+                if(id==='velZ') unit = 'm/s';
+                if(id==='magDipole') unit = 'A·m²';
+                if(id==='resistance') unit = 'Ω';
+                if(id==='radius') unit = 'm';
+                
+                document.getElementById('lbl' + id.charAt(0).toUpperCase() + id.slice(1).replace('Z','')).innerHTML = `${params[id].toFixed(1)} ${unit}`;
+
+                // Rebuild loop if radius changes
+                if(id === 'radius') {
+                    scene.remove(loopMesh);
+                    loopGeo.dispose();
+                    loopGeo = new THREE.TorusGeometry(params.radius, 0.15, 16, 100);
+                    loopMesh.geometry = loopGeo;
+                    scene.add(loopMesh);
+                }
+            });
+        });
+
+        // --- Physics Engine ---
+        let lastTime = performance.now();
+
+        function updatePhysics() {
+            const currentTime = performance.now();
+            const dt = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+
+            // 1. Update Position based on Velocity
+            if (params.velZ !== 0) {
+                params.posZ += params.velZ * dt;
+                
+                // Bounce off limits
+                if (params.posZ > 10) { params.posZ = 10; params.velZ *= -1; document.getElementById('velZ').value = params.velZ; }
+                if (params.posZ < -10) { params.posZ = -10; params.velZ *= -1; document.getElementById('velZ').value = params.velZ; }
+                
+                // Update UI slider
+                document.getElementById('posZ').value = params.posZ;
+                document.getElementById('lblPos').innerText = params.posZ.toFixed(1) + ' m';
+                document.getElementById('lblVel').innerText = params.velZ.toFixed(1) + ' m/s';
+            }
+
+            magnetGroup.position.z = params.posZ;
+
+            // 2. Physics Calculations
+            const z = params.posZ;
+            const R = params.radius;
+            const m = params.magDipole;
+            const v = params.velZ;
+
+            // B_z at center of loop (simplified dipole)
+            const denom = Math.pow(z*z + R*R, 1.5);
+            const Bz = m / denom; 
+            
+            // Flux = B * Area
+            const flux = Bz * Math.PI * R * R;
+
+            // dPhi/dz derivative
+            const dPhi_dz = -(3 * m * Math.PI * R * R * z) / Math.pow(z*z + R*R, 2.5);
+            
+            // Faraday's Law: EMF = -dPhi/dt = -v * dPhi/dz
+            const emf = -v * dPhi_dz;
+            
+            // Ohm's Law: I = V/R
+            const I = emf / params.resistance;
+
+            // 3. Update Visuals
+            
+            // External Field Scale
+            extFieldGroup.scale.setScalar(0.5 + m / 10);
+
+            // Velocity Arrow
+            if (Math.abs(v) > 0.05) {
+                velArrow.visible = true;
+                velArrow.position.copy(magnetGroup.position);
+                velArrow.position.y += 1.5; // Offset above magnet
+                velArrow.setDirection(new THREE.Vector3(0, 0, Math.sign(v)));
+                velArrow.setLength(Math.abs(v) * 0.5 + 0.5, 0.4, 0.3);
+            } else {
+                velArrow.visible = false;
+            }
+
+            // Induced Current & Field
+            const threshold = 0.01;
+            if (Math.abs(I) > threshold) {
+                currentGroup.visible = true;
+                indFieldGroup.visible = true;
+                
+                // Direction: Right hand rule. +Z is thumb, fingers curl CCW.
+                // If I > 0, CCW. If I < 0, CW.
+                const dir = I > 0 ? 1 : -1;
+                
+                // Update current arrows
+                currentGroup.children.forEach((arrow, i) => {
+                    const angle = (i / numArrows) * Math.PI * 2;
+                    arrow.position.set(R * Math.cos(angle), R * Math.sin(angle), 0);
+                    // Tangent vector
+                    arrow.setDirection(new THREE.Vector3(-dir * Math.sin(angle), dir * Math.cos(angle), 0));
+                    arrow.setLength(Math.min(Math.abs(I) * 2 + 0.5, 3), 0.4, 0.3);
+                });
+
+                // Loop Glow
+                loopMat.emissiveIntensity = Math.min(Math.abs(I), 2);
+
+                // Induced Field Direction (opposes change in flux)
+                // If I > 0 (CCW), B_ind is +Z. If I < 0 (CW), B_ind is -Z.
+                indArrow.setDirection(new THREE.Vector3(0, 0, dir));
+                const indScale = Math.min(Math.abs(I) * 1.5 + 1, 5);
+                indArrow.setLength(indScale, 0.6, 0.4);
+                
+                // Scale the induced loops
+                indFieldGroup.children.forEach(child => {
+                    if(child.type === 'Line') {
+                        child.scale.set(R/2, R/2, indScale/4);
+                        // Flip loops if direction changes
+                        child.rotation.x = dir < 0 ? Math.PI : 0;
+                    }
+                });
+
+            } else {
+                currentGroup.visible = false;
+                indFieldGroup.visible = false;
+                loopMat.emissiveIntensity = 0;
+            }
+
+            // 4. Update UI Values
+            document.getElementById('valFlux').innerText = flux.toFixed(3);
+            document.getElementById('valRate').innerText = (v * dPhi_dz).toFixed(3);
+            document.getElementById('valCurrent').innerText = I.toFixed(3);
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePhysics();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        animate();
+    </script>
+</body>
+</html>

@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gibbs Energy and Maximum Work</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            color: #333;
+        }
+        .container {
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            color: #111;
+            margin-bottom: 5px;
+            font-size: 26px;
+            font-weight: 700;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #555;
+            font-family: 'Roboto Mono', monospace;
+            margin-bottom: 20px;
+            font-size: 15px;
+        }
+        .svg-wrapper {
+            width: 100%;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+            position: relative;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        text {
+            user-select: none;
+        }
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+        }
+        
+        /* Animations */
+        .ball {
+            offset-path: path('M 80 220 C 150 220, 160 120, 220 120 C 280 120, 290 360, 360 360');
+            animation: roll 8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+        .e1 {
+            offset-path: path('M 520 295 L 520 160 L 720 160 L 720 295');
+            animation: eMove1 8s linear infinite;
+        }
+        .e2 {
+            offset-path: path('M 520 295 L 520 160 L 720 160 L 720 295');
+            animation: eMove2 8s linear infinite;
+        }
+        .fade-out { animation: fadeOut 8s ease-in-out infinite; }
+        .fade-in { animation: fadeIn 8s ease-in-out infinite; }
+        .bulb-glow { animation: bulbGlow 8s ease-in-out infinite; }
+        .spontaneous-text { animation: showText 8s ease-in-out infinite; }
+        .ea-arrow { animation: pulseEa 8s ease-in-out infinite; }
+        .deltag-arrow { animation: flashDeltaG 8s ease-in-out infinite; }
+        .zn-shake { animation: shake 8s ease-in-out infinite; }
+
+        @keyframes roll {
+            0%, 18.75% { offset-distance: 0%; opacity: 1; }
+            31.25% { offset-distance: 48%; opacity: 1; }
+            50%, 87.5% { offset-distance: 100%; opacity: 1; }
+            92%, 100% { offset-distance: 100%; opacity: 0; }
+        }
+        @keyframes eMove1 {
+            0%, 31.25% { opacity: 0; offset-distance: 0%; }
+            31.26% { opacity: 1; }
+            48% { offset-distance: 100%; opacity: 1; }
+            48.1%, 100% { opacity: 0; offset-distance: 100%; }
+        }
+        @keyframes eMove2 {
+            0%, 33% { opacity: 0; offset-distance: 0%; }
+            33.1% { opacity: 1; }
+            50% { offset-distance: 100%; opacity: 1; }
+            50.1%, 100% { opacity: 0; offset-distance: 100%; }
+        }
+        @keyframes fadeOut {
+            0%, 31.25% { opacity: 1; }
+            50%, 87.5% { opacity: 0; }
+            95%, 100% { opacity: 1; }
+        }
+        @keyframes fadeIn {
+            0%, 31.25% { opacity: 0; }
+            50%, 87.5% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+        @keyframes bulbGlow {
+            0%, 31.25% { fill: #e0e0e0; filter: none; }
+            38%, 50% { fill: #FFD166; filter: url(#glowYellow); }
+            50.1%, 87.5% { fill: #FFE6A7; filter: url(#glowYellow); }
+            95%, 100% { fill: #e0e0e0; filter: none; }
+        }
+        @keyframes showText {
+            0%, 50% { opacity: 0; transform: translateY(10px); }
+            55%, 87.5% { opacity: 1; transform: translateY(0); }
+            95%, 100% { opacity: 0; transform: translateY(10px); }
+        }
+        @keyframes pulseEa {
+            0%, 5% { opacity: 0.4; filter: none; }
+            10%, 18.75% { opacity: 1; filter: url(#glowRed); }
+            25%, 100% { opacity: 0.4; filter: none; }
+        }
+        @keyframes flashDeltaG {
+            0%, 50% { opacity: 0.4; filter: none; }
+            55%, 75% { opacity: 1; filter: url(#glowBlue); }
+            85%, 100% { opacity: 0.4; filter: none; }
+        }
+        @keyframes shake {
+            0%, 10% { transform: translateX(0); }
+            12% { transform: translateX(-2px); }
+            14% { transform: translateX(2px); }
+            16% { transform: translateX(-2px); }
+            18.75% { transform: translateX(0); }
+            100% { transform: translateX(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Gibbs Energy (&Delta;G) and Maximum Work</h1>
+    <p class="subtitle">Spontaneous Redox Reaction: Zn(s) + Cu<sup>2+</sup>(aq) &rarr; Zn<sup>2+</sup>(aq) + Cu(s)</p>
+    
+    <div class="svg-wrapper">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <!-- Gradients for 3D Atoms -->
+                <radialGradient id="znGrad" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#FFFFFF" />
+                    <stop offset="100%" stop-color="#CCCCCC" />
+                </radialGradient>
+                <radialGradient id="cuGrad" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#FF9E7A" />
+                    <stop offset="100%" stop-color="#D9480F" />
+                </radialGradient>
+                <radialGradient id="cuIonGrad" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#80EAFF" />
+                    <stop offset="100%" stop-color="#00B4D8" />
+                </radialGradient>
+                <radialGradient id="znIonGrad" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#FFFFFF" />
+                    <stop offset="100%" stop-color="#E9ECEF" />
+                </radialGradient>
+                
+                <!-- Glow Filters -->
+                <filter id="glowYellow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="6" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="glowRed" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="glowBlue" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="glowGreen" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+
+                <!-- Arrow Markers -->
+                <marker id="arrowRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#EF233C" />
+                </marker>
+                <marker id="arrowBlue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#4361EE" />
+                </marker>
+                <marker id="arrowBlueStart" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 10 1 L 0 5 L 10 9 z" fill="#4361EE" />
+                </marker>
+                <marker id="arrowOrange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#F77F00" />
+                </marker>
+            </defs>
+
+            <!-- Grid/Background (Subtle) -->
+            <rect width="800" height="500" fill="#ffffff" />
+            <line x1="400" y1="40" x2="400" y2="460" stroke="#f0f0f0" stroke-width="2" stroke-dasharray="8" />
+
+            <!-- ================= LEFT PANEL: REACTION COORDINATE ================= -->
+            <g id="left-panel">
+                <!-- Axes -->
+                <path d="M 60 60 L 60 420 L 380 420" stroke="#333" stroke-width="2" fill="none" />
+                <text x="-280" y="40" transform="rotate(-90)" font-size="14" font-weight="600" fill="#333">Gibbs Energy (G)</text>
+                <text x="160" y="450" font-size="14" font-weight="600" fill="#333">Reaction Progress</text>
+
+                <!-- Energy Levels (Dashed) -->
+                <line x1="60" y1="220" x2="140" y2="220" stroke="#888" stroke-width="2" stroke-dasharray="4" />
+                <line x1="280" y1="360" x2="380" y2="360" stroke="#888" stroke-width="2" stroke-dasharray="4" />
+
+                <!-- Energy Curve -->
+                <path d="M 80 220 C 150 220, 160 120, 220 120 C 280 120, 290 360, 360 360" stroke="#404040" stroke-width="3" fill="none" />
+
+                <!-- Reactant & Product Labels -->
+                <text x="100" y="205" font-size="13" text-anchor="middle" class="formula" fill="#333">Zn(s) + Cu<tspan baseline-shift="super" font-size="0.7em">2+</tspan>(aq)</text>
+                <text x="330" y="385" font-size="13" text-anchor="middle" class="formula" fill="#333">Zn<tspan baseline-shift="super" font-size="0.7em">2+</tspan>(aq) + Cu(s)</text>
+
+                <!-- Activation Energy (Ea) -->
+                <line x1="220" y1="220" x2="220" y2="128" stroke="#EF233C" stroke-width="2" marker-end="url(#arrowRed)" class="ea-arrow" />
+                <text x="205" y="180" font-size="13" font-weight="600" fill="#EF233C" class="ea-arrow">E<tspan baseline-shift="sub" font-size="0.7em">a</tspan></text>
+
+                <!-- Gibbs Energy (Delta G) -->
+                <line x1="320" y1="228" x2="320" y2="352" stroke="#4361EE" stroke-width="2" marker-start="url(#arrowBlueStart)" marker-end="url(#arrowBlue)" class="deltag-arrow" />
+                <text x="330" y="295" font-size="14" font-weight="600" fill="#4361EE" class="formula deltag-arrow">&Delta;<tspan baseline-shift="sub" font-size="0.7em">r</tspan>G = -nFE<tspan baseline-shift="sub" font-size="0.7em">cell</tspan></text>
+
+                <!-- Transition State Dot -->
+                <circle cx="220" cy="120" r="5" fill="#44CC44" filter="url(#glowGreen)" />
+                <text x="220" y="105" font-size="12" text-anchor="middle" fill="#2b932b" font-weight="600">Transition State</text>
+
+                <!-- Rolling Ball (System State) -->
+                <circle r="8" fill="#7209B7" class="ball" />
+            </g>
+
+            <!-- ================= RIGHT PANEL: MOLECULAR / WORK ================= -->
+            <g id="right-panel">
+                <!-- Cell Platform -->
+                <rect x="460" y="345" width="280" height="8" rx="4" fill="#e9ecef" stroke="#ced4da" />
+                
+                <!-- Wire -->
+                <path d="M 520 295 L 520 160 L 720 160 L 720 295" stroke="#333" stroke-width="3" fill="none" />
+                
+                <!-- Electron Flow Indicators (Static Arrows on Wire) -->
+                <path d="M 550 160 L 560 160" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowOrange)" />
+                <path d="M 670 160 L 680 160" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowOrange)" />
+                <text x="555" y="145" font-size="12" fill="#F77F00" font-weight="600" text-anchor="middle">e<tspan baseline-shift="super" font-size="0.7em">-</tspan></text>
+                <text x="675" y="145" font-size="12" fill="#F77F00" font-weight="600" text-anchor="middle">e<tspan baseline-shift="super" font-size="0.7em">-</tspan></text>
+
+                <!-- Lightbulb (Work Indicator) -->
+                <g transform="translate(620, 160)">
+                    <!-- Bulb Glass -->
+                    <circle cx="0" cy="0" r="22" fill="#e0e0e0" class="bulb-glow" />
+                    <!-- Filament -->
+                    <path d="M -8 8 L -4 -4 L 0 4 L 4 -4 L 8 8" stroke="#888" stroke-width="1.5" fill="none" />
+                    <!-- Base -->
+                    <path d="M -10 20 L 10 20 L 8 32 L -8 32 Z" fill="#555" />
+                    <path d="M -6 32 L 6 32 L 4 38 L -4 38 Z" fill="#333" />
+                </g>
+                <text x="620" y="115" font-size="14" font-weight="600" text-anchor="middle" fill="#333">Electrical Work (W<tspan baseline-shift="sub" font-size="0.7em">max</tspan>)</text>
+
+                <!-- Zinc Side (Anode) -->
+                <g transform="translate(520, 320)">
+                    <!-- Zn Atom (Fades Out) -->
+                    <circle cx="0" cy="0" r="25" fill="url(#znGrad)" class="fade-out zn-shake" />
+                    <!-- Zn2+ Ion (Fades In) -->
+                    <circle cx="0" cy="0" r="18" fill="url(#znIonGrad)" stroke="#adb5bd" stroke-width="2" stroke-dasharray="4" class="fade-in" />
+                    
+                    <text x="0" y="45" font-size="14" font-weight="600" text-anchor="middle" fill="#555">Anode</text>
+                    <text x="0" y="65" font-size="12" text-anchor="middle" class="formula fade-out" fill="#555">Zn(s)</text>
+                    <text x="0" y="65" font-size="12" text-anchor="middle" class="formula fade-in" fill="#555">Zn<tspan baseline-shift="super" font-size="0.7em">2+</tspan>(aq)</text>
+                </g>
+
+                <!-- Copper Side (Cathode) -->
+                <g transform="translate(720, 320)">
+                    <!-- Cu2+ Ion (Fades Out) -->
+                    <circle cx="0" cy="0" r="18" fill="url(#cuIonGrad)" stroke="#00B4D8" stroke-width="2" stroke-dasharray="4" class="fade-out" />
+                    <!-- Cu Atom (Fades In) -->
+                    <circle cx="0" cy="0" r="25" fill="url(#cuGrad)" class="fade-in" />
+                    
+                    <text x="0" y="45" font-size="14" font-weight="600" text-anchor="middle" fill="#555">Cathode</text>
+                    <text x="0" y="65" font-size="12" text-anchor="middle" class="formula fade-out" fill="#555">Cu<tspan baseline-shift="super" font-size="0.7em">2+</tspan>(aq)</text>
+                    <text x="0" y="65" font-size="12" text-anchor="middle" class="formula fade-in" fill="#555">Cu(s)</text>
+                </g>
+
+                <!-- Moving Electrons -->
+                <circle r="5" fill="#FFCC00" filter="url(#glowYellow)" class="e1" />
+                <circle r="5" fill="#FFCC00" filter="url(#glowYellow)" class="e2" />
+
+                <!-- Spontaneous Result Label -->
+                <g class="spontaneous-text" transform="translate(620, 430)">
+                    <rect x="-110" y="-20" width="220" height="40" rx="6" fill="#d4edda" stroke="#c3e6cb" stroke-width="2" />
+                    <text x="0" y="5" font-size="15" font-weight="700" text-anchor="middle" fill="#155724" class="formula">&Delta;G &lt; 0 &rArr; Spontaneous</text>
+                </g>
+            </g>
+
+            <!-- ================= LEGEND ================= -->
+            <g id="legend" transform="translate(40, 40)">
+                <rect x="0" y="0" width="160" height="85" rx="4" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" />
+                <text x="10" y="20" font-size="11" font-weight="700" fill="#333">Legend</text>
+                
+                <circle cx="15" cy="35" r="4" fill="#7209B7" />
+                <text x="25" y="39" font-size="10" fill="#555">System State</text>
+                
+                <circle cx="15" cy="50" r="4" fill="#FFCC00" />
+                <text x="25" y="54" font-size="10" fill="#555">Electron (e<tspan baseline-shift="super" font-size="0.7em">-</tspan>)</text>
+                
+                <line x1="10" y1="65" x2="20" y2="65" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowOrange)" />
+                <text x="25" y="69" font-size="10" fill="#555">Electron Flow</text>
+            </g>
+        </svg>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SN2 Reaction Mechanism Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap');
+
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            background-color: #f8f9fa;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        text {
+            fill: #333;
+            user-select: none;
+        }
+
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Animations */
+        @keyframes moveO {
+            0%, 10% { transform: translateX(50px); }
+            15%, 30% { transform: translateX(100px); }
+            50% { transform: translateX(150px); }
+            70%, 85% { transform: translateX(190px); }
+            100% { transform: translateX(50px); }
+        }
+
+        @keyframes moveCl {
+            0%, 30% { transform: translateX(310px); }
+            50% { transform: translateX(350px); }
+            70%, 85% { transform: translateX(450px); }
+            100% { transform: translateX(310px); }
+        }
+
+        @keyframes flipH {
+            0%, 30% { transform: scaleX(1); }
+            50% { transform: scaleX(0); }
+            70%, 85% { transform: scaleX(-1); }
+            100% { transform: scaleX(1); }
+        }
+
+        @keyframes drawArrow1 {
+            0%, 14% { stroke-dashoffset: 100; opacity: 0; }
+            15% { stroke-dashoffset: 100; opacity: 1; }
+            20%, 25% { stroke-dashoffset: 0; opacity: 1; }
+            30%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes drawArrow2 {
+            0%, 19% { stroke-dashoffset: 100; opacity: 0; }
+            20% { stroke-dashoffset: 100; opacity: 1; }
+            25%, 28% { stroke-dashoffset: 0; opacity: 1; }
+            30%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes fadeReactant {
+            0%, 25% { opacity: 1; }
+            30%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeTS {
+            0%, 40% { opacity: 0; }
+            45%, 55% { opacity: 1; }
+            60%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeProduct {
+            0%, 65% { opacity: 0; }
+            70%, 85% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes dotX {
+            0%, 30% { transform: translateX(0px); }
+            50% { transform: translateX(100px); }
+            70%, 85% { transform: translateX(200px); }
+            100% { transform: translateX(0px); }
+        }
+
+        @keyframes dotY {
+            0%, 30% { transform: translateY(0px); }
+            50% { transform: translateY(-160px); }
+            70%, 85% { transform: translateY(80px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes scaleCO_dashed {
+            0%, 30% { transform: scaleX(0); opacity: 0; }
+            35% { opacity: 1; }
+            50% { transform: scaleX(1); opacity: 1; }
+            70%, 85% { transform: scaleX(0.6); opacity: 0; }
+            100% { transform: scaleX(0); opacity: 0; }
+        }
+
+        @keyframes fadeCO_solid {
+            0%, 60% { opacity: 0; }
+            70%, 85% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes scaleCCl_solid {
+            0%, 30% { transform: scaleX(1); opacity: 1; }
+            40% { opacity: 0; }
+            100% { transform: scaleX(1); opacity: 0; }
+        }
+
+        @keyframes scaleCCl_dashed {
+            0%, 30% { transform: scaleX(0.6); opacity: 0; }
+            35% { opacity: 1; }
+            50% { transform: scaleX(1); opacity: 1; }
+            70%, 85% { transform: scaleX(2); opacity: 0; }
+            100% { transform: scaleX(0.6); opacity: 0; }
+        }
+
+        .anim-ease {
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            animation-duration: 8s;
+            animation-iteration-count: infinite;
+        }
+
+        .anim-linear {
+            animation-timing-function: linear;
+            animation-duration: 8s;
+            animation-iteration-count: infinite;
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Arrowheads -->
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00" />
+            </marker>
+            <marker id="arrowhead-axis" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+            </marker>
+            <marker id="arrowhead-axis-rev" markerWidth="10" markerHeight="7" refX="1" refY="3.5" orient="auto">
+                <polygon points="10 0, 0 3.5, 10 7" fill="#333" />
+            </marker>
+
+            <!-- Drop Shadow for Atoms -->
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.2"/>
+            </filter>
+
+            <!-- Energy Gradient -->
+            <linearGradient id="energyGrad" gradientUnits="userSpaceOnUse" x1="0" y1="360" x2="0" y2="120">
+                <stop offset="0%" stop-color="#4444FF" />
+                <stop offset="50%" stop-color="#20B2AA" />
+                <stop offset="100%" stop-color="#FF4444" />
+            </linearGradient>
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="40" text-anchor="middle" font-size="24" font-weight="700">S<tspan baseline-shift="sub" font-size="16">N</tspan>2 Mechanism: Nucleophilic Substitution</text>
+        <text x="400" y="65" text-anchor="middle" font-size="14" fill="#666">Bimolecular, single-step reaction with inversion of stereochemistry</text>
+
+        <!-- ========================================== -->
+        <!-- RIGHT PANE: ENERGY COORDINATE DIAGRAM      -->
+        <!-- ========================================== -->
+        <g transform="translate(0, 20)">
+            <!-- Axes -->
+            <line x1="550" y1="380" x2="770" y2="380" stroke="#333" stroke-width="2" marker-end="url(#arrowhead-axis)" />
+            <line x1="550" y1="380" x2="550" y2="100" stroke="#333" stroke-width="2" marker-end="url(#arrowhead-axis)" />
+            
+            <!-- Axis Labels -->
+            <text x="660" y="410" text-anchor="middle" font-size="12" font-weight="600">Reaction Progress</text>
+            <text x="-240" y="530" transform="rotate(-90)" text-anchor="middle" font-size="12" font-weight="600">Potential Energy</text>
+
+            <!-- Energy Curve -->
+            <path d="M 550 280 C 600 280, 600 120, 650 120 C 700 120, 700 360, 750 360" fill="none" stroke="url(#energyGrad)" stroke-width="4" stroke-linecap="round" />
+
+            <!-- Reference Lines -->
+            <line x1="530" y1="280" x2="550" y2="280" stroke="#888" stroke-dasharray="4" stroke-width="1.5" />
+            <line x1="750" y1="360" x2="770" y2="360" stroke="#888" stroke-dasharray="4" stroke-width="1.5" />
+            <line x1="650" y1="120" x2="650" y2="140" stroke="#888" stroke-dasharray="4" stroke-width="1.5" />
+
+            <!-- Enthalpy Label -->
+            <path d="M 760 280 L 760 360" fill="none" stroke="#333" stroke-width="1.5" marker-end="url(#arrowhead-axis)" marker-start="url(#arrowhead-axis-rev)" />
+            <text x="770" y="325" font-size="12" font-weight="600" fill="#4444FF">ΔH &lt; 0</text>
+
+            <!-- Moving Energy Dot -->
+            <g style="animation-name: dotX;" class="anim-ease">
+                <g style="animation-name: dotY;" class="anim-ease">
+                    <circle cx="550" cy="280" r="7" fill="#F77F00" filter="url(#shadow)" />
+                    <circle cx="550" cy="280" r="3" fill="#FFF" />
+                </g>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- LEFT PANE: MOLECULAR WORKSPACE             -->
+        <!-- ========================================== -->
+
+        <!-- Background grid/guides for molecular space -->
+        <line x1="50" y1="300" x2="450" y2="300" stroke="#e9ecef" stroke-width="2" stroke-dasharray="10,10" />
+
+        <!-- Transition State Brackets & Labels -->
+        <g style="animation-name: fadeTS;" class="anim-linear">
+            <text x="250" y="120" text-anchor="middle" font-size="18" font-weight="700" fill="#7209B7">Transition State [‡]</text>
+            <path d="M 120 140 L 100 140 L 100 420 L 120 420" fill="none" stroke="#7209B7" stroke-width="2" />
+            <path d="M 380 140 L 400 140 L 400 420 L 380 420" fill="none" stroke="#7209B7" stroke-width="2" />
+            
+            <!-- Partial Charges -->
+            <text x="150" y="250" font-size="16" font-weight="bold" fill="#FF4444" class="mono">δ-</text>
+            <text x="340" y="250" font-size="16" font-weight="bold" fill="#44CC44" class="mono">δ-</text>
+        </g>
+
+        <!-- BONDS -->
+        <!-- C-O Dashed Bond (Forming) -->
+        <line x1="250" y1="300" x2="150" y2="300" stroke="#555" stroke-width="4" stroke-dasharray="6,4" style="transform-origin: 250px 300px; animation-name: scaleCO_dashed;" class="anim-ease" />
+        
+        <!-- C-O Solid Bond (Product) -->
+        <line x1="250" y1="300" x2="190" y2="300" stroke="#333" stroke-width="4" style="animation-name: fadeCO_solid;" class="anim-ease" />
+
+        <!-- C-Cl Solid Bond (Reactant) -->
+        <line x1="250" y1="300" x2="310" y2="300" stroke="#333" stroke-width="4" style="transform-origin: 250px 300px; animation-name: scaleCCl_solid;" class="anim-ease" />
+
+        <!-- C-Cl Dashed Bond (Breaking) -->
+        <line x1="250" y1="300" x2="350" y2="300" stroke="#555" stroke-width="4" stroke-dasharray="6,4" style="transform-origin: 250px 300px; animation-name: scaleCCl_dashed;" class="anim-ease" />
+
+        <!-- ATOMS -->
+        <!-- Oxygen Group (Nucleophile) -->
+        <g style="animation-name: moveO;" class="anim-ease">
+            <g transform="translate(0, 300)">
+                <!-- H attached to O -->
+                <line x1="0" y1="0" x2="-25" y2="0" stroke="#333" stroke-width="3" />
+                <circle cx="-25" cy="0" r="10" fill="#CCCCCC" filter="url(#shadow)" />
+                <text x="-25" y="0" dy=".3em" text-anchor="middle" font-size="10" font-weight="600" class="mono">H</text>
+                
+                <!-- Oxygen Atom -->
+                <circle cx="0" cy="0" r="18" fill="#FF4444" filter="url(#shadow)" />
+                <text x="0" y="0" dy=".3em" text-anchor="middle" fill="white" font-size="16" font-weight="700" class="mono">O</text>
+                
+                <!-- Lone Pair -->
+                <circle cx="12" cy="-8" r="2.5" fill="#333" />
+                <circle cx="12" cy="8" r="2.5" fill="#333" />
+
+                <!-- Negative Charge (Fades out) -->
+                <g style="animation-name: fadeReactant;" class="anim-linear">
+                    <circle cx="16" cy="-16" r="8" fill="white" stroke="#FF4444" stroke-width="1.5" />
+                    <text x="16" y="-16" dy=".3em" text-anchor="middle" fill="#FF4444" font-size="14" font-weight="bold">-</text>
+                </g>
+
+                <!-- Label -->
+                <g style="animation-name: fadeReactant;" class="anim-linear">
+                    <text x="0" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#FF4444">Nucleophile (Nu⁻)</text>
+                </g>
+            </g>
+        </g>
+
+        <!-- Carbon & Hydrogens Group (Substrate) -->
+        <g transform="translate(250, 300)">
+            <!-- Hydrogens (Undergo Walden Inversion via scaleX) -->
+            <g style="animation-name: flipH;" class="anim-ease">
+                <!-- H1 (Up) -->
+                <line x1="0" y1="0" x2="-40" y2="-45" stroke="#333" stroke-width="4" />
+                <circle cx="-40" cy="-45" r="12" fill="#CCCCCC" filter="url(#shadow)" />
+                <text x="-40" y="-45" dy=".3em" text-anchor="middle" font-size="11" font-weight="600" class="mono">H</text>
+
+                <!-- H2 (Down, Front) -->
+                <line x1="0" y1="0" x2="-50" y2="25" stroke="#333" stroke-width="4" />
+                <circle cx="-50" cy="25" r="12" fill="#CCCCCC" filter="url(#shadow)" />
+                <text x="-50" y="25" dy=".3em" text-anchor="middle" font-size="11" font-weight="600" class="mono">H</text>
+
+                <!-- H3 (Down, Back) -->
+                <line x1="0" y1="0" x2="-20" y2="50" stroke="#333" stroke-width="4" />
+                <circle cx="-20" cy="50" r="12" fill="#CCCCCC" filter="url(#shadow)" />
+                <text x="-20" y="50" dy=".3em" text-anchor="middle" font-size="11" font-weight="600" class="mono">H</text>
+            </g>
+
+            <!-- Central Carbon Atom -->
+            <circle cx="0" cy="0" r="18" fill="#404040" filter="url(#shadow)" />
+            <text x="0" y="0" dy=".3em" text-anchor="middle" fill="white" font-size="16" font-weight="700" class="mono">C</text>
+
+            <!-- Labels -->
+            <g style="animation-name: fadeReactant;" class="anim-linear">
+                <text x="0" y="85" text-anchor="middle" font-size="12" font-weight="600" fill="#404040">Substrate</text>
+            </g>
+            <g style="animation-name: fadeProduct;" class="anim-linear">
+                <text x="0" y="85" text-anchor="middle" font-size="12" font-weight="600" fill="#404040">Product (Inversion)</text>
+            </g>
+        </g>
+
+        <!-- Chlorine Group (Leaving Group) -->
+        <g style="animation-name: moveCl;" class="anim-ease">
+            <g transform="translate(0, 300)">
+                <!-- Chlorine Atom -->
+                <circle cx="0" cy="0" r="22" fill="#44CC44" filter="url(#shadow)" />
+                <text x="0" y="0" dy=".3em" text-anchor="middle" fill="white" font-size="16" font-weight="700" class="mono">Cl</text>
+                
+                <!-- Negative Charge (Fades in) -->
+                <g style="animation-name: fadeProduct;" class="anim-linear">
+                    <circle cx="18" cy="-18" r="8" fill="white" stroke="#44CC44" stroke-width="1.5" />
+                    <text x="18" y="-18" dy=".3em" text-anchor="middle" fill="#44CC44" font-size="14" font-weight="bold">-</text>
+                    
+                    <!-- Label -->
+                    <text x="0" y="45" text-anchor="middle" font-size="12" font-weight="600" fill="#44CC44">Leaving Group (L⁻)</text>
+                </g>
+            </g>
+        </g>
+
+        <!-- ELECTRON FLOW ARROWS -->
+        <!-- Arrow 1: O lone pair to C -->
+        <path d="M 115 285 C 150 220, 210 220, 240 280" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrowhead)" pathLength="100" style="stroke-dasharray: 100; animation-name: drawArrow1;" class="anim-linear" />
+        
+        <!-- Arrow 2: C-Cl bond to Cl -->
+        <path d="M 280 290 C 290 250, 310 250, 315 275" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrowhead)" pathLength="100" style="stroke-dasharray: 100; animation-name: drawArrow2;" class="anim-linear" />
+
+        <!-- ========================================== -->
+        <!-- LEGEND                                     -->
+        <!-- ========================================== -->
+        <g transform="translate(30, 460)">
+            <rect x="0" y="0" width="360" height="30" rx="15" fill="#ffffff" stroke="#ddd" stroke-width="1" />
+            
+            <circle cx="20" cy="15" r="6" fill="#404040" />
+            <text x="32" y="15" dy=".3em" font-size="11" font-weight="600">Carbon</text>
+            
+            <circle cx="90" cy="15" r="6" fill="#FF4444" />
+            <text x="102" y="15" dy=".3em" font-size="11" font-weight="600">Oxygen</text>
+            
+            <circle cx="160" cy="15" r="6" fill="#44CC44" />
+            <text x="172" y="15" dy=".3em" font-size="11" font-weight="600">Chlorine</text>
+            
+            <circle cx="240" cy="15" r="6" fill="#CCCCCC" />
+            <text x="252" y="15" dy=".3em" font-size="11" font-weight="600">Hydrogen</text>
+
+            <line x1="320" y1="15" x2="335" y2="15" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowhead)" />
+            <text x="345" y="15" dy=".3em" font-size="11" font-weight="600">e⁻ flow</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

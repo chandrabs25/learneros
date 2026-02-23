@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Logic of Differential Extraction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+        
+        /* CSS Animations */
+        .ba-move {
+            animation: moveBA 15s ease-in-out infinite;
+        }
+        .oh-move {
+            animation: moveOH 15s ease-in-out infinite;
+        }
+        .na-move {
+            animation: moveNa 15s ease-in-out infinite;
+        }
+        .arrow-draw {
+            animation: drawArrow 15s linear infinite;
+        }
+        .leaving-h {
+            animation: fadeOut 15s linear infinite;
+        }
+        .incoming-h {
+            animation: fadeIn 15s linear infinite;
+        }
+        .ba-charge {
+            animation: appearCharge 15s linear infinite;
+        }
+        .oh-charge {
+            animation: fadeOut 15s linear infinite;
+        }
+        .ether-interaction {
+            animation: fadeEther 15s linear infinite;
+        }
+        .solvation-shell {
+            animation: appearSolvation 15s ease-in-out infinite;
+        }
+        .process-note {
+            animation: noteAppear 15s ease-in-out infinite;
+        }
+        .ion-dipole {
+            animation: pulseDash 2s linear infinite;
+        }
+        .float-slow {
+            animation: float 6s ease-in-out infinite alternate;
+        }
+        .float-slower {
+            animation: float 8s ease-in-out infinite alternate-reverse;
+        }
+
+        /* Keyframes */
+        @keyframes moveBA {
+            0% { transform: translate(350px, 120px) rotate(-5deg); opacity: 0; }
+            5% { transform: translate(350px, 120px) rotate(-5deg); opacity: 1; }
+            15% { transform: translate(360px, 130px) rotate(5deg); opacity: 1; }
+            25% { transform: translate(350px, 210px) rotate(0deg); opacity: 1; }
+            35%, 50% { transform: translate(350px, 210px) rotate(0deg); opacity: 1; }
+            60% { transform: translate(350px, 340px) rotate(10deg); opacity: 1; }
+            75% { transform: translate(360px, 350px) rotate(5deg); opacity: 1; }
+            85% { transform: translate(340px, 360px) rotate(15deg); opacity: 1; }
+            95% { transform: translate(350px, 350px) rotate(10deg); opacity: 1; }
+            98%, 100% { transform: translate(350px, 350px) rotate(10deg); opacity: 0; }
+        }
+
+        @keyframes moveOH {
+            0%, 15% { transform: translate(450px, 380px); opacity: 0; }
+            20% { transform: translate(450px, 350px); opacity: 1; }
+            30%, 35% { transform: translate(480px, 260px); opacity: 1; }
+            50% { transform: translate(480px, 260px); opacity: 1; }
+            60% { transform: translate(510px, 320px); opacity: 1; }
+            75%, 100% { transform: translate(530px, 380px); opacity: 0; }
+        }
+
+        @keyframes moveNa {
+            0% { transform: translate(550px, 320px); }
+            50% { transform: translate(530px, 340px); }
+            100% { transform: translate(550px, 320px); }
+        }
+
+        @keyframes drawArrow {
+            0%, 35% { stroke-dashoffset: 100; opacity: 0; }
+            38% { opacity: 1; stroke-dashoffset: 100; }
+            43%, 48% { stroke-dashoffset: 0; opacity: 1; }
+            50%, 100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+
+        @keyframes fadeOut {
+            0%, 40% { opacity: 1; }
+            45%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeIn {
+            0%, 40% { opacity: 0; }
+            45%, 80% { opacity: 1; }
+            85%, 100% { opacity: 0; }
+        }
+
+        @keyframes appearCharge {
+            0%, 40% { opacity: 0; transform: scale(0); }
+            45%, 95% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; }
+        }
+
+        @keyframes fadeEther {
+            0%, 20% { opacity: 1; }
+            25%, 100% { opacity: 0; }
+        }
+
+        @keyframes appearSolvation {
+            0%, 55% { opacity: 0; transform: scale(1.2); }
+            60%, 95% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; }
+        }
+
+        @keyframes noteAppear {
+            0%, 35% { opacity: 0; transform: translateY(10px); }
+            40%, 55% { opacity: 1; transform: translateY(0); }
+            60%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes pulseDash {
+            to { stroke-dashoffset: -12; }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-10px) rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Clip Path for Separatory Funnel -->
+        <clipPath id="funnel-clip">
+            <path d="M 200 50 C 200 150, 200 250, 380 420 L 380 470 L 420 470 L 420 420 C 600 250, 600 150, 600 50 Z"/>
+        </clipPath>
+
+        <!-- Drop Shadow Filter -->
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="3" stdDeviation="3" flood-opacity="0.15"/>
+        </filter>
+
+        <!-- Arrowhead Marker -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00"/>
+        </marker>
+
+        <!-- Reusable Water Molecule -->
+        <g id="water-mol">
+            <line x1="0" y1="0" x2="-6" y2="-6" stroke="#404040" stroke-width="2"/>
+            <line x1="0" y1="0" x2="6" y2="-6" stroke="#404040" stroke-width="2"/>
+            <circle cx="0" cy="0" r="6" fill="#FF4444"/>
+            <circle cx="-6" cy="-6" r="4" fill="#CCCCCC"/>
+            <circle cx="6" cy="-6" r="4" fill="#CCCCCC"/>
+        </g>
+
+        <!-- Reusable Ether Molecule -->
+        <g id="ether-mol">
+            <path d="M -20 10 L -10 0 L 0 10 L 10 0 L 20 10" fill="none" stroke="#404040" stroke-width="3" stroke-linejoin="round"/>
+            <circle cx="0" cy="10" r="5" fill="#FF4444"/>
+        </g>
+    </defs>
+
+    <!-- Title and Subtitle -->
+    <text x="400" y="30" text-anchor="middle" font-size="20" font-weight="700" fill="#333">Differential Extraction: Solubility Shift of Benzoic Acid</text>
+    <text x="400" y="50" text-anchor="middle" font-size="13" fill="#666">"Like Dissolves Like" & Phase Transfer via Deprotonation</text>
+
+    <!-- Phase Labels -->
+    <g transform="translate(20, 120)">
+        <text x="0" y="0" font-size="14" font-weight="700" fill="#555">Organic Phase</text>
+        <text x="0" y="18" font-size="12" fill="#777">Diethyl Ether</text>
+        <text x="0" y="34" font-size="11" fill="#888">Low Polarity</text>
+    </g>
+    <g transform="translate(20, 360)">
+        <text x="0" y="0" font-size="14" font-weight="700" fill="#555">Aqueous Phase</text>
+        <text x="0" y="18" font-size="12" fill="#777">Water + NaOH</text>
+        <text x="0" y="34" font-size="11" fill="#888">High Polarity</text>
+    </g>
+
+    <!-- Legend -->
+    <g transform="translate(650, 70)">
+        <rect x="0" y="0" width="130" height="150" rx="6" fill="white" stroke="#ced4da" stroke-width="1"/>
+        <text x="10" y="20" font-size="12" font-weight="700" fill="#333">Legend</text>
+        
+        <circle cx="15" cy="40" r="5" fill="#404040"/>
+        <text x="30" y="44" font-size="11" fill="#444">Carbon (C)</text>
+        
+        <circle cx="15" cy="60" r="5" fill="#FF4444"/>
+        <text x="30" y="64" font-size="11" fill="#444">Oxygen (O)</text>
+        
+        <circle cx="15" cy="80" r="5" fill="#CCCCCC"/>
+        <text x="30" y="84" font-size="11" fill="#444">Hydrogen (H)</text>
+        
+        <circle cx="15" cy="100" r="5" fill="#AB5CF2"/>
+        <text x="30" y="104" font-size="11" fill="#444">Sodium (Na⁺)</text>
+        
+        <path d="M 10 125 Q 15 120 20 125" fill="none" stroke="#F77F00" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="30" y="129" font-size="11" fill="#444">Electron Flow</text>
+    </g>
+
+    <!-- Separatory Funnel & Liquids -->
+    <g>
+        <!-- Liquid Layers -->
+        <rect x="0" y="0" width="800" height="250" fill="#FFF9C4" opacity="0.5" clip-path="url(#funnel-clip)"/>
+        <rect x="0" y="250" width="800" height="250" fill="#E3F2FD" opacity="0.6" clip-path="url(#funnel-clip)"/>
+        
+        <!-- Interface Line -->
+        <line x1="200" y1="250" x2="600" y2="250" stroke="#adb5bd" stroke-width="2" stroke-dasharray="6,4" clip-path="url(#funnel-clip)"/>
+        
+        <!-- Glass Outline -->
+        <path d="M 200 50 C 200 150, 200 250, 380 420 L 380 470 L 420 470 L 420 420 C 600 250, 600 150, 600 50 Z" fill="none" stroke="#ced4da" stroke-width="4"/>
+        
+        <!-- Stopcock -->
+        <rect x="370" y="445" width="60" height="10" rx="3" fill="#ced4da"/>
+        <polygon points="390,445 410,445 405,455 395,455" fill="#adb5bd"/>
+    </g>
+
+    <!-- Background Molecules (Static/Floating) -->
+    <g clip-path="url(#funnel-clip)">
+        <g class="float-slow" transform="translate(250, 100)"><use href="#ether-mol"/></g>
+        <g class="float-slower" transform="translate(520, 160)"><use href="#ether-mol"/></g>
+        <g class="float-slow" transform="translate(300, 190)"><use href="#ether-mol"/></g>
+        
+        <g class="float-slower" transform="translate(300, 320)"><use href="#water-mol"/></g>
+        <g class="float-slow" transform="translate(500, 360)"><use href="#water-mol"/></g>
+        <g class="float-slower" transform="translate(380, 400)"><use href="#water-mol"/></g>
+    </g>
+
+    <!-- Chemical Formulas -->
+    <text x="220" y="90" font-family="'Roboto Mono', monospace" font-size="14" fill="#444">
+        C<tspan baseline-shift="sub" font-size="10">6</tspan>H<tspan baseline-shift="sub" font-size="10">5</tspan>COOH
+    </text>
+    <text x="280" y="400" font-family="'Roboto Mono', monospace" font-size="14" fill="#444">
+        C<tspan baseline-shift="sub" font-size="10">6</tspan>H<tspan baseline-shift="sub" font-size="10">5</tspan>COO<tspan baseline-shift="super" font-size="10">⁻</tspan> + Na<tspan baseline-shift="super" font-size="10">⁺</tspan>
+    </text>
+
+    <!-- ANIMATED ELEMENTS -->
+    
+    <!-- Sodium Ion -->
+    <g class="na-move" filter="url(#shadow)">
+        <circle cx="0" cy="0" r="12" fill="#AB5CF2"/>
+        <text x="0" y="4" font-size="12" font-weight="bold" fill="white" text-anchor="middle">Na⁺</text>
+    </g>
+
+    <!-- Hydroxide Ion (OH-) -->
+    <g class="oh-move" filter="url(#shadow)">
+        <!-- O Atom -->
+        <circle cx="0" cy="0" r="8" fill="#FF4444"/>
+        <!-- Lone Pairs -->
+        <circle cx="-5" cy="-4" r="1.5" fill="#404040"/>
+        <circle cx="-2" cy="-6" r="1.5" fill="#404040"/>
+        
+        <!-- Original H Atom -->
+        <line x1="0" y1="0" x2="12" y2="8" stroke="#404040" stroke-width="4"/>
+        <circle cx="12" cy="8" r="6" fill="#CCCCCC"/>
+        
+        <!-- Negative Charge -->
+        <g class="oh-charge">
+            <circle cx="-12" cy="10" r="7" fill="#FF4444" stroke="white" stroke-width="1"/>
+            <line x1="-15" y1="10" x2="-9" y2="10" stroke="white" stroke-width="2"/>
+        </g>
+        
+        <!-- Incoming H Atom (from Benzoic Acid) -->
+        <g class="incoming-h">
+            <line x1="0" y1="0" x2="-12" y2="8" stroke="#404040" stroke-width="4"/>
+            <circle cx="-12" cy="8" r="6" fill="#CCCCCC"/>
+        </g>
+    </g>
+
+    <!-- Benzoic Acid Molecule -->
+    <g class="ba-move" filter="url(#shadow)">
+        <!-- Benzene Ring -->
+        <polygon points="30,0 15,26 -15,26 -30,0 -15,-26 15,-26" fill="#f8f9fa" stroke="#404040" stroke-width="4" stroke-linejoin="round"/>
+        <circle cx="0" cy="0" r="16" fill="none" stroke="#404040" stroke-width="3"/>
+        
+        <!-- Carboxyl Carbon -->
+        <line x1="30" y1="0" x2="60" y2="0" stroke="#404040" stroke-width="4"/>
+        
+        <!-- Double Bond to O -->
+        <line x1="60" y1="-2" x2="75" y2="-20" stroke="#404040" stroke-width="4"/>
+        <line x1="55" y1="2" x2="70" y2="-16" stroke="#404040" stroke-width="4"/>
+        <circle cx="78" cy="-22" r="8" fill="#FF4444"/>
+        
+        <!-- Single Bond to O -->
+        <line x1="60" y1="0" x2="75" y2="20" stroke="#404040" stroke-width="4"/>
+        <circle cx="78" cy="22" r="8" fill="#FF4444"/>
+        
+        <!-- Leaving H Atom -->
+        <g class="leaving-h">
+            <line x1="86" y1="22" x2="100" y2="22" stroke="#404040" stroke-width="4"/>
+            <circle cx="106" cy="22" r="6" fill="#CCCCCC"/>
+        </g>
+
+        <!-- Negative Charge on Benzoate -->
+        <g class="ba-charge">
+            <circle cx="92" cy="22" r="7" fill="#FF4444" stroke="white" stroke-width="1"/>
+            <line x1="89" y1="22" x2="95" y2="22" stroke="white" stroke-width="2"/>
+        </g>
+
+        <!-- Initial Ether H-Bond Interaction (Fades out) -->
+        <g class="ether-interaction">
+            <g transform="translate(140, 22)">
+                <path d="M -15 -15 L -5 -25 L 5 -15 L 15 -25 L 25 -15" fill="none" stroke="#404040" stroke-width="3" stroke-linejoin="round"/>
+                <circle cx="5" cy="-15" r="5" fill="#FF4444"/>
+            </g>
+            <line x1="112" y1="22" x2="140" y2="10" stroke="#00BFFF" stroke-width="2" stroke-dasharray="4,4"/>
+        </g>
+
+        <!-- Solvation Shell (Appears in Water) -->
+        <g class="solvation-shell">
+            <!-- Water 1 -->
+            <g transform="translate(115, -35) rotate(-120)">
+                <use href="#water-mol"/>
+            </g>
+            <line x1="78" y1="-22" x2="105" y2="-30" stroke="#4444FF" stroke-width="2" stroke-dasharray="4,4" class="ion-dipole"/>
+            
+            <!-- Water 2 -->
+            <g transform="translate(125, 30) rotate(-60)">
+                <use href="#water-mol"/>
+            </g>
+            <line x1="78" y1="22" x2="115" y2="28" stroke="#4444FF" stroke-width="2" stroke-dasharray="4,4" class="ion-dipole"/>
+            
+            <!-- Water 3 -->
+            <g transform="translate(85, 60) rotate(0)">
+                <use href="#water-mol"/>
+            </g>
+            <line x1="78" y1="22" x2="83" y2="50" stroke="#4444FF" stroke-width="2" stroke-dasharray="4,4" class="ion-dipole"/>
+            
+            <!-- Water 4 -->
+            <g transform="translate(70, -60) rotate(180)">
+                <use href="#water-mol"/>
+            </g>
+            <line x1="78" y1="-22" x2="72" y2="-50" stroke="#4444FF" stroke-width="2" stroke-dasharray="4,4" class="ion-dipole"/>
+        </g>
+    </g>
+
+    <!-- Curly Arrow for Mechanism -->
+    <path d="M 473 255 Q 475 235 462 235" fill="none" stroke="#F77F00" stroke-width="3" stroke-dasharray="100" marker-end="url(#arrow)" class="arrow-draw"/>
+
+    <!-- Process Note -->
+    <g class="process-note">
+        <rect x="250" y="150" width="300" height="32" rx="16" fill="#F77F00" opacity="0.95" filter="url(#shadow)"/>
+        <text x="400" y="171" text-anchor="middle" font-size="13" font-weight="700" fill="white">Deprotonation increases water solubility</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

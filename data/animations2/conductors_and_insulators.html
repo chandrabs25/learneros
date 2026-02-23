@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conductors vs Insulators 3D Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            height: 100vh;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #controls-container {
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+            color: #1a1a2e;
+            font-weight: 600;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            font-size: 0.85rem;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #FF3366;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .formula-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            color: #1e293b;
+            margin: 5px 0;
+        }
+
+        .math span.ext { color: #7209B7; font-weight: bold; }
+        .math span.ind { color: #F77F00; font-weight: bold; }
+        .math span.net { color: #10b981; font-weight: bold; }
+
+        .label-3d {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: opacity 0.2s;
+        }
+
+        #label-anode { color: #FF3366; border: 1px solid #FF3366; }
+        #label-cathode { color: #4361EE; border: 1px solid #4361EE; }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .color-box {
+            width: 12px; height: 12px; border-radius: 3px; margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Internal Electric Field</div>
+            <div class="math" id="eq-main">E_net = <span class="ext">E_ext</span> - <span class="ind">E_ind</span></div>
+            <div class="math">E_net = <span class="net" id="val-enet">0.00</span> V/m</div>
+        </div>
+        <div id="label-anode" class="label-3d">Anode (+)</div>
+        <div id="label-cathode" class="label-3d">Cathode (-)</div>
+    </div>
+
+    <div id="controls-container">
+        <h1>Physics Lab Control</h1>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Material Type</label>
+            </div>
+            <select id="matType">
+                <option value="0">Conductor (Free Electrons)</option>
+                <option value="1">Insulator (Bound Electrons)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>External Field (E_ext)</label>
+                <span class="value-display" id="val-eExt">0.0 V/m</span>
+            </div>
+            <input type="range" id="eExt" min="0" max="10" step="0.1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Temperature</label>
+                <span class="value-display" id="val-temp">300 K</span>
+            </div>
+            <input type="range" id="temp" min="0" max="500" step="10" value="300">
+        </div>
+
+        <div class="control-group" id="group-phi">
+            <div class="control-header">
+                <label>Work Function (Φ)</label>
+                <span class="value-display" id="val-phi">4.5 eV</span>
+            </div>
+            <input type="range" id="phi" min="1" max="5" step="0.1" value="4.5">
+        </div>
+
+        <div class="control-group" id="group-kappa" style="display: none; opacity: 0.5;">
+            <div class="control-header">
+                <label>Dielectric Const (κ)</label>
+                <span class="value-display" id="val-kappa">3.0</span>
+            </div>
+            <input type="range" id="kappa" min="1" max="10" step="0.5" value="3.0">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Positive Ions (Lattice)</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Electrons</div>
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> External Field (E_ext)</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Induced Field (E_ind)</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics & State Variables ---
+        const state = {
+            matType: 0, // 0: Conductor, 1: Insulator
+            E_ext: 0,
+            temp: 300,
+            phi: 4.5,
+            kappa: 3.0,
+            E_ind_mag: 0,
+            E_net: 0
+        };
+
+        // --- UI Elements ---
+        const ui = {
+            matType: document.getElementById('matType'),
+            eExt: document.getElementById('eExt'),
+            temp: document.getElementById('temp'),
+            phi: document.getElementById('phi'),
+            kappa: document.getElementById('kappa'),
+            valEExt: document.getElementById('val-eExt'),
+            valTemp: document.getElementById('val-temp'),
+            valPhi: document.getElementById('val-phi'),
+            valKappa: document.getElementById('val-kappa'),
+            valEnet: document.getElementById('val-enet'),
+            eqMain: document.getElementById('eq-main'),
+            groupPhi: document.getElementById('group-phi'),
+            groupKappa: document.getElementById('group-kappa'),
+            labelAnode: document.getElementById('label-anode'),
+            labelCathode: document.getElementById('label-cathode')
+        };
+
+        // --- Event Listeners ---
+        ui.matType.addEventListener('change', (e) => {
+            state.matType = parseInt(e.target.value);
+            if(state.matType === 0) {
+                ui.groupPhi.style.display = 'flex';
+                ui.groupPhi.style.opacity = '1';
+                ui.groupKappa.style.display = 'none';
+                ui.eqMain.innerHTML = 'E_net = <span class="ext">E_ext</span> - <span class="ind">E_ind</span>';
+                resetConductorElectrons();
+            } else {
+                ui.groupPhi.style.display = 'none';
+                ui.groupKappa.style.display = 'flex';
+                ui.groupKappa.style.opacity = '1';
+                ui.eqMain.innerHTML = 'E_net = <span class="ext">E_ext</span> / κ';
+            }
+        });
+
+        ui.eExt.addEventListener('input', (e) => { state.E_ext = parseFloat(e.target.value); ui.valEExt.innerText = state.E_ext.toFixed(1) + ' V/m'; });
+        ui.temp.addEventListener('input', (e) => { state.temp = parseFloat(e.target.value); ui.valTemp.innerText = state.temp + ' K'; });
+        ui.phi.addEventListener('input', (e) => { state.phi = parseFloat(e.target.value); ui.valPhi.innerText = state.phi.toFixed(1) + ' eV'; });
+        ui.kappa.addEventListener('input', (e) => { state.kappa = parseFloat(e.target.value); ui.valKappa.innerText = state.kappa.toFixed(1); });
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 2, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // --- Materials ---
+        const ionMat = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.7, metalness: 0.1 });
+        const electronMat = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.4, metalness: 0.3 });
+
+        // --- Geometries ---
+        const ionGeo = new THREE.SphereGeometry(0.25, 32, 32);
+        const electronGeo = new THREE.SphereGeometry(0.08, 16, 16);
+
+        // --- Objects ---
+        const gridSize = 5;
+        const spacing = 1.2;
+        const numIons = gridSize * gridSize * gridSize;
+        const offset = (gridSize - 1) * spacing / 2;
+
+        // 1. Ions (Lattice)
+        const ions = new THREE.InstancedMesh(ionGeo, ionMat, numIons);
+        const dummy = new THREE.Object3D();
+        const ionPositions = [];
+
+        let idx = 0;
+        for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; x < gridSize && y < gridSize; y++) {
+                for (let z = 0; z < gridSize; z++) {
+                    const px = x * spacing - offset;
+                    const py = y * spacing - offset;
+                    const pz = z * spacing - offset;
+                    dummy.position.set(px, py, pz);
+                    dummy.updateMatrix();
+                    ions.setMatrixAt(idx, dummy.matrix);
+                    ionPositions.push(new THREE.Vector3(px, py, pz));
+                    idx++;
+                }
+            }
+        }
+        scene.add(ions);
+
+        // 2. Conductor Electrons (Free)
+        const numFreeElectrons = 250;
+        const freeElectrons = new THREE.InstancedMesh(electronGeo, electronMat, numFreeElectrons);
+        const freeElectronData = []; // Store pos and vel
+
+        const boxLimit = offset + 0.3;
+
+        function resetConductorElectrons() {
+            for (let i = 0; i < numFreeElectrons; i++) {
+                const pos = new THREE.Vector3(
+                    (Math.random() - 0.5) * boxLimit * 2,
+                    (Math.random() - 0.5) * boxLimit * 2,
+                    (Math.random() - 0.5) * boxLimit * 2
+                );
+                freeElectronData[i] = {
+                    pos: pos,
+                    vel: new THREE.Vector3(0, 0, 0)
+                };
+                dummy.position.copy(pos);
+                dummy.updateMatrix();
+                freeElectrons.setMatrixAt(i, dummy.matrix);
+            }
+            freeElectrons.instanceMatrix.needsUpdate = true;
+        }
+        resetConductorElectrons();
+        scene.add(freeElectrons);
+
+        // 3. Insulator Electrons (Bound)
+        const boundElectrons = new THREE.InstancedMesh(electronGeo, electronMat, numIons);
+        for (let i = 0; i < numIons; i++) {
+            dummy.position.copy(ionPositions[i]);
+            dummy.updateMatrix();
+            boundElectrons.setMatrixAt(i, dummy.matrix);
+        }
+        scene.add(boundElectrons);
+
+        // 4. Field Arrows
+        const extArrows = new THREE.Group();
+        const arrowDir = new THREE.Vector3(1, 0, 0);
+        for(let y = -1; y <= 1; y++) {
+            for(let z = -1; z <= 1; z++) {
+                const origin = new THREE.Vector3(-4, y*2, z*2);
+                const arrow = new THREE.ArrowHelper(arrowDir, origin, 0.1, 0x7209B7, 0.3, 0.2);
+                arrow.visible = false;
+                extArrows.add(arrow);
+            }
+        }
+        scene.add(extArrows);
+
+        const indArrowOrigin = new THREE.Vector3(0, 0, 0);
+        const indArrowDir = new THREE.Vector3(-1, 0, 0);
+        const indArrow = new THREE.ArrowHelper(indArrowDir, indArrowOrigin, 0.1, 0xF77F00, 0.4, 0.3);
+        indArrow.visible = false;
+        scene.add(indArrow);
+
+        // 3D Positions for Labels
+        const anodePos = new THREE.Vector3(boxLimit + 1, 0, 0);
+        const cathodePos = new THREE.Vector3(-boxLimit - 1, 0, 0);
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.1);
+
+            // Update Field Arrows
+            if (state.E_ext > 0.1) {
+                extArrows.children.forEach(a => {
+                    a.visible = true;
+                    a.setLength(state.E_ext * 0.8, 0.4, 0.2);
+                });
+            } else {
+                extArrows.children.forEach(a => a.visible = false);
+            }
+
+            if (state.matType === 0) {
+                // --- CONDUCTOR LOGIC (Drude Model) ---
+                freeElectrons.visible = true;
+                boundElectrons.visible = false;
+
+                let avgX = 0;
+                const thermalFactor = Math.sqrt(state.temp) * 0.005;
+                const driftMobility = 2.0;
+                
+                // Calculate E_ind based on charge separation (average X position of electrons)
+                // If electrons are uniformly distributed, avgX ~ 0.
+                // If they pile up on the left (-x), avgX is negative.
+                // E_ind points from + to - (right to left, so -x direction).
+                // Magnitude of E_ind is proportional to how far left they are.
+                for (let i = 0; i < numFreeElectrons; i++) {
+                    avgX += freeElectronData[i].pos.x;
+                }
+                avgX /= numFreeElectrons;
+                
+                // Coupling constant to make E_ind cancel E_ext eventually
+                const coupling = 4.0; 
+                state.E_ind_mag = Math.max(0, -avgX * coupling);
+                
+                // Net field inside conductor
+                state.E_net = Math.max(0, state.E_ext - state.E_ind_mag);
+
+                // Update electrons
+                for (let i = 0; i < numFreeElectrons; i++) {
+                    let d = freeElectronData[i];
+                    
+                    // Thermal velocity (random walk)
+                    const thermalVel = new THREE.Vector3(
+                        (Math.random() - 0.5),
+                        (Math.random() - 0.5),
+                        (Math.random() - 0.5)
+                    ).normalize().multiplyScalar(thermalFactor);
+
+                    // Drift velocity (Force = -e * E_net, so drift is in -x direction)
+                    const driftVel = new THREE.Vector3(-state.E_net * driftMobility * dt, 0, 0);
+
+                    d.vel.add(thermalVel).add(driftVel);
+                    d.vel.multiplyScalar(0.85); // Damping/collisions
+
+                    d.pos.add(d.vel);
+
+                    // Boundary conditions
+                    // Y and Z bounds (bounce)
+                    if (d.pos.y > boxLimit) { d.pos.y = boxLimit; d.vel.y *= -1; }
+                    if (d.pos.y < -boxLimit) { d.pos.y = -boxLimit; d.vel.y *= -1; }
+                    if (d.pos.z > boxLimit) { d.pos.z = boxLimit; d.vel.z *= -1; }
+                    if (d.pos.z < -boxLimit) { d.pos.z = -boxLimit; d.vel.z *= -1; }
+
+                    // X bounds (Left: accumulate, Right: Work function)
+                    if (d.pos.x < -boxLimit) {
+                        d.pos.x = -boxLimit;
+                        d.vel.x = 0; // Pile up on surface
+                    }
+                    if (d.pos.x > boxLimit) {
+                        // Field emission check
+                        if (state.E_ext > state.phi * 1.5) {
+                            d.pos.x = -boxLimit; // Wrap around (current flows)
+                        } else {
+                            d.pos.x = boxLimit;
+                            d.vel.x *= -1; // Bounce back
+                        }
+                    }
+
+                    dummy.position.copy(d.pos);
+                    dummy.updateMatrix();
+                    freeElectrons.setMatrixAt(i, dummy.matrix);
+                }
+                freeElectrons.instanceMatrix.needsUpdate = true;
+
+                // Update Induced Arrow
+                if (state.E_ind_mag > 0.1) {
+                    indArrow.visible = true;
+                    indArrow.setLength(state.E_ind_mag * 0.8, 0.4, 0.2);
+                } else {
+                    indArrow.visible = false;
+                }
+
+                // Lattice vibration (thermal)
+                const ionJitter = state.temp * 0.00005;
+                for(let i=0; i<numIons; i++) {
+                    dummy.position.copy(ionPositions[i]);
+                    dummy.position.x += (Math.random()-0.5)*ionJitter;
+                    dummy.position.y += (Math.random()-0.5)*ionJitter;
+                    dummy.position.z += (Math.random()-0.5)*ionJitter;
+                    dummy.updateMatrix();
+                    ions.setMatrixAt(i, dummy.matrix);
+                }
+                ions.instanceMatrix.needsUpdate = true;
+
+            } else {
+                // --- INSULATOR LOGIC (Polarization) ---
+                freeElectrons.visible = false;
+                boundElectrons.visible = true;
+                indArrow.visible = false; // Simplified: just show net effect
+
+                state.E_net = state.E_ext / state.kappa;
+                
+                // Displacement of bound electron: d = -E_ext / kappa * scale
+                const maxStretch = 0.4;
+                const stretch = Math.min((state.E_ext / state.kappa) * 0.15, maxStretch);
+                const displacement = new THREE.Vector3(-stretch, 0, 0);
+
+                for (let i = 0; i < numIons; i++) {
+                    dummy.position.copy(ionPositions[i]).add(displacement);
+                    
+                    // Add slight thermal vibration to bound electrons too
+                    const thermalFactor = Math.sqrt(state.temp) * 0.001;
+                    dummy.position.x += (Math.random()-0.5)*thermalFactor;
+                    dummy.position.y += (Math.random()-0.5)*thermalFactor;
+                    dummy.position.z += (Math.random()-0.5)*thermalFactor;
+
+                    dummy.updateMatrix();
+                    boundElectrons.setMatrixAt(i, dummy.matrix);
+                    
+                    // Reset ions to stable positions
+                    dummy.position.copy(ionPositions[i]);
+                    dummy.updateMatrix();
+                    ions.setMatrixAt(i, dummy.matrix);
+                }
+                boundElectrons.instanceMatrix.needsUpdate = true;
+                ions.instanceMatrix.needsUpdate = true;
+            }
+
+            // Update UI Net Field
+            ui.valEnet.innerText = state.E_net.toFixed(2);
+
+            controls.update();
+
+            // Update 2D Labels positions
+            updateLabelPosition(anodePos, ui.labelAnode);
+            updateLabelPosition(cathodePos, ui.labelCathode);
+
+            // Show labels only if field is applied
+            const labelOpacity = state.E_ext > 0.5 ? '1' : '0';
+            ui.labelAnode.style.opacity = labelOpacity;
+            ui.labelCathode.style.opacity = labelOpacity;
+
+            renderer.render(scene, camera);
+        }
+
+        function updateLabelPosition(vector3D, element) {
+            const tempV = vector3D.clone();
+            tempV.project(camera);
+            
+            const x = (tempV.x *  .5 + .5) * container.clientWidth;
+            const y = (tempV.y * -.5 + .5) * container.clientHeight;
+            
+            // Check if behind camera
+            if (tempV.z > 1) {
+                element.style.display = 'none';
+            } else {
+                element.style.display = 'block';
+                element.style.left = `${x}px`;
+                element.style.top = `${y}px`;
+            }
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        animate();
+
+    </script>
+</body>
+</html>

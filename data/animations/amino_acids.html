@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amino Acid Structure & Peptide Bond Formation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #2C3E50;
+        }
+        .chem-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 14px;
+            font-weight: 700;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        .chem-text.light { fill: #ffffff; }
+        .chem-text.dark { fill: #2C3E50; }
+        
+        .annotation {
+            font-size: 13px;
+            fill: #7F8C8D;
+            font-weight: 600;
+        }
+
+        /* SVG Elements */
+        .bond {
+            stroke: #95A5A6;
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+        .atom {
+            filter: url(#shadow);
+        }
+
+        /* Animations */
+        .aa1-group { animation: slide-aa1 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .aa2-group { animation: slide-aa2 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .leaving-group { animation: leaving-fade 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .water-molecule { animation: water-float 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .peptide-bond { animation: draw-bond 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .dehydration-label { animation: dehydration-label 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .peptide-label-group { animation: peptide-label 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .pulse-text { animation: pulse-color 12s infinite; }
+
+        /* Keyframes */
+        @keyframes slide-aa1 {
+            0%, 20% { transform: translateX(0); opacity: 1; }
+            35%, 85% { transform: translateX(60px); opacity: 1; }
+            85.1%, 90% { transform: translateX(60px); opacity: 0; }
+            91%, 95% { transform: translateX(0); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes slide-aa2 {
+            0%, 20% { transform: translateX(0); opacity: 1; }
+            35%, 85% { transform: translateX(-60px); opacity: 1; }
+            85.1%, 90% { transform: translateX(-60px); opacity: 0; }
+            91%, 95% { transform: translateX(0); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes leaving-fade {
+            0%, 35% { opacity: 1; filter: drop-shadow(0 0 0px rgba(241,196,15,0)); }
+            38%, 40% { opacity: 1; filter: drop-shadow(0 0 8px rgba(241,196,15,0.9)); }
+            42%, 90% { opacity: 0; filter: drop-shadow(0 0 8px rgba(241,196,15,0.9)); }
+            91%, 100% { opacity: 1; filter: drop-shadow(0 0 0px rgba(241,196,15,0)); }
+        }
+
+        @keyframes water-float {
+            0%, 40% { opacity: 0; transform: translateY(0) scale(0.8); }
+            42% { opacity: 1; transform: translateY(0) scale(1); }
+            55% { opacity: 1; transform: translateY(-70px) scale(1); }
+            60%, 100% { opacity: 0; transform: translateY(-90px) scale(1); }
+        }
+
+        @keyframes draw-bond {
+            0%, 58% { stroke-dashoffset: 100; opacity: 0; }
+            60% { stroke-dashoffset: 100; opacity: 1; }
+            70%, 85% { stroke-dashoffset: 0; opacity: 1; }
+            85.1%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes dehydration-label {
+            0%, 40% { opacity: 0; transform: translateY(10px); }
+            45%, 55% { opacity: 1; transform: translateY(0); }
+            60%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes peptide-label {
+            0%, 65% { opacity: 0; transform: translateY(10px); }
+            70%, 85% { opacity: 1; transform: translateY(0); }
+            85.1%, 100% { opacity: 0; transform: translateY(0); }
+        }
+
+        @keyframes pulse-color {
+            0%, 15% { fill: #7F8C8D; font-weight: 600; }
+            20%, 25% { fill: #E74C3C; font-weight: 700; }
+            30%, 100% { fill: #7F8C8D; font-weight: 600; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-labelledby="svg-title svg-desc" role="img">
+        <title id="svg-title">Amino Acid Structure and Peptide Bond Formation</title>
+        <desc id="svg-desc">An animated diagram showing two amino acids undergoing dehydration synthesis to form a peptide bond and release a water molecule.</desc>
+
+        <!-- Definitions for Filters and Markers -->
+        <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.15"/>
+            </filter>
+            <marker id="arrow-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="#7F8C8D"/>
+            </marker>
+            <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M0,0 L10,5 L0,10 Z" fill="#27AE60"/>
+            </marker>
+        </defs>
+
+        <!-- Title and Subtitle -->
+        <text x="400" y="45" font-size="24" font-weight="700" text-anchor="middle">Amino Acid Structure &amp; Peptide Bond Formation</text>
+        <text x="400" y="70" font-size="14" fill="#7F8C8D" text-anchor="middle">Dehydration synthesis links amino acids by forming a peptide bond and releasing water.</text>
+
+        <!-- Peptide Bond (Drawn behind atoms) -->
+        <line class="peptide-bond" x1="350" y1="300" x2="450" y2="300" stroke="#98D8C8" stroke-width="8" stroke-dasharray="100" stroke-dashoffset="100" stroke-linecap="round"/>
+
+        <!-- Amino Acid 1 (Left) -->
+        <g class="aa1-group">
+            <!-- Labels & Leader Lines for AA1 -->
+            <line x1="80" y1="300" x2="125" y2="300" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+            <text x="75" y="300" class="annotation pulse-text" text-anchor="end" dominant-baseline="central">Amino Group</text>
+
+            <line x1="290" y1="180" x2="290" y2="215" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+            <text x="290" y="170" class="annotation pulse-text" text-anchor="middle">Carboxyl Group</text>
+
+            <line x1="185" y1="235" x2="205" y2="275" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+            <text x="180" y="230" class="annotation" text-anchor="end">α-Carbon</text>
+
+            <line x1="220" y1="430" x2="220" y2="405" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+            <text x="220" y="445" class="annotation" text-anchor="middle">Side Chain (R)</text>
+
+            <!-- Bonds -->
+            <g class="bonds">
+                <line class="bond" x1="150" y1="300" x2="220" y2="300"/> <!-- N to C_alpha -->
+                <line class="bond" x1="220" y1="300" x2="290" y2="300"/> <!-- C_alpha to C -->
+                <line class="bond" x1="220" y1="300" x2="220" y2="380"/> <!-- C_alpha to R -->
+                <line class="bond" x1="220" y1="300" x2="220" y2="240"/> <!-- C_alpha to H -->
+                <line class="bond" x1="150" y1="300" x2="120" y2="260"/> <!-- N to H_top -->
+                <line class="bond" x1="150" y1="300" x2="120" y2="340"/> <!-- N to H_bot -->
+                <line class="bond" x1="285" y1="300" x2="285" y2="240"/> <!-- C to O_double (left) -->
+                <line class="bond" x1="295" y1="300" x2="295" y2="240"/> <!-- C to O_double (right) -->
+            </g>
+
+            <!-- Atoms -->
+            <g class="atoms">
+                <circle cx="120" cy="260" r="12" fill="#BDC3C7" class="atom"/><text x="120" y="260" class="chem-text dark">H</text>
+                <circle cx="120" cy="340" r="12" fill="#BDC3C7" class="atom"/><text x="120" y="340" class="chem-text dark">H</text>
+                <circle cx="150" cy="300" r="18" fill="#3498DB" class="atom"/><text x="150" y="300" class="chem-text light">N</text>
+                <circle cx="220" cy="240" r="12" fill="#BDC3C7" class="atom"/><text x="220" y="240" class="chem-text dark">H</text>
+                <circle cx="220" cy="380" r="22" fill="#F39C12" class="atom"/><text x="220" y="380" class="chem-text light">R</text>
+                <circle cx="220" cy="300" r="18" fill="#2C3E50" class="atom"/><text x="220" y="300" class="chem-text light">C</text>
+                <circle cx="290" cy="240" r="18" fill="#E74C3C" class="atom"/><text x="290" y="240" class="chem-text light">O</text>
+                <circle cx="290" cy="300" r="18" fill="#2C3E50" class="atom"/><text x="290" y="300" class="chem-text light">C</text>
+            </g>
+
+            <!-- Leaving OH Group -->
+            <g class="leaving-group">
+                <line class="bond" x1="290" y1="300" x2="340" y2="300"/>
+                <line class="bond" x1="340" y1="300" x2="375" y2="300"/>
+                <circle cx="340" cy="300" r="18" fill="#E74C3C" class="atom"/><text x="340" y="300" class="chem-text light">O</text>
+                <circle cx="375" cy="300" r="12" fill="#BDC3C7" class="atom"/><text x="375" y="300" class="chem-text dark">H</text>
+            </g>
+        </g>
+
+        <!-- Amino Acid 2 (Right) -->
+        <g class="aa2-group">
+            <!-- Labels & Leader Lines for AA2 -->
+            <line x1="510" y1="180" x2="510" y2="275" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+            <text x="510" y="170" class="annotation pulse-text" text-anchor="middle">Amino Group</text>
+
+            <line x1="720" y1="230" x2="665" y2="285" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#arrow-gray)"/>
+            <text x="725" y="225" class="annotation" text-anchor="start">Carboxyl Group</text>
+
+            <!-- Bonds -->
+            <g class="bonds">
+                <line class="bond" x1="510" y1="300" x2="580" y2="300"/> <!-- N to C_alpha -->
+                <line class="bond" x1="580" y1="300" x2="650" y2="300"/> <!-- C_alpha to C -->
+                <line class="bond" x1="580" y1="300" x2="580" y2="380"/> <!-- C_alpha to R -->
+                <line class="bond" x1="580" y1="300" x2="580" y2="240"/> <!-- C_alpha to H -->
+                <line class="bond" x1="510" y1="300" x2="480" y2="350"/> <!-- N to H_bot -->
+                <line class="bond" x1="645" y1="300" x2="645" y2="240"/> <!-- C to O_double (left) -->
+                <line class="bond" x1="655" y1="300" x2="655" y2="240"/> <!-- C to O_double (right) -->
+                <line class="bond" x1="650" y1="300" x2="700" y2="300"/> <!-- C to O_oh -->
+                <line class="bond" x1="700" y1="300" x2="735" y2="300"/> <!-- O_oh to H_oh -->
+            </g>
+
+            <!-- Atoms -->
+            <g class="atoms">
+                <circle cx="480" cy="350" r="12" fill="#BDC3C7" class="atom"/><text x="480" y="350" class="chem-text dark">H</text>
+                <circle cx="510" cy="300" r="18" fill="#3498DB" class="atom"/><text x="510" y="300" class="chem-text light">N</text>
+                <circle cx="580" cy="240" r="12" fill="#BDC3C7" class="atom"/><text x="580" y="240" class="chem-text dark">H</text>
+                <circle cx="580" cy="380" r="22" fill="#F39C12" class="atom"/><text x="580" y="380" class="chem-text light">R</text>
+                <circle cx="580" cy="300" r="18" fill="#2C3E50" class="atom"/><text x="580" y="300" class="chem-text light">C</text>
+                <circle cx="650" cy="240" r="18" fill="#E74C3C" class="atom"/><text x="650" y="240" class="chem-text light">O</text>
+                <circle cx="650" cy="300" r="18" fill="#2C3E50" class="atom"/><text x="650" y="300" class="chem-text light">C</text>
+                <circle cx="700" cy="300" r="18" fill="#E74C3C" class="atom"/><text x="700" y="300" class="chem-text light">O</text>
+                <circle cx="735" cy="300" r="12" fill="#BDC3C7" class="atom"/><text x="735" y="300" class="chem-text dark">H</text>
+            </g>
+
+            <!-- Leaving H Group -->
+            <g class="leaving-group">
+                <line class="bond" x1="510" y1="300" x2="460" y2="300"/>
+                <circle cx="460" cy="300" r="12" fill="#BDC3C7" class="atom"/><text x="460" y="300" class="chem-text dark">H</text>
+            </g>
+        </g>
+
+        <!-- Animated Water Molecule -->
+        <g class="water-molecule">
+            <line class="bond" x1="400" y1="300" x2="375" y2="325"/>
+            <line class="bond" x1="400" y1="300" x2="425" y2="325"/>
+            <circle cx="400" cy="300" r="18" fill="#E74C3C" class="atom"/><text x="400" y="300" class="chem-text light">O</text>
+            <circle cx="375" cy="325" r="12" fill="#BDC3C7" class="atom"/><text x="375" y="325" class="chem-text dark">H</text>
+            <circle cx="425" cy="325" r="12" fill="#BDC3C7" class="atom"/><text x="425" y="325" class="chem-text dark">H</text>
+        </g>
+
+        <!-- Process Labels -->
+        <text class="dehydration-label" x="400" y="160" font-size="16" font-weight="700" fill="#E74C3C" text-anchor="middle">Dehydration Synthesis (-H₂O)</text>
+        
+        <g class="peptide-label-group">
+            <text x="400" y="355" font-size="16" font-weight="700" fill="#27AE60" text-anchor="middle">Peptide Bond</text>
+            <path d="M400,340 L400,315" stroke="#27AE60" stroke-width="2" marker-end="url(#arrow-green)"/>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(0, 460)">
+            <rect x="160" y="-15" width="480" height="30" rx="15" fill="#f8f9fa" stroke="#e9ecef" stroke-width="1"/>
+            
+            <circle cx="180" cy="0" r="8" fill="#2C3E50"/>
+            <text x="195" y="0" font-size="12" fill="#2C3E50" dominant-baseline="central">Carbon</text>
+            
+            <circle cx="260" cy="0" r="8" fill="#3498DB"/>
+            <text x="275" y="0" font-size="12" fill="#2C3E50" dominant-baseline="central">Nitrogen</text>
+            
+            <circle cx="345" cy="0" r="8" fill="#E74C3C"/>
+            <text x="360" y="0" font-size="12" fill="#2C3E50" dominant-baseline="central">Oxygen</text>
+            
+            <circle cx="425" cy="0" r="8" fill="#BDC3C7"/>
+            <text x="440" y="0" font-size="12" fill="#2C3E50" dominant-baseline="central">Hydrogen</text>
+            
+            <circle cx="515" cy="0" r="8" fill="#F39C12"/>
+            <text x="530" y="0" font-size="12" fill="#2C3E50" dominant-baseline="central">R-Group</text>
+
+            <line x1="595" y1="0" x2="615" y2="0" stroke="#98D8C8" stroke-width="4" stroke-linecap="round"/>
+            <text x="625" y="0" font-size="12" fill="#2C3E50" dominant-baseline="central">Peptide Bond</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

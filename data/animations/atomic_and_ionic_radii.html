@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lanthanoid Contraction</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #e9ecef;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            background-color: #f8f9fa;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        /* Typography */
+        .title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 22px;
+            fill: #222;
+        }
+
+        .subtitle {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            fill: #444;
+        }
+
+        .axis-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 13px;
+            fill: #555;
+        }
+
+        .tick-label {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 11px;
+            fill: #666;
+        }
+
+        .annotation {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            fill: #444;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+        }
+
+        .legend-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            fill: #333;
+        }
+
+        /* Animations */
+        .graph-line {
+            stroke-dasharray: 300;
+            stroke-dashoffset: 300;
+            animation: drawGraph 15s ease-in-out infinite;
+        }
+
+        .graph-point {
+            opacity: 0;
+            animation: showPoint 15s ease-in-out infinite;
+        }
+
+        .sweep-group {
+            animation: sweep 15s ease-in-out infinite;
+        }
+
+        .shrink-atom {
+            transform-origin: 90px 80px;
+            animation: shrinkAtom 15s ease-in-out infinite;
+        }
+
+        .shrink-ion {
+            transform-origin: 270px 80px;
+            animation: shrinkIon 15s ease-in-out infinite;
+        }
+
+        .contract-shell {
+            transform-origin: 180px 145px;
+            animation: contractShell 15s ease-in-out infinite;
+        }
+
+        .glow-nucleus {
+            animation: glowNucleus 15s ease-in-out infinite;
+        }
+
+        .pull-arrows {
+            animation: showPull 15s ease-in-out infinite;
+        }
+
+        .rotate-fast {
+            transform-origin: 180px 145px;
+            animation: rotate 4s linear infinite;
+        }
+
+        .rotate-slow {
+            transform-origin: 180px 145px;
+            animation: rotateReverse 12s linear infinite;
+        }
+
+        /* Keyframes */
+        @keyframes drawGraph {
+
+            0%,
+            5% {
+                stroke-dashoffset: 300;
+            }
+
+            20%,
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        @keyframes showPoint {
+
+            0%,
+            5% {
+                opacity: 0;
+            }
+
+            20%,
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes sweep {
+
+            0%,
+            25% {
+                transform: translateX(0);
+                opacity: 0;
+            }
+
+            30% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+
+            80% {
+                transform: translateX(280px);
+                opacity: 1;
+            }
+
+            85%,
+            95% {
+                opacity: 0;
+                transform: translateX(280px);
+            }
+
+            100% {
+                opacity: 0;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes shrinkAtom {
+
+            0%,
+            30% {
+                transform: scale(1);
+            }
+
+            80%,
+            90% {
+                transform: scale(0.90);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes shrinkIon {
+
+            0%,
+            30% {
+                transform: scale(1);
+            }
+
+            80%,
+            90% {
+                transform: scale(0.80);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes contractShell {
+
+            0%,
+            30% {
+                transform: scale(1);
+            }
+
+            80%,
+            90% {
+                transform: scale(0.82);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        @keyframes glowNucleus {
+
+            0%,
+            30% {
+                fill: #FF4444;
+                filter: drop-shadow(0 0 0px #FF4444);
+            }
+
+            80%,
+            90% {
+                fill: #FF0000;
+                filter: drop-shadow(0 0 10px #FF0000);
+            }
+
+            100% {
+                fill: #FF4444;
+                filter: drop-shadow(0 0 0px #FF4444);
+            }
+        }
+
+        @keyframes showPull {
+
+            0%,
+            35% {
+                opacity: 0;
+            }
+
+            45%,
+            75% {
+                opacity: 1;
+            }
+
+            85%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes rotateReverse {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(-360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+        <!-- Definitions -->
+        <defs>
+            <!-- Gradients for Atoms/Ions -->
+            <radialGradient id="lnGrad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#E8E8E8" />
+                <stop offset="50%" stop-color="#C0C0C0" />
+                <stop offset="100%" stop-color="#708090" />
+            </radialGradient>
+            <radialGradient id="ln3Grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#88FFFF" />
+                <stop offset="50%" stop-color="#00FFFF" />
+                <stop offset="100%" stop-color="#0077BE" />
+            </radialGradient>
+
+            <!-- 4f Electron Cloud Gradient -->
+            <radialGradient id="fCloud" cx="50%" cy="50%" r="50%">
+                <stop offset="30%" stop-color="#FF4500" stop-opacity="0.35" />
+                <stop offset="70%" stop-color="#FF4500" stop-opacity="0.15" />
+                <stop offset="100%" stop-color="#FF4500" stop-opacity="0" />
+            </radialGradient>
+
+            <!-- Drop Shadow for Panels -->
+            <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+                <feDropShadow dx="0" dy="3" stdDeviation="4" flood-opacity="0.08" />
+            </filter>
+
+            <!-- Arrow Markers -->
+            <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6"
+                orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#F77F00" />
+            </marker>
+            <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6"
+                orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#7209B7" />
+            </marker>
+            <marker id="arrow-dark" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6"
+                orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#444" />
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Main Title -->
+        <text x="400" y="35" text-anchor="middle" class="title">
+            Lanthanoid Contraction: Atomic (Ln) vs. Ionic (Ln<tspan baseline-shift="super" font-size="0.6em">3+</tspan>)
+            Radii
+        </text>
+
+        <!-- ========================================== -->
+        <!-- LEFT PANEL: TREND GRAPH                    -->
+        <!-- ========================================== -->
+
+        <!-- Graph Grid & Axes -->
+        <g transform="translate(0, 10)">
+            <!-- Grid Lines -->
+            <line x1="80" y1="120" x2="380" y2="120" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="4 4" />
+            <line x1="80" y1="220" x2="380" y2="220" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="4 4" />
+            <line x1="80" y1="320" x2="380" y2="320" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="4 4" />
+            <line x1="80" y1="420" x2="380" y2="420" stroke="#e0e0e0" stroke-width="1" stroke-dasharray="4 4" />
+
+            <!-- Y-Axis Ticks -->
+            <text x="70" y="124" text-anchor="end" class="tick-label">200</text>
+            <text x="70" y="224" text-anchor="end" class="tick-label">150</text>
+            <text x="70" y="324" text-anchor="end" class="tick-label">100</text>
+            <text x="70" y="424" text-anchor="end" class="tick-label">50</text>
+
+            <!-- X-Axis Ticks -->
+            <text x="80" y="440" text-anchor="middle" class="tick-label">La (57)</text>
+            <text x="220" y="440" text-anchor="middle" class="tick-label">Gd (64)</text>
+            <text x="360" y="440" text-anchor="middle" class="tick-label">Lu (71)</text>
+
+            <!-- Axes Lines -->
+            <line x1="80" y1="90" x2="80" y2="420" stroke="#333" stroke-width="2" />
+            <line x1="80" y1="420" x2="390" y2="420" stroke="#333" stroke-width="2" />
+
+            <!-- Axis Labels -->
+            <text x="-255" y="35" transform="rotate(-90)" text-anchor="middle" class="axis-label">Radius (pm)</text>
+            <text x="230" y="470" text-anchor="middle" class="axis-label">Atomic Number (Z)</text>
+
+            <!-- Data Lines (Animated) -->
+            <!-- Ln Path: 187pm -> 173pm (Y: 146 -> 174) -->
+            <path d="M 80 146 Q 220 155 360 174" fill="none" stroke="#404040" stroke-width="3" class="graph-line" />
+            <!-- Ln3+ Path: 103pm -> 86pm (Y: 314 -> 348) -->
+            <path d="M 80 314 Q 220 325 360 348" fill="none" stroke="#0077BE" stroke-width="3" class="graph-line" />
+
+            <!-- Data Points -->
+            <circle cx="80" cy="146" r="4" fill="#404040" class="graph-point" />
+            <circle cx="360" cy="174" r="4" fill="#404040" class="graph-point" />
+            <circle cx="80" cy="314" r="4" fill="#0077BE" class="graph-point" />
+            <circle cx="360" cy="348" r="4" fill="#0077BE" class="graph-point" />
+
+            <!-- Legend -->
+            <rect x="250" y="100" width="120" height="50" rx="4" fill="#fff" stroke="#ccc" stroke-width="1" />
+            <line x1="260" y1="115" x2="280" y2="115" stroke="#404040" stroke-width="3" />
+            <text x="290" y="119" class="legend-text">Ln Atom</text>
+            <line x1="260" y1="135" x2="280" y2="135" stroke="#0077BE" stroke-width="3" />
+            <text x="290" y="139" class="legend-text">Ln<tspan baseline-shift="super" font-size="0.7em">3+</tspan>
+                Ion</text>
+
+            <!-- Sweeping Highlight Line (Z Counter) -->
+            <g class="sweep-group">
+                <line x1="80" y1="100" x2="80" y2="420" stroke="#7209B7" stroke-width="2" stroke-dasharray="6 4" />
+                <rect x="50" y="75" width="60" height="20" rx="10" fill="#7209B7" />
+                <text x="80" y="89" fill="#fff" class="tick-label" text-anchor="middle"
+                    font-weight="bold">Z&uarr;</text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- RIGHT PANEL TOP: ATOMIC COMPARISON         -->
+        <!-- ========================================== -->
+
+        <g transform="translate(420, 60)">
+            <rect x="0" y="0" width="350" height="140" rx="8" fill="#ffffff" stroke="#e0e0e0" filter="url(#shadow)" />
+            <text x="175" y="25" text-anchor="middle" class="subtitle">Radii Contraction (La &rarr; Lu)</text>
+
+            <!-- Neutral Atom -->
+            <g class="shrink-atom">
+                <circle cx="90" cy="80" r="35" fill="url(#lnGrad)" />
+            </g>
+            <text x="90" y="130" text-anchor="middle" class="annotation formula">Ln</text>
+
+            <!-- Tripositive Ion -->
+            <g class="shrink-ion">
+                <circle cx="270" cy="80" r="22" fill="url(#ln3Grad)" />
+            </g>
+            <text x="270" y="130" text-anchor="middle" class="annotation formula">Ln<tspan baseline-shift="super"
+                    font-size="0.7em">3+</tspan></text>
+
+            <!-- Comparison Arrow -->
+            <path d="M 150 80 L 220 80" fill="none" stroke="#ccc" stroke-width="2" stroke-dasharray="4 2"
+                marker-end="url(#arrow-dark)" />
+            <text x="185" y="70" text-anchor="middle" class="annotation" fill="#888" font-size="10px">-3e<tspan
+                    baseline-shift="super" font-size="0.7em">-</tspan></text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- RIGHT PANEL BOTTOM: MECHANISM              -->
+        <!-- ========================================== -->
+
+        <g transform="translate(420, 215)">
+            <rect x="0" y="0" width="350" height="265" rx="8" fill="#ffffff" stroke="#e0e0e0" filter="url(#shadow)" />
+            <text x="175" y="25" text-anchor="middle" class="subtitle">Mechanism: Poor Shielding Effect</text>
+
+            <!-- Atom Cross Section Center: (180, 145) -->
+
+            <!-- Core Shells (Xe core) -->
+            <circle cx="180" cy="145" r="22" fill="#e0e0e0" opacity="0.6" />
+
+            <!-- 4f Fuzzy Cloud -->
+            <circle cx="180" cy="145" r="50" fill="url(#fCloud)" />
+
+            <!-- 4f Electrons (Rotating slowly) -->
+            <g class="rotate-slow" style="transform-origin: 180px 145px;">
+                <!-- Scattered gold dots representing 14 f-electrons -->
+                <circle cx="150" cy="125" r="2.5" fill="#FFD700" />
+                <circle cx="205" cy="120" r="2.5" fill="#FFD700" />
+                <circle cx="165" cy="175" r="2.5" fill="#FFD700" />
+                <circle cx="210" cy="165" r="2.5" fill="#FFD700" />
+                <circle cx="145" cy="155" r="2.5" fill="#FFD700" />
+                <circle cx="185" cy="110" r="2.5" fill="#FFD700" />
+                <circle cx="220" cy="140" r="2.5" fill="#FFD700" />
+                <circle cx="175" cy="180" r="2.5" fill="#FFD700" />
+                <circle cx="140" cy="140" r="2.5" fill="#FFD700" />
+                <circle cx="195" cy="175" r="2.5" fill="#FFD700" />
+                <circle cx="215" cy="125" r="2.5" fill="#FFD700" />
+                <circle cx="160" cy="115" r="2.5" fill="#FFD700" />
+                <circle cx="155" cy="165" r="2.5" fill="#FFD700" />
+                <circle cx="195" cy="115" r="2.5" fill="#FFD700" />
+            </g>
+
+            <!-- 5s/5p Shell -->
+            <circle cx="180" cy="145" r="65" fill="none" stroke="#888" stroke-width="1" stroke-dasharray="4 3" />
+
+            <!-- 6s Outer Shell (Contracts) -->
+            <g class="contract-shell" style="transform-origin: 180px 145px;">
+                <circle cx="180" cy="145" r="95" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="8 4" />
+                <!-- 6s Electrons (Rotating fast) -->
+                <g class="rotate-fast" style="transform-origin: 180px 145px;">
+                    <circle cx="85" cy="145" r="4" fill="#FFF" stroke="#333" stroke-width="1.5" />
+                    <circle cx="275" cy="145" r="4" fill="#FFF" stroke="#333" stroke-width="1.5" />
+                </g>
+            </g>
+
+            <!-- Nucleus (Glows as Z increases) -->
+            <circle cx="180" cy="145" r="12" class="glow-nucleus" />
+            <text x="180" y="149" fill="white" font-size="12" text-anchor="middle" font-weight="bold">+</text>
+
+            <!-- Annotations & Arrows -->
+
+            <!-- Z_eff Arrow -->
+            <path d="M 20 50 Q 80 50 160 130" fill="none" stroke="#7209B7" stroke-width="2"
+                marker-end="url(#arrow-purple)" />
+            <text x="20" y="40" class="annotation" fill="#7209B7" font-weight="bold">Increasing Z<tspan
+                    baseline-shift="sub" font-size="0.7em">eff</tspan></text>
+
+            <!-- 4f Shielding Arrow -->
+            <path d="M 330 220 Q 280 220 225 180" fill="none" stroke="#FF4500" stroke-width="2"
+                marker-end="url(#arrow-orange)" />
+            <text x="330" y="235" text-anchor="end" class="annotation" fill="#FF4500">Poor shielding by <tspan
+                    class="formula">4f</tspan> e<tspan baseline-shift="super" font-size="0.7em">-</tspan></text>
+
+            <!-- Contraction Pull Arrows (Appear during sweep) -->
+            <g class="pull-arrows">
+                <path d="M 180 45 L 180 75" fill="none" stroke="#F77F00" stroke-width="2"
+                    marker-end="url(#arrow-orange)" />
+                <path d="M 180 245 L 180 215" fill="none" stroke="#F77F00" stroke-width="2"
+                    marker-end="url(#arrow-orange)" />
+                <path d="M 80 145 L 110 145" fill="none" stroke="#F77F00" stroke-width="2"
+                    marker-end="url(#arrow-orange)" />
+                <path d="M 280 145 L 250 145" fill="none" stroke="#F77F00" stroke-width="2"
+                    marker-end="url(#arrow-orange)" />
+
+                <text x="180" y="255" text-anchor="middle" class="annotation" fill="#F77F00" font-weight="bold">6s shell
+                    pulled inward</text>
+            </g>
+
+            <!-- Shell Labels -->
+            <text x="180" y="105" text-anchor="middle" class="formula" font-size="10px" fill="#D4AF37">4f</text>
+            <text x="180" y="75" text-anchor="middle" class="formula" font-size="10px" fill="#888">5s, 5p</text>
+            <text x="180" y="40" text-anchor="middle" class="formula" font-size="10px" fill="#333">6s</text>
+        </g>
+
+    </svg>
+
+</body>
+
+</html>

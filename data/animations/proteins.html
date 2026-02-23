@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protein Denaturation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            text-anchor: middle;
+            font-size: 14px;
+        }
+
+        .title { font-size: 26px; font-weight: 700; text-anchor: middle; fill: #222; }
+        .subtitle { font-size: 16px; font-weight: 400; text-anchor: middle; fill: #666; }
+        .state-label { font-size: 18px; font-weight: 600; text-anchor: middle; }
+        .ui-text { font-size: 13px; font-weight: 600; fill: #555; }
+
+        .bond { stroke: #555555; stroke-width: 4; stroke-linecap: round; }
+        .bond.double { stroke: #444444; stroke-width: 3; }
+        
+        .h-bond-line {
+            stroke: #AAAAAA;
+            stroke-width: 3;
+            stroke-dasharray: 6, 5;
+            animation: hbond-break 12s infinite ease-in-out;
+        }
+
+        /* Atom Animations & Styles */
+        #protein-chain {
+            animation: vibrate-and-move 12s infinite ease-in-out;
+            transform-origin: 150px 250px;
+        }
+
+        @keyframes vibrate-and-move {
+            0%, 25% { transform: translate(150px, 250px); }
+            26% { transform: translate(148px, 252px); }
+            28% { transform: translate(152px, 248px); }
+            30% { transform: translate(149px, 251px); }
+            32% { transform: translate(153px, 249px); }
+            34% { transform: translate(147px, 253px); }
+            36% { transform: translate(151px, 247px); }
+            38% { transform: translate(148px, 252px); }
+            40% { transform: translate(150px, 250px); }
+            55%, 85% { transform: translate(280px, 250px); }
+            100% { transform: translate(150px, 250px); }
+        }
+
+        @keyframes hbond-break {
+            0%, 30% { stroke: #AAAAAA; opacity: 1; stroke-width: 3; }
+            35%, 40% { stroke: #FF4444; opacity: 1; stroke-width: 5; }
+            41%, 100% { opacity: 0; }
+        }
+
+        /* Unfolding Kinematics */
+        .u1 { animation: unfold-1 12s infinite ease-in-out; }
+        .u2 { animation: unfold-2 12s infinite ease-in-out; }
+        .u3 { animation: unfold-3 12s infinite ease-in-out; }
+        .u4 { animation: unfold-4 12s infinite ease-in-out; }
+        .u5 { animation: unfold-5 12s infinite ease-in-out; }
+        .u6 { animation: unfold-6 12s infinite ease-in-out; }
+
+        @keyframes unfold-1 { 0%, 40% { transform: translate(90px, 0) rotate(60deg); } 55%, 85% { transform: translate(90px, 0) rotate(15deg); } 100% { transform: translate(90px, 0) rotate(60deg); } }
+        @keyframes unfold-2 { 0%, 40% { transform: translate(90px, 0) rotate(60deg); } 55%, 85% { transform: translate(90px, 0) rotate(-10deg); } 100% { transform: translate(90px, 0) rotate(60deg); } }
+        @keyframes unfold-3 { 0%, 40% { transform: translate(90px, 0) rotate(60deg); } 55%, 85% { transform: translate(90px, 0) rotate(25deg); } 100% { transform: translate(90px, 0) rotate(60deg); } }
+        @keyframes unfold-4 { 0%, 40% { transform: translate(90px, 0) rotate(60deg); } 55%, 85% { transform: translate(90px, 0) rotate(-5deg); } 100% { transform: translate(90px, 0) rotate(60deg); } }
+        @keyframes unfold-5 { 0%, 40% { transform: translate(90px, 0) rotate(60deg); } 55%, 85% { transform: translate(90px, 0) rotate(20deg); } 100% { transform: translate(90px, 0) rotate(60deg); } }
+        @keyframes unfold-6 { 0%, 40% { transform: translate(90px, 0) rotate(60deg); } 55%, 85% { transform: translate(90px, 0) rotate(-15deg); } 100% { transform: translate(90px, 0) rotate(60deg); } }
+
+        /* Heat Waves */
+        .heat-waves path {
+            animation: heat-wave-anim 12s infinite ease-in-out;
+            opacity: 0;
+        }
+        @keyframes heat-wave-anim {
+            0%, 25% { opacity: 0; transform: translateY(20px); }
+            30%, 40% { opacity: 0.8; transform: translateY(0); }
+            45%, 100% { opacity: 0; transform: translateY(-20px); }
+        }
+
+        /* UI Animations */
+        .activity-bar { animation: activity 12s infinite ease-in-out; }
+        @keyframes activity {
+            0%, 40% { width: 150px; fill: #44CC44; }
+            55%, 85% { width: 10px; fill: #FF4444; }
+            100% { width: 150px; fill: #44CC44; }
+        }
+
+        .act-100 { animation: fade-out 12s infinite ease-in-out; }
+        .act-0 { animation: fade-in 12s infinite ease-in-out; opacity: 0; }
+        @keyframes fade-out { 0%, 40% { opacity: 1; } 55%, 85% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes fade-in { 0%, 40% { opacity: 0; } 55%, 85% { opacity: 1; } 100% { opacity: 0; } }
+
+        .fade-element { animation: fade-out 12s infinite ease-in-out; }
+        .fade-in-element { animation: fade-in 12s infinite ease-in-out; opacity: 0; }
+        
+        .water-mol { animation: drift 20s infinite linear; }
+        @keyframes drift {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(20px, -20px) rotate(180deg); }
+            100% { transform: translate(0, 0) rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Atom Gradients for 2.5D effect -->
+            <radialGradient id="grad-c" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#777777" />
+                <stop offset="100%" stop-color="#404040" />
+            </radialGradient>
+            <radialGradient id="grad-o" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FF8888" />
+                <stop offset="100%" stop-color="#FF4444" />
+            </radialGradient>
+            <radialGradient id="grad-n" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#8888FF" />
+                <stop offset="100%" stop-color="#4444FF" />
+            </radialGradient>
+            <radialGradient id="grad-h" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FFFFFF" />
+                <stop offset="100%" stop-color="#CCCCCC" />
+            </radialGradient>
+            <radialGradient id="grad-s" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FFFF66" />
+                <stop offset="100%" stop-color="#FFCC00" />
+            </radialGradient>
+            
+            <!-- R-Group Gradients -->
+            <radialGradient id="grad-r1" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#FFCC66" /><stop offset="100%" stop-color="#FF9900" /></radialGradient>
+            <radialGradient id="grad-r2" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#CC66FF" /><stop offset="100%" stop-color="#9900FF" /></radialGradient>
+            <radialGradient id="grad-r3" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#66CCFF" /><stop offset="100%" stop-color="#0099FF" /></radialGradient>
+            <radialGradient id="grad-r4" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#FF66CC" /><stop offset="100%" stop-color="#FF0099" /></radialGradient>
+            <radialGradient id="grad-r5" cx="30%" cy="30%" r="70%"><stop offset="0%" stop-color="#66FFCC" /><stop offset="100%" stop-color="#00CC99" /></radialGradient>
+
+            <!-- Arrow Marker -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7" />
+            </marker>
+
+            <!-- Water Molecule Template -->
+            <g id="water">
+                <circle cx="0" cy="0" r="6" fill="url(#grad-o)"/>
+                <circle cx="-5" cy="-6" r="4" fill="url(#grad-h)"/>
+                <circle cx="5" cy="-6" r="4" fill="url(#grad-h)"/>
+            </g>
+
+            <!-- Peptide Backbone Template -->
+            <g id="backbone">
+                <line x1="0" y1="0" x2="30" y2="-15" class="bond" />
+                <line x1="30" y1="-15" x2="60" y2="-15" class="bond" />
+                <line x1="60" y1="-15" x2="90" y2="0" class="bond" />
+                <line x1="27" y1="-15" x2="27" y2="-45" class="bond double" />
+                <line x1="33" y1="-15" x2="33" y2="-45" class="bond double" />
+                <line x1="60" y1="-15" x2="60" y2="15" class="bond" />
+                <line x1="0" y1="0" x2="0" y2="30" class="bond" />
+                
+                <circle cx="0" cy="0" r="8" fill="url(#grad-c)" />
+                <circle cx="30" cy="-15" r="7" fill="url(#grad-c)" />
+                <circle cx="30" cy="-45" r="7" fill="url(#grad-o)" />
+                <circle cx="60" cy="-15" r="7" fill="url(#grad-n)" />
+                <circle cx="60" cy="15" r="5" fill="url(#grad-h)" />
+            </g>
+        </defs>
+
+        <!-- Background Water Molecules -->
+        <g opacity="0.4">
+            <use href="#water" x="100" y="100" class="water-mol" style="animation-delay: 0s;" />
+            <use href="#water" x="850" y="150" class="water-mol" style="animation-delay: -3s;" />
+            <use href="#water" x="70" y="450" class="water-mol" style="animation-delay: -7s;" />
+            <use href="#water" x="900" y="500" class="water-mol" style="animation-delay: -11s;" />
+            <use href="#water" x="450" y="80" class="water-mol" style="animation-delay: -15s;" />
+            <use href="#water" x="650" y="550" class="water-mol" style="animation-delay: -5s;" />
+        </g>
+
+        <!-- Headers -->
+        <text x="500" y="45" class="title">Denaturation of Proteins</text>
+        <text x="500" y="70" class="subtitle">Loss of Quaternary, Tertiary, and Secondary Structure</text>
+
+        <!-- State Labels -->
+        <text x="220" y="130" class="state-label fade-element" fill="#222">Native Protein (Active α-Helix)</text>
+        <text x="780" y="130" class="state-label fade-in-element" fill="#FF4444">Denatured Protein (Inactive Coil)</text>
+
+        <!-- Reaction Arrow -->
+        <g class="reaction-arrow">
+            <line x1="420" y1="150" x2="580" y2="150" stroke="#7209B7" stroke-width="4" marker-end="url(#arrow)" />
+            <text x="500" y="135" fill="#7209B7" class="math">ΔT (Heat) or ΔpH</text>
+            <text x="500" y="170" fill="#7209B7" class="ui-text">Disrupts Non-Covalent Bonds</text>
+        </g>
+
+        <!-- Biological Activity Meter -->
+        <g transform="translate(780, 40)">
+            <rect x="0" y="0" width="150" height="16" fill="#EEEEEE" rx="8" stroke="#DDDDDD" stroke-width="1"/>
+            <rect x="0" y="0" width="150" height="16" fill="#44CC44" rx="8" class="activity-bar"/>
+            <text x="75" y="-8" text-anchor="middle" class="ui-text">Biological Activity</text>
+            <text x="165" y="13" class="ui-text act-100" fill="#44CC44">100%</text>
+            <text x="165" y="13" class="ui-text act-0" fill="#FF4444">0%</text>
+        </g>
+
+        <!-- Heat Waves -->
+        <g class="heat-waves">
+            <path d="M 120 480 Q 145 430 170 480 T 220 480" fill="none" stroke="#FF5733" stroke-width="4" stroke-linecap="round"/>
+            <path d="M 180 500 Q 205 450 230 500 T 280 500" fill="none" stroke="#FF5733" stroke-width="4" stroke-linecap="round" style="animation-delay: 0.2s"/>
+            <path d="M 240 470 Q 265 420 290 470 T 340 470" fill="none" stroke="#FF5733" stroke-width="4" stroke-linecap="round" style="animation-delay: 0.4s"/>
+        </g>
+
+        <!-- Annotations (Visible only in Native State) -->
+        <g class="fade-element">
+            <text x="60" y="320" class="ui-text" fill="#7209B7">Intramolecular H-bonds</text>
+            <path d="M 205 315 L 230 315" stroke="#7209B7" stroke-width="2" marker-end="url(#arrow)"/>
+            
+            <text x="60" y="210" class="math" fill="#555">-(C=O)-(NH)-</text>
+            <text x="60" y="228" class="ui-text" fill="#555">Peptide Bond</text>
+            <path d="M 165 224 L 190 224" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+        </g>
+
+        <!-- Main Protein Chain -->
+        <g id="protein-chain">
+            <!-- Disulfide Bridge (Stretches and breaks) -->
+            <line stroke="#FFCC00" stroke-width="4" stroke-dasharray="6,4">
+                <animate attributeName="x1" values="64; 64; 82.2; 82.2; 64" keyTimes="0; 0.4; 0.55; 0.85; 1" dur="12s" repeatCount="indefinite" />
+                <animate attributeName="y1" values="15; 15; 29.0; 29.0; 15" keyTimes="0; 0.4; 0.55; 0.85; 1" dur="12s" repeatCount="indefinite" />
+                <animate attributeName="x2" values="-19; -19; 404.8; 404.8; -19" keyTimes="0; 0.4; 0.55; 0.85; 1" dur="12s" repeatCount="indefinite" />
+                <animate attributeName="y2" values="93; 93; 135.3; 135.3; 93" keyTimes="0; 0.4; 0.55; 0.85; 1" dur="12s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="1; 1; 1; 0; 0; 1" keyTimes="0; 0.4; 0.5; 0.55; 0.85; 1" dur="12s" repeatCount="indefinite" />
+            </line>
+
+            <!-- Unit 0 -->
+            <g class="unit u0">
+                <use href="#backbone" />
+                <circle cx="0" cy="30" r="10" fill="url(#grad-r1)" />
+                <line x1="30" y1="-38" x2="30" y2="135.9" class="h-bond-line" />
+                
+                <!-- Unit 1 -->
+                <g class="unit u1">
+                    <use href="#backbone" />
+                    <circle cx="0" cy="30" r="10" fill="url(#grad-s)" /> <!-- Cysteine -->
+                    <line x1="30" y1="-38" x2="30" y2="135.9" class="h-bond-line" />
+                    
+                    <!-- Unit 2 -->
+                    <g class="unit u2">
+                        <use href="#backbone" />
+                        <circle cx="0" cy="30" r="10" fill="url(#grad-r2)" />
+                        <line x1="30" y1="-38" x2="30" y2="135.9" class="h-bond-line" />
+                        
+                        <!-- Unit 3 -->
+                        <g class="unit u3">
+                            <use href="#backbone" />
+                            <circle cx="0" cy="30" r="10" fill="url(#grad-r3)" />
+                            <line x1="30" y1="-38" x2="30" y2="135.9" class="h-bond-line" />
+                            
+                            <!-- Unit 4 -->
+                            <g class="unit u4">
+                                <use href="#backbone" />
+                                <circle cx="0" cy="30" r="10" fill="url(#grad-r4)" />
+                                
+                                <!-- Unit 5 -->
+                                <g class="unit u5">
+                                    <use href="#backbone" />
+                                    <circle cx="0" cy="30" r="10" fill="url(#grad-s)" /> <!-- Cysteine -->
+                                    
+                                    <!-- Unit 6 -->
+                                    <g class="unit u6">
+                                        <use href="#backbone" />
+                                        <circle cx="0" cy="30" r="10" fill="url(#grad-r5)" />
+                                    </g>
+                                </g>
+                            </g>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(40, 510)" class="legend">
+            <rect x="0" y="0" width="460" height="70" fill="#ffffff" stroke="#E0E0E0" rx="8" opacity="0.9"/>
+            <text x="15" y="25" font-weight="700" font-size="13" fill="#333">Key:</text>
+            
+            <circle cx="65" cy="21" r="6" fill="url(#grad-c)"/><text x="78" y="25" font-size="12" fill="#444">Carbon</text>
+            <circle cx="135" cy="21" r="6" fill="url(#grad-o)"/><text x="148" y="25" font-size="12" fill="#444">Oxygen</text>
+            <circle cx="205" cy="21" r="6" fill="url(#grad-n)"/><text x="218" y="25" font-size="12" fill="#444">Nitrogen</text>
+            <circle cx="285" cy="21" r="6" fill="url(#grad-h)"/><text x="298" y="25" font-size="12" fill="#444">Hydrogen</text>
+            <circle cx="370" cy="21" r="6" fill="url(#grad-s)"/><text x="383" y="25" font-size="12" fill="#444">Sulfur</text>
+            
+            <circle cx="65" cy="50" r="7" fill="url(#grad-r1)"/><text x="78" y="54" font-size="12" fill="#444">Side Chain (R)</text>
+            <line x1="175" y1="50" x2="205" y2="50" stroke="#AAAAAA" stroke-width="3" stroke-dasharray="5,4"/><text x="215" y="54" font-size="12" fill="#444">Hydrogen Bond</text>
+            <line x1="320" y1="50" x2="350" y2="50" stroke="#FFCC00" stroke-width="3" stroke-dasharray="5,4"/><text x="360" y="54" font-size="12" fill="#444">Disulfide Bridge</text>
+        </g>
+    </svg>
+</body>
+</html>

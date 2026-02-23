@@ -37,6 +37,26 @@ interface InsightItem {
     source_title?: string;
 }
 
+interface ExplainState {
+    loading: boolean;
+    text?: string;
+    points?: string[];
+    error?: string;
+}
+
+interface TestState {
+    loading: boolean;
+    question?: string;
+    options?: Record<string, string>;
+    correct_answer?: string;
+    explanation?: string;
+    selected?: string;
+    evaluating?: boolean;
+    feedback?: string;
+    done?: boolean;
+    error?: string;
+}
+
 interface ChapterMeta {
     id: string;
     title: string;
@@ -61,6 +81,59 @@ export default function KnowledgeGraphPage() {
     const [chapterTitle, setChapterTitle] = useState("");
     const [chapterTitles, setChapterTitles] = useState<Record<string, string>>({});
     const [animationUrl, setAnimationUrl] = useState<string | null>(null);
+    const [explainById, setExplainById] = useState<Record<string, ExplainState>>({});
+    const [testById, setTestById] = useState<Record<string, TestState>>({});
+
+    const shouldShowActions = (ins: InsightItem) =>
+        !!ins.id && (ins.type === "MISCONCEPTION" || ins.type === "PARTIAL_UNDERSTANDING");
+
+    const fetchNodeInsights = async (node: GraphNode) => {
+        const token = await getIdToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        if (node.type === "concept") {
+            const res = await fetch(`${API_URL}/api/students/me/insights/concept/${node.id}`, {
+                headers,
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const active = Array.isArray(data)
+                    ? data.filter((ins: InsightItem) => ins.is_active !== false)
+                    : [];
+                setPanelInsights(active);
+                return;
+            }
+            if (node.insight) {
+                setPanelInsights([{
+                    type: node.insight.type,
+                    category: node.insight.category,
+                    content: node.insight.content,
+                    concept_id: node.id,
+                }]);
+            }
+            return;
+        }
+
+        const res = await fetch(`${API_URL}/api/students/me/insights?chapter_id=${chapterId}`, {
+            headers,
+        });
+        if (res.ok) {
+            const data = await res.json();
+            setPanelInsights(Array.isArray(data) ? data : []);
+            return;
+        }
+        const inlineInsights = nodes
+            .filter((n) => n.insight)
+            .map((n) => ({
+                type: n.insight!.type,
+                category: n.insight!.category,
+                content: n.insight!.content,
+                source_id: n.type === "section" ? n.id : undefined,
+                concept_id: n.type === "concept" ? n.id : undefined,
+            }));
+        setPanelInsights(inlineInsights);
+    };
 
     // Fetch graph data
     useEffect(() => {
@@ -138,56 +211,11 @@ export default function KnowledgeGraphPage() {
 
         setPanelLoading(true);
         setPanelInsights([]);
+        setExplainById({});
+        setTestById({});
 
         try {
-            const token = await getIdToken();
-            const headers: Record<string, string> = {};
-            if (token) headers["Authorization"] = `Bearer ${token}`;
-
-            if (node.type === "concept") {
-                // Fetch concept insight log
-                const res = await fetch(`${API_URL}/api/students/me/insights/concept/${node.id}`, {
-                    headers,
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    const active = Array.isArray(data)
-                        ? data.filter((ins: InsightItem) => ins.is_active !== false)
-                        : [];
-                    setPanelInsights(active);
-                } else {
-                    // Fallback: use inline insight from graph data
-                    if (node.insight) {
-                        setPanelInsights([{
-                            type: node.insight.type,
-                            category: node.insight.category,
-                            content: node.insight.content,
-                            concept_id: node.id,
-                        }]);
-                    }
-                }
-            } else {
-                // Chapter/section: fetch all chapter insights
-                const res = await fetch(`${API_URL}/api/students/me/insights?chapter_id=${chapterId}`, {
-                    headers,
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setPanelInsights(Array.isArray(data) ? data : []);
-                } else {
-                    // Fallback: gather inline insights from all nodes
-                    const inlineInsights = nodes
-                        .filter((n) => n.insight)
-                        .map((n) => ({
-                            type: n.insight!.type,
-                            category: n.insight!.category,
-                            content: n.insight!.content,
-                            source_id: n.type === "section" ? n.id : undefined,
-                            concept_id: n.type === "concept" ? n.id : undefined,
-                        }));
-                    setPanelInsights(inlineInsights);
-                }
-            }
+            await fetchNodeInsights(node);
         } catch {
             // Use inline insights as fallback
             if (node.insight) {
@@ -199,6 +227,103 @@ export default function KnowledgeGraphPage() {
             }
         }
         setPanelLoading(false);
+    };
+
+    const runExplain = async (insightId: string) => {
+        setExplainById((prev) => ({ ...prev, [insightId]: { loading: true } }));
+        try {
+            const token = await getIdToken();
+            if (!token) throw new Error("Sign in required.");
+            const res = await fetch(`${API_URL}/api/students/me/insights/${encodeURIComponent(insightId)}/explain`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+            setExplainById((prev) => ({
+                ...prev,
+                [insightId]: {
+                    loading: false,
+                    text: data.explanation || "",
+                    points: Array.isArray(data.key_points) ? data.key_points : [],
+                },
+            }));
+        } catch (e: unknown) {
+            setExplainById((prev) => ({
+                ...prev,
+                [insightId]: { loading: false, error: e instanceof Error ? e.message : "Failed to explain." },
+            }));
+        }
+    };
+
+    const runTest = async (insightId: string) => {
+        setTestById((prev) => ({ ...prev, [insightId]: { loading: true } }));
+        try {
+            const token = await getIdToken();
+            if (!token) throw new Error("Sign in required.");
+            const res = await fetch(`${API_URL}/api/students/me/insights/${encodeURIComponent(insightId)}/test/mcq`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+            setTestById((prev) => ({
+                ...prev,
+                [insightId]: {
+                    loading: false,
+                    question: data.question || "",
+                    options: data.options || {},
+                    correct_answer: data.correct_answer || "A",
+                    explanation: data.explanation || "",
+                    selected: undefined,
+                    done: false,
+                },
+            }));
+        } catch (e: unknown) {
+            setTestById((prev) => ({
+                ...prev,
+                [insightId]: { loading: false, error: e instanceof Error ? e.message : "Failed to generate test." },
+            }));
+        }
+    };
+
+    const evaluateTest = async (insightId: string) => {
+        const t = testById[insightId];
+        if (!t?.selected || !t.question || !t.options || !t.correct_answer) return;
+        setTestById((prev) => ({ ...prev, [insightId]: { ...prev[insightId], evaluating: true, error: undefined } }));
+        try {
+            const token = await getIdToken();
+            if (!token) throw new Error("Sign in required.");
+            const res = await fetch(`${API_URL}/api/students/me/insights/${encodeURIComponent(insightId)}/test/mcq/evaluate`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    question: t.question,
+                    options: t.options,
+                    selected: t.selected,
+                    correct_answer: t.correct_answer,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
+            setTestById((prev) => ({
+                ...prev,
+                [insightId]: {
+                    ...prev[insightId],
+                    evaluating: false,
+                    feedback: data.feedback || "",
+                    done: true,
+                },
+            }));
+            if (selectedNode) {
+                await fetchNodeInsights(selectedNode);
+            }
+        } catch (e: unknown) {
+            setTestById((prev) => ({
+                ...prev,
+                [insightId]: { ...prev[insightId], evaluating: false, error: e instanceof Error ? e.message : "Failed to evaluate." },
+            }));
+        }
     };
 
     // Select chapter node by default
@@ -259,6 +384,142 @@ export default function KnowledgeGraphPage() {
         return order.map((key) => groups[key]);
     }, [panelInsights, selectedNode?.type, chapterId, chapterTitles]);
 
+    const renderInsightActions = (ins: InsightItem) => {
+        if (!shouldShowActions(ins) || !ins.id) return null;
+        const insightId = ins.id;
+        const explainState = explainById[insightId];
+        const testState = testById[insightId];
+        return (
+            <>
+                <div style={{ marginTop: "0.6rem", display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
+                    <button
+                        onClick={() => runExplain(insightId)}
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.25rem",
+                            padding: "0.36rem 0.62rem",
+                            borderRadius: 8,
+                            border: "none",
+                            background: "#13ecda",
+                            color: "#042b28",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            fontFamily: "var(--font-display)",
+                            fontSize: "0.74rem",
+                        }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>bolt</span>
+                        Explain
+                    </button>
+                    <button
+                        onClick={() => runTest(insightId)}
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.25rem",
+                            padding: "0.36rem 0.62rem",
+                            borderRadius: 8,
+                            border: "none",
+                            background: "#3498db",
+                            color: "white",
+                            fontWeight: 800,
+                            cursor: "pointer",
+                            fontFamily: "var(--font-display)",
+                            fontSize: "0.74rem",
+                        }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>quiz</span>
+                        Test
+                    </button>
+                </div>
+
+                {explainState && (
+                    <div style={{ marginTop: "0.55rem", borderRadius: 8, border: "1px solid #bae6fd", background: "#ecfeff", padding: "0.52rem 0.6rem" }}>
+                        {explainState.loading ? (
+                            <p style={{ margin: 0, fontSize: "0.78rem", color: "#0f172a" }}>Generating explanation...</p>
+                        ) : explainState.error ? (
+                            <p style={{ margin: 0, fontSize: "0.78rem", color: "#b91c1c" }}>{explainState.error}</p>
+                        ) : (
+                            <>
+                                <p style={{ margin: 0, fontSize: "0.8rem", color: "#0f172a", lineHeight: 1.45 }}>{explainState.text}</p>
+                                {!!explainState.points?.length && (
+                                    <ul style={{ margin: "0.35rem 0 0", paddingLeft: "0.95rem" }}>
+                                        {explainState.points!.map((p, i) => (
+                                            <li key={i} style={{ fontSize: "0.74rem", color: "#334155", marginBottom: "0.22rem" }}>{p}</li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {testState && (
+                    <div style={{ marginTop: "0.55rem", borderRadius: 8, border: "1px solid #bfdbfe", background: "#eff6ff", padding: "0.6rem" }}>
+                        {testState.loading ? (
+                            <p style={{ margin: 0, fontSize: "0.78rem", color: "#0f172a" }}>Generating MCQ...</p>
+                        ) : testState.error ? (
+                            <p style={{ margin: 0, fontSize: "0.78rem", color: "#b91c1c" }}>{testState.error}</p>
+                        ) : (
+                            <>
+                                <p style={{ margin: 0, fontSize: "0.81rem", color: "#0f172a", fontWeight: 700 }}>{testState.question}</p>
+                                <div style={{ display: "grid", gap: "0.28rem", marginTop: "0.45rem" }}>
+                                    {Object.entries(testState.options || {}).map(([k, v]) => (
+                                        <button
+                                            key={k}
+                                            onClick={() => setTestById((prev) => ({ ...prev, [insightId]: { ...prev[insightId], selected: k } }))}
+                                            style={{
+                                                textAlign: "left",
+                                                borderRadius: 7,
+                                                border: `1px solid ${(testState.selected === k) ? "#2563eb" : "#cbd5e1"}`,
+                                                background: (testState.selected === k) ? "#dbeafe" : "white",
+                                                padding: "0.36rem 0.45rem",
+                                                cursor: "pointer",
+                                                fontSize: "0.74rem",
+                                                color: "#0f172a",
+                                                fontFamily: "var(--font-body)",
+                                            }}
+                                        >
+                                            <strong>{k}.</strong> {v}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div style={{ marginTop: "0.45rem", display: "flex", gap: "0.4rem", alignItems: "center", flexWrap: "wrap" }}>
+                                    <button
+                                        onClick={() => evaluateTest(insightId)}
+                                        disabled={!testState.selected || !!testState.evaluating}
+                                        style={{
+                                            border: "none",
+                                            borderRadius: 7,
+                                            background: "#1d4ed8",
+                                            color: "white",
+                                            fontSize: "0.72rem",
+                                            fontWeight: 800,
+                                            padding: "0.32rem 0.62rem",
+                                            cursor: (!testState.selected || !!testState.evaluating) ? "not-allowed" : "pointer",
+                                            opacity: (!testState.selected || !!testState.evaluating) ? 0.6 : 1,
+                                        }}
+                                    >
+                                        {testState.evaluating ? "Checking..." : "Submit Test"}
+                                    </button>
+                                    {testState.done && (
+                                        <span style={{ fontSize: "0.7rem", color: "#065f46", fontWeight: 700 }}>
+                                            Reconciled and saved.
+                                        </span>
+                                    )}
+                                </div>
+                                {!!testState.feedback && (
+                                    <p style={{ margin: "0.38rem 0 0", fontSize: "0.74rem", color: "#1e3a8a" }}>{testState.feedback}</p>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
+            </>
+        );
+    };
+
     if (loading) {
         return (
             <div className="kg-page">
@@ -312,7 +573,7 @@ export default function KnowledgeGraphPage() {
                         animation: "kg-fade-in 1s ease-out 2s both"
                     }}>
                         <span className="material-symbols-outlined" style={{ fontSize: "1.25rem", color: "var(--primary)" }}>info</span>
-                        Select any node to view insights & 3D animations
+                        Select any node to view insights & animations
                     </div>
                     {/* SVG Edges & Particles */}
                     <svg className="kg-edges">
@@ -456,7 +717,7 @@ export default function KnowledgeGraphPage() {
                                         onClick={() => setAnimationUrl(animSrc)}
                                     >
                                         <span className="material-symbols-outlined" style={{ fontSize: '1.125rem' }}>play_circle</span>
-                                        View 3D Animation
+                                        View Animation
                                     </button>
                                 );
                             })()}
@@ -543,6 +804,7 @@ export default function KnowledgeGraphPage() {
                                                             Subsection: {ins.source_title || ins.source_id}
                                                         </p>
                                                     )}
+                                                    {renderInsightActions(ins)}
                                                 </div>
                                             ))}
                                         </div>
@@ -572,6 +834,7 @@ export default function KnowledgeGraphPage() {
                                                 )}
                                             </div>
                                             <p className="kg-insight-content">{ins.content}</p>
+                                            {renderInsightActions(ins)}
                                         </div>
                                     ))
                                 )}

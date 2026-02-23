@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solenoid Magnetization & Field Dynamics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            color: #333;
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #ui-panel {
+            width: 25%;
+            min-width: 300px;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 2px 0 15px rgba(0, 0, 0, 0.03);
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        #canvas-container {
+            width: 75%;
+            flex-grow: 1;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+        }
+
+        p.desc {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.03);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #444;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: #e2e8f0;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            color: #1a202c;
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Specific slider colors */
+        #current::-webkit-slider-thumb {
+            background: #F77F00;
+        }
+
+        #turns::-webkit-slider-thumb {
+            background: #4361EE;
+        }
+
+        #chi::-webkit-slider-thumb {
+            background: #FF3366;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .toggle-container input {
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+            accent-color: #7209B7;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            padding: 1.5rem;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            pointer-events: none;
+        }
+
+        .formula-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .math-b {
+            color: #7209B7;
+        }
+
+        .math-h {
+            color: #4361EE;
+        }
+
+        .math-m {
+            color: #FF3366;
+        }
+
+        .math-mu {
+            color: #555;
+        }
+
+        .live-values {
+            margin-top: 1rem;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 0.5rem 1rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .vector-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: opacity 0.2s;
+        }
+
+        #label-h {
+            color: #4361EE;
+            border: 1px solid #4361EE;
+        }
+
+        #label-m {
+            color: #FF3366;
+            border: 1px solid #FF3366;
+        }
+
+        #label-b {
+            color: #7209B7;
+            border: 1px solid #7209B7;
+        }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+            color: #666;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 1rem;
+            border-radius: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="ui-panel">
+        <div>
+            <h1>Solenoid Field Dynamics</h1>
+            <p class="desc">Explore the relationship between Magnetic Intensity (H), Magnetization (M), and Total
+                Magnetic Field (B).</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="current">Current (I)</label>
+                <span class="value-display" id="val-current">2.0 A</span>
+            </div>
+            <input type="range" id="current" min="-10" max="10" step="0.1" value="2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="turns">Turn Density (n)</label>
+                <span class="value-display" id="val-turns">500 m⁻¹</span>
+            </div>
+            <input type="range" id="turns" min="100" max="1000" step="50" value="500">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="chi">Susceptibility (χm)</label>
+                <span class="value-display" id="val-chi">10</span>
+            </div>
+            <input type="range" id="chi" min="0" max="100" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <label class="toggle-container">
+                <input type="checkbox" id="core" checked>
+                <span>Show Magnetic Core & Dipoles</span>
+            </label>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="color-box" style="background:#F77F00"></div> Solenoid Current
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background:#4361EE"></div> H-Field (Intensity)
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background:#FF3366"></div> M-Field (Magnetization)
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background:#7209B7"></div> B-Field (Total)
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Superposition Principle</div>
+            <div class="math">
+                <span class="math-b">B</span> = <span class="math-mu">μ₀</span>(<span class="math-h">H</span> + <span
+                    class="math-m">M</span>)
+            </div>
+            <div class="live-values">
+                <span class="math-h">|H|:</span> <span id="live-h">0.00</span>
+                <span class="math-m">|M|:</span> <span id="live-m">0.00</span>
+                <span class="math-b">|B|:</span> <span id="live-b">0.00</span>
+            </div>
+        </div>
+
+        <div id="label-h" class="vector-label">H</div>
+        <div id="label-m" class="vector-label">M</div>
+        <div id="label-b" class="vector-label">B</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Setup & Initialization ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(15, 10, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-10, -10, -10);
+        scene.add(backLight);
+
+        // --- Constants & Variables ---
+        const SOLENOID_RADIUS = 2.5;
+        const SOLENOID_LENGTH = 12;
+        let currentN = 500;
+
+        // Colors
+        const COLOR_COPPER = 0xF77F00;
+        const COLOR_CORE = 0xB0C4DE;
+        const COLOR_H = 0x4361EE;
+        const COLOR_M = 0xFF3366;
+        const COLOR_B = 0x7209B7;
+
+        // --- Procedural Textures ---
+        function createCoilTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+
+            // Base copper
+            ctx.fillStyle = '#F77F00';
+            ctx.fillRect(0, 0, 64, 128);
+
+            // Highlight/Shadow for 3D wire effect
+            const gradient = ctx.createLinearGradient(0, 0, 64, 0);
+            gradient.addColorStop(0, 'rgba(0,0,0,0.4)');
+            gradient.addColorStop(0.5, 'rgba(255,255,255,0.6)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0.4)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 128);
+
+            // Wire gap
+            ctx.fillStyle = '#8a4700';
+            ctx.fillRect(0, 110, 64, 18);
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            return tex;
+        }
+        const coilTexture = createCoilTexture();
+
+        // --- Objects Creation ---
+
+        // 1. Solenoid
+        class SolenoidCurve extends THREE.Curve {
+            constructor(turns, radius, length) {
+                super();
+                this.turns = turns;
+                this.radius = radius;
+                this.length = length;
+            }
+            getPoint(t, optionalTarget = new THREE.Vector3()) {
+                const y = (t - 0.5) * this.length;
+                const angle = t * Math.PI * 2 * this.turns;
+                const x = Math.cos(angle) * this.radius;
+                const z = Math.sin(angle) * this.radius;
+                return optionalTarget.set(x, y, z);
+            }
+        }
+
+        let solenoidMesh;
+        const solenoidMat = new THREE.MeshStandardMaterial({
+            map: coilTexture,
+            roughness: 0.4,
+            metalness: 0.6
+        });
+
+        function buildSolenoid(n) {
+            if (solenoidMesh) scene.remove(solenoidMesh);
+            // Scale visual turns to keep performance good (10 to 100 turns visually)
+            const visualTurns = Math.max(10, Math.floor(n / 10));
+            const path = new SolenoidCurve(visualTurns, SOLENOID_RADIUS, SOLENOID_LENGTH);
+            const geometry = new THREE.TubeGeometry(path, visualTurns * 12, 0.15, 8, false);
+
+            coilTexture.repeat.set(1, visualTurns * 4);
+
+            solenoidMesh = new THREE.Mesh(geometry, solenoidMat);
+            scene.add(solenoidMesh);
+        }
+        buildSolenoid(currentN);
+
+        // 2. Magnetic Core
+        const coreGeo = new THREE.CylinderGeometry(SOLENOID_RADIUS - 0.2, SOLENOID_RADIUS - 0.2, SOLENOID_LENGTH + 1, 32);
+        const coreMat = new THREE.MeshPhysicalMaterial({
+            color: COLOR_CORE,
+            transparent: true,
+            opacity: 0.25,
+            roughness: 0.1,
+            transmission: 0.5,
+            depthWrite: false
+        });
+        const coreMesh = new THREE.Mesh(coreGeo, coreMat);
+        scene.add(coreMesh);
+
+        // 3. Atomic Dipoles (InstancedMesh)
+        const dipoleCount = 250;
+        const dipoleGeo = new THREE.ConeGeometry(0.12, 0.6, 8);
+        dipoleGeo.translate(0, 0.3, 0); // Pivot at base
+        const dipoleMat = new THREE.MeshPhongMaterial({ color: COLOR_M, shininess: 100 });
+        const dipoles = new THREE.InstancedMesh(dipoleGeo, dipoleMat, dipoleCount);
+
+        const dummy = new THREE.Object3D();
+        const initialQuats = [];
+        const dipolePositions = [];
+
+        for (let i = 0; i < dipoleCount; i++) {
+            // Random position inside core
+            const r = (SOLENOID_RADIUS - 0.4) * Math.sqrt(Math.random());
+            const theta = Math.random() * 2 * Math.PI;
+            const y = (Math.random() - 0.5) * SOLENOID_LENGTH;
+            const pos = new THREE.Vector3(r * Math.cos(theta), y, r * Math.sin(theta));
+            dipolePositions.push(pos);
+
+            // Random initial rotation
+            const axis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize();
+            const angle = Math.random() * Math.PI * 2;
+            const quat = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+            initialQuats.push(quat);
+
+            dummy.position.copy(pos);
+            dummy.quaternion.copy(quat);
+            dummy.updateMatrix();
+            dipoles.setMatrixAt(i, dummy.matrix);
+        }
+        scene.add(dipoles);
+
+        // 4. Field Lines
+        const fieldLines = [];
+        const numLines = 8;
+        const lineMat = new THREE.LineDashedMaterial({
+            color: COLOR_B,
+            linewidth: 2,
+            dashSize: 0.4,
+            gapSize: 0.4
+        });
+
+        for (let i = 0; i < numLines; i++) {
+            const angle = (i / numLines) * Math.PI * 2;
+            const rIn = 1.0 + (i % 2) * 0.8; // Staggered radii inside
+            const rOut = SOLENOID_RADIUS + 3 + (i % 2) * 2;
+
+            const pts = [
+                new THREE.Vector3(0, -SOLENOID_LENGTH, 0),
+                new THREE.Vector3(rIn, -SOLENOID_LENGTH / 2, 0),
+                new THREE.Vector3(rIn, SOLENOID_LENGTH / 2, 0),
+                new THREE.Vector3(0, SOLENOID_LENGTH, 0),
+                new THREE.Vector3(rOut, SOLENOID_LENGTH * 0.8, 0),
+                new THREE.Vector3(rOut + 2, 0, 0),
+                new THREE.Vector3(rOut, -SOLENOID_LENGTH * 0.8, 0),
+            ];
+
+            const curve = new THREE.CatmullRomCurve3(pts, true);
+            const points = curve.getPoints(100);
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+
+            // Rotate loop
+            geo.rotateY(angle);
+
+            const line = new THREE.Line(geo, lineMat.clone());
+            line.computeLineDistances();
+            scene.add(line);
+            fieldLines.push(line);
+        }
+
+        // 5. Vectors (H, M, B)
+        function createVectorArrow(color, xOffset) {
+            const group = new THREE.Group();
+
+            const shaftGeo = new THREE.CylinderGeometry(0.15, 0.15, 1, 16);
+            shaftGeo.translate(0, 0.5, 0);
+            const shaftMat = new THREE.MeshPhongMaterial({ color: color });
+            const shaft = new THREE.Mesh(shaftGeo, shaftMat);
+
+            const headGeo = new THREE.ConeGeometry(0.4, 0.8, 16);
+            headGeo.translate(0, 0.4, 0);
+            const headMat = new THREE.MeshPhongMaterial({ color: color });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 1; // Will be updated dynamically
+
+            group.add(shaft);
+            group.add(head);
+            group.position.x = xOffset;
+
+            // Store references for easy updating
+            group.userData = { shaft: shaft, head: head };
+            scene.add(group);
+            return group;
+        }
+
+        // Place them side by side for comparison
+        const arrowH = createVectorArrow(COLOR_H, -1.5);
+        const arrowM = createVectorArrow(COLOR_M, 0);
+        const arrowB = createVectorArrow(COLOR_B, 1.5);
+
+        // --- UI Elements ---
+        const uiI = document.getElementById('current');
+        const uiN = document.getElementById('turns');
+        const uiChi = document.getElementById('chi');
+        const uiCore = document.getElementById('core');
+
+        const valI = document.getElementById('val-current');
+        const valN = document.getElementById('val-turns');
+        const valChi = document.getElementById('val-chi');
+
+        const liveH = document.getElementById('live-h');
+        const liveM = document.getElementById('live-m');
+        const liveB = document.getElementById('live-b');
+
+        const labelH = document.getElementById('label-h');
+        const labelM = document.getElementById('label-m');
+        const labelB = document.getElementById('label-b');
+
+        // --- Physics & Animation Loop ---
+
+        function updateVectorVisuals(arrow, magnitude) {
+            const absMag = Math.abs(magnitude);
+            if (absMag < 0.1) {
+                arrow.visible = false;
+                return false;
+            }
+            arrow.visible = true;
+
+            // Scale shaft
+            arrow.userData.shaft.scale.set(1, absMag, 1);
+            // Position head at end of shaft
+            arrow.userData.head.position.y = absMag;
+
+            // Direction
+            arrow.rotation.x = magnitude < 0 ? Math.PI : 0;
+            // Adjust Y position so they originate from center
+            arrow.position.y = magnitude < 0 ? 0 : 0;
+
+            return true;
+        }
+
+        function updateLabelPosition(arrow, labelElement, isVisible, magnitude) {
+            if (!isVisible) {
+                labelElement.style.opacity = 0;
+                return;
+            }
+            labelElement.style.opacity = 1;
+
+            // Get tip position
+            const tipPos = new THREE.Vector3(0, Math.abs(magnitude) + 1.0, 0);
+            tipPos.applyMatrix4(arrow.matrixWorld);
+
+            tipPos.project(camera);
+
+            const x = (tipPos.x * .5 + .5) * container.clientWidth;
+            const y = (tipPos.y * -.5 + .5) * container.clientHeight;
+
+            labelElement.style.left = `${x}px`;
+            labelElement.style.top = `${y}px`;
+        }
+
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            // Read inputs
+            const I = parseFloat(uiI.value);
+            const n = parseFloat(uiN.value);
+            const chi = parseFloat(uiChi.value);
+            const showCore = uiCore.checked;
+
+            // Update UI text
+            valI.innerText = I.toFixed(1) + ' A';
+            valN.innerText = n + ' m⁻¹';
+            valChi.innerText = chi;
+
+            // Rebuild solenoid if n changed significantly
+            if (Math.abs(n - currentN) > 10) {
+                currentN = n;
+                buildSolenoid(currentN);
+            }
+
+            // --- PHYSICS CALCULATIONS ---
+            // Scale factors are chosen purely for visual fitting on screen
+            const scaleH = 0.0015;
+            const maxVisualM = 5.0;
+
+            // 1. H = n * I
+            const H_val = n * I;
+            const H_vis = H_val * scaleH;
+
+            // 2. M = chi * H (with visual saturation using tanh)
+            // In linear region M = chi * H. We use tanh to simulate saturation of dipoles.
+            const M_val = chi * H_val;
+            const M_vis = maxVisualM * Math.tanh((Math.abs(H_val) * chi) * 0.00005) * Math.sign(H_val);
+
+            // 3. B = mu0 (H + M)
+            // Visually, B vector length is exactly H length + M length
+            const B_vis = H_vis + M_vis;
+
+            // Update live formula values
+            liveH.innerText = Math.abs(H_val).toFixed(0);
+            liveM.innerText = Math.abs(M_val).toFixed(0);
+            liveB.innerText = Math.abs(H_val + M_val).toFixed(0); // Ignoring mu0 scale for display clarity
+
+            // --- VISUAL UPDATES ---
+
+            // Update Vectors
+            const visH = updateVectorVisuals(arrowH, H_vis);
+            const visM = updateVectorVisuals(arrowM, M_vis);
+            const visB = updateVectorVisuals(arrowB, B_vis);
+
+            updateLabelPosition(arrowH, labelH, visH, H_vis);
+            updateLabelPosition(arrowM, labelM, visM, M_vis);
+            updateLabelPosition(arrowB, labelB, visB, B_vis);
+
+            // Update Solenoid Current Flow (Texture Animation)
+            solenoidMat.map.offset.y -= I * delta * 0.5;
+
+            // Update Core & Dipoles Visibility
+            coreMesh.visible = showCore;
+            dipoles.visible = showCore;
+
+            // Update Dipole Alignment
+            if (showCore) {
+                // Alignment factor based on H and chi
+                const alignStrength = Math.abs(H_val) * chi * 0.0001;
+                const lerpAmt = Math.min(alignStrength, 1.0);
+
+                // Target rotation: Up (+Y) if H>0, Down (-Y) if H<0
+                const targetQ = new THREE.Quaternion();
+                if (H_val < 0) {
+                    targetQ.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
+                }
+
+                for (let i = 0; i < dipoleCount; i++) {
+                    // Thermal agitation (randomness) decreases as alignment increases
+                    dummy.quaternion.copy(initialQuats[i]).slerp(targetQ, lerpAmt);
+                    dummy.position.copy(dipolePositions[i]);
+                    dummy.updateMatrix();
+                    dipoles.setMatrixAt(i, dummy.matrix);
+                }
+                dipoles.instanceMatrix.needsUpdate = true;
+            }
+
+            // Update Field Lines
+            const bMagAbs = Math.abs(B_vis);
+            fieldLines.forEach(line => {
+                if (bMagAbs < 0.2) {
+                    line.visible = false;
+                } else {
+                    line.visible = true;
+                    // Pulse speed proportional to B
+                    line.material.dashOffset -= Math.sign(B_vis) * bMagAbs * delta * 2.0;
+                }
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        animate();
+
+    </script>
+</body>
+
+</html>

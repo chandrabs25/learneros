@@ -301,7 +301,7 @@ export default function ConceptsPage() {
                             <span className="material-symbols-outlined" style={{ fontSize: 64, opacity: 0.2, marginBottom: 16 }}>science</span>
                             <p style={{ fontWeight: 700, fontSize: 18, margin: 0 }}>No concept animations</p>
                             <p style={{ fontSize: 14, color: "rgba(26,26,26,0.5)", textAlign: "center", maxWidth: 400, marginTop: 8 }}>
-                                Interactive 3D animations will appear here when available for the concepts covered in this lesson.
+                                Interactive animations will appear here when available for the concepts covered in this lesson.
                             </p>
                         </div>
                     ) : animationSrc ? (
@@ -378,7 +378,7 @@ export default function ConceptsPage() {
                                             <span className="material-symbols-outlined" style={{ fontSize: 40, color: "rgba(26,26,26,0.15)" }}>psychology</span>
                                             <p style={{ margin: "12px 0 4px", fontSize: 14, fontWeight: 700, color: "rgba(26,26,26,0.6)" }}>No insights yet</p>
                                             <p style={{ margin: 0, fontSize: 13, color: "rgba(26,26,26,0.4)", lineHeight: 1.5 }}>
-                                                Complete exercises and interact with the AI Tutor to build your learning profile.
+                                                Complete exercises and interact with LearnerOS Tutor to build your learning profile.
                                             </p>
                                         </div>
                                     ) : (

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atomic Orbital Symmetry and Molecular Orbital Formation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* CSS Animations */
+        .stage {
+            will-change: opacity;
+            animation-duration: 15s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+        }
+
+        .anim-transform {
+            will-change: transform, opacity;
+            animation-duration: 15s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+        }
+
+        /* Stage 1: s-s Sigma */
+        #stage1 { animation-name: s1-vis; }
+        #s1-left { animation-name: s1-left-anim; }
+        #s1-right { animation-name: s1-right-anim; }
+        #s1-merged { animation-name: s1-merged-anim; }
+
+        @keyframes s1-vis {
+            0%, 28% { opacity: 1; pointer-events: auto; }
+            32%, 100% { opacity: 0; pointer-events: none; }
+        }
+        @keyframes s1-left-anim {
+            0%, 3% { transform: translate(200px, 250px); opacity: 1; }
+            10%, 15% { transform: translate(340px, 250px); opacity: 0; }
+            16%, 100% { transform: translate(340px, 250px); opacity: 0; }
+        }
+        @keyframes s1-right-anim {
+            0%, 3% { transform: translate(600px, 250px); opacity: 1; }
+            10%, 15% { transform: translate(460px, 250px); opacity: 0; }
+            16%, 100% { transform: translate(460px, 250px); opacity: 0; }
+        }
+        @keyframes s1-merged-anim {
+            0%, 8% { opacity: 0; transform: translate(400px, 250px) scale(0.8); }
+            12%, 28% { opacity: 1; transform: translate(400px, 250px) scale(1); }
+            32%, 100% { opacity: 0; transform: translate(400px, 250px) scale(1); }
+        }
+
+        /* Stage 3: p-p Sigma */
+        #stage3 { animation-name: s3-vis; opacity: 0; }
+        #s3-left { animation-name: s3-left-anim; }
+        #s3-right { animation-name: s3-right-anim; }
+        #s3-merged { animation-name: s3-merged-anim; }
+
+        @keyframes s3-vis {
+            0%, 30% { opacity: 0; pointer-events: none; }
+            34%, 62% { opacity: 1; pointer-events: auto; }
+            66%, 100% { opacity: 0; pointer-events: none; }
+        }
+        @keyframes s3-left-anim {
+            0%, 36% { transform: translate(200px, 250px); opacity: 1; }
+            43%, 48% { transform: translate(320px, 250px); opacity: 0; }
+            100% { transform: translate(320px, 250px); opacity: 0; }
+        }
+        @keyframes s3-right-anim {
+            0%, 36% { transform: translate(600px, 250px); opacity: 1; }
+            43%, 48% { transform: translate(480px, 250px); opacity: 0; }
+            100% { transform: translate(480px, 250px); opacity: 0; }
+        }
+        @keyframes s3-merged-anim {
+            0%, 41% { opacity: 0; transform: translate(400px, 250px) scale(0.8); }
+            45%, 62% { opacity: 1; transform: translate(400px, 250px) scale(1); }
+            66%, 100% { opacity: 0; transform: translate(400px, 250px) scale(1); }
+        }
+
+        /* Stage 5: p-p Pi */
+        #stage5 { animation-name: s5-vis; opacity: 0; }
+        #s5-left { animation-name: s5-left-anim; }
+        #s5-right { animation-name: s5-right-anim; }
+        #s5-merged { animation-name: s5-merged-anim; }
+        #s5-node { animation-name: s5-node-anim; }
+
+        @keyframes s5-vis {
+            0%, 63% { opacity: 0; pointer-events: none; }
+            67%, 95% { opacity: 1; pointer-events: auto; }
+            99%, 100% { opacity: 0; pointer-events: none; }
+        }
+        @keyframes s5-left-anim {
+            0%, 70% { transform: translate(250px, 250px); opacity: 1; }
+            77%, 82% { transform: translate(340px, 250px); opacity: 0; }
+            100% { transform: translate(340px, 250px); opacity: 0; }
+        }
+        @keyframes s5-right-anim {
+            0%, 70% { transform: translate(550px, 250px); opacity: 1; }
+            77%, 82% { transform: translate(460px, 250px); opacity: 0; }
+            100% { transform: translate(460px, 250px); opacity: 0; }
+        }
+        @keyframes s5-merged-anim {
+            0%, 75% { opacity: 0; transform: translate(400px, 250px) scale(0.8); }
+            79%, 95% { opacity: 1; transform: translate(400px, 250px) scale(1); }
+            100% { opacity: 0; transform: translate(400px, 250px) scale(1); }
+        }
+        @keyframes s5-node-anim {
+            0%, 77% { opacity: 0; stroke-dashoffset: 20; }
+            80%, 95% { opacity: 1; stroke-dashoffset: 0; }
+            100% { opacity: 0; }
+        }
+
+        .formula { font-family: 'Roboto Mono', monospace; font-size: 22px; fill: #333; font-weight: 600; }
+        .label { font-family: 'Inter', sans-serif; font-size: 16px; fill: #555; }
+        .title { font-family: 'Inter', sans-serif; font-size: 26px; fill: #222; font-weight: 700; }
+        .legend-text { font-family: 'Inter', sans-serif; font-size: 13px; fill: #444; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Gradients for 3D Orbital Cloud Effect -->
+            <radialGradient id="blue-grad" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#8888FF" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#4444FF" stop-opacity="0.4"/>
+            </radialGradient>
+            <radialGradient id="red-grad" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#FF8888" stop-opacity="0.9"/>
+                <stop offset="100%" stop-color="#FF4444" stop-opacity="0.4"/>
+            </radialGradient>
+
+            <!-- Reusable Orbital Shapes -->
+            <g id="s-orbital">
+                <circle cx="0" cy="0" r="45" fill="url(#blue-grad)" stroke="#4444FF" stroke-width="1.5" />
+                <circle cx="0" cy="0" r="4" fill="#404040" />
+            </g>
+
+            <g id="pz-orbital-left">
+                <path d="M 0 0 C -30 -40, -80 -30, -80 0 C -80 30, -30 40, 0 0" fill="url(#red-grad)" stroke="#FF4444" stroke-width="1.5" />
+                <path d="M 0 0 C 30 -40, 80 -30, 80 0 C 80 30, 30 40, 0 0" fill="url(#blue-grad)" stroke="#4444FF" stroke-width="1.5" />
+                <circle cx="0" cy="0" r="4" fill="#404040" />
+            </g>
+
+            <g id="pz-orbital-right">
+                <path d="M 0 0 C -30 -40, -80 -30, -80 0 C -80 30, -30 40, 0 0" fill="url(#blue-grad)" stroke="#4444FF" stroke-width="1.5" />
+                <path d="M 0 0 C 30 -40, 80 -30, 80 0 C 80 30, 30 40, 0 0" fill="url(#red-grad)" stroke="#FF4444" stroke-width="1.5" />
+                <circle cx="0" cy="0" r="4" fill="#404040" />
+            </g>
+
+            <g id="px-orbital">
+                <path d="M 0 0 C -40 -30, -30 -80, 0 -80 C 30 -80, 40 -30, 0 0" fill="url(#blue-grad)" stroke="#4444FF" stroke-width="1.5" />
+                <path d="M 0 0 C -40 30, -30 80, 0 80 C 30 80, 40 30, 0 0" fill="url(#red-grad)" stroke="#FF4444" stroke-width="1.5" />
+                <circle cx="0" cy="0" r="4" fill="#404040" />
+            </g>
+        </defs>
+
+        <!-- Background & Static Elements -->
+        <rect width="100%" height="100%" fill="#ffffff" />
+        
+        <!-- Internuclear Axis -->
+        <line x1="80" y1="250" x2="720" y2="250" stroke="#CCCCCC" stroke-width="2" stroke-dasharray="8,6" />
+        <text x="730" y="254" font-family="Inter" font-size="14" fill="#999">z-axis</text>
+
+        <!-- Title -->
+        <text x="400" y="50" class="title" text-anchor="middle">Symmetry of Molecular Orbitals</text>
+
+        <!-- Legend (Bottom Left) -->
+        <g transform="translate(30, 410)">
+            <rect x="0" y="0" width="170" height="65" rx="6" fill="#f8f9fa" stroke="#e0e0e0" stroke-width="1" />
+            <circle cx="20" cy="20" r="7" fill="#4444FF" />
+            <text x="38" y="24" class="legend-text">Positive Phase (+)</text>
+            <circle cx="20" cy="45" r="7" fill="#FF4444" />
+            <text x="38" y="49" class="legend-text">Negative Phase (-)</text>
+        </g>
+
+        <!-- Symmetry Notes Box (Bottom Right) -->
+        <g transform="translate(540, 410)">
+            <rect x="0" y="0" width="230" height="65" rx="6" fill="#f8f9fa" stroke="#e0e0e0" stroke-width="1" />
+            <text x="15" y="24" class="legend-text"><tspan font-weight="700" fill="#222">σ bond:</tspan> Cylindrically symmetrical</text>
+            <text x="15" y="49" class="legend-text"><tspan font-weight="700" fill="#222">π bond:</tspan> Nodal plane on axis</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 1: s-s Sigma Bond Formation          -->
+        <!-- ========================================== -->
+        <g id="stage1" class="stage">
+            <!-- Individual Atoms -->
+            <use href="#s-orbital" id="s1-left" class="anim-transform" />
+            <use href="#s-orbital" id="s1-right" class="anim-transform" />
+            
+            <!-- Merged MO -->
+            <g id="s1-merged" class="anim-transform">
+                <ellipse cx="0" cy="0" rx="110" ry="50" fill="url(#blue-grad)" stroke="#4444FF" stroke-width="1.5" />
+                <circle cx="-60" cy="0" r="4" fill="#404040" />
+                <circle cx="60" cy="0" r="4" fill="#404040" />
+            </g>
+
+            <!-- Labels -->
+            <text x="400" y="360" class="formula" text-anchor="middle">
+                1s + 1s → σ<tspan baseline-shift="sub" font-size="0.7em">1s</tspan>
+            </text>
+            <text x="400" y="390" class="label" text-anchor="middle">Cylindrical Symmetry</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 3: p-p Sigma Bond Formation          -->
+        <!-- ========================================== -->
+        <g id="stage3" class="stage">
+            <!-- Individual Atoms -->
+            <use href="#pz-orbital-left" id="s3-left" class="anim-transform" />
+            <use href="#pz-orbital-right" id="s3-right" class="anim-transform" />
+            
+            <!-- Merged MO -->
+            <g id="s3-merged" class="anim-transform">
+                <!-- Central bonding region -->
+                <ellipse cx="0" cy="0" rx="95" ry="45" fill="url(#blue-grad)" stroke="#4444FF" stroke-width="1.5" />
+                <!-- Outer anti-bonding lobes (shrunk due to electron density shift) -->
+                <path d="M -80 0 C -110 -25, -135 -20, -135 0 C -135 20, -110 25, -80 0" fill="url(#red-grad)" stroke="#FF4444" stroke-width="1.5" />
+                <path d="M 80 0 C 110 -25, 135 -20, 135 0 C 135 20, 110 25, 80 0" fill="url(#red-grad)" stroke="#FF4444" stroke-width="1.5" />
+                <!-- Nuclei -->
+                <circle cx="-80" cy="0" r="4" fill="#404040" />
+                <circle cx="80" cy="0" r="4" fill="#404040" />
+            </g>
+
+            <!-- Labels -->
+            <text x="400" y="360" class="formula" text-anchor="middle">
+                2p<tspan baseline-shift="sub" font-size="0.7em">z</tspan> + 2p<tspan baseline-shift="sub" font-size="0.7em">z</tspan> → σ<tspan baseline-shift="sub" font-size="0.7em">2pz</tspan>
+            </text>
+            <text x="400" y="390" class="label" text-anchor="middle">Head-on Overlap (σ)</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 5: p-p Pi Bond Formation             -->
+        <!-- ========================================== -->
+        <g id="stage5" class="stage">
+            <!-- Individual Atoms -->
+            <use href="#px-orbital" id="s5-left" class="anim-transform" />
+            <use href="#px-orbital" id="s5-right" class="anim-transform" />
+            
+            <!-- Merged MO -->
+            <g id="s5-merged" class="anim-transform">
+                <!-- Top bonding region -->
+                <ellipse cx="0" cy="-55" rx="110" ry="35" fill="url(#blue-grad)" stroke="#4444FF" stroke-width="1.5" />
+                <!-- Bottom bonding region -->
+                <ellipse cx="0" cy="55" rx="110" ry="35" fill="url(#red-grad)" stroke="#FF4444" stroke-width="1.5" />
+                <!-- Nuclei -->
+                <circle cx="-60" cy="0" r="4" fill="#404040" />
+                <circle cx="60" cy="0" r="4" fill="#404040" />
+            </g>
+
+            <!-- Nodal Plane Highlight -->
+            <g id="s5-node" class="anim-transform">
+                <line x1="200" y1="250" x2="600" y2="250" stroke="#FFD700" stroke-width="3" stroke-dasharray="12,8" />
+                <text x="610" y="254" font-family="Inter" font-size="14" font-weight="700" fill="#D4AF37">Nodal Plane</text>
+            </g>
+
+            <!-- Labels -->
+            <text x="400" y="360" class="formula" text-anchor="middle">
+                2p<tspan baseline-shift="sub" font-size="0.7em">x</tspan> + 2p<tspan baseline-shift="sub" font-size="0.7em">x</tspan> → π<tspan baseline-shift="sub" font-size="0.7em">2px</tspan>
+            </text>
+            <text x="400" y="390" class="label" text-anchor="middle">Lateral Overlap (π)</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actinoid Contraction Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* Typography */
+        .title { font-size: 24px; font-weight: 700; fill: #212529; }
+        .axis-label { font-size: 12px; font-weight: 600; fill: #495057; }
+        .tick-label { font-size: 10px; font-weight: 400; fill: #6c757d; }
+        .legend-text { font-size: 12px; font-weight: 400; fill: #212529; }
+
+        /* Dynamic Text Badge */
+        .dynamic-badge {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+        }
+        .dynamic-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: #ffffff;
+            background: #7209B7;
+            padding: 8px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(114, 9, 183, 0.3);
+            transition: all 0.3s ease;
+        }
+        .dynamic-text::after {
+            content: "Actinium (Z=89) | [Rn] 6d¹ 7s²";
+            animation: textAnim 15s infinite;
+        }
+
+        /* Concept Label */
+        .concept-box {
+            background: rgba(255, 255, 255, 0.95);
+            border: 2px solid #F77F00;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: #212529;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(247, 127, 0, 0.2);
+            opacity: 0;
+            transform: scale(0.9);
+            animation: showShielding 15s infinite;
+        }
+
+        /* Animations */
+        .shell-7s {
+            transform-origin: 550px 260px;
+            animation: shellShrink 15s infinite linear;
+        }
+
+        .graph-dot {
+            animation: dotMove 15s infinite linear;
+        }
+
+        .nucleus {
+            transform-origin: 550px 260px;
+            animation: pulseNucleus 15s infinite linear;
+        }
+
+        .shielding-highlight {
+            opacity: 0;
+            animation: showShielding 15s infinite;
+        }
+
+        .e-5f {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation-duration: 15s;
+            animation-iteration-count: infinite;
+            animation-timing-function: linear;
+        }
+
+        /* Electron specific animations based on Z */
+        .e1, .e2 { animation-name: opE1; } /* Pa (91) */
+        .e3 { animation-name: opE3; }      /* U (92) */
+        .e4 { animation-name: opE4; }      /* Np (93) */
+        .e5, .e6 { animation-name: opE5; } /* Pu (94) */
+        .e7 { animation-name: opE7; }      /* Am (95) */
+        .e8, .e9 { animation-name: opE8; } /* Bk (97) */
+        .e10 { animation-name: opE10; }    /* Cf (98) */
+        .e11 { animation-name: opE11; }    /* Es (99) */
+        .e12 { animation-name: opE12; }    /* Fm (100) */
+        .e13 { animation-name: opE13; }    /* Md (101) */
+        .e14 { animation-name: opE14; }    /* No (102) */
+
+        /* Keyframes for Text */
+        @keyframes textAnim {
+            0%, 13.32% { content: "Actinium (Z=89) | [Rn] 6d¹ 7s²"; }
+            13.33%, 17.13% { content: "Thorium (Z=90) | [Rn] 6d² 7s²"; }
+            17.14%, 20.94% { content: "Protactinium (Z=91) | [Rn] 5f² 6d¹ 7s²"; }
+            20.95%, 24.75% { content: "Uranium (Z=92) | [Rn] 5f³ 6d¹ 7s²"; }
+            24.76%, 28.56% { content: "Neptunium (Z=93) | [Rn] 5f⁴ 6d¹ 7s²"; }
+            28.57%, 32.37% { content: "Plutonium (Z=94) | [Rn] 5f⁶ 7s²"; }
+            32.38%, 36.18% { content: "Americium (Z=95) | [Rn] 5f⁷ 7s²"; }
+            36.19%, 39.99% { content: "Curium (Z=96) | [Rn] 5f⁷ 6d¹ 7s²"; }
+            40.00%, 43.80% { content: "Berkelium (Z=97) | [Rn] 5f⁹ 7s²"; }
+            43.81%, 47.61% { content: "Californium (Z=98) | [Rn] 5f¹⁰ 7s²"; }
+            47.62%, 51.42% { content: "Einsteinium (Z=99) | [Rn] 5f¹¹ 7s²"; }
+            51.43%, 55.23% { content: "Fermium (Z=100) | [Rn] 5f¹² 7s²"; }
+            55.24%, 59.04% { content: "Mendelevium (Z=101) | [Rn] 5f¹³ 7s²"; }
+            59.05%, 62.85% { content: "Nobelium (Z=102) | [Rn] 5f¹⁴ 7s²"; }
+            62.86%, 66.65% { content: "Lawrencium (Z=103) | [Rn] 5f¹⁴ 6d¹ 7s²"; }
+            66.66%, 86.66% { content: "Highlight: Californium (Z=98) | High Z_eff"; background: #F72585; }
+            86.67%, 100% { content: "Actinium (Z=89) | [Rn] 6d¹ 7s²"; }
+        }
+
+        /* Keyframes for Graph Dot */
+        @keyframes dotMove {
+            0%, 13.32% { transform: translate(80px, 150px); }
+            13.33%, 17.13% { transform: translate(94px, 170px); }
+            17.14%, 20.94% { transform: translate(108px, 195px); }
+            20.95%, 24.75% { transform: translate(122px, 215px); }
+            24.76%, 28.56% { transform: translate(136px, 235px); }
+            28.57%, 32.37% { transform: translate(150px, 255px); }
+            32.38%, 36.18% { transform: translate(164px, 270px); }
+            36.19%, 39.99% { transform: translate(178px, 285px); }
+            40.00%, 43.80% { transform: translate(192px, 300px); }
+            43.81%, 47.61% { transform: translate(206px, 315px); }
+            47.62%, 51.42% { transform: translate(220px, 330px); }
+            51.43%, 55.23% { transform: translate(234px, 345px); }
+            55.24%, 59.04% { transform: translate(248px, 358px); }
+            59.05%, 62.85% { transform: translate(262px, 370px); }
+            62.86%, 66.65% { transform: translate(276px, 380px); }
+            66.66%, 86.66% { transform: translate(206px, 315px); } /* Jump to Cf */
+            86.67%, 100% { transform: translate(80px, 150px); }
+        }
+
+        /* Keyframes for 7s Shell Contraction */
+        @keyframes shellShrink {
+            0%, 13.32% { transform: scale(1); stroke: #4CC9F0; stroke-width: 2px; }
+            13.33%, 17.13% { transform: scale(0.97); }
+            17.14%, 20.94% { transform: scale(0.93); }
+            20.95%, 24.75% { transform: scale(0.90); }
+            24.76%, 28.56% { transform: scale(0.87); }
+            28.57%, 32.37% { transform: scale(0.84); }
+            32.38%, 36.18% { transform: scale(0.82); }
+            36.19%, 39.99% { transform: scale(0.80); }
+            40.00%, 43.80% { transform: scale(0.77); }
+            43.81%, 47.61% { transform: scale(0.75); }
+            47.62%, 51.42% { transform: scale(0.73); }
+            51.43%, 55.23% { transform: scale(0.71); }
+            55.24%, 59.04% { transform: scale(0.69); }
+            59.05%, 62.85% { transform: scale(0.67); }
+            62.86%, 66.65% { transform: scale(0.64); stroke: #4CC9F0; stroke-width: 2px; }
+            66.66%, 86.66% { transform: scale(0.75); stroke: #F77F00; stroke-width: 3px; } /* Jump to Cf, Highlight */
+            86.67%, 100% { transform: scale(1); stroke: #4CC9F0; stroke-width: 2px; }
+        }
+
+        /* Keyframes for Nucleus */
+        @keyframes pulseNucleus {
+            0%, 13.32% { transform: scale(1); filter: drop-shadow(0 0 5px #FFD700); }
+            62.86%, 66.65% { transform: scale(1.3); filter: drop-shadow(0 0 15px #FFD700); }
+            66.66%, 86.66% { transform: scale(1.2); filter: drop-shadow(0 0 25px #F77F00); }
+            86.67%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px #FFD700); }
+        }
+
+        /* Keyframes for Shielding Highlight */
+        @keyframes showShielding {
+            0%, 66.65% { opacity: 0; transform: scale(0.95); }
+            66.66%, 86.66% { opacity: 1; transform: scale(1); }
+            86.67%, 100% { opacity: 0; transform: scale(0.95); }
+        }
+
+        /* Keyframes for Electrons */
+        @keyframes opE1 { 0%, 17.13% { opacity: 0; transform: scale(0); } 17.14%, 86.66% { opacity: 1; transform: scale(1); } 86.67%, 100% { opacity: 0; transform: scale(0); } }
+        @keyframes opE3 { 0%, 20.94% { opacity: 0; transform: scale(0); } 20.95%, 86.66% { opacity: 1; transform: scale(1); } 86.67%, 100% { opacity: 0; transform: scale(0); } }
+        @keyframes opE4 { 0%, 24.75% { opacity: 0; transform: scale(0); } 24.76%, 86.66% { opacity: 1; transform: scale(1); } 86.67%, 100% { opacity: 0; transform: scale(0); } }
+        @keyframes opE5 { 0%, 28.56% { opacity: 0; transform: scale(0); } 28.57%, 86.66% { opacity: 1; transform: scale(1); } 86.67%, 100% { opacity: 0; transform: scale(0); } }
+        @keyframes opE7 { 0%, 32.37% { opacity: 0; transform: scale(0); } 32.38%, 86.66% { opacity: 1; transform: scale(1); } 86.67%, 100% { opacity: 0; transform: scale(0); } }
+        @keyframes opE8 { 0%, 39.99% { opacity: 0; transform: scale(0); } 40.00%, 86.66% { opacity: 1; transform: scale(1); } 86.67%, 100% { opacity: 0; transform: scale(0); } }
+        @keyframes opE10 { 0%, 43.80% { opacity: 0; transform: scale(0); } 43.81%, 86.66% { opacity: 1; transform: scale(1); } 86.67%, 100% { opacity: 0; transform: scale(0); } }
+        
+        /* These hide during the Cf highlight (Z=98 has 10 f-electrons) */
+        @keyframes opE11 { 0%, 47.61% { opacity: 0; transform: scale(0); } 47.62%, 66.65% { opacity: 1; transform: scale(1); } 66.66%, 100% { opacity: 0; transform: scale(0); } }
+        @keyframes opE12 { 0%, 51.42% { opacity: 0; transform: scale(0); } 51.43%, 66.65% { opacity: 1; transform: scale(1); } 66.66%, 100% { opacity: 0; transform: scale(0); } }
+        @keyframes opE13 { 0%, 55.23% { opacity: 0; transform: scale(0); } 55.24%, 66.65% { opacity: 1; transform: scale(1); } 66.66%, 100% { opacity: 0; transform: scale(0); } }
+        @keyframes opE14 { 0%, 59.04% { opacity: 0; transform: scale(0); } 59.05%, 66.65% { opacity: 1; transform: scale(1); } 66.66%, 100% { opacity: 0; transform: scale(0); } }
+
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+            </marker>
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="35" text-anchor="middle" class="title">Actinoid Contraction &amp; 5f Orbital Filling</text>
+        
+        <!-- Dynamic Configuration Badge -->
+        <foreignObject x="100" y="55" width="600" height="50">
+            <div class="dynamic-badge" xmlns="http://www.w3.org/1999/xhtml">
+                <div class="dynamic-text"></div>
+            </div>
+        </foreignObject>
+
+        <!-- ================= LEFT COLUMN: GRAPH ================= -->
+        <g id="graph-section">
+            <!-- Grid Lines -->
+            <line x1="70" y1="150" x2="290" y2="150" stroke="#e9ecef" stroke-width="1"/>
+            <line x1="70" y1="200" x2="290" y2="200" stroke="#e9ecef" stroke-width="1"/>
+            <line x1="70" y1="250" x2="290" y2="250" stroke="#e9ecef" stroke-width="1"/>
+            <line x1="70" y1="300" x2="290" y2="300" stroke="#e9ecef" stroke-width="1"/>
+            <line x1="70" y1="350" x2="290" y2="350" stroke="#e9ecef" stroke-width="1"/>
+
+            <!-- Axes -->
+            <line x1="70" y1="130" x2="70" y2="390" stroke="#adb5bd" stroke-width="2"/>
+            <line x1="70" y1="390" x2="300" y2="390" stroke="#adb5bd" stroke-width="2"/>
+
+            <!-- Labels -->
+            <text x="-260" y="30" transform="rotate(-90)" text-anchor="middle" class="axis-label">Ionic Radius (M³⁺) in pm</text>
+            <text x="180" y="430" text-anchor="middle" class="axis-label">Atomic Number (Z)</text>
+
+            <!-- Y Ticks -->
+            <text x="60" y="154" text-anchor="end" class="tick-label">112</text>
+            <text x="60" y="254" text-anchor="end" class="tick-label">100</text>
+            <text x="60" y="384" text-anchor="end" class="tick-label">88</text>
+
+            <!-- X Ticks -->
+            <text x="80" y="408" text-anchor="middle" class="tick-label">Ac</text>
+            <text x="122" y="408" text-anchor="middle" class="tick-label">U</text>
+            <text x="178" y="408" text-anchor="middle" class="tick-label">Cm</text>
+            <text x="234" y="408" text-anchor="middle" class="tick-label">Fm</text>
+            <text x="276" y="408" text-anchor="middle" class="tick-label">Lr</text>
+
+            <!-- Data Curve -->
+            <polyline points="80,150 94,170 108,195 122,215 136,235 150,255 164,270 178,285 192,300 206,315 220,330 234,345 248,358 262,370 276,380" fill="none" stroke="#7209B7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            
+            <!-- Moving Dot -->
+            <circle class="graph-dot" cx="0" cy="0" r="6" fill="#FF4444" filter="url(#glow)"/>
+        </g>
+
+        <!-- ================= RIGHT COLUMN: ATOM MODEL ================= -->
+        <g id="atom-section">
+            <!-- 6d Subshell (Dashed) -->
+            <circle cx="550" cy="260" r="80" fill="none" stroke="#4361EE" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+
+            <!-- 5f Orbitals (Clover/Lobes) -->
+            <g transform="translate(550,260) rotate(45)">
+                <!-- Top Lobe -->
+                <ellipse cx="0" cy="-35" rx="14" ry="32" fill="#F72585" opacity="0.3"/>
+                <!-- Bottom Lobe -->
+                <ellipse cx="0" cy="35" rx="14" ry="32" fill="#F72585" opacity="0.3"/>
+                <!-- Left Lobe -->
+                <ellipse cx="-35" cy="0" rx="32" ry="14" fill="#F72585" opacity="0.3"/>
+                <!-- Right Lobe -->
+                <ellipse cx="35" cy="0" rx="32" ry="14" fill="#F72585" opacity="0.3"/>
+
+                <!-- 5f Electrons (14 Total) -->
+                <!-- Top Lobe -->
+                <circle class="e-5f e1" cx="0" cy="-20" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e5" cx="-6" cy="-35" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e9" cx="6" cy="-35" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e13" cx="0" cy="-50" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                
+                <!-- Right Lobe -->
+                <circle class="e-5f e2" cx="20" cy="0" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e6" cx="35" cy="-6" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e10" cx="35" cy="6" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e14" cx="50" cy="0" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                
+                <!-- Bottom Lobe -->
+                <circle class="e-5f e3" cx="0" cy="20" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e7" cx="-6" cy="35" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e11" cx="6" cy="35" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                
+                <!-- Left Lobe -->
+                <circle class="e-5f e4" cx="-20" cy="0" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e8" cx="-35" cy="-6" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+                <circle class="e-5f e12" cx="-35" cy="6" r="3.5" fill="#fff" stroke="#F72585" stroke-width="1.5"/>
+            </g>
+
+            <!-- Shielding Highlight Arrows (Phase 3) -->
+            <g class="shielding-highlight">
+                <!-- Arrows pointing through the gaps in the 5f lobes -->
+                <path d="M 550,150 L 550,210" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow)"/>
+                <path d="M 550,370 L 550,310" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow)"/>
+                <path d="M 440,260 L 500,260" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow)"/>
+                <path d="M 660,260 L 600,260" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow)"/>
+                
+                <!-- Ripple Effect -->
+                <circle cx="550" cy="260" r="60" fill="none" stroke="#F77F00" stroke-width="1" stroke-dasharray="4,4" opacity="0.5"/>
+                <circle cx="550" cy="260" r="40" fill="none" stroke="#F77F00" stroke-width="1" stroke-dasharray="4,4" opacity="0.8"/>
+            </g>
+
+            <!-- 7s Subshell (Solid, Shrinking) -->
+            <g class="shell-7s">
+                <circle cx="550" cy="260" r="130" fill="none" stroke="#4CC9F0" stroke-width="2"/>
+                <!-- 7s Electrons -->
+                <circle cx="550" cy="130" r="5" fill="#4CC9F0" filter="url(#glow)"/>
+                <circle cx="550" cy="390" r="5" fill="#4CC9F0" filter="url(#glow)"/>
+            </g>
+
+            <!-- Nucleus -->
+            <circle class="nucleus" cx="550" cy="260" r="12" fill="#FFD700"/>
+        </g>
+
+        <!-- ================= BOTTOM: LEGEND & CAPTION ================= -->
+        <!-- Legend -->
+        <rect x="40" y="440" width="260" height="45" fill="#ffffff" stroke="#dee2e6" rx="6"/>
+        <circle cx="55" cy="455" r="4" fill="#F72585"/>
+        <text x="65" y="459" class="legend-text">5f Electron</text>
+        
+        <circle cx="55" cy="473" r="4" fill="#4CC9F0"/>
+        <text x="65" y="477" class="legend-text">7s Shell / e⁻</text>
+        
+        <line x1="155" y1="455" x2="175" y2="455" stroke="#4361EE" stroke-dasharray="3,3" stroke-width="2"/>
+        <text x="180" y="459" class="legend-text">6d Subshell</text>
+        
+        <circle cx="165" cy="473" r="5" fill="#FFD700"/>
+        <text x="180" y="477" class="legend-text">Nucleus (+)</text>
+
+        <!-- Concept Label (Appears during Phase 3) -->
+        <foreignObject x="350" y="420" width="400" height="70" class="shielding-highlight">
+            <div class="concept-box" xmlns="http://www.w3.org/1999/xhtml">
+                <strong>Key Concept:</strong> Poor shielding by 5f electrons allows the nucleus to pull the outer 7s shell inward, increasing Z<sub>eff</sub>.
+            </div>
+        </foreignObject>
+
+    </svg>
+</div>
+
+</body>
+</html>

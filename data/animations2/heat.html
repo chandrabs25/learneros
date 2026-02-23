@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Microscopic and Macroscopic Nature of Heat</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --text-main: #2d3748;
+            --accent-red: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-orange: #F77F00;
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.9);
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            width: 25%;
+            min-width: 280px;
+            max-width: 350px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text-main);
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-blue);
+            font-weight: 700;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(255, 51, 102, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d9e6;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        #btn-reset {
+            background: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+            margin-top: 10px;
+        }
+
+        #btn-reset:hover {
+            background: #324ed4;
+            transform: translateY(-1px);
+        }
+
+        #btn-reset:active {
+            transform: translateY(1px);
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            text-align: center;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.8);
+            padding: 8px;
+            border-radius: 8px;
+        }
+
+        .live-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+
+        .stat-box {
+            background: rgba(255,255,255,0.6);
+            padding: 8px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #666;
+        }
+
+        .stat-val {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .val-a { color: var(--accent-blue); }
+        .val-b { color: var(--accent-red); }
+        .val-q { color: var(--accent-orange); grid-column: span 2; font-size: 1.1rem;}
+
+        /* 3D Overlays */
+        .label-3d {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(4px);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            border: 1px solid rgba(255,255,255,0.5);
+            pointer-events: none;
+            z-index: 5;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+
+        .thermometer-wrapper {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            width: 16px;
+            height: 180px;
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(4px);
+            border: 2px solid #fff;
+            border-radius: 10px;
+            pointer-events: none;
+            z-index: 5;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+
+        .thermometer-fill {
+            width: 100%;
+            height: 10%; /* Dynamic */
+            background: linear-gradient(to top, var(--accent-blue), var(--accent-red));
+            border-radius: 6px;
+            transition: height 0.1s linear;
+        }
+
+        .thermometer-bulb {
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 24px;
+            height: 24px;
+            background: var(--accent-blue); /* Dynamic */
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: background 0.1s linear;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <!-- Formula & Live Data Card -->
+    <div id="formula-card">
+        <div class="formula">Q = m · s · ΔT</div>
+        <div class="live-stats">
+            <div class="stat-box val-q">
+                <div class="stat-label">Total Heat Added (Q)</div>
+                <div class="stat-val" id="val-q-live">0 J</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Temp A (Water)</div>
+                <div class="stat-val val-a" id="val-ta-live">273.1 K</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Temp B (Metal)</div>
+                <div class="stat-val val-b" id="val-tb-live">273.1 K</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div id="ui-panel">
+        <h2>Simulation Controls</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Heat Input Rate (P)</span>
+                <span class="val-display" id="val-p">100 J/s</span>
+            </div>
+            <input type="range" id="slider-p" min="0" max="500" step="10" value="100">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Mass (m)</span>
+                <span class="val-display" id="val-m">1.0 kg</span>
+            </div>
+            <input type="range" id="slider-m" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Specific Heat A (s<sub>A</sub>)</span>
+                <span class="val-display" id="val-sa">4186</span>
+            </div>
+            <input type="range" id="slider-sa" min="500" max="4186" step="100" value="4186">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Specific Heat B (s<sub>B</sub>)</span>
+                <span class="val-display" id="val-sb">385</span>
+            </div>
+            <input type="range" id="slider-sb" min="100" max="1000" step="50" value="385">
+        </div>
+
+        <button id="btn-reset">Reset Simulation</button>
+    </div>
+
+    <!-- 3D Overlays (Labels & Thermometers) -->
+    <div id="label-a" class="label-3d">Substance A (High s)</div>
+    <div id="label-b" class="label-3d">Substance B (Low s)</div>
+
+    <div id="thermo-a" class="thermometer-wrapper">
+        <div id="thermo-fill-a" class="thermometer-fill"></div>
+        <div id="thermo-bulb-a" class="thermometer-bulb"></div>
+    </div>
+    <div id="thermo-b" class="thermometer-wrapper">
+        <div id="thermo-fill-b" class="thermometer-fill"></div>
+        <div id="thermo-bulb-b" class="thermometer-bulb"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics & State Variables ---
+        const T_INITIAL = 273.15;
+        const T_MAX = 450.0;
+        let state = {
+            P: 100,
+            m: 1.0,
+            sA: 4186,
+            sB: 385,
+            Q: 0,
+            TA: T_INITIAL,
+            TB: T_INITIAL
+        };
+
+        const MAX_PARTICLES = 200;
+        let activeParticles = 100;
+
+        // --- DOM Elements ---
+        const ui = {
+            sliderP: document.getElementById('slider-p'),
+            sliderM: document.getElementById('slider-m'),
+            sliderSA: document.getElementById('slider-sa'),
+            sliderSB: document.getElementById('slider-sb'),
+            valP: document.getElementById('val-p'),
+            valM: document.getElementById('val-m'),
+            valSA: document.getElementById('val-sa'),
+            valSB: document.getElementById('val-sb'),
+            btnReset: document.getElementById('btn-reset'),
+            liveQ: document.getElementById('val-q-live'),
+            liveTA: document.getElementById('val-ta-live'),
+            liveTB: document.getElementById('val-tb-live'),
+            labelA: document.getElementById('label-a'),
+            labelB: document.getElementById('label-b'),
+            thermoA: document.getElementById('thermo-a'),
+            thermoB: document.getElementById('thermo-b'),
+            fillA: document.getElementById('thermo-fill-a'),
+            fillB: document.getElementById('thermo-fill-b'),
+            bulbA: document.getElementById('thermo-bulb-a'),
+            bulbB: document.getElementById('thermo-bulb-b')
+        };
+
+        // --- Event Listeners ---
+        function updateUI() {
+            state.P = parseFloat(ui.sliderP.value);
+            state.m = parseFloat(ui.sliderM.value);
+            state.sA = parseFloat(ui.sliderSA.value);
+            state.sB = parseFloat(ui.sliderSB.value);
+
+            ui.valP.innerText = state.P + " J/s";
+            ui.valM.innerText = state.m.toFixed(1) + " kg";
+            ui.valSA.innerText = state.sA;
+            ui.valSB.innerText = state.sB;
+
+            activeParticles = Math.floor(state.m * 100);
+            meshA.count = activeParticles;
+            meshB.count = activeParticles;
+        }
+
+        ui.sliderP.addEventListener('input', updateUI);
+        ui.sliderM.addEventListener('input', updateUI);
+        ui.sliderSA.addEventListener('input', updateUI);
+        ui.sliderSB.addEventListener('input', updateUI);
+
+        ui.btnReset.addEventListener('click', () => {
+            state.Q = 0;
+            state.TA = T_INITIAL;
+            state.TB = T_INITIAL;
+            initParticles();
+        });
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.FogExp2('#f0f4f8', 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 15, 35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.minDistance = 10;
+        controls.maxDistance = 60;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Grid
+        const grid = new THREE.GridHelper(100, 100, 0xd1d9e6, 0xe2e8f0);
+        grid.position.y = -5.01;
+        scene.add(grid);
+
+        // --- Materials ---
+        const glassMaterial = new THREE.MeshPhongMaterial({
+            color: 0xE0E1DD,
+            transparent: true,
+            opacity: 0.25,
+            shininess: 100,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        const heatMaterial = new THREE.MeshBasicMaterial({
+            color: 0xF77F00,
+            transparent: true,
+            opacity: 0.8,
+            side: THREE.DoubleSide
+        });
+
+        const arrowMaterial = new THREE.MeshBasicMaterial({
+            color: 0xF77F00,
+            transparent: true,
+            opacity: 0.6
+        });
+
+        // --- Geometries & Objects ---
+        const boxWidth = 8, boxHeight = 10, boxDepth = 8;
+        const boxGeo = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+        
+        const centerA = new THREE.Vector3(-6, 0, 0);
+        const centerB = new THREE.Vector3(6, 0, 0);
+
+        // Containers
+        const containerA = new THREE.Mesh(boxGeo, glassMaterial);
+        containerA.position.copy(centerA);
+        scene.add(containerA);
+
+        const containerB = new THREE.Mesh(boxGeo, glassMaterial);
+        containerB.position.copy(centerB);
+        scene.add(containerB);
+
+        // Edges for containers to make them pop
+        const edgesGeo = new THREE.EdgesGeometry(boxGeo);
+        const edgesMat = new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 });
+        const edgesA = new THREE.LineSegments(edgesGeo, edgesMat);
+        containerA.add(edgesA);
+        const edgesB = new THREE.LineSegments(edgesGeo, edgesMat);
+        containerB.add(edgesB);
+
+        // Heat Sources (Planes at bottom)
+        const planeGeo = new THREE.PlaneGeometry(boxWidth - 0.2, boxDepth - 0.2);
+        const heatA = new THREE.Mesh(planeGeo, heatMaterial);
+        heatA.rotation.x = -Math.PI / 2;
+        heatA.position.set(centerA.x, -boxHeight/2 + 0.1, centerA.z);
+        scene.add(heatA);
+
+        const heatB = new THREE.Mesh(planeGeo, heatMaterial);
+        heatB.rotation.x = -Math.PI / 2;
+        heatB.position.set(centerB.x, -boxHeight/2 + 0.1, centerB.z);
+        scene.add(heatB);
+
+        // --- Particles Setup ---
+        const sphereGeoA = new THREE.SphereGeometry(0.4, 16, 16);
+        const sphereGeoB = new THREE.SphereGeometry(0.25, 16, 16);
+        
+        // Use a white material, color will be set via instanceColor
+        const particleMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 50 });
+
+        const meshA = new THREE.InstancedMesh(sphereGeoA, particleMat, MAX_PARTICLES);
+        const meshB = new THREE.InstancedMesh(sphereGeoB, particleMat, MAX_PARTICLES);
+        
+        meshA.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        meshB.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        
+        scene.add(meshA);
+        scene.add(meshB);
+
+        // Particle State Arrays
+        const dummy = new THREE.Object3D();
+        
+        // Substance A (Liquid-like)
+        const posA = [];
+        const velA = [];
+        const speedMultA = [];
+
+        // Substance B (Solid-like)
+        const basePosB = [];
+        const phaseB = [];
+        const speedMultB = [];
+
+        function initParticles() {
+            // Init A (Random positions and velocities)
+            for(let i=0; i<MAX_PARTICLES; i++) {
+                posA[i] = new THREE.Vector3(
+                    (Math.random() - 0.5) * (boxWidth - 1),
+                    (Math.random() - 0.5) * (boxHeight - 1),
+                    (Math.random() - 0.5) * (boxDepth - 1)
+                );
+                velA[i] = new THREE.Vector3(
+                    (Math.random() - 0.5),
+                    (Math.random() - 0.5),
+                    (Math.random() - 0.5)
+                ).normalize();
+                speedMultA[i] = 0.5 + Math.random(); // Variation in individual kinetic energy
+            }
+
+            // Init B (Lattice positions)
+            // Create a grid. Max 200. Let's do 5x8x5 = 200
+            let idx = 0;
+            const spacingX = (boxWidth - 1.5) / 4;
+            const spacingY = (boxHeight - 1.5) / 7;
+            const spacingZ = (boxDepth - 1.5) / 4;
+            
+            for(let y=0; y<8; y++) {
+                for(let x=0; x<5; x++) {
+                    for(let z=0; z<5; z++) {
+                        if(idx >= MAX_PARTICLES) break;
+                        basePosB[idx] = new THREE.Vector3(
+                            - (boxWidth - 1.5)/2 + x * spacingX,
+                            - (boxHeight - 1.5)/2 + y * spacingY,
+                            - (boxDepth - 1.5)/2 + z * spacingZ
+                        );
+                        phaseB[idx] = new THREE.Vector3(Math.random()*Math.PI*2, Math.random()*Math.PI*2, Math.random()*Math.PI*2);
+                        speedMultB[idx] = 0.5 + Math.random();
+                        idx++;
+                    }
+                }
+            }
+        }
+        initParticles();
+
+        // --- Energy Flux Arrows ---
+        const arrowCount = 60;
+        const coneGeo = new THREE.ConeGeometry(0.2, 0.8, 8);
+        coneGeo.translate(0, 0.4, 0); // pivot at base
+        const arrows = new THREE.InstancedMesh(coneGeo, arrowMaterial, arrowCount);
+        scene.add(arrows);
+
+        const arrowPos = [];
+        for(let i=0; i<arrowCount; i++) {
+            arrowPos[i] = new THREE.Vector3(
+                (Math.random() - 0.5) * (boxWidth - 1),
+                -boxHeight/2 + Math.random() * boxHeight,
+                (Math.random() - 0.5) * (boxDepth - 1)
+            );
+        }
+
+        // --- Color Mapping Logic ---
+        const colorCold = new THREE.Color('#4361EE');
+        const colorNeutral = new THREE.Color('#BDC3C7');
+        const colorHot = new THREE.Color('#FF3366');
+        const tempColor = new THREE.Color();
+
+        function getTemperatureColor(T) {
+            let t = (T - 273.15) / (T_MAX - 273.15);
+            t = Math.max(0, Math.min(1, t));
+            if (t < 0.5) {
+                tempColor.lerpColors(colorCold, colorNeutral, t * 2);
+            } else {
+                tempColor.lerpColors(colorNeutral, colorHot, (t - 0.5) * 2);
+            }
+            return tempColor;
+        }
+
+        function getCSSColor(T) {
+            let c = getTemperatureColor(T);
+            return `rgb(${Math.round(c.r*255)}, ${Math.round(c.g*255)}, ${Math.round(c.b*255)})`;
+        }
+
+        // --- Projection Logic for HTML Overlays ---
+        const projVector = new THREE.Vector3();
+        function updateOverlayPosition(element, worldPos, offsetXY = {x:0, y:0}) {
+            projVector.copy(worldPos);
+            projVector.project(camera);
+            
+            const x = (projVector.x * .5 + .5) * window.innerWidth;
+            const y = (projVector.y * -.5 + .5) * window.innerHeight;
+            
+            // Hide if behind camera
+            if (projVector.z > 1) {
+                element.style.display = 'none';
+            } else {
+                element.style.display = 'flex';
+                element.style.left = `${x + offsetXY.x}px`;
+                element.style.top = `${y + offsetXY.y}px`;
+            }
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.1); // Cap dt to prevent huge jumps
+            const time = clock.getElapsedTime();
+
+            // 1. Macroscopic Physics Update
+            if (state.P > 0) {
+                state.Q += state.P * dt;
+                // ΔT = Q / (m * s)
+                state.TA = T_INITIAL + state.Q / (state.m * state.sA);
+                state.TB = T_INITIAL + state.Q / (state.m * state.sB);
+            }
+
+            // Update UI Text
+            ui.liveQ.innerText = Math.round(state.Q) + " J";
+            ui.liveTA.innerText = state.TA.toFixed(1) + " K";
+            ui.liveTB.innerText = state.TB.toFixed(1) + " K";
+
+            // Update Thermometers UI
+            const pctA = Math.min(100, Math.max(5, ((state.TA - 273.15) / (T_MAX - 273.15)) * 100));
+            const pctB = Math.min(100, Math.max(5, ((state.TB - 273.15) / (T_MAX - 273.15)) * 100));
+            
+            ui.fillA.style.height = `${pctA}%`;
+            ui.fillB.style.height = `${pctB}%`;
+            
+            const colorStrA = getCSSColor(state.TA);
+            const colorStrB = getCSSColor(state.TB);
+            
+            ui.fillA.style.background = `linear-gradient(to top, var(--accent-blue), ${colorStrA})`;
+            ui.fillB.style.background = `linear-gradient(to top, var(--accent-blue), ${colorStrB})`;
+            ui.bulbA.style.background = colorStrA;
+            ui.bulbB.style.background = colorStrB;
+
+            // 2. Microscopic Physics Update (Particles)
+            
+            // Substance A (Liquid - Random Motion)
+            // v_rms proportional to sqrt(T)
+            const vBaseA = 3.0;
+            const speedFactorA = Math.sqrt(state.TA / 273.15);
+            
+            for(let i=0; i<activeParticles; i++) {
+                let v = vBaseA * speedFactorA * speedMultA[i];
+                posA[i].addScaledVector(velA[i], v * dt);
+
+                // Bounce off walls
+                const boundX = boxWidth/2 - 0.4;
+                const boundY = boxHeight/2 - 0.4;
+                const boundZ = boxDepth/2 - 0.4;
+
+                if(posA[i].x > boundX) { posA[i].x = boundX; velA[i].x *= -1; }
+                if(posA[i].x < -boundX) { posA[i].x = -boundX; velA[i].x *= -1; }
+                if(posA[i].y > boundY) { posA[i].y = boundY; velA[i].y *= -1; }
+                if(posA[i].y < -boundY) { posA[i].y = -boundY; velA[i].y *= -1; }
+                if(posA[i].z > boundZ) { posA[i].z = boundZ; velA[i].z *= -1; }
+                if(posA[i].z < -boundZ) { posA[i].z = -boundZ; velA[i].z *= -1; }
+
+                dummy.position.copy(posA[i]).add(centerA);
+                dummy.updateMatrix();
+                meshA.setMatrixAt(i, dummy.matrix);
+
+                // Color based on individual kinetic energy (proportional to T * speedMult^2)
+                let Ti = state.TA * Math.pow(speedMultA[i], 2);
+                meshA.setColorAt(i, getTemperatureColor(Ti));
+            }
+            meshA.instanceMatrix.needsUpdate = true;
+            meshA.instanceColor.needsUpdate = true;
+
+            // Substance B (Solid - Lattice Vibration)
+            // Amplitude proportional to sqrt(T)
+            const ampBase = 0.08;
+            const freqBase = 20.0;
+            const ampFactor = Math.sqrt(state.TB / 273.15);
+            const freqFactor = Math.sqrt(state.TB / 273.15);
+
+            for(let i=0; i<activeParticles; i++) {
+                let amp = ampBase * ampFactor * speedMultB[i];
+                let freq = freqBase * freqFactor;
+                let p = phaseB[i];
+
+                dummy.position.copy(basePosB[i]);
+                dummy.position.x += Math.sin(time * freq + p.x) * amp;
+                dummy.position.y += Math.sin(time * freq + p.y) * amp;
+                dummy.position.z += Math.sin(time * freq + p.z) * amp;
+                dummy.position.add(centerB);
+                
+                dummy.updateMatrix();
+                meshB.setMatrixAt(i, dummy.matrix);
+
+                let Ti = state.TB * Math.pow(speedMultB[i], 2);
+                meshB.setColorAt(i, getTemperatureColor(Ti));
+            }
+            meshB.instanceMatrix.needsUpdate = true;
+            meshB.instanceColor.needsUpdate = true;
+
+            // 3. Visual Effects Update
+            
+            // Heat Source Pulsing
+            if (state.P > 0) {
+                let pulse = 0.5 + 0.5 * Math.sin(time * 8);
+                heatMaterial.opacity = 0.3 + (state.P / 500) * 0.5 * pulse;
+            } else {
+                heatMaterial.opacity = 0;
+            }
+
+            // Energy Flux Arrows
+            if (state.P > 0) {
+                arrowMaterial.opacity = 0.2 + (state.P / 500) * 0.6;
+                let arrowSpeed = 2.0 + (state.P / 500) * 6.0;
+                
+                for(let i=0; i<arrowCount; i++) {
+                    arrowPos[i].y += arrowSpeed * dt;
+                    if(arrowPos[i].y > boxHeight/2) {
+                        arrowPos[i].y = -boxHeight/2; // reset to bottom
+                    }
+                    
+                    dummy.position.copy(arrowPos[i]);
+                    // Half in A, half in B
+                    if(i < arrowCount/2) dummy.position.add(centerA);
+                    else dummy.position.add(centerB);
+                    
+                    dummy.updateMatrix();
+                    arrows.setMatrixAt(i, dummy.matrix);
+                }
+                arrows.instanceMatrix.needsUpdate = true;
+            } else {
+                arrowMaterial.opacity = 0;
+            }
+
+            // 4. Update HTML Overlays
+            updateOverlayPosition(ui.labelA, new THREE.Vector3(centerA.x, boxHeight/2 + 1.5, centerA.z));
+            updateOverlayPosition(ui.labelB, new THREE.Vector3(centerB.x, boxHeight/2 + 1.5, centerB.z));
+            
+            // Place thermometers to the left of each box
+            updateOverlayPosition(ui.thermoA, new THREE.Vector3(centerA.x - boxWidth/2 - 1.5, -boxHeight/2, centerA.z));
+            updateOverlayPosition(ui.thermoB, new THREE.Vector3(centerB.x - boxWidth/2 - 1.5, -boxHeight/2, centerB.z));
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initialize UI and Start
+        updateUI();
+        animate();
+
+    </script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 """
-Create Neo4j vector index(es) used by AI Tutor retrieval.
+Create Neo4j vector index(es) used by LearnerOS retrieval.
 
 Usage:
   cd backend

@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elementary Reactions and Molecularity</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        text {
+            fill: #2D3436;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            font-weight: 500;
+            fill: #555;
+        }
+
+        /* Global Fade Reset for Loop */
+        .fade-reset {
+            animation: fadeReset 12s linear infinite;
+        }
+
+        @keyframes fadeReset {
+            0%, 66.6% { opacity: 1; }
+            70%, 95% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* Vibration during Transition State */
+        .vibrate {
+            animation: vibrateAnim 12s linear infinite;
+        }
+
+        @keyframes vibrateAnim {
+            0%, 24% { transform: translate(0, 0); }
+            25%, 29%, 33%, 37%, 41% { transform: translate(1.5px, -1.5px); }
+            27%, 31%, 35%, 39% { transform: translate(-1.5px, 1.5px); }
+            42%, 100% { transform: translate(0, 0); }
+        }
+
+        /* --- Unimolecular Animations --- */
+        .uni-o2 { animation: uniO2Anim 12s ease-in-out infinite; }
+        .uni-o { animation: uniOAnim 12s ease-in-out infinite; }
+
+        @keyframes uniO2Anim {
+            0%, 41.6% { transform: translate(150px, 250px); }
+            66.6%, 100% { transform: translate(90px, 250px); }
+        }
+        @keyframes uniOAnim {
+            0%, 41.6% { transform: translate(150px, 250px); }
+            66.6%, 100% { transform: translate(210px, 250px); }
+        }
+
+        /* --- Bimolecular Animations --- */
+        .bi-no { animation: biNoAnim 12s ease-in-out infinite; }
+        .bi-o3-term { animation: biO3TermAnim 12s ease-in-out infinite; }
+        .bi-o3-core { animation: biO3CoreAnim 12s ease-in-out infinite; }
+        .bi-bend-left { animation: biBendLeft 12s ease-in-out infinite; transform-origin: 12px 0px; }
+        .bi-bend-right { animation: biBendRight 12s ease-in-out infinite; transform-origin: 12px 0px; }
+        .bi-bend-term-o { animation: biBendTermO 12s ease-in-out infinite; }
+
+        @keyframes biNoAnim {
+            0% { transform: translate(320px, 250px); }
+            25%, 41.6% { transform: translate(414px, 250px); }
+            66.6%, 100% { transform: translate(320px, 250px); }
+        }
+        @keyframes biO3TermAnim {
+            0% { transform: translate(580px, 250px); }
+            25%, 41.6% { transform: translate(462px, 250px); }
+            66.6%, 100% { transform: translate(368px, 250px); }
+        }
+        @keyframes biO3CoreAnim {
+            0% { transform: translate(580px, 250px); }
+            25%, 41.6% { transform: translate(462px, 250px); }
+            66.6%, 100% { transform: translate(580px, 250px); }
+        }
+        @keyframes biBendLeft {
+            0%, 41.6% { transform: rotate(0deg); }
+            66.6%, 100% { transform: rotate(-35deg); }
+        }
+        @keyframes biBendRight {
+            0%, 41.6% { transform: rotate(0deg); }
+            66.6%, 100% { transform: rotate(35deg); }
+        }
+        @keyframes biBendTermO {
+            0%, 41.6% { transform: translate(0, 0); }
+            66.6%, 100% { transform: translate(-4.3px, 13.7px); } /* Follows the 35deg rotated bond */
+        }
+
+        /* --- Termolecular Animations --- */
+        .ter-o2-left { animation: terO2LeftAnim 12s ease-in-out infinite; }
+        .ter-o2-right { animation: terO2RightAnim 12s ease-in-out infinite; }
+        .ter-no-left { animation: terNoLeftAnim 12s ease-in-out infinite; }
+        .ter-no-right { animation: terNoRightAnim 12s ease-in-out infinite; }
+
+        @keyframes terO2LeftAnim {
+            0% { transform: translate(750px, 130px); }
+            25%, 41.6% { transform: translate(750px, 250px); }
+            66.6%, 100% { transform: translate(670px, 250px); }
+        }
+        @keyframes terO2RightAnim {
+            0% { transform: translate(750px, 130px); }
+            25%, 41.6% { transform: translate(750px, 250px); }
+            66.6%, 100% { transform: translate(830px, 250px); }
+        }
+        @keyframes terNoLeftAnim {
+            0% { transform: translate(630px, 370px); }
+            25%, 41.6% { transform: translate(726px, 250px); }
+            66.6%, 100% { transform: translate(646px, 250px); }
+        }
+        @keyframes terNoRightAnim {
+            0% { transform: translate(870px, 370px); }
+            25%, 41.6% { transform: translate(774px, 250px); }
+            66.6%, 100% { transform: translate(854px, 250px); }
+        }
+
+        /* --- Bond Breaking/Forming --- */
+        .bond-break { animation: bondBreakAnim 12s linear infinite; }
+        .bond-form { animation: bondFormAnim 12s linear infinite; }
+        
+        @keyframes bondBreakAnim {
+            0%, 24.9% { stroke-dasharray: none; opacity: 1; }
+            25%, 41.6% { stroke-dasharray: 4, 4; opacity: 1; }
+            41.7%, 100% { opacity: 0; }
+        }
+        @keyframes bondFormAnim {
+            0%, 24.9% { opacity: 0; stroke-dasharray: 4, 4; }
+            25%, 41.5% { opacity: 1; stroke-dasharray: 4, 4; }
+            41.6%, 100% { opacity: 1; stroke-dasharray: none; }
+        }
+
+        /* --- Glow & Arrows --- */
+        .ts-glow { animation: glowAnim 12s linear infinite; }
+        .arrow-anim { animation: arrowAnim 12s linear infinite; }
+
+        @keyframes glowAnim {
+            0%, 24.9% { opacity: 0; transform: scale(0.5); }
+            25%, 41.6% { opacity: 0.7; transform: scale(1.2); }
+            45%, 100% { opacity: 0; transform: scale(0.5); }
+        }
+        @keyframes arrowAnim {
+            0%, 20% { opacity: 1; }
+            25%, 100% { opacity: 0; }
+        }
+
+        /* --- Energy Graph Indicator --- */
+        .energy-indicator { animation: energyAnim 12s ease-in-out infinite; }
+
+        @keyframes energyAnim {
+            0% { transform: translate(150px, 560px); opacity: 1; }
+            10% { transform: translate(250px, 560px); opacity: 1; }
+            25%, 41.6% { transform: translate(450px, 420px); opacity: 1; }
+            56% { transform: translate(650px, 600px); opacity: 1; }
+            66.6% { transform: translate(800px, 600px); opacity: 1; }
+            70%, 95% { transform: translate(800px, 600px); opacity: 0; }
+            96%, 100% { transform: translate(150px, 560px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 900 650" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Atom Gradients -->
+        <radialGradient id="grad-O" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FF8888"/>
+            <stop offset="100%" stop-color="#FF4444"/>
+        </radialGradient>
+        <radialGradient id="grad-N" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#8888FF"/>
+            <stop offset="100%" stop-color="#4444FF"/>
+        </radialGradient>
+        
+        <!-- Drop Shadow -->
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.2"/>
+        </filter>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="6" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+
+        <!-- Arrow Marker -->
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#7209B7" />
+        </marker>
+        <marker id="arrowhead-black" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#2D3436" />
+        </marker>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#f8f9fa" />
+
+    <!-- Title & Headers -->
+    <text x="450" y="40" font-size="26" font-weight="700" text-anchor="middle">Elementary Reactions &amp; Molecularity</text>
+    
+    <!-- Panel Dividers -->
+    <line x1="300" y1="70" x2="300" y2="440" stroke="#ddd" stroke-width="2" stroke-dasharray="6,6" />
+    <line x1="600" y1="70" x2="600" y2="440" stroke="#ddd" stroke-width="2" stroke-dasharray="6,6" />
+
+    <!-- Panel 1: Unimolecular -->
+    <text x="150" y="80" font-size="18" font-weight="600" text-anchor="middle" fill="#7209B7">Unimolecular (m=1)</text>
+    <text x="150" y="110" class="formula" text-anchor="middle">O<tspan dy="4" font-size="12">3</tspan><tspan dy="-4"> &rarr; O</tspan><tspan dy="4" font-size="12">2</tspan><tspan dy="-4"> + O</tspan></text>
+
+    <!-- Panel 2: Bimolecular -->
+    <text x="450" y="80" font-size="18" font-weight="600" text-anchor="middle" fill="#7209B7">Bimolecular (m=2)</text>
+    <text x="450" y="110" class="formula" text-anchor="middle">NO + O<tspan dy="4" font-size="12">3</tspan><tspan dy="-4"> &rarr; NO</tspan><tspan dy="4" font-size="12">2</tspan><tspan dy="-4"> + O</tspan><tspan dy="4" font-size="12">2</tspan><tspan dy="-4"></tspan></text>
+
+    <!-- Panel 3: Termolecular -->
+    <text x="750" y="80" font-size="18" font-weight="600" text-anchor="middle" fill="#7209B7">Termolecular (m=3)</text>
+    <text x="750" y="110" class="formula" text-anchor="middle">2NO + O<tspan dy="4" font-size="12">2</tspan><tspan dy="-4"> &rarr; 2NO</tspan><tspan dy="4" font-size="12">2</tspan><tspan dy="-4"></tspan></text>
+
+    <!-- ========================================== -->
+    <!-- REACTION ANIMATIONS                        -->
+    <!-- ========================================== -->
+
+    <g class="fade-reset">
+        
+        <!-- PANEL 1: UNIMOLECULAR -->
+        <g class="vibrate">
+            <!-- TS Glow -->
+            <circle cx="161" cy="250" r="25" fill="#00FF00" filter="url(#glow)" class="ts-glow" style="transform-origin: 161px 250px;" />
+            
+            <!-- O2 Part (Left & Central) -->
+            <g class="uni-o2">
+                <!-- Double Bond (Left) -->
+                <line x1="0" y1="0" x2="-22" y2="15" stroke="#555" stroke-width="8" stroke-linecap="round"/>
+                <line x1="0" y1="0" x2="-22" y2="15" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round"/>
+                <!-- Breaking Single Bond (Right) -->
+                <line x1="0" y1="0" x2="22" y2="15" stroke="#333" stroke-width="5" stroke-linecap="round" class="bond-break"/>
+                
+                <circle cx="-22" cy="15" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+                <circle cx="0" cy="0" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+            </g>
+            
+            <!-- O Part (Right) -->
+            <g class="uni-o">
+                <circle cx="22" cy="15" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+            </g>
+        </g>
+
+        <!-- PANEL 2: BIMOLECULAR -->
+        <!-- Approach Arrows -->
+        <line x1="320" y1="280" x2="380" y2="280" stroke="#7209B7" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-anim" />
+        <line x1="580" y1="280" x2="520" y2="280" stroke="#7209B7" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-anim" />
+
+        <g class="vibrate">
+            <!-- TS Glow -->
+            <circle cx="438" cy="250" r="30" fill="#00FF00" filter="url(#glow)" class="ts-glow" style="transform-origin: 438px 250px;" />
+
+            <!-- NO Molecule (Left) -->
+            <g class="bi-no">
+                <!-- Forming Bond to Terminal O -->
+                <g class="bi-bend-right">
+                    <line x1="12" y1="0" x2="36" y2="0" stroke="#333" stroke-width="5" stroke-linecap="round" class="bond-form"/>
+                </g>
+                <!-- Existing NO Double Bond (Bends left) -->
+                <g class="bi-bend-left">
+                    <line x1="12" y1="0" x2="-12" y2="0" stroke="#555" stroke-width="8" stroke-linecap="round"/>
+                    <line x1="12" y1="0" x2="-12" y2="0" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="-12" cy="0" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+                </g>
+                <circle cx="12" cy="0" r="12" fill="url(#grad-N)" filter="url(#shadow)"/>
+            </g>
+
+            <!-- O3 Core (Central & Far O) -->
+            <g class="bi-o3-core">
+                <!-- Double Bond (Far) -->
+                <line x1="10" y1="15" x2="32" y2="0" stroke="#555" stroke-width="8" stroke-linecap="round"/>
+                <line x1="10" y1="15" x2="32" y2="0" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round"/>
+                <!-- Breaking Single Bond (to Term O) -->
+                <line x1="10" y1="15" x2="-12" y2="0" stroke="#333" stroke-width="5" stroke-linecap="round" class="bond-break"/>
+                
+                <circle cx="10" cy="15" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+                <circle cx="32" cy="0" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+            </g>
+
+            <!-- O3 Terminal O (Transfers to NO) -->
+            <g class="bi-o3-term">
+                <g class="bi-bend-term-o">
+                    <circle cx="-12" cy="0" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+                </g>
+            </g>
+        </g>
+
+        <!-- PANEL 3: TERMOLECULAR -->
+        <!-- Approach Arrows -->
+        <line x1="750" y1="170" x2="750" y2="210" stroke="#7209B7" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-anim" />
+        <line x1="660" y1="330" x2="700" y2="290" stroke="#7209B7" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-anim" />
+        <line x1="840" y1="330" x2="800" y2="290" stroke="#7209B7" stroke-width="3" marker-end="url(#arrowhead)" class="arrow-anim" />
+
+        <g class="vibrate">
+            <!-- TS Glows -->
+            <circle cx="738" cy="250" r="25" fill="#00FF00" filter="url(#glow)" class="ts-glow" style="transform-origin: 738px 250px;" />
+            <circle cx="762" cy="250" r="25" fill="#00FF00" filter="url(#glow)" class="ts-glow" style="transform-origin: 762px 250px;" />
+
+            <!-- O2 Molecule (Center/Top) -->
+            <!-- Left O -->
+            <g class="ter-o2-left">
+                <!-- Breaking O2 Double Bond -->
+                <line x1="-12" y1="0" x2="12" y2="0" stroke="#555" stroke-width="8" stroke-linecap="round" class="bond-break"/>
+                <line x1="-12" y1="0" x2="12" y2="0" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round" class="bond-break"/>
+                <circle cx="-12" cy="0" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+            </g>
+            <!-- Right O -->
+            <g class="ter-o2-right">
+                <circle cx="12" cy="0" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+            </g>
+
+            <!-- NO Molecule (Left) -->
+            <g class="ter-no-left">
+                <!-- Forming Bond to O2 Left -->
+                <line x1="-12" y1="0" x2="12" y2="0" stroke="#333" stroke-width="5" stroke-linecap="round" class="bond-form"/>
+                <!-- Existing NO Double Bond -->
+                <line x1="-12" y1="0" x2="-30" y2="15" stroke="#555" stroke-width="8" stroke-linecap="round"/>
+                <line x1="-12" y1="0" x2="-30" y2="15" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round"/>
+                
+                <circle cx="-30" cy="15" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+                <circle cx="-12" cy="0" r="12" fill="url(#grad-N)" filter="url(#shadow)"/>
+            </g>
+
+            <!-- NO Molecule (Right) -->
+            <g class="ter-no-right">
+                <!-- Forming Bond to O2 Right -->
+                <line x1="12" y1="0" x2="-12" y2="0" stroke="#333" stroke-width="5" stroke-linecap="round" class="bond-form"/>
+                <!-- Existing NO Double Bond -->
+                <line x1="12" y1="0" x2="30" y2="15" stroke="#555" stroke-width="8" stroke-linecap="round"/>
+                <line x1="12" y1="0" x2="30" y2="15" stroke="#f8f9fa" stroke-width="2" stroke-linecap="round"/>
+                
+                <circle cx="30" cy="15" r="12" fill="url(#grad-O)" filter="url(#shadow)"/>
+                <circle cx="12" cy="0" r="12" fill="url(#grad-N)" filter="url(#shadow)"/>
+            </g>
+        </g>
+
+    </g> <!-- End Fade Reset Group -->
+
+    <!-- ========================================== -->
+    <!-- ENERGY COORDINATE GRAPH                    -->
+    <!-- ========================================== -->
+    
+    <!-- Graph Axes -->
+    <line x1="100" y1="620" x2="850" y2="620" stroke="#2D3436" stroke-width="3" marker-end="url(#arrowhead-black)" />
+    <line x1="100" y1="620" x2="100" y2="400" stroke="#2D3436" stroke-width="3" marker-end="url(#arrowhead-black)" />
+    
+    <text x="475" y="640" font-size="14" font-weight="600" text-anchor="middle">Reaction Coordinate</text>
+    <text x="-510" y="80" font-size="14" font-weight="600" text-anchor="middle" transform="rotate(-90)">Potential Energy</text>
+
+    <!-- Energy Curve -->
+    <path d="M 150 560 L 250 560 C 350 560, 380 420, 450 420 C 520 420, 550 600, 650 600 L 800 600" fill="none" stroke="#2D3436" stroke-width="4" stroke-linecap="round" />
+
+    <!-- Annotations (Ea, Delta H) -->
+    <line x1="250" y1="560" x2="450" y2="560" stroke="#888" stroke-width="2" stroke-dasharray="4,4" />
+    <line x1="650" y1="600" x2="450" y2="600" stroke="#888" stroke-width="2" stroke-dasharray="4,4" />
+    
+    <!-- Ea Arrow -->
+    <line x1="450" y1="555" x2="450" y2="425" stroke="#FF4444" stroke-width="2" marker-end="url(#arrowhead-black)" />
+    <polygon points="447 555, 453 555, 450 560" fill="#FF4444" /> <!-- Bottom arrow head -->
+    <text x="460" y="495" font-size="14" font-weight="600" fill="#FF4444">E<tspan dy="3" font-size="10">a</tspan></text>
+
+    <!-- Delta H Arrow -->
+    <line x1="450" y1="565" x2="450" y2="595" stroke="#4444FF" stroke-width="2" marker-end="url(#arrowhead-black)" />
+    <text x="460" y="585" font-size="14" font-weight="600" fill="#4444FF">&Delta;H</text>
+
+    <!-- Moving Energy Indicator -->
+    <circle r="10" fill="#FFD700" filter="url(#glow)" class="energy-indicator" />
+
+    <!-- Legend -->
+    <g transform="translate(720, 420)">
+        <rect x="0" y="0" width="140" height="90" fill="#fff" stroke="#ddd" stroke-width="1" rx="6" />
+        <circle cx="15" cy="20" r="6" fill="url(#grad-O)" />
+        <text x="30" y="24" font-size="12">Oxygen (O)</text>
+        
+        <circle cx="15" cy="40" r="6" fill="url(#grad-N)" />
+        <text x="30" y="44" font-size="12">Nitrogen (N)</text>
+        
+        <line x1="9" y1="60" x2="21" y2="60" stroke="#555" stroke-width="4" />
+        <line x1="9" y1="60" x2="21" y2="60" stroke="#fff" stroke-width="1" />
+        <text x="30" y="64" font-size="12">Double Bond</text>
+
+        <line x1="9" y1="80" x2="21" y2="80" stroke="#333" stroke-width="2" stroke-dasharray="2,2" />
+        <text x="30" y="84" font-size="12">Transition State</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

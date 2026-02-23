@@ -718,6 +718,7 @@ async def teacher_student_detail(
     student_rows = read_query(
         """
         MATCH (s:Student {id: $student_id})
+        WHERE coalesce(s.role, 'student') = 'student'
         RETURN s.id AS student_id,
                s.name AS student_name,
                s.email AS student_email,

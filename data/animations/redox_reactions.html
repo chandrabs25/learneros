@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redox in Covalent Compounds</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 22px; fill: #2D3436; text-anchor: middle; }
+        .subtitle { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 14px; fill: #636E72; text-anchor: middle; }
+        .equation { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 20px; fill: #2D3436; text-anchor: middle; }
+        .label { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; fill: #2D3436; text-anchor: middle; }
+        .ox-state { font-family: 'Roboto Mono', monospace; font-weight: 700; font-size: 14px; text-anchor: middle; dominant-baseline: middle; }
+        .legend-text { font-family: 'Inter', sans-serif; font-size: 12px; fill: #2D3436; dominant-baseline: middle; }
+        
+        .dynamic-text {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 15px;
+            text-anchor: middle;
+            text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff;
+        }
+        .text-ox { fill: #d63031; }
+        .text-red { fill: #0984e3; }
+
+        /* Master Loop */
+        .master-container { animation: masterReset 12s infinite; }
+
+        /* Group Movements (Float -> Center -> Vibrate -> Hold) */
+        .group-h2a { animation: moveGroupH2A 12s infinite; }
+        .group-h2b { animation: moveGroupH2B 12s infinite; }
+        .group-o2 { animation: moveGroupO2 12s infinite; }
+
+        /* Atom Local Movements (Hold -> Move to Product -> Hold) */
+        .atom-h1 { animation: moveH1 12s infinite; }
+        .atom-h2 { animation: moveH2 12s infinite; }
+        .atom-h3 { animation: moveH3 12s infinite; }
+        .atom-h4 { animation: moveH4 12s infinite; }
+        .atom-o1 { animation: moveO1 12s infinite; }
+        .atom-o2 { animation: moveO2 12s infinite; }
+
+        /* Fades */
+        .reactant-only { animation: fadeOutReactants 12s infinite; }
+        .product-only { animation: fadeInProducts 12s infinite; opacity: 0; }
+
+        /* Electron Shifts */
+        .e-pair1 { animation: shiftE1 12s infinite; }
+        .e-pair2 { animation: shiftE2 12s infinite; }
+        .e-pair3 { animation: shiftE3 12s infinite; }
+        .e-pair4 { animation: shiftE4 12s infinite; }
+
+        /* Oxidation States */
+        .ox-old { animation: oxOld 12s infinite; }
+        .ox-new { animation: oxNew 12s infinite; opacity: 0; }
+        .ox-0 { fill: #636E72; }
+        .ox-plus { fill: #d63031; }
+        .ox-minus { fill: #0984e3; }
+
+        /* Arrows & Dynamic Labels */
+        .dipole-arrow {
+            stroke: #F77F00;
+            stroke-width: 3;
+            stroke-linecap: round;
+            fill: none;
+            stroke-dasharray: 40;
+            stroke-dashoffset: 40;
+            animation: showArrows 12s infinite;
+        }
+        .reveal-element { animation: revealElement 12s infinite; opacity: 0; }
+
+        /* --- KEYFRAMES --- */
+
+        @keyframes masterReset {
+            0%, 92% { opacity: 1; }
+            96%, 100% { opacity: 0; }
+        }
+
+        /* Group Animations */
+        @keyframes moveGroupH2A {
+            0% { transform: translate(200px, 150px); }
+            12.5% { transform: translate(200px, 142px); }
+            25% { transform: translate(200px, 150px); }
+            33% { transform: translate(380px, 240px); }
+            34% { transform: translate(375px, 243px); }
+            35% { transform: translate(383px, 237px); }
+            36%, 100% { transform: translate(380px, 240px); }
+        }
+        @keyframes moveGroupH2B {
+            0% { transform: translate(200px, 350px); }
+            12.5% { transform: translate(200px, 358px); }
+            25% { transform: translate(200px, 350px); }
+            33% { transform: translate(380px, 260px); }
+            34% { transform: translate(384px, 256px); }
+            35% { transform: translate(377px, 263px); }
+            36%, 100% { transform: translate(380px, 260px); }
+        }
+        @keyframes moveGroupO2 {
+            0% { transform: translate(600px, 250px); }
+            12.5% { transform: translate(600px, 242px); }
+            25% { transform: translate(600px, 250px); }
+            33% { transform: translate(400px, 250px); }
+            34% { transform: translate(396px, 253px); }
+            35% { transform: translate(403px, 247px); }
+            36%, 100% { transform: translate(400px, 250px); }
+        }
+
+        /* Atom Local Animations */
+        @keyframes moveH1 {
+            0%, 36% { transform: translate(-25px, 0px); }
+            45%, 100% { transform: translate(-130px, 50px); }
+        }
+        @keyframes moveH2 {
+            0%, 36% { transform: translate(25px, 0px); }
+            45%, 100% { transform: translate(-30px, 50px); }
+        }
+        @keyframes moveH3 {
+            0%, 36% { transform: translate(-25px, 0px); }
+            45%, 100% { transform: translate(70px, 30px); }
+        }
+        @keyframes moveH4 {
+            0%, 36% { transform: translate(25px, 0px); }
+            45%, 100% { transform: translate(170px, 30px); }
+        }
+        @keyframes moveO1 {
+            0%, 36% { transform: translate(-35px, 0px); }
+            45%, 100% { transform: translate(-100px, 0px); }
+        }
+        @keyframes moveO2 {
+            0%, 36% { transform: translate(35px, 0px); }
+            45%, 100% { transform: translate(100px, 0px); }
+        }
+
+        /* Fade Animations */
+        @keyframes fadeOutReactants {
+            0%, 33% { opacity: 1; }
+            36%, 100% { opacity: 0; }
+        }
+        @keyframes fadeInProducts {
+            0%, 40% { opacity: 0; }
+            45%, 100% { opacity: 1; }
+        }
+
+        /* Electron Shift Animations */
+        @keyframes shiftE1 {
+            0%, 66.6% { transform: translate(275px, 270px) rotate(141deg); }
+            70%, 100% { transform: translate(285px, 262px) rotate(141deg); }
+        }
+        @keyframes shiftE2 {
+            0%, 66.6% { transform: translate(325px, 270px) rotate(39deg); }
+            70%, 100% { transform: translate(315px, 262px) rotate(39deg); }
+        }
+        @keyframes shiftE3 {
+            0%, 66.6% { transform: translate(475px, 270px) rotate(141deg); }
+            70%, 100% { transform: translate(485px, 262px) rotate(141deg); }
+        }
+        @keyframes shiftE4 {
+            0%, 66.6% { transform: translate(525px, 270px) rotate(39deg); }
+            70%, 100% { transform: translate(515px, 262px) rotate(39deg); }
+        }
+
+        /* Oxidation State & Label Reveals */
+        @keyframes oxOld {
+            0%, 66.6% { opacity: 1; }
+            70%, 100% { opacity: 0; }
+        }
+        @keyframes oxNew {
+            0%, 66.6% { opacity: 0; }
+            70%, 100% { opacity: 1; }
+        }
+        @keyframes showArrows {
+            0%, 66.6% { opacity: 0; stroke-dashoffset: 40; }
+            70%, 100% { opacity: 1; stroke-dashoffset: 0; }
+        }
+        @keyframes revealElement {
+            0%, 66.6% { opacity: 0; transform: translateY(10px); }
+            70%, 100% { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Gradients for Atoms -->
+            <radialGradient id="gradH" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#cccccc"/>
+            </radialGradient>
+            <radialGradient id="gradO" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#ff8888"/>
+                <stop offset="100%" stop-color="#FF4444"/>
+            </radialGradient>
+
+            <!-- Glow Filter for Electrons -->
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2.5" result="blur" />
+                <feMerge>
+                    <feMergeNode in="blur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+
+            <!-- Arrowhead Marker -->
+            <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#F77F00"/>
+            </marker>
+        </defs>
+
+        <!-- Static Background Elements -->
+        <text x="400" y="40" class="title">Redox in Covalent Compounds: Electron Shift</text>
+        <text x="400" y="65" class="subtitle">Formation of Water from Hydrogen and Oxygen Gas</text>
+        
+        <text x="400" y="470" class="equation">
+            2H<tspan dy="5" font-size="14">2</tspan><tspan dy="-5">(g)</tspan> + 
+            O<tspan dy="5" font-size="14">2</tspan><tspan dy="-5">(g)</tspan> → 
+            2H<tspan dy="5" font-size="14">2</tspan><tspan dy="-5">O(l)</tspan>
+        </text>
+
+        <!-- Legend -->
+        <g transform="translate(640, 20)">
+            <rect x="0" y="0" width="140" height="90" fill="#ffffff" stroke="#e2e8f0" rx="6" opacity="0.9"/>
+            <circle cx="20" cy="20" r="7" fill="url(#gradH)" stroke="#aaa" stroke-width="1"/>
+            <text x="35" y="21" class="legend-text">Hydrogen (H)</text>
+            
+            <circle cx="20" cy="45" r="9" fill="url(#gradO)" stroke="#cc0000" stroke-width="1"/>
+            <text x="35" y="46" class="legend-text">Oxygen (O)</text>
+            
+            <circle cx="20" cy="70" r="4" fill="#FFD700" filter="url(#glow)"/>
+            <text x="35" y="71" class="legend-text">Valence Electron</text>
+        </g>
+
+        <!-- Master Animation Container -->
+        <g class="master-container">
+
+            <!-- PRODUCT BONDS (Fade in later) -->
+            <g class="product-only">
+                <line x1="300" y1="250" x2="250" y2="290" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                <line x1="300" y1="250" x2="350" y2="290" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                <line x1="500" y1="250" x2="450" y2="290" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                <line x1="500" y1="250" x2="550" y2="290" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                <text x="400" y="180" class="label">2H₂O (l)</text>
+            </g>
+
+            <!-- PRODUCT ELECTRONS (Fade in, then shift) -->
+            <g class="product-only">
+                <g class="e-pair1">
+                    <circle cy="-4" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <circle cy="4" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                </g>
+                <g class="e-pair2">
+                    <circle cy="-4" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <circle cy="4" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                </g>
+                <g class="e-pair3">
+                    <circle cy="-4" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <circle cy="4" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                </g>
+                <g class="e-pair4">
+                    <circle cy="-4" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <circle cy="4" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                </g>
+            </g>
+
+            <!-- DIPOLE ARROWS (Appear during shift) -->
+            <g>
+                <g transform="translate(275, 270) rotate(-39)">
+                    <line x1="-15" y1="-15" x2="15" y2="-15" class="dipole-arrow" marker-end="url(#arrowhead)"/>
+                </g>
+                <g transform="translate(325, 270) rotate(-141)">
+                    <line x1="-15" y1="15" x2="15" y2="15" class="dipole-arrow" marker-end="url(#arrowhead)"/>
+                </g>
+                <g transform="translate(475, 270) rotate(-39)">
+                    <line x1="-15" y1="-15" x2="15" y2="-15" class="dipole-arrow" marker-end="url(#arrowhead)"/>
+                </g>
+                <g transform="translate(525, 270) rotate(-141)">
+                    <line x1="-15" y1="15" x2="15" y2="15" class="dipole-arrow" marker-end="url(#arrowhead)"/>
+                </g>
+            </g>
+
+            <!-- DYNAMIC TEXT LABELS -->
+            <text x="200" y="410" class="dynamic-text text-ox reveal-element">Oxidation: H loses electron density</text>
+            <text x="600" y="410" class="dynamic-text text-red reveal-element">Reduction: O gains electron density</text>
+
+            <!-- ========================================== -->
+            <!-- MOLECULE GROUPS (Atoms & Reactant Bonds)   -->
+            <!-- ========================================== -->
+
+            <!-- H2 MOLECULE A -->
+            <g class="group-h2a">
+                <!-- Reactant Bond & Electrons -->
+                <g class="reactant-only">
+                    <line x1="-25" y1="0" x2="25" y2="0" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="-4" cy="0" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <circle cx="4" cy="0" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <text x="0" y="40" class="label">H₂ (g)</text>
+                </g>
+                <!-- Atom H1 -->
+                <g class="atom-h1">
+                    <circle r="15" fill="url(#gradH)" stroke="#aaa" stroke-width="1"/>
+                    <text y="-25" class="ox-state ox-old ox-0">0</text>
+                    <text y="-25" class="ox-state ox-new ox-plus">+1</text>
+                </g>
+                <!-- Atom H2 -->
+                <g class="atom-h2">
+                    <circle r="15" fill="url(#gradH)" stroke="#aaa" stroke-width="1"/>
+                    <text y="-25" class="ox-state ox-old ox-0">0</text>
+                    <text y="-25" class="ox-state ox-new ox-plus">+1</text>
+                </g>
+            </g>
+
+            <!-- H2 MOLECULE B -->
+            <g class="group-h2b">
+                <!-- Reactant Bond & Electrons -->
+                <g class="reactant-only">
+                    <line x1="-25" y1="0" x2="25" y2="0" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="-4" cy="0" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <circle cx="4" cy="0" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <text x="0" y="40" class="label">H₂ (g)</text>
+                </g>
+                <!-- Atom H3 -->
+                <g class="atom-h3">
+                    <circle r="15" fill="url(#gradH)" stroke="#aaa" stroke-width="1"/>
+                    <text y="-25" class="ox-state ox-old ox-0">0</text>
+                    <text y="-25" class="ox-state ox-new ox-plus">+1</text>
+                </g>
+                <!-- Atom H4 -->
+                <g class="atom-h4">
+                    <circle r="15" fill="url(#gradH)" stroke="#aaa" stroke-width="1"/>
+                    <text y="-25" class="ox-state ox-old ox-0">0</text>
+                    <text y="-25" class="ox-state ox-new ox-plus">+1</text>
+                </g>
+            </g>
+
+            <!-- O2 MOLECULE -->
+            <g class="group-o2">
+                <!-- Reactant Bond & Electrons -->
+                <g class="reactant-only">
+                    <line x1="-35" y1="-6" x2="35" y2="-6" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+                    <line x1="-35" y1="6" x2="35" y2="6" stroke="#555" stroke-width="4" stroke-linecap="round"/>
+                    <circle cx="-6" cy="-6" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <circle cx="6" cy="-6" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <circle cx="-6" cy="6" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <circle cx="6" cy="6" r="3.5" fill="#FFD700" filter="url(#glow)"/>
+                    <text x="0" y="55" class="label">O₂ (g)</text>
+                </g>
+                <!-- Atom O1 -->
+                <g class="atom-o1">
+                    <circle r="25" fill="url(#gradO)" stroke="#cc0000" stroke-width="1"/>
+                    <text y="-35" class="ox-state ox-old ox-0">0</text>
+                    <text y="-35" class="ox-state ox-new ox-minus">-2</text>
+                </g>
+                <!-- Atom O2 -->
+                <g class="atom-o2">
+                    <circle r="25" fill="url(#gradO)" stroke="#cc0000" stroke-width="1"/>
+                    <text y="-35" class="ox-state ox-old ox-0">0</text>
+                    <text y="-35" class="ox-state ox-new ox-minus">-2</text>
+                </g>
+            </g>
+
+        </g>
+    </svg>
+</div>
+
+</body>
+</html>

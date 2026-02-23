@@ -1,5 +1,5 @@
 """
-AI Tutor — Test Me Router
+LearnerOS — Test Me Router
 ─────────────────────────
 Generates comprehension questions from section content using Fireworks-hosted Kimi 2.5,
 and evaluates student answers. Returns structured insight data for

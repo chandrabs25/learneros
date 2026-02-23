@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnetic Dipole Moment Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Base */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            position: absolute;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        /* Formula Card (Top Left) */
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            min-width: 280px;
+        }
+
+        #formula-card h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+            color: #111;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .math-symbol {
+            font-weight: 700;
+        }
+
+        .val-m { color: #7209B7; }
+        .val-tau { color: #F77F00; }
+        .val-b { color: #4361EE; }
+        .val-i { color: #FF3366; }
+
+        /* Control Panel (Right) */
+        #control-panel {
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            color: #555;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid #ccc;
+        }
+
+        /* Custom Slider Colors */
+        #slider-current::-webkit-slider-thumb { border-color: #FF3366; }
+        #slider-radius::-webkit-slider-thumb { border-color: #444444; }
+        #slider-bfield::-webkit-slider-thumb { border-color: #4361EE; }
+        #slider-theta::-webkit-slider-thumb { border-color: #10B981; }
+        #slider-temp::-webkit-slider-thumb { border-color: #F59E0B; }
+
+        /* Toggle Switch */
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #7209B7;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .micro-controls {
+            display: none;
+        }
+
+        .macro-controls {
+            display: block;
+        }
+
+        /* Legend */
+        .legend {
+            margin-top: 20px;
+            font-size: 0.85rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>Physics Data</h2>
+        <div class="math-line">
+            <span>Area (<span class="math-symbol">A</span>)</span>
+            <span id="val-area">0.00 m²</span>
+        </div>
+        <div class="math-line">
+            <span>Dipole Moment (<span class="math-symbol val-m">m</span>)</span>
+            <span id="val-moment" class="val-m">0.00 Am²</span>
+        </div>
+        <div class="math-line">
+            <span>Torque (<span class="math-symbol val-tau">&tau;</span>)</span>
+            <span id="val-torque" class="val-tau">0.00 Nm</span>
+        </div>
+        <div class="math-line">
+            <span>Pot. Energy (<span class="math-symbol">U</span>)</span>
+            <span id="val-energy">0.00 J</span>
+        </div>
+        <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin: 15px 0;">
+        <div style="font-size: 0.8rem; color: #666; font-family: 'Roboto Mono', monospace;">
+            m = I &middot; A<br>
+            &tau; = |m &times; B| = mB&middot;sin(&theta;)<br>
+            U = -m &middot; B = -mB&middot;cos(&theta;)
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <div class="toggle-container">
+            <span style="font-weight: 600;">Simulation Mode</span>
+            <label class="switch">
+                <input type="checkbox" id="mode-toggle">
+                <span class="slider"></span>
+            </label>
+            <span id="mode-label" style="font-size: 0.85rem; color: #666; width: 45px; text-align: right;">Macro</span>
+        </div>
+
+        <div class="macro-controls" id="macro-controls-group">
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Current (I)</span>
+                    <span class="control-value"><span id="lbl-current">2.0</span> A</span>
+                </div>
+                <input type="range" id="slider-current" min="-10" max="10" step="0.5" value="2.0">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Loop Radius (R)</span>
+                    <span class="control-value"><span id="lbl-radius">1.5</span> m</span>
+                </div>
+                <input type="range" id="slider-radius" min="0.5" max="3.0" step="0.1" value="1.5">
+            </div>
+
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Tilt Angle (&theta;)</span>
+                    <span class="control-value"><span id="lbl-theta">45</span>&deg;</span>
+                </div>
+                <input type="range" id="slider-theta" min="0" max="180" step="1" value="45">
+            </div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>B-Field Strength (B)</span>
+                <span class="control-value"><span id="lbl-bfield">1.0</span> T</span>
+            </div>
+            <input type="range" id="slider-bfield" min="0" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="micro-controls" id="micro-controls-group">
+            <div class="control-group">
+                <div class="control-header">
+                    <span>Temperature (T)</span>
+                    <span class="control-value"><span id="lbl-temp">300</span> K</span>
+                </div>
+                <input type="range" id="slider-temp" min="1" max="500" step="10" value="300">
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> Dipole Moment (m)</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Magnetic Field (B)</div>
+            <div class="legend-item macro-controls" id="legend-tau"><div class="color-box" style="background: #F77F00;"></div> Torque (&tau;)</div>
+            <div class="legend-item macro-controls" id="legend-curr"><div class="color-box" style="background: #FF3366;"></div> Conventional Current</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        const state = {
+            isMicro: false,
+            current: 2.0,
+            radius: 1.5,
+            bField: 1.0,
+            theta: 45, // degrees
+            temp: 300,
+            time: 0
+        };
+
+        // --- Colors ---
+        const COLORS = {
+            dipole: 0x7209B7,
+            bField: 0x4361EE,
+            torque: 0xF77F00,
+            currentPos: 0xFF3366,
+            currentNeg: 0x4361EE,
+            loop: 0x444444,
+            area: 0xffffff
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(6, 4, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+        dirLight2.position.set(-5, -5, -5);
+        scene.add(dirLight2);
+
+        // Grid
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xe0e0e0);
+        gridHelper.position.y = -3;
+        scene.add(gridHelper);
+
+        // --- Custom Thick Arrow Class ---
+        class VectorArrow {
+            constructor(color, thickness, opacity = 1.0) {
+                this.group = new THREE.Group();
+                
+                const mat = new THREE.MeshPhongMaterial({ 
+                    color: color, 
+                    transparent: opacity < 1.0, 
+                    opacity: opacity,
+                    shininess: 80
+                });
+
+                this.cylGeo = new THREE.CylinderGeometry(thickness, thickness, 1, 16);
+                this.cylGeo.translate(0, 0.5, 0); 
+                this.cyl = new THREE.Mesh(this.cylGeo, mat);
+                
+                this.coneGeo = new THREE.ConeGeometry(thickness * 2.5, thickness * 4, 16);
+                this.coneGeo.translate(0, thickness * 2, 0); 
+                this.cone = new THREE.Mesh(this.coneGeo, mat);
+                
+                this.group.add(this.cyl);
+                this.group.add(this.cone);
+            }
+
+            setLength(len) {
+                if (Math.abs(len) < 0.01) {
+                    this.group.visible = false;
+                    return;
+                }
+                this.group.visible = true;
+                const absLen = Math.abs(len);
+                this.cyl.scale.set(1, absLen, 1);
+                this.cone.position.y = absLen;
+            }
+
+            setDirection(dir) {
+                if (dir.lengthSq() < 0.0001) return;
+                const axis = new THREE.Vector3(0, 1, 0);
+                this.group.quaternion.setFromUnitVectors(axis, dir.clone().normalize());
+            }
+        }
+
+        // --- Macro Mode Objects ---
+        const macroGroup = new THREE.Group();
+        scene.add(macroGroup);
+
+        // The Loop (Torus)
+        const loopGeo = new THREE.TorusGeometry(1, 0.05, 16, 64);
+        const loopMat = new THREE.MeshPhongMaterial({ color: COLORS.loop });
+        const loopMesh = new THREE.Mesh(loopGeo, loopMat);
+        // Rotate torus so it lies in XY plane (normal is Z)
+        // Default Torus is in XY plane, so normal is +Z. Perfect.
+        macroGroup.add(loopMesh);
+
+        // Area Disk
+        const areaGeo = new THREE.CircleGeometry(1, 64);
+        const areaMat = new THREE.MeshBasicMaterial({ 
+            color: COLORS.area, 
+            transparent: true, 
+            opacity: 0.4, 
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const areaMesh = new THREE.Mesh(areaGeo, areaMat);
+        macroGroup.add(areaMesh);
+
+        // Charges
+        const numCharges = 12;
+        const charges = [];
+        const chargeGeo = new THREE.SphereGeometry(0.1, 16, 16);
+        const posMat = new THREE.MeshPhongMaterial({ color: COLORS.currentPos });
+        const negMat = new THREE.MeshPhongMaterial({ color: COLORS.currentNeg });
+
+        for(let i=0; i<numCharges; i++) {
+            const posCharge = new THREE.Mesh(chargeGeo, posMat);
+            const negCharge = new THREE.Mesh(chargeGeo, negMat);
+            macroGroup.add(posCharge);
+            macroGroup.add(negCharge);
+            charges.push({ pos: posCharge, neg: negCharge, offset: (i / numCharges) * Math.PI * 2 });
+        }
+
+        // Vectors
+        const mArrow = new VectorArrow(COLORS.dipole, 0.12);
+        macroGroup.add(mArrow.group); // m rotates with the loop
+
+        const tauArrow = new VectorArrow(COLORS.torque, 0.12);
+        scene.add(tauArrow.group); // tau is global
+
+        const rotationAxisGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-5, 0, 0), new THREE.Vector3(5, 0, 0)
+        ]);
+        const rotationAxisMat = new THREE.LineDashedMaterial({ color: 0x888888, dashSize: 0.2, gapSize: 0.1 });
+        const rotationAxis = new THREE.Line(rotationAxisGeo, rotationAxisMat);
+        rotationAxis.computeLineDistances();
+        scene.add(rotationAxis);
+
+        // Global B-Field Grid
+        const bFieldGroup = new THREE.Group();
+        scene.add(bFieldGroup);
+        const bArrows = [];
+        for(let x = -4; x <= 4; x+=2) {
+            for(let y = -4; y <= 4; y+=2) {
+                const bArrow = new VectorArrow(COLORS.bField, 0.04, 0.6);
+                bArrow.group.position.set(x, y, -4);
+                bArrow.setDirection(new THREE.Vector3(0, 0, 1)); // B points in +Z
+                bFieldGroup.add(bArrow.group);
+                bArrows.push(bArrow);
+            }
+        }
+
+        // --- Micro Mode Objects ---
+        const microGroup = new THREE.Group();
+        scene.add(microGroup);
+        const microArrows = [];
+        const gridSize = 8;
+        const spacing = 0.8;
+        const offset = (gridSize - 1) * spacing / 2;
+
+        for(let x = 0; x < gridSize; x++) {
+            for(let y = 0; y < gridSize; y++) {
+                const arrow = new VectorArrow(COLORS.dipole, 0.04);
+                arrow.group.position.set(x * spacing - offset, y * spacing - offset, 0);
+                
+                // Assign random initial orientation
+                const randDir = new THREE.Vector3(
+                    Math.random() - 0.5,
+                    Math.random() - 0.5,
+                    Math.random() - 0.5
+                ).normalize();
+                
+                microGroup.add(arrow.group);
+                microArrows.push({
+                    obj: arrow,
+                    baseDir: randDir,
+                    currentDir: randDir.clone()
+                });
+            }
+        }
+        microGroup.visible = false;
+
+        // --- DOM Elements ---
+        const dom = {
+            valArea: document.getElementById('val-area'),
+            valMoment: document.getElementById('val-moment'),
+            valTorque: document.getElementById('val-torque'),
+            valEnergy: document.getElementById('val-energy'),
+            
+            lblCurrent: document.getElementById('lbl-current'),
+            lblRadius: document.getElementById('lbl-radius'),
+            lblBfield: document.getElementById('lbl-bfield'),
+            lblTheta: document.getElementById('lbl-theta'),
+            lblTemp: document.getElementById('lbl-temp'),
+            
+            slCurrent: document.getElementById('slider-current'),
+            slRadius: document.getElementById('slider-radius'),
+            slBfield: document.getElementById('slider-bfield'),
+            slTheta: document.getElementById('slider-theta'),
+            slTemp: document.getElementById('slider-temp'),
+            
+            modeToggle: document.getElementById('mode-toggle'),
+            modeLabel: document.getElementById('mode-label'),
+            macroControls: document.getElementById('macro-controls-group'),
+            microControls: document.getElementById('micro-controls-group'),
+            legendTau: document.getElementById('legend-tau'),
+            legendCurr: document.getElementById('legend-curr')
+        };
+
+        // --- Event Listeners ---
+        function updateStateFromUI() {
+            state.current = parseFloat(dom.slCurrent.value);
+            state.radius = parseFloat(dom.slRadius.value);
+            state.bField = parseFloat(dom.slBfield.value);
+            state.theta = parseFloat(dom.slTheta.value);
+            state.temp = parseFloat(dom.slTemp.value);
+            
+            dom.lblCurrent.innerText = state.current.toFixed(1);
+            dom.lblRadius.innerText = state.radius.toFixed(1);
+            dom.lblBfield.innerText = state.bField.toFixed(1);
+            dom.lblTheta.innerText = state.theta;
+            dom.lblTemp.innerText = state.temp;
+
+            updatePhysics();
+        }
+
+        dom.slCurrent.addEventListener('input', updateStateFromUI);
+        dom.slRadius.addEventListener('input', updateStateFromUI);
+        dom.slBfield.addEventListener('input', updateStateFromUI);
+        dom.slTheta.addEventListener('input', updateStateFromUI);
+        dom.slTemp.addEventListener('input', updateStateFromUI);
+
+        dom.modeToggle.addEventListener('change', (e) => {
+            state.isMicro = e.target.checked;
+            dom.modeLabel.innerText = state.isMicro ? "Micro" : "Macro";
+            
+            if(state.isMicro) {
+                dom.macroControls.style.display = 'none';
+                dom.microControls.style.display = 'block';
+                dom.legendTau.style.display = 'none';
+                dom.legendCurr.style.display = 'none';
+                macroGroup.visible = false;
+                tauArrow.group.visible = false;
+                rotationAxis.visible = false;
+                microGroup.visible = true;
+            } else {
+                dom.macroControls.style.display = 'block';
+                dom.microControls.style.display = 'none';
+                dom.legendTau.style.display = 'flex';
+                dom.legendCurr.style.display = 'flex';
+                macroGroup.visible = true;
+                rotationAxis.visible = true;
+                microGroup.visible = false;
+            }
+            updatePhysics();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Physics & Math Logic ---
+        function updatePhysics() {
+            // 1. Math Calculations
+            const A = Math.PI * Math.pow(state.radius, 2);
+            const m_mag = state.current * A;
+            const theta_rad = state.theta * Math.PI / 180;
+            
+            // B is along +Z
+            const B_vec = new THREE.Vector3(0, 0, state.bField);
+            
+            // Loop normal is initially +Z. Rotate around X axis by theta.
+            // If current is negative, m points opposite to normal.
+            const m_dir_local = new THREE.Vector3(0, 0, Math.sign(state.current) || 1);
+            
+            // Apply rotation to macro group
+            macroGroup.rotation.x = theta_rad;
+            
+            // Calculate global m vector for torque calculation
+            const m_vec_global = m_dir_local.clone().applyEuler(macroGroup.rotation).multiplyScalar(Math.abs(m_mag));
+            
+            // Torque = m x B
+            const tau_vec = new THREE.Vector3().crossVectors(m_vec_global, B_vec);
+            const tau_mag = tau_vec.length();
+            
+            // Energy U = -m . B
+            const U = -m_vec_global.dot(B_vec);
+
+            // Update UI
+            if (!state.isMicro) {
+                dom.valArea.innerText = A.toFixed(2) + " m²";
+                dom.valMoment.innerText = m_mag.toFixed(2) + " Am²";
+                dom.valTorque.innerText = tau_mag.toFixed(2) + " Nm";
+                dom.valEnergy.innerText = U.toFixed(2) + " J";
+            } else {
+                // In micro mode, show qualitative magnetization
+                const x = (state.bField * 50) / state.temp;
+                let L = 0;
+                if (Math.abs(x) > 0.01) {
+                    L = (Math.exp(x) + Math.exp(-x)) / (Math.exp(x) - Math.exp(-x)) - 1/x;
+                } else {
+                    L = x / 3;
+                }
+                dom.valArea.innerText = "-";
+                dom.valMoment.innerText = "M &prop; " + L.toFixed(2);
+                dom.valTorque.innerText = "-";
+                dom.valEnergy.innerText = "-";
+            }
+
+            // 2. Visual Updates (Macro)
+            if (!state.isMicro) {
+                // Scale loop and area
+                loopMesh.scale.set(state.radius, state.radius, state.radius);
+                areaMesh.scale.set(state.radius, state.radius, state.radius);
+                
+                // Update m arrow (child of macroGroup, so local coordinates)
+                const visualScaleM = 0.15;
+                mArrow.setDirection(m_dir_local);
+                mArrow.setLength(Math.abs(m_mag) * visualScaleM);
+
+                // Update tau arrow (global)
+                const visualScaleTau = 0.5;
+                if (tau_mag > 0.01) {
+                    tauArrow.setDirection(tau_vec);
+                    tauArrow.setLength(tau_mag * visualScaleTau);
+                } else {
+                    tauArrow.setLength(0);
+                }
+            }
+
+            // 3. Visual Updates (B-Field)
+            bArrows.forEach(arrow => {
+                arrow.setLength(state.bField * 1.5);
+                // Adjust opacity based on strength
+                arrow.group.children.forEach(c => {
+                    c.material.opacity = 0.2 + (state.bField / 5.0) * 0.8;
+                });
+            });
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            state.time += dt;
+
+            controls.update();
+
+            if (!state.isMicro) {
+                // Animate charges
+                const speed = state.current * 1.5;
+                charges.forEach(c => {
+                    // Positive charges move in direction of current
+                    const anglePos = c.offset + state.time * speed;
+                    c.pos.position.set(Math.cos(anglePos) * state.radius, Math.sin(anglePos) * state.radius, 0);
+                    
+                    // Negative charges move opposite
+                    const angleNeg = c.offset - state.time * speed;
+                    c.neg.position.set(Math.cos(angleNeg) * state.radius, Math.sin(angleNeg) * state.radius, 0);
+                    
+                    // Hide if current is 0
+                    c.pos.visible = Math.abs(state.current) > 0.1;
+                    c.neg.visible = Math.abs(state.current) > 0.1;
+                });
+            } else {
+                // Animate Micro Dipoles (Langevin / Thermal agitation simulation)
+                // x = mu * B / kT. We use a scaled proxy.
+                const x = (state.bField * 100) / state.temp; 
+                
+                // Langevin function approximation for alignment factor [0, 1]
+                let alignment = 0;
+                if (Math.abs(x) > 0.01) {
+                    alignment = (Math.exp(x) + Math.exp(-x)) / (Math.exp(x) - Math.exp(-x)) - 1/x;
+                } else {
+                    alignment = x / 3;
+                }
+                
+                const targetDir = new THREE.Vector3(0, 0, 1); // B-field direction
+                const jitterAmount = state.temp / 500; // 0 to 1
+
+                microArrows.forEach((item, index) => {
+                    // Base direction interpolated towards B-field
+                    const idealDir = item.baseDir.clone().lerp(targetDir, alignment).normalize();
+                    
+                    // Add thermal jitter
+                    const timeOffset = index * 0.1;
+                    const jitterX = Math.sin(state.time * 10 + timeOffset) * jitterAmount * 0.5;
+                    const jitterY = Math.cos(state.time * 12 + timeOffset) * jitterAmount * 0.5;
+                    
+                    const finalDir = idealDir.add(new THREE.Vector3(jitterX, jitterY, 0)).normalize();
+                    
+                    item.obj.setDirection(finalDir);
+                    item.obj.setLength(0.6);
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

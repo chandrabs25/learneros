@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>sp3 Hybridization of Carbon</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title { font-weight: 700; font-size: 24px; fill: #333; }
+        .axis-label { font-weight: 600; font-size: 16px; fill: #333; }
+        .orbital-label { font-family: 'Roboto Mono', monospace; font-size: 14px; fill: #333; }
+        .small-label { font-family: 'Roboto Mono', monospace; font-size: 11px; fill: #555; }
+        .legend-text { font-size: 12px; fill: #404040; }
+        .ch4-text { font-weight: 700; font-size: 28px; fill: #404040; }
+        .sigma-label { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 16px; fill: #333; }
+
+        /* Global Scene Fade (for smooth looping) */
+        .scene {
+            animation: scene-fade 15s infinite ease-in-out;
+        }
+
+        @keyframes scene-fade {
+            0%, 90% { opacity: 1; }
+            94%, 98% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* Energy Level Animations */
+        .merge-up {
+            animation: merge-up-anim 15s infinite ease-in-out;
+        }
+        .merge-down {
+            animation: merge-down-anim 15s infinite ease-in-out;
+        }
+
+        @keyframes merge-up-anim {
+            0%, 33.3% { transform: translateY(0); }
+            40%, 90% { transform: translateY(-150px); }
+            95%, 100% { transform: translateY(0); }
+        }
+
+        @keyframes merge-down-anim {
+            0%, 33.3% { transform: translateY(0); }
+            40%, 90% { transform: translateY(50px); }
+            95%, 100% { transform: translateY(0); }
+        }
+
+        /* Electron Jump Animation */
+        .e2-anim {
+            animation: e2-jump 15s infinite ease-in-out;
+        }
+
+        @keyframes e2-jump {
+            0%, 20% { transform: translate(0, 0) scaleY(-1); }
+            25%, 33.3% { transform: translate(190px, -200px) scaleY(1); }
+            40%, 90% { transform: translate(190px, -150px) scaleY(1); }
+            95%, 100% { transform: translate(0, 0) scaleY(-1); }
+        }
+
+        .jump-path {
+            stroke-dasharray: 6, 6;
+            animation: jump-path-anim 15s infinite ease-in-out;
+        }
+
+        @keyframes jump-path-anim {
+            0%, 20% { opacity: 0; }
+            22%, 30% { opacity: 1; }
+            33.3%, 100% { opacity: 0; }
+        }
+
+        /* Label Fades */
+        .fade-out { animation: fade-out-anim 15s infinite ease-in-out; }
+        .fade-in { animation: fade-in-anim 15s infinite ease-in-out; }
+
+        @keyframes fade-out-anim {
+            0%, 33.3% { opacity: 1; }
+            40%, 90% { opacity: 0; }
+            95%, 100% { opacity: 1; }
+        }
+
+        @keyframes fade-in-anim {
+            0%, 33.3% { opacity: 0; }
+            40%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        /* Spatial Model Animations */
+        .morph-out {
+            transform-origin: 0 0;
+            animation: morph-out-anim 15s infinite ease-in-out;
+        }
+
+        @keyframes morph-out-anim {
+            0%, 33.3% { opacity: 0.6; transform: scale(1); }
+            40%, 90% { opacity: 0; transform: scale(0.2); }
+            95%, 100% { opacity: 0.6; transform: scale(1); }
+        }
+
+        .morph-in {
+            transform-origin: 0 0;
+            animation: morph-in-anim 15s infinite ease-in-out;
+        }
+
+        @keyframes morph-in-anim {
+            0%, 33.3% { opacity: 0; transform: scale(0.2); }
+            40%, 90% { opacity: 0.6; transform: scale(1); }
+            95%, 100% { opacity: 0; transform: scale(0.2); }
+        }
+
+        /* Geometry Optimization (Rotations) */
+        .lobe-group-1 { animation: rot1 15s infinite ease-in-out; }
+        .lobe-group-2 { animation: rot2 15s infinite ease-in-out; }
+        .lobe-group-3 { animation: rot3 15s infinite ease-in-out; }
+        .lobe-group-4 { animation: rot4 15s infinite ease-in-out; }
+
+        @keyframes rot1 { 0%, 100% { transform: rotate(0deg); } }
+        
+        @keyframes rot2 {
+            0%, 53.3% { transform: rotate(90deg); }
+            60%, 90% { transform: rotate(109.5deg); }
+            95%, 100% { transform: rotate(90deg); }
+        }
+        
+        @keyframes rot3 {
+            0%, 53.3% { transform: rotate(180deg); }
+            60%, 90% { transform: rotate(219deg); }
+            95%, 100% { transform: rotate(180deg); }
+        }
+        
+        @keyframes rot4 {
+            0%, 53.3% { transform: rotate(270deg); }
+            60%, 90% { transform: rotate(328.5deg); }
+            95%, 100% { transform: rotate(270deg); }
+        }
+
+        /* CH4 Formation Animations */
+        .h-atom {
+            animation: h-approach 15s infinite ease-in-out;
+        }
+
+        @keyframes h-approach {
+            0%, 66.6% { opacity: 0; transform: translateY(-50px); }
+            73.3%, 90% { opacity: 1; transform: translateY(0); }
+            95%, 100% { opacity: 0; transform: translateY(-50px); }
+        }
+
+        .bond {
+            stroke-dasharray: 80;
+            stroke-dashoffset: 80;
+            animation: bond-appear 15s infinite ease-in-out;
+        }
+
+        @keyframes bond-appear {
+            0%, 70% { stroke-dashoffset: 80; opacity: 0; }
+            75%, 90% { stroke-dashoffset: 0; opacity: 1; }
+            95%, 100% { stroke-dashoffset: 80; opacity: 0; }
+        }
+
+        .sigma-label {
+            animation: sigma-appear 15s infinite ease-in-out;
+        }
+
+        @keyframes sigma-appear {
+            0%, 75% { opacity: 0; }
+            80%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        .angle-arc {
+            animation: angle-appear 15s infinite ease-in-out;
+        }
+
+        @keyframes angle-appear {
+            0%, 53.3% { opacity: 0; }
+            60%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        .ch4-label {
+            animation: ch4-appear 15s infinite ease-in-out;
+        }
+
+        @keyframes ch4-appear {
+            0%, 70% { opacity: 0; transform: scale(0.8); }
+            75%, 90% { opacity: 1; transform: scale(1); }
+            95%, 100% { opacity: 0; transform: scale(0.8); }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>sp3 Hybridization of Carbon</title>
+        <desc>Animation showing the excitation and sp3 hybridization of a carbon atom, forming methane (CH4) with tetrahedral geometry.</desc>
+
+        <defs>
+            <!-- Arrowhead for Energy Axis -->
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#333" />
+            </marker>
+            
+            <!-- Electron Half-Arrow -->
+            <g id="electron">
+                <path d="M 0 10 L 0 -10 L 5 -3" stroke="#FFD700" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Static Title -->
+        <text x="400" y="45" text-anchor="middle" class="title">
+            Hybridization: Carbon sp<tspan dy="-10" font-size="16">3</tspan><tspan dy="10"> in CH</tspan><tspan dy="5" font-size="16">4</tspan>
+        </text>
+
+        <!-- Static Legend -->
+        <g transform="translate(20, 460)">
+            <rect x="0" y="0" width="12" height="12" fill="#48CAE4" rx="2" />
+            <text x="20" y="10" class="legend-text">s orbital</text>
+            
+            <rect x="90" y="0" width="12" height="12" fill="#FF8585" rx="2" />
+            <text x="110" y="10" class="legend-text">p orbital</text>
+            
+            <rect x="180" y="0" width="12" height="12" fill="#7209B7" opacity="0.6" rx="2" />
+            <text x="200" y="10" class="legend-text">sp³ orbital</text>
+
+            <path d="M 285 10 L 285 -2 L 289 3" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <text x="300" y="10" class="legend-text">Electron</text>
+
+            <circle cx="370" cy="6" r="6" fill="#CCCCCC" />
+            <text x="385" y="10" class="legend-text">Hydrogen</text>
+        </g>
+
+        <!-- Animated Scene Wrapper -->
+        <g class="scene">
+            
+            <!-- ========================================== -->
+            <!-- LEFT SIDE: ENERGY DIAGRAM                  -->
+            <!-- ========================================== -->
+            
+            <!-- Energy Axis -->
+            <line x1="50" y1="420" x2="50" y2="120" stroke="#333" stroke-width="2" marker-end="url(#arrowhead)" />
+            <text x="35" y="270" transform="rotate(-90, 35, 270)" class="axis-label" text-anchor="middle">Energy</text>
+
+            <!-- Ground State Labels -->
+            <text x="70" y="405" class="orbital-label fade-out">2s</text>
+            <text x="70" y="205" class="orbital-label fade-out">2p</text>
+            
+            <text x="205" y="225" class="small-label fade-out" text-anchor="middle">2p<tspan dy="3" font-size="9">x</tspan></text>
+            <text x="265" y="225" class="small-label fade-out" text-anchor="middle">2p<tspan dy="3" font-size="9">y</tspan></text>
+            <text x="325" y="225" class="small-label fade-out" text-anchor="middle">2p<tspan dy="3" font-size="9">z</tspan></text>
+
+            <!-- Hybrid State Label -->
+            <text x="70" y="255" class="orbital-label fade-in">4 × sp<tspan dy="-5" font-size="10">3</tspan></text>
+
+            <!-- Energy Levels (Lines) -->
+            <g transform="translate(125, 400)" class="merge-up">
+                <line x1="-25" y1="0" x2="25" y2="0" stroke="#333" stroke-width="2" />
+            </g>
+            <g transform="translate(205, 200)" class="merge-down">
+                <line x1="-20" y1="0" x2="20" y2="0" stroke="#333" stroke-width="2" />
+            </g>
+            <g transform="translate(265, 200)" class="merge-down">
+                <line x1="-20" y1="0" x2="20" y2="0" stroke="#333" stroke-width="2" />
+            </g>
+            <g transform="translate(325, 200)" class="merge-down">
+                <line x1="-20" y1="0" x2="20" y2="0" stroke="#333" stroke-width="2" />
+            </g>
+
+            <!-- Electron Jump Path -->
+            <path d="M 135 395 Q 180 250 325 195" fill="none" stroke="#F77F00" stroke-width="2" class="jump-path" />
+
+            <!-- Electrons -->
+            <!-- E1: 2s Up -->
+            <g transform="translate(115, 395)">
+                <use href="#electron" class="merge-up" />
+            </g>
+            
+            <!-- E2: 2s Down -> Jumps to 2pz Up -->
+            <g transform="translate(135, 395)">
+                <use href="#electron" class="e2-anim" />
+            </g>
+
+            <!-- E3: 2px Up -->
+            <g transform="translate(205, 195)">
+                <use href="#electron" class="merge-down" />
+            </g>
+
+            <!-- E4: 2py Up -->
+            <g transform="translate(265, 195)">
+                <use href="#electron" class="merge-down" />
+            </g>
+
+
+            <!-- ========================================== -->
+            <!-- RIGHT SIDE: SPATIAL MODEL                  -->
+            <!-- ========================================== -->
+            
+            <g transform="translate(580, 260)">
+                
+                <!-- Ground State Orbitals (Morph Out) -->
+                <!-- s orbital -->
+                <circle cx="0" cy="0" r="45" fill="#48CAE4" class="morph-out" />
+                
+                <!-- px orbital -->
+                <g transform="rotate(0)">
+                    <path d="M 0 0 C 20 -25, 90 -25, 90 0 C 90 25, 20 25, 0 0 C -20 -25, -90 -25, -90 0 C -90 25, -20 25, 0 0 Z" fill="#FF8585" class="morph-out" />
+                </g>
+                
+                <!-- py orbital -->
+                <g transform="rotate(90)">
+                    <path d="M 0 0 C 20 -25, 90 -25, 90 0 C 90 25, 20 25, 0 0 C -20 -25, -90 -25, -90 0 C -90 25, -20 25, 0 0 Z" fill="#FF8585" class="morph-out" />
+                </g>
+                
+                <!-- pz orbital (isometric tilt) -->
+                <g transform="rotate(45)">
+                    <path d="M 0 0 C 15 -20, 70 -20, 70 0 C 70 20, 15 20, 0 0 C -15 -20, -70 -20, -70 0 C -70 20, -15 20, 0 0 Z" fill="#FF8585" class="morph-out" />
+                </g>
+
+                <!-- Hybridized State (Morph In & Rotate) -->
+                
+                <!-- Lobe 1 (Top) -->
+                <g class="lobe-group-1">
+                    <path d="M 0 0 C 25 -40, 40 -100, 0 -115 C -40 -100, -25 -40, 0 0 C 12 15, 15 30, 0 35 C -15 30, -12 15, 0 0 Z" fill="#7209B7" class="morph-in" />
+                    <line x1="0" y1="-40" x2="0" y2="-115" stroke="#333" stroke-width="3" class="bond" />
+                    <circle cx="0" cy="-135" r="18" fill="#CCCCCC" class="h-atom" />
+                    <text x="12" y="-65" class="sigma-label">σ</text>
+                </g>
+
+                <!-- Lobe 2 (Bottom Right) -->
+                <g class="lobe-group-2">
+                    <path d="M 0 0 C 25 -40, 40 -100, 0 -115 C -40 -100, -25 -40, 0 0 C 12 15, 15 30, 0 35 C -15 30, -12 15, 0 0 Z" fill="#7209B7" class="morph-in" />
+                    <line x1="0" y1="-40" x2="0" y2="-115" stroke="#333" stroke-width="3" class="bond" />
+                    <circle cx="0" cy="-135" r="18" fill="#CCCCCC" class="h-atom" />
+                    <text x="12" y="-65" class="sigma-label">σ</text>
+                </g>
+
+                <!-- Lobe 3 (Bottom Left) -->
+                <g class="lobe-group-3">
+                    <path d="M 0 0 C 25 -40, 40 -100, 0 -115 C -40 -100, -25 -40, 0 0 C 12 15, 15 30, 0 35 C -15 30, -12 15, 0 0 Z" fill="#7209B7" class="morph-in" />
+                    <line x1="0" y1="-40" x2="0" y2="-115" stroke="#333" stroke-width="3" class="bond" />
+                    <circle cx="0" cy="-135" r="18" fill="#CCCCCC" class="h-atom" />
+                    <text x="12" y="-65" class="sigma-label">σ</text>
+                </g>
+
+                <!-- Lobe 4 (Front/Center) -->
+                <g class="lobe-group-4">
+                    <path d="M 0 0 C 25 -40, 40 -100, 0 -115 C -40 -100, -25 -40, 0 0 C 12 15, 15 30, 0 35 C -15 30, -12 15, 0 0 Z" fill="#7209B7" class="morph-in" />
+                    <line x1="0" y1="-40" x2="0" y2="-115" stroke="#333" stroke-width="3" class="bond" />
+                    <circle cx="0" cy="-135" r="18" fill="#CCCCCC" class="h-atom" />
+                    <text x="12" y="-65" class="sigma-label">σ</text>
+                </g>
+
+                <!-- Carbon Nucleus (Always Visible) -->
+                <circle cx="0" cy="0" r="6" fill="#404040" />
+
+                <!-- Bond Angle Arc (Appears in Stage 4) -->
+                <g class="angle-arc">
+                    <!-- Arc from 0 deg to 109.5 deg -->
+                    <path d="M 0 -50 A 50 50 0 0 1 47 16.5" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="4,4" />
+                    <text x="35" y="-25" font-family="Inter" font-size="13" font-weight="600" fill="#333">109.5°</text>
+                </g>
+
+            </g>
+
+            <!-- Final Molecule Label -->
+            <g transform="translate(680, 420)" class="ch4-label">
+                <text x="0" y="0" class="ch4-text">CH<tspan dy="8" font-size="18">4</tspan></text>
+            </g>
+
+        </g>
+    </svg>
+</div>
+
+</body>
+</html>

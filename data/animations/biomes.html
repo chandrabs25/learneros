@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whittaker Biome Dynamics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;1,400&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* Base Styles */
+        .axis-line {
+            stroke: #2C3E50;
+            stroke-width: 2;
+            fill: none;
+            stroke-dasharray: 800;
+            stroke-dashoffset: 800;
+            animation: drawAxis 2s ease-out forwards;
+        }
+
+        .grid-line {
+            stroke: #e0e0e0;
+            stroke-width: 1;
+            stroke-dasharray: 4 4;
+            opacity: 0;
+            animation: fadeIn 2s ease-out 1s forwards;
+        }
+
+        .label-text {
+            fill: #2C3E50;
+            opacity: 0;
+            animation: fadeIn 2s ease-out 1.5s forwards;
+        }
+
+        .tick-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 10px;
+            fill: #7f8c8d;
+            opacity: 0;
+            animation: fadeIn 2s ease-out 1.5s forwards;
+        }
+
+        /* Biome Polygons */
+        .biome {
+            opacity: 0;
+            transform: scale(0.95);
+            stroke: #2C3E50;
+            stroke-width: 1;
+            stroke-linejoin: round;
+            transition: all 0.3s ease;
+        }
+
+        .biome-tropical {
+            fill: #1B5E20;
+            transform-origin: 500px 100px;
+            animation: biomeIntro 2s ease-out 2s forwards, highlightTropical 15s linear 5s infinite;
+        }
+
+        .biome-desert {
+            fill: #F4D03F;
+            transform-origin: 120px 200px;
+            animation: biomeIntro 2s ease-out 2s forwards, highlightDesert 15s linear 5s infinite;
+        }
+
+        .biome-tundra {
+            fill: #D6EAF8;
+            transform-origin: 230px 380px;
+            animation: biomeIntro 2s ease-out 2s forwards, highlightTundra 15s linear 5s infinite;
+        }
+
+        .biome-temperate {
+            fill: #4CAF50;
+            transform-origin: 300px 200px;
+            animation: biomeIntro 2s ease-out 2s forwards, highlightTemperate 15s linear 5s infinite;
+        }
+
+        .biome-taiga {
+            fill: #2E7D32;
+            transform-origin: 280px 300px;
+            animation: biomeIntro 2s ease-out 2s forwards, highlightTaiga 15s linear 5s infinite;
+        }
+
+        .biome-grassland {
+            fill: #C5E1A5;
+            transform-origin: 180px 180px;
+            animation: biomeIntro 2s ease-out 2s forwards, highlightGrassland 15s linear 5s infinite;
+        }
+
+        /* Cursor */
+        .cursor-wrapper {
+            opacity: 0;
+            animation: fadeInScale 1s ease-out 4s forwards;
+        }
+
+        .cursor-mover {
+            transform: translate(666.7px, 100px);
+            animation: moveCursor 15s linear 5s infinite;
+        }
+
+        .cursor-ring {
+            fill: none;
+            stroke: #ffffff;
+            stroke-width: 2;
+            animation: ringPulse 1.5s ease-out infinite;
+        }
+
+        /* Legend */
+        .legend-box {
+            opacity: 0;
+            animation: fadeIn 1s ease-out 4s forwards;
+        }
+
+        .legend-content {
+            opacity: 0;
+        }
+
+        .legend-tropical { animation: showTropical 15s linear 5s infinite; }
+        .legend-desert { animation: showDesert 15s linear 5s infinite; }
+        .legend-tundra { animation: showTundra 15s linear 5s infinite; }
+        .legend-temperate { animation: showTemperate 15s linear 5s infinite; }
+        .legend-taiga { animation: showTaiga 15s linear 5s infinite; }
+        .legend-grassland { animation: showGrassland 15s linear 5s infinite; }
+
+        /* Keyframes */
+        @keyframes drawAxis {
+            to { stroke-dashoffset: 0; }
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes biomeIntro {
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes ringPulse {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(2.5); opacity: 0; }
+        }
+
+        /* Cursor Movement Path */
+        @keyframes moveCursor {
+            0%, 10% { transform: translate(666.7px, 100px); } /* Tropical */
+            15%, 25% { transform: translate(120px, 100px); }  /* Desert */
+            30%, 40% { transform: translate(150px, 380px); }  /* Tundra */
+            45%, 55% { transform: translate(300px, 200px); }  /* Temperate */
+            60%, 70% { transform: translate(250px, 300px); }  /* Taiga */
+            75%, 85% { transform: translate(200px, 120px); }  /* Grassland */
+            90%, 100% { transform: translate(666.7px, 100px); } /* Tropical */
+        }
+
+        /* Biome Highlight Sync */
+        @keyframes highlightTropical {
+            0%, 11% { fill-opacity: 0.9; stroke-width: 3; }
+            12%, 89% { fill-opacity: 0.6; stroke-width: 1; }
+            90%, 100% { fill-opacity: 0.9; stroke-width: 3; }
+        }
+        @keyframes highlightDesert {
+            0%, 14% { fill-opacity: 0.6; stroke-width: 1; }
+            15%, 26% { fill-opacity: 0.9; stroke-width: 3; }
+            27%, 100% { fill-opacity: 0.6; stroke-width: 1; }
+        }
+        @keyframes highlightTundra {
+            0%, 29% { fill-opacity: 0.6; stroke-width: 1; }
+            30%, 41% { fill-opacity: 0.9; stroke-width: 3; }
+            42%, 100% { fill-opacity: 0.6; stroke-width: 1; }
+        }
+        @keyframes highlightTemperate {
+            0%, 44% { fill-opacity: 0.6; stroke-width: 1; }
+            45%, 56% { fill-opacity: 0.9; stroke-width: 3; }
+            57%, 100% { fill-opacity: 0.6; stroke-width: 1; }
+        }
+        @keyframes highlightTaiga {
+            0%, 59% { fill-opacity: 0.6; stroke-width: 1; }
+            60%, 71% { fill-opacity: 0.9; stroke-width: 3; }
+            72%, 100% { fill-opacity: 0.6; stroke-width: 1; }
+        }
+        @keyframes highlightGrassland {
+            0%, 74% { fill-opacity: 0.6; stroke-width: 1; }
+            75%, 86% { fill-opacity: 0.9; stroke-width: 3; }
+            87%, 100% { fill-opacity: 0.6; stroke-width: 1; }
+        }
+
+        /* Legend Visibility Sync */
+        @keyframes showTropical { 0%, 11% { opacity: 1; } 12%, 89% { opacity: 0; } 90%, 100% { opacity: 1; } }
+        @keyframes showDesert { 0%, 14% { opacity: 0; } 15%, 26% { opacity: 1; } 27%, 100% { opacity: 0; } }
+        @keyframes showTundra { 0%, 29% { opacity: 0; } 30%, 41% { opacity: 1; } 42%, 100% { opacity: 0; } }
+        @keyframes showTemperate { 0%, 44% { opacity: 0; } 45%, 56% { opacity: 1; } 57%, 100% { opacity: 0; } }
+        @keyframes showTaiga { 0%, 59% { opacity: 0; } 60%, 71% { opacity: 1; } 72%, 100% { opacity: 0; } }
+        @keyframes showGrassland { 0%, 74% { opacity: 0; } 75%, 86% { opacity: 1; } 87%, 100% { opacity: 0; } }
+
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" width="800" height="500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
+    <title id="svg-title">Whittaker Biome Classification System</title>
+    <desc id="svg-desc">An animated graph showing how mean annual temperature and precipitation determine Earth's major biomes. A cursor moves through different climate zones, highlighting the corresponding biome.</desc>
+
+    <defs>
+        <filter id="drop-shadow" x="-10%" y="-10%" width="130%" height="130%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.1"/>
+        </filter>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+    </defs>
+
+    <!-- Title & Annotations -->
+    <text x="80" y="35" class="label-text" font-size="20" font-weight="700">Whittaker Biome Classification</text>
+    <text x="80" y="55" class="label-text" font-size="14" fill="#7f8c8d">Climate &amp; Biodiversity Dynamics</text>
+
+    <!-- Grid Lines & Ticks -->
+    <g class="grid">
+        <!-- Horizontal Grid Lines (Temperature) -->
+        <line x1="80" y1="60" x2="740" y2="60" class="grid-line"/>
+        <line x1="80" y1="100" x2="740" y2="100" class="grid-line"/>
+        <line x1="80" y1="140" x2="740" y2="140" class="grid-line"/>
+        <line x1="80" y1="180" x2="740" y2="180" class="grid-line"/>
+        <line x1="80" y1="220" x2="740" y2="220" class="grid-line"/>
+        <line x1="80" y1="260" x2="740" y2="260" class="grid-line"/>
+        <line x1="80" y1="300" x2="740" y2="300" class="grid-line"/>
+        <line x1="80" y1="340" x2="740" y2="340" class="grid-line"/>
+        <line x1="80" y1="380" x2="740" y2="380" class="grid-line"/>
+
+        <!-- Vertical Grid Lines (Precipitation) -->
+        <line x1="153.3" y1="60" x2="153.3" y2="420" class="grid-line"/>
+        <line x1="226.7" y1="60" x2="226.7" y2="420" class="grid-line"/>
+        <line x1="300" y1="60" x2="300" y2="420" class="grid-line"/>
+        <line x1="373.3" y1="60" x2="373.3" y2="420" class="grid-line"/>
+        <line x1="446.7" y1="60" x2="446.7" y2="420" class="grid-line"/>
+        <line x1="520" y1="60" x2="520" y2="420" class="grid-line"/>
+        <line x1="593.3" y1="60" x2="593.3" y2="420" class="grid-line"/>
+        <line x1="666.7" y1="60" x2="666.7" y2="420" class="grid-line"/>
+
+        <!-- Y-Axis Labels (Temp) -->
+        <text x="70" y="64" class="tick-text" text-anchor="end">30</text>
+        <text x="70" y="104" class="tick-text" text-anchor="end">25</text>
+        <text x="70" y="144" class="tick-text" text-anchor="end">20</text>
+        <text x="70" y="184" class="tick-text" text-anchor="end">15</text>
+        <text x="70" y="224" class="tick-text" text-anchor="end">10</text>
+        <text x="70" y="264" class="tick-text" text-anchor="end">5</text>
+        <text x="70" y="304" class="tick-text" text-anchor="end">0</text>
+        <text x="70" y="344" class="tick-text" text-anchor="end">-5</text>
+        <text x="70" y="384" class="tick-text" text-anchor="end">-10</text>
+        <text x="70" y="424" class="tick-text" text-anchor="end">-15</text>
+
+        <!-- X-Axis Labels (Precip) -->
+        <text x="80" y="440" class="tick-text" text-anchor="middle">0</text>
+        <text x="153.3" y="440" class="tick-text" text-anchor="middle">50</text>
+        <text x="226.7" y="440" class="tick-text" text-anchor="middle">100</text>
+        <text x="300" y="440" class="tick-text" text-anchor="middle">150</text>
+        <text x="373.3" y="440" class="tick-text" text-anchor="middle">200</text>
+        <text x="446.7" y="440" class="tick-text" text-anchor="middle">250</text>
+        <text x="520" y="440" class="tick-text" text-anchor="middle">300</text>
+        <text x="593.3" y="440" class="tick-text" text-anchor="middle">350</text>
+        <text x="666.7" y="440" class="tick-text" text-anchor="middle">400</text>
+        <text x="740" y="440" class="tick-text" text-anchor="middle">450</text>
+    </g>
+
+    <!-- Axes -->
+    <path d="M 80 60 L 80 420 L 740 420" class="axis-line" />
+    
+    <!-- Axis Titles -->
+    <text x="410" y="475" class="label-text" font-size="14" font-weight="600" text-anchor="middle">Mean Annual Precipitation (cm)</text>
+    <text x="-240" y="35" class="label-text" font-size="14" font-weight="600" text-anchor="middle" transform="rotate(-90)">Mean Annual Temperature (°C)</text>
+
+    <!-- Biome Polygons -->
+    <g id="biomes">
+        <!-- Tundra -->
+        <path class="biome biome-tundra" d="M 80,335 L 395,335 L 235,420 L 80,420 Z" />
+        
+        <!-- Taiga -->
+        <path class="biome biome-taiga" d="M 115,255 L 465,255 L 385,345 L 115,345 Z" />
+        
+        <!-- Temperate Forest -->
+        <path class="biome biome-temperate" d="M 220,135 L 405,135 L 455,265 L 220,265 L 175,175 Z" />
+        
+        <!-- Grassland -->
+        <path class="biome biome-grassland" d="M 135,60 L 280,60 L 235,185 L 190,305 L 120,305 L 150,180 Z" />
+        
+        <!-- Desert -->
+        <path class="biome biome-desert" d="M 80,60 L 145,60 L 160,185 L 130,345 L 80,345 Z" />
+        
+        <!-- Tropical Rainforest -->
+        <path class="biome biome-tropical" d="M 270,60 L 740,60 L 740,145 L 395,145 Z" />
+    </g>
+
+    <!-- Climate Cursor -->
+    <g class="cursor-wrapper">
+        <g class="cursor-mover">
+            <circle class="cursor-ring" cx="0" cy="0" r="10" />
+            <circle cx="0" cy="0" r="6" fill="#FFFFFF" filter="url(#glow)" />
+        </g>
+    </g>
+
+    <!-- Dynamic Legend Box (Bottom Right - Empty Quarter) -->
+    <g class="legend-box" transform="translate(500, 320)">
+        <rect x="0" y="0" width="260" height="85" rx="8" fill="rgba(255,255,255,0.95)" stroke="#2C3E50" stroke-width="1" filter="url(#drop-shadow)"/>
+        <text x="15" y="20" font-size="11" fill="#7f8c8d" font-weight="600" text-transform="uppercase" letter-spacing="0.5">Current Biome</text>
+
+        <!-- Tropical Legend -->
+        <g class="legend-content legend-tropical">
+            <text x="15" y="42" font-size="16" font-weight="700" fill="#1B5E20">Tropical Rainforest</text>
+            <text x="15" y="60" font-size="12" fill="#2C3E50">High Species Richness</text>
+            <text x="15" y="76" font-size="11" font-style="italic" fill="#7f8c8d">Dipterocarpus spp.</text>
+            <!-- Palm Tree Icon -->
+            <g transform="translate(225, 45)">
+                <path d="M0,25 Q3,5 3,-5 Q1,5 0,25" stroke="#8B4513" stroke-width="2" fill="none"/>
+                <path d="M3,-5 Q-10,-10 -15,0 M3,-5 Q-5,-20 -10,-15 M3,-5 Q10,-20 15,-15 M3,-5 Q20,-10 25,0" stroke="#27AE60" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </g>
+        </g>
+
+        <!-- Desert Legend -->
+        <g class="legend-content legend-desert">
+            <text x="15" y="42" font-size="16" font-weight="700" fill="#D4AC0D">Desert</text>
+            <text x="15" y="60" font-size="12" fill="#2C3E50">Arid, extreme temperatures</text>
+            <text x="15" y="76" font-size="11" font-style="italic" fill="#7f8c8d">Carnegiea gigantea</text>
+            <!-- Cactus Icon -->
+            <g transform="translate(225, 45)">
+                <path d="M5,25 L5,-10 M5,5 L-5,5 L-5,-10 M5,0 L15,0 L15,-10" stroke="#2E7D32" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+        </g>
+
+        <!-- Tundra Legend -->
+        <g class="legend-content legend-tundra">
+            <text x="15" y="42" font-size="16" font-weight="700" fill="#2980B9">Tundra</text>
+            <text x="15" y="60" font-size="12" fill="#2C3E50">Permafrost, low precipitation</text>
+            <text x="15" y="76" font-size="11" font-style="italic" fill="#7f8c8d">Cladonia rangiferina</text>
+            <!-- Lichen Icon -->
+            <g transform="translate(225, 45)">
+                <path d="M-10,25 Q-5,15 0,25 Q5,10 10,25 Q15,15 20,25" fill="#7CB342"/>
+            </g>
+        </g>
+
+        <!-- Temperate Legend -->
+        <g class="legend-content legend-temperate">
+            <text x="15" y="42" font-size="16" font-weight="700" fill="#27AE60">Temperate Forest</text>
+            <text x="15" y="60" font-size="12" fill="#2C3E50">Deciduous canopy, distinct seasons</text>
+            <text x="15" y="76" font-size="11" font-style="italic" fill="#7f8c8d">Quercus alba</text>
+            <!-- Oak Tree Icon -->
+            <g transform="translate(225, 45)">
+                <rect x="3" y="10" width="4" height="15" fill="#8B4513"/>
+                <circle cx="5" cy="0" r="12" fill="#4CAF50"/>
+            </g>
+        </g>
+
+        <!-- Taiga Legend -->
+        <g class="legend-content legend-taiga">
+            <text x="15" y="42" font-size="16" font-weight="700" fill="#1E8449">Taiga (Boreal)</text>
+            <text x="15" y="60" font-size="12" fill="#2C3E50">Coniferous belt, cold winters</text>
+            <text x="15" y="76" font-size="11" font-style="italic" fill="#7f8c8d">Abies balsamea</text>
+            <!-- Pine Tree Icon -->
+            <g transform="translate(225, 45)">
+                <rect x="3" y="15" width="4" height="10" fill="#8B4513"/>
+                <polygon points="5,-15 -10,15 20,15" fill="#2E7D32"/>
+            </g>
+        </g>
+
+        <!-- Grassland Legend -->
+        <g class="legend-content legend-grassland">
+            <text x="15" y="42" font-size="16" font-weight="700" fill="#7CB342">Grassland / Steppe</text>
+            <text x="15" y="60" font-size="12" fill="#2C3E50">Moderate rain, fire-adapted</text>
+            <text x="15" y="76" font-size="11" font-style="italic" fill="#7f8c8d">Andropogon gerardi</text>
+            <!-- Grass Icon -->
+            <g transform="translate(225, 45)">
+                <path d="M-5,25 Q0,5 -3,-5 M5,25 Q5,0 5,-10 M15,25 Q10,5 13,-5" stroke="#8BC34A" stroke-width="2" fill="none" stroke-linecap="round"/>
+            </g>
+        </g>
+    </g>
+
+</svg>
+
+</body>
+</html>

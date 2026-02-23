@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Electrostatic Field Dynamics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Base */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            position: absolute;
+            z-index: 10;
+            padding: 20px;
+        }
+
+        /* Control Panel */
+        #control-panel {
+            top: 20px;
+            right: 20px;
+            width: 25%;
+            min-width: 280px;
+            max-width: 350px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        #control-panel h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #4a5568;
+        }
+
+        .val-display {
+            color: #7209B7;
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #FF3366;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        /* Specific slider colors */
+        #q1-slider::-webkit-slider-thumb { background: #FF3366; }
+        #q2-slider::-webkit-slider-thumb { background: #4361EE; }
+        #mass-slider::-webkit-slider-thumb { background: #06D6A0; }
+        #density-slider::-webkit-slider-thumb { background: #F77F00; }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        #btn-toggle {
+            background: #06D6A0;
+            box-shadow: 0 4px 15px rgba(6, 214, 160, 0.3);
+        }
+        #btn-toggle:hover { background: #05b587; }
+        
+        #btn-reset {
+            background: #F77F00;
+            box-shadow: 0 4px 15px rgba(247, 127, 0, 0.3);
+        }
+        #btn-reset:hover { background: #d66e00; }
+
+        /* Formula Card */
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            width: 280px;
+        }
+
+        .math {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 1.1rem;
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 10px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .live-data {
+            font-size: 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 8px;
+            margin-top: 8px;
+        }
+
+        /* 3D Labels */
+        .label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            z-index: 5;
+        }
+
+        /* Legend */
+        .legend {
+            margin-top: 15px;
+            font-size: 0.75rem;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <div style="font-weight: 700; margin-bottom: 8px; color: #1a1a1a;">Coulomb's Law</div>
+        <div class="math">
+            <i>F</i> = <i>k</i> · (|<i>Q<sub>1</sub></i> <i>q<sub>2</sub></i>|) / <i>r</i><sup>2</sup>
+        </div>
+        <div class="live-data">
+            <span>Distance (<i>r</i>):</span>
+            <span id="val-r" style="font-weight: 600;">0.00 m</span>
+        </div>
+        <div class="live-data">
+            <span>Force (|<i>F</i>|):</span>
+            <span id="val-f" style="font-weight: 600; color: #F77F00;">0.00 N</span>
+        </div>
+        <div class="live-data">
+            <span>E-Field (|<i>E</i>|):</span>
+            <span id="val-e" style="font-weight: 600; color: #7209B7;">0.00 N/C</span>
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <h2>Simulation Controls</h2>
+        
+        <div class="control-group">
+            <label>Source Charge (Q₁) <span id="val-q1" class="val-display">5.0 μC</span></label>
+            <input type="range" id="q1-slider" min="-10" max="10" step="0.1" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <label>Test Charge (q₂) <span id="val-q2" class="val-display">1.0 μC</span></label>
+            <input type="range" id="q2-slider" min="-5" max="5" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label>Test Mass (m) <span id="val-mass" class="val-display">1.0 kg</span></label>
+            <input type="range" id="mass-slider" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <label>Field Density <span id="val-density" class="val-display">8</span></label>
+            <input type="range" id="density-slider" min="4" max="12" step="1" value="8">
+        </div>
+
+        <div class="button-group">
+            <button id="btn-toggle">Play Motion</button>
+            <button id="btn-reset">Reset Pos</button>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Force Vector (F)</div>
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> E-Field Vector (E)</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Trajectory</div>
+            <div class="legend-item"><div class="color-box" style="background: #BDC3C7;"></div> Vector Field</div>
+        </div>
+    </div>
+
+    <div id="label-source" class="label" style="color: #FF3366;">Source Q₁</div>
+    <div id="label-test" class="label" style="color: #4361EE;">Test q₂</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics & State Variables ---
+        const state = {
+            Q1: 5.0,
+            q2: 1.0,
+            mass: 1.0,
+            density: 8,
+            isPlaying: false,
+            k: 10, // Scaled Coulomb constant for visual purposes
+            softening: 0.1, // Prevent singularity
+            dt: 0.016, // Fixed timestep
+            damping: 0.99 // Energy loss
+        };
+
+        const posSource = new THREE.Vector3(0, 0, 0);
+        let posTest = new THREE.Vector3(2, 2, 2);
+        let velTest = new THREE.Vector3(0, 0, 0);
+
+        // --- Colors ---
+        const COLOR_POS = new THREE.Color(0xFF3366); // Red
+        const COLOR_NEG = new THREE.Color(0x4361EE); // Blue
+        const COLOR_FORCE = 0xF77F00; // Orange
+        const COLOR_EFIELD = 0x7209B7; // Purple
+        const COLOR_TRACE = 0x06D6A0; // Green
+        const COLOR_FIELD_ARROW = new THREE.Color(0xBDC3C7); // Faded Grey
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.03);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(6, 5, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 20;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+
+        // --- Environment ---
+        const gridHelper = new THREE.GridHelper(20, 20, 0xd1d9e6, 0xd1d9e6);
+        gridHelper.position.y = -3;
+        scene.add(gridHelper);
+
+        // --- Objects ---
+        // Source Charge
+        const sourceGeo = new THREE.SphereGeometry(0.5, 32, 32);
+        const sourceMat = new THREE.MeshPhongMaterial({ color: COLOR_POS, shininess: 100 });
+        const sourceMesh = new THREE.Mesh(sourceGeo, sourceMat);
+        scene.add(sourceMesh);
+
+        // Source Glow
+        const glowGeo = new THREE.SphereGeometry(0.7, 32, 32);
+        const glowMat = new THREE.MeshBasicMaterial({ 
+            color: COLOR_POS, 
+            transparent: true, 
+            opacity: 0.2,
+            blending: THREE.AdditiveBlending
+        });
+        const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+        scene.add(glowMesh);
+
+        // Test Charge
+        const testGeo = new THREE.SphereGeometry(0.2, 32, 32);
+        const testMat = new THREE.MeshPhongMaterial({ color: COLOR_POS, shininess: 100 });
+        const testMesh = new THREE.Mesh(testGeo, testMat);
+        testMesh.position.copy(posTest);
+        scene.add(testMesh);
+
+        // Vectors (Arrows)
+        const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), posTest, 1, COLOR_FORCE, 0.3, 0.15);
+        scene.add(forceArrow);
+
+        const eFieldArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), posTest, 1, COLOR_EFIELD, 0.2, 0.1);
+        scene.add(eFieldArrow);
+
+        // Trace Path
+        const maxTracePoints = 300;
+        const tracePositions = new Float32Array(maxTracePoints * 3);
+        const traceGeo = new THREE.BufferGeometry();
+        traceGeo.setAttribute('position', new THREE.BufferAttribute(tracePositions, 3));
+        const traceMat = new THREE.LineBasicMaterial({ color: COLOR_TRACE, transparent: true, opacity: 0.6, linewidth: 2 });
+        const traceLine = new THREE.Line(traceGeo, traceMat);
+        scene.add(traceLine);
+        let traceIndex = 0;
+
+        // Vector Field (InstancedMesh)
+        let fieldMesh;
+        function buildVectorField() {
+            if (fieldMesh) scene.remove(fieldMesh);
+
+            const d = state.density;
+            const count = d * d * d;
+            const size = 10;
+            const step = size / (d - 1);
+            const offset = size / 2;
+
+            // Geometry: Cone pointing along Z
+            const arrowGeo = new THREE.ConeGeometry(0.04, 0.2, 8);
+            arrowGeo.translate(0, 0.1, 0);
+            arrowGeo.rotateX(Math.PI / 2);
+
+            const arrowMat = new THREE.MeshBasicMaterial({ 
+                color: 0xffffff, 
+                transparent: true, 
+                opacity: 0.8,
+                depthWrite: false
+            });
+
+            fieldMesh = new THREE.InstancedMesh(arrowGeo, arrowMat, count);
+            
+            const dummy = new THREE.Object3D();
+            const color = new THREE.Color();
+            let i = 0;
+
+            for (let x = 0; x < d; x++) {
+                for (let y = 0; y < d; y++) {
+                    for (let z = 0; z < d; z++) {
+                        const px = x * step - offset;
+                        const py = y * step - offset;
+                        const pz = z * step - offset;
+                        
+                        dummy.position.set(px, py, pz);
+                        
+                        // Calculate E-field at this point
+                        const rVec = new THREE.Vector3().subVectors(dummy.position, posSource);
+                        const rSq = rVec.lengthSq();
+                        
+                        // Avoid singularity and inside source sphere
+                        if (rSq > 0.3) {
+                            const r = Math.sqrt(rSq);
+                            const eMag = Math.abs(state.k * state.Q1 / (rSq + state.softening));
+                            const dir = rVec.clone().normalize();
+                            if (state.Q1 < 0) dir.negate();
+
+                            dummy.lookAt(dummy.position.clone().add(dir));
+                            
+                            // Scale based on magnitude, clamped
+                            const scale = Math.min(Math.max(eMag * 0.2, 0.1), 1.5);
+                            dummy.scale.set(scale, scale, scale);
+                            
+                            // Opacity/Color fade based on distance
+                            const fade = Math.max(0.1, 1.0 - (r / (size*0.8)));
+                            color.copy(COLOR_FIELD_ARROW).multiplyScalar(fade + 0.2);
+                            fieldMesh.setColorAt(i, color);
+                        } else {
+                            dummy.scale.set(0,0,0);
+                        }
+
+                        dummy.updateMatrix();
+                        fieldMesh.setMatrixAt(i, dummy.matrix);
+                        i++;
+                    }
+                }
+            }
+            fieldMesh.instanceMatrix.needsUpdate = true;
+            if(fieldMesh.instanceColor) fieldMesh.instanceColor.needsUpdate = true;
+            scene.add(fieldMesh);
+        }
+
+        buildVectorField();
+
+        // --- Physics Logic ---
+        function calculatePhysics(pos) {
+            const rVec = new THREE.Vector3().subVectors(pos, posSource);
+            const rSq = rVec.lengthSq();
+            const r = Math.sqrt(rSq);
+            
+            // E = k * Q1 / r^2 * r_hat
+            const eMag = (state.k * Math.abs(state.Q1)) / (rSq + state.softening);
+            const eDir = rVec.clone().normalize();
+            if (state.Q1 < 0) eDir.negate();
+            
+            const E = eDir.clone().multiplyScalar(eMag);
+            
+            // F = q2 * E
+            const F = E.clone().multiplyScalar(state.q2);
+            const fMag = F.length();
+
+            return { r, E, eMag, F, fMag };
+        }
+
+        function resetTrace() {
+            tracePositions.fill(0);
+            traceGeo.attributes.position.needsUpdate = true;
+            traceIndex = 0;
+            // Fill initial positions to prevent drawing to origin
+            for(let i=0; i<maxTracePoints; i++) {
+                tracePositions[i*3] = posTest.x;
+                tracePositions[i*3+1] = posTest.y;
+                tracePositions[i*3+2] = posTest.z;
+            }
+        }
+
+        // --- UI Updates ---
+        const ui = {
+            q1: document.getElementById('q1-slider'),
+            q2: document.getElementById('q2-slider'),
+            mass: document.getElementById('mass-slider'),
+            density: document.getElementById('density-slider'),
+            valQ1: document.getElementById('val-q1'),
+            valQ2: document.getElementById('val-q2'),
+            valMass: document.getElementById('val-mass'),
+            valDensity: document.getElementById('val-density'),
+            valR: document.getElementById('val-r'),
+            valF: document.getElementById('val-f'),
+            valE: document.getElementById('val-e'),
+            btnToggle: document.getElementById('btn-toggle'),
+            btnReset: document.getElementById('btn-reset'),
+            lblSource: document.getElementById('label-source'),
+            lblTest: document.getElementById('label-test')
+        };
+
+        function updateChargeColors() {
+            // Source
+            const c1 = state.Q1 >= 0 ? COLOR_POS : COLOR_NEG;
+            sourceMat.color.copy(c1);
+            glowMat.color.copy(c1);
+            ui.lblSource.style.color = '#' + c1.getHexString();
+            ui.lblSource.innerText = `Source Q₁ (${state.Q1 > 0 ? '+' : ''}${state.Q1})`;
+
+            // Test
+            const c2 = state.q2 >= 0 ? COLOR_POS : COLOR_NEG;
+            testMat.color.copy(c2);
+            ui.lblTest.style.color = '#' + c2.getHexString();
+            ui.lblTest.innerText = `Test q₂ (${state.q2 > 0 ? '+' : ''}${state.q2})`;
+        }
+
+        // Event Listeners
+        ui.q1.addEventListener('input', (e) => {
+            state.Q1 = parseFloat(e.target.value);
+            ui.valQ1.innerText = state.Q1.toFixed(1) + ' μC';
+            updateChargeColors();
+            buildVectorField();
+        });
+
+        ui.q2.addEventListener('input', (e) => {
+            state.q2 = parseFloat(e.target.value);
+            ui.valQ2.innerText = state.q2.toFixed(1) + ' μC';
+            updateChargeColors();
+        });
+
+        ui.mass.addEventListener('input', (e) => {
+            state.mass = parseFloat(e.target.value);
+            ui.valMass.innerText = state.mass.toFixed(1) + ' kg';
+        });
+
+        ui.density.addEventListener('input', (e) => {
+            state.density = parseInt(e.target.value);
+            ui.valDensity.innerText = state.density;
+            buildVectorField();
+        });
+
+        ui.btnToggle.addEventListener('click', () => {
+            state.isPlaying = !state.isPlaying;
+            if (state.isPlaying) {
+                ui.btnToggle.innerText = 'Pause Motion';
+                ui.btnToggle.style.background = '#FF3366';
+                ui.btnToggle.style.boxShadow = '0 4px 15px rgba(255, 51, 102, 0.3)';
+            } else {
+                ui.btnToggle.innerText = 'Play Motion';
+                ui.btnToggle.style.background = '#06D6A0';
+                ui.btnToggle.style.boxShadow = '0 4px 15px rgba(6, 214, 160, 0.3)';
+            }
+        });
+
+        ui.btnReset.addEventListener('click', () => {
+            posTest.set(2, 2, 2);
+            velTest.set(0, 0, 0);
+            state.isPlaying = false;
+            ui.btnToggle.innerText = 'Play Motion';
+            ui.btnToggle.style.background = '#06D6A0';
+            ui.btnToggle.style.boxShadow = '0 4px 15px rgba(6, 214, 160, 0.3)';
+            resetTrace();
+        });
+
+        // HTML Label Projection
+        function updateLabels() {
+            const tempV = new THREE.Vector3();
+            
+            // Source Label
+            tempV.copy(posSource);
+            tempV.y += 0.8;
+            tempV.project(camera);
+            ui.lblSource.style.left = (tempV.x * .5 + .5) * window.innerWidth + 'px';
+            ui.lblSource.style.top = (tempV.y * -.5 + .5) * window.innerHeight + 'px';
+            ui.lblSource.style.display = tempV.z > 1 ? 'none' : 'block';
+
+            // Test Label
+            tempV.copy(posTest);
+            tempV.y += 0.4;
+            tempV.project(camera);
+            ui.lblTest.style.left = (tempV.x * .5 + .5) * window.innerWidth + 'px';
+            ui.lblTest.style.top = (tempV.y * -.5 + .5) * window.innerHeight + 'px';
+            ui.lblTest.style.display = tempV.z > 1 ? 'none' : 'block';
+        }
+
+        // --- Main Loop ---
+        updateChargeColors();
+        resetTrace();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const phys = calculatePhysics(posTest);
+
+            // Physics Integration
+            if (state.isPlaying) {
+                // a = F / m
+                const acc = phys.F.clone().divideScalar(state.mass);
+                
+                // Euler integration
+                velTest.add(acc.multiplyScalar(state.dt));
+                velTest.multiplyScalar(state.damping); // Damping
+                posTest.add(velTest.clone().multiplyScalar(state.dt));
+
+                // Update Trace
+                tracePositions[traceIndex * 3] = posTest.x;
+                tracePositions[traceIndex * 3 + 1] = posTest.y;
+                tracePositions[traceIndex * 3 + 2] = posTest.z;
+                traceIndex = (traceIndex + 1) % maxTracePoints;
+                traceGeo.attributes.position.needsUpdate = true;
+            }
+
+            // Visual Updates
+            testMesh.position.copy(posTest);
+
+            // Update Arrows
+            if (phys.fMag > 0.001) {
+                forceArrow.position.copy(posTest);
+                forceArrow.setDirection(phys.F.clone().normalize());
+                // Scale visually
+                const fLen = Math.min(Math.max(phys.fMag * 0.5, 0.5), 4.0);
+                forceArrow.setLength(fLen, fLen*0.2, fLen*0.1);
+                forceArrow.visible = true;
+            } else {
+                forceArrow.visible = false;
+            }
+
+            if (phys.eMag > 0.001) {
+                eFieldArrow.position.copy(posTest);
+                eFieldArrow.setDirection(phys.E.clone().normalize());
+                const eLen = Math.min(Math.max(phys.eMag * 0.2, 0.5), 3.0);
+                eFieldArrow.setLength(eLen, eLen*0.2, eLen*0.1);
+                eFieldArrow.visible = true;
+            } else {
+                eFieldArrow.visible = false;
+            }
+
+            // Update UI Data
+            ui.valR.innerText = phys.r.toFixed(2) + ' m';
+            ui.valF.innerText = phys.fMag.toFixed(2) + ' N';
+            ui.valE.innerText = phys.eMag.toFixed(2) + ' N/C';
+
+            // Glow pulse
+            const time = Date.now() * 0.003;
+            glowMesh.scale.setScalar(1 + Math.sin(time) * 0.05);
+
+            updateLabels();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>

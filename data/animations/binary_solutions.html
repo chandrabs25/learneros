@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raoult's Law Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 900px;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* Typography */
+        .title { font-size: 20px; font-weight: 700; fill: #333333; }
+        .axis-label { font-family: 'Roboto Mono', monospace; font-size: 13px; fill: #555555; }
+        .math-text { font-family: 'Roboto Mono', monospace; font-size: 14px; }
+        .legend-text { font-size: 12px; fill: #444444; }
+
+        /* Molecule Animations */
+        .mol-b {
+            animation: fadeInB 12s ease-in-out infinite;
+        }
+
+        @keyframes fadeInB {
+            0%, 20% { opacity: 0; }
+            40%, 90% { opacity: 0.9; }
+            100% { opacity: 0; }
+        }
+
+        /* Graph Animations */
+        .line-pa {
+            stroke-dasharray: 350;
+            stroke-dashoffset: 350;
+            animation: drawPA 12s ease-in-out infinite;
+        }
+        .line-pb {
+            stroke-dasharray: 400;
+            stroke-dashoffset: 400;
+            animation: drawPB 12s ease-in-out infinite;
+        }
+        .line-ptot {
+            stroke-dasharray: 330;
+            stroke-dashoffset: 330;
+            animation: drawPTot 12s ease-in-out infinite;
+        }
+
+        @keyframes drawPA {
+            0%, 20% { stroke-dashoffset: 350; }
+            40%, 90% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 350; }
+        }
+        @keyframes drawPB {
+            0%, 20% { stroke-dashoffset: 400; }
+            40%, 90% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 400; }
+        }
+        @keyframes drawPTot {
+            0%, 20% { stroke-dashoffset: 330; }
+            40%, 90% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 330; }
+        }
+
+        /* Indicator Animations */
+        .indicator-line {
+            animation: moveInd 12s ease-in-out infinite;
+        }
+        .indicator-label {
+            animation: fadeInMid 12s ease-in-out infinite;
+        }
+
+        @keyframes moveInd {
+            0%, 20% { transform: translateX(450px); }
+            40%, 90% { transform: translateX(570px); }
+            100% { transform: translateX(450px); }
+        }
+        @keyframes fadeInMid {
+            0%, 20% { opacity: 0; }
+            40%, 90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Point Animations */
+        .point-a { animation: movePtA 12s ease-in-out infinite; }
+        .point-b { animation: movePtB 12s ease-in-out infinite; }
+        .point-tot { animation: movePtTot 12s ease-in-out infinite; }
+
+        @keyframes movePtA {
+            0%, 20% { transform: translate(450px, 250px); }
+            40%, 90% { transform: translate(570px, 310px); }
+            100% { transform: translate(450px, 250px); }
+        }
+        @keyframes movePtB {
+            0%, 20% { transform: translate(450px, 400px); opacity: 0; }
+            21% { opacity: 1; }
+            40%, 90% { transform: translate(570px, 300px); opacity: 1; }
+            100% { transform: translate(450px, 400px); opacity: 0; }
+        }
+        @keyframes movePtTot {
+            0%, 20% { transform: translate(450px, 250px); opacity: 0; }
+            21% { opacity: 1; }
+            40%, 90% { transform: translate(570px, 210px); opacity: 1; }
+            100% { transform: translate(450px, 250px); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <title>Binary Solution: Volatile Liquids (Raoult's Law)</title>
+    <desc>Diagram showing the molecular exchange and vapor pressure graph of a binary volatile solution.</desc>
+
+    <!-- Definitions -->
+    <defs>
+        <!-- Arrowhead for Evaporation/Condensation -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+        </marker>
+
+        <!-- Molecule Templates -->
+        <g id="molA">
+            <circle cx="0" cy="0" r="6" fill="#3498db" opacity="0.9" />
+            <circle cx="-2" cy="-2" r="2" fill="#ffffff" opacity="0.4" />
+        </g>
+        <g id="molB">
+            <circle cx="0" cy="0" r="5" fill="#2ecc71" opacity="0.9" />
+            <circle cx="-1.5" cy="-1.5" r="1.5" fill="#ffffff" opacity="0.4" />
+        </g>
+    </defs>
+
+    <!-- Title -->
+    <text x="400" y="40" text-anchor="middle" class="title">Binary Solution: Volatile Liquids (Raoult's Law)</text>
+
+    <!-- ========================================== -->
+    <!-- LEFT SIDE: MOLECULAR VIEW (BEAKER)         -->
+    <!-- ========================================== -->
+    
+    <!-- Beaker Background & Liquid -->
+    <g id="beaker-group">
+        <!-- Liquid Area with Wavy Surface -->
+        <path fill="#ebf5fb" d="M 50 300 Q 125 290 200 300 T 350 300 L 350 450 Q 350 460 340 460 L 60 460 Q 50 460 50 450 Z">
+            <animate attributeName="d" 
+                values="M 50 300 Q 125 290 200 300 T 350 300 L 350 450 Q 350 460 340 460 L 60 460 Q 50 460 50 450 Z;
+                        M 50 300 Q 125 310 200 300 T 350 300 L 350 450 Q 350 460 340 460 L 60 460 Q 50 460 50 450 Z;
+                        M 50 300 Q 125 290 200 300 T 350 300 L 350 450 Q 350 460 340 460 L 60 460 Q 50 460 50 450 Z" 
+                dur="4s" repeatCount="indefinite" />
+        </path>
+
+        <!-- Glass Container Outline -->
+        <path d="M 50 100 L 50 450 Q 50 460 60 460 L 340 460 Q 350 460 350 450 L 350 100 Z" fill="none" stroke="#404040" stroke-width="3" />
+        
+        <!-- Glass Reflection -->
+        <path d="M 60 110 L 60 440 Q 60 445 65 445 L 80 445 L 80 110 Z" fill="#ffffff" opacity="0.4" />
+
+        <!-- Lid -->
+        <line x1="40" y1="100" x2="360" y2="100" stroke="#404040" stroke-width="6" stroke-linecap="round" />
+        <rect x="185" y="85" width="30" height="15" rx="3" fill="#404040" />
+    </g>
+
+    <!-- Liquid Molecules (Static Grid with slight offset) -->
+    <g id="liquid-molecules">
+        <!-- Component A (Blue) -->
+        <use href="#molA" x="70" y="440" /><use href="#molA" x="130" y="440" /><use href="#molA" x="190" y="440" /><use href="#molA" x="250" y="440" /><use href="#molA" x="310" y="440" />
+        <use href="#molA" x="100" y="415" /><use href="#molA" x="160" y="415" /><use href="#molA" x="220" y="415" /><use href="#molA" x="280" y="415" />
+        <use href="#molA" x="80" y="390" /><use href="#molA" x="140" y="390" /><use href="#molA" x="200" y="390" /><use href="#molA" x="260" y="390" /><use href="#molA" x="320" y="390" />
+        <use href="#molA" x="110" y="365" /><use href="#molA" x="170" y="365" /><use href="#molA" x="230" y="365" /><use href="#molA" x="290" y="365" />
+        <use href="#molA" x="90" y="340" /><use href="#molA" x="150" y="340" /><use href="#molA" x="210" y="340" /><use href="#molA" x="270" y="340" /><use href="#molA" x="330" y="340" />
+        <use href="#molA" x="120" y="315" /><use href="#molA" x="180" y="315" /><use href="#molA" x="240" y="315" /><use href="#molA" x="300" y="315" />
+
+        <!-- Component B (Green) - Fades in -->
+        <use href="#molB" x="100" y="440" class="mol-b" /><use href="#molB" x="160" y="440" class="mol-b" /><use href="#molB" x="220" y="440" class="mol-b" /><use href="#molB" x="280" y="440" class="mol-b" />
+        <use href="#molB" x="70" y="415" class="mol-b" /><use href="#molB" x="130" y="415" class="mol-b" /><use href="#molB" x="190" y="415" class="mol-b" /><use href="#molB" x="250" y="415" class="mol-b" /><use href="#molB" x="310" y="415" class="mol-b" />
+        <use href="#molB" x="110" y="390" class="mol-b" /><use href="#molB" x="170" y="390" class="mol-b" /><use href="#molB" x="230" y="390" class="mol-b" /><use href="#molB" x="290" y="390" class="mol-b" />
+        <use href="#molB" x="80" y="365" class="mol-b" /><use href="#molB" x="140" y="365" class="mol-b" /><use href="#molB" x="200" y="365" class="mol-b" /><use href="#molB" x="260" y="365" class="mol-b" /><use href="#molB" x="320" y="365" class="mol-b" />
+        <use href="#molB" x="120" y="340" class="mol-b" /><use href="#molB" x="180" y="340" class="mol-b" /><use href="#molB" x="240" y="340" class="mol-b" /><use href="#molB" x="300" y="340" class="mol-b" />
+        <use href="#molB" x="90" y="315" class="mol-b" /><use href="#molB" x="150" y="315" class="mol-b" /><use href="#molB" x="210" y="315" class="mol-b" /><use href="#molB" x="270" y="315" class="mol-b" />
+    </g>
+
+    <!-- Vapor Molecules (Brownian Motion) -->
+    <g id="vapor-molecules">
+        <!-- Component A Vapor -->
+        <g transform="translate(100, 200)"><use href="#molA"><animateMotion path="M 0 0 Q 30 -20 10 -50 T -20 -10 T 0 0" dur="5s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(150, 150)"><use href="#molA"><animateMotion path="M 0 0 Q -20 30 -40 10 T -10 -40 T 0 0" dur="6s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(250, 220)"><use href="#molA"><animateMotion path="M 0 0 Q 20 20 40 -10 T 10 -30 T 0 0" dur="4.5s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(300, 140)"><use href="#molA"><animateMotion path="M 0 0 Q -30 -20 -10 30 T 20 10 T 0 0" dur="5.5s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(200, 260)"><use href="#molA"><animateMotion path="M 0 0 Q 40 -10 20 -40 T -20 -20 T 0 0" dur="7s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(80, 130)"><use href="#molA"><animateMotion path="M 0 0 Q 10 40 30 20 T 10 -20 T 0 0" dur="4.8s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(280, 270)"><use href="#molA"><animateMotion path="M 0 0 Q -20 -30 -40 0 T -10 30 T 0 0" dur="6.2s" repeatCount="indefinite" /></use></g>
+
+        <!-- Component B Vapor (Fades in) -->
+        <g transform="translate(120, 240)"><use href="#molB" class="mol-b"><animateMotion path="M 0 0 Q 20 -30 40 0 T 10 30 T 0 0" dur="5.2s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(220, 160)"><use href="#molB" class="mol-b"><animateMotion path="M 0 0 Q -30 20 -10 -20 T 30 10 T 0 0" dur="4.7s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(320, 200)"><use href="#molB" class="mol-b"><animateMotion path="M 0 0 Q -20 -40 -40 -10 T -10 30 T 0 0" dur="6.5s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(180, 120)"><use href="#molB" class="mol-b"><animateMotion path="M 0 0 Q 30 10 10 40 T -20 10 T 0 0" dur="5.8s" repeatCount="indefinite" /></use></g>
+        <g transform="translate(90, 270)"><use href="#molB" class="mol-b"><animateMotion path="M 0 0 Q 40 -20 20 -50 T -20 -10 T 0 0" dur="6.1s" repeatCount="indefinite" /></use></g>
+    </g>
+
+    <!-- Evaporation & Condensation Arrows -->
+    <g id="arrows">
+        <!-- Evaporation Arrow 1 -->
+        <path d="M 140 300 L 140 260" stroke="#F77F00" stroke-width="2" marker-end="url(#arrow)">
+            <animate attributeName="opacity" values="0;1;0;0" keyTimes="0;0.1;0.2;1" dur="4s" repeatCount="indefinite" />
+            <animateTransform attributeName="transform" type="translate" values="0 10; 0 -10; 0 -20; 0 -20" keyTimes="0;0.1;0.2;1" dur="4s" repeatCount="indefinite" />
+        </path>
+        <!-- Condensation Arrow 1 -->
+        <path d="M 260 250 L 260 290" stroke="#7209B7" stroke-width="2" marker-end="url(#arrow)">
+            <animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.4;0.5;0.6;1" dur="4.5s" repeatCount="indefinite" />
+            <animateTransform attributeName="transform" type="translate" values="0 -20; 0 -20; 0 0; 0 10; 0 10" keyTimes="0;0.4;0.5;0.6;1" dur="4.5s" repeatCount="indefinite" />
+        </path>
+        <!-- Evaporation Arrow 2 -->
+        <path d="M 210 300 L 210 260" stroke="#F77F00" stroke-width="2" marker-end="url(#arrow)">
+            <animate attributeName="opacity" values="0;0;0;1;0;0" keyTimes="0;0.6;0.7;0.8;0.9;1" dur="5s" repeatCount="indefinite" />
+            <animateTransform attributeName="transform" type="translate" values="0 10; 0 10; 0 10; 0 -10; 0 -20; 0 -20" keyTimes="0;0.6;0.7;0.8;0.9;1" dur="5s" repeatCount="indefinite" />
+        </path>
+    </g>
+
+    <!-- Legend -->
+    <g id="legend" transform="translate(220, 115)">
+        <rect x="0" y="0" width="120" height="50" rx="4" fill="#ffffff" stroke="#dddddd" opacity="0.9" />
+        <circle cx="15" cy="15" r="6" fill="#3498db" />
+        <text x="30" y="19" class="legend-text">Solvent (A)</text>
+        <circle cx="15" cy="35" r="5" fill="#2ecc71" />
+        <text x="30" y="39" class="legend-text">Solute (B)</text>
+    </g>
+
+
+    <!-- ========================================== -->
+    <!-- RIGHT SIDE: GRAPHICAL VIEW (RAOULT'S LAW)  -->
+    <!-- ========================================== -->
+    
+    <g id="graph">
+        <!-- Grid Lines -->
+        <line x1="450" y1="350" x2="750" y2="350" stroke="#eeeeee" stroke-width="1" />
+        <line x1="450" y1="300" x2="750" y2="300" stroke="#eeeeee" stroke-width="1" />
+        <line x1="450" y1="250" x2="750" y2="250" stroke="#eeeeee" stroke-width="1" />
+        <line x1="450" y1="200" x2="750" y2="200" stroke="#eeeeee" stroke-width="1" />
+        <line x1="450" y1="150" x2="750" y2="150" stroke="#eeeeee" stroke-width="1" />
+
+        <!-- Axes -->
+        <line x1="450" y1="400" x2="750" y2="400" stroke="#333333" stroke-width="2" /> <!-- X-axis -->
+        <line x1="450" y1="400" x2="450" y2="100" stroke="#333333" stroke-width="2" /> <!-- Left Y-axis -->
+        <line x1="750" y1="400" x2="750" y2="100" stroke="#333333" stroke-width="2" /> <!-- Right Y-axis -->
+
+        <!-- Axis Labels -->
+        <!-- Left Y-axis (Pure A) -->
+        <text x="440" y="255" text-anchor="end" class="axis-label">P<tspan baseline-shift="sub" font-size="10">A</tspan><tspan baseline-shift="super" font-size="10">0</tspan></text>
+        <!-- Right Y-axis (Pure B) -->
+        <text x="760" y="155" text-anchor="start" class="axis-label">P<tspan baseline-shift="sub" font-size="10">B</tspan><tspan baseline-shift="super" font-size="10">0</tspan></text>
+        
+        <!-- X-axis Left -->
+        <text x="450" y="420" text-anchor="middle" class="axis-label">x<tspan baseline-shift="sub" font-size="10">A</tspan>=1</text>
+        <text x="450" y="435" text-anchor="middle" class="axis-label">x<tspan baseline-shift="sub" font-size="10">B</tspan>=0</text>
+        
+        <!-- X-axis Right -->
+        <text x="750" y="420" text-anchor="middle" class="axis-label">x<tspan baseline-shift="sub" font-size="10">A</tspan>=0</text>
+        <text x="750" y="435" text-anchor="middle" class="axis-label">x<tspan baseline-shift="sub" font-size="10">B</tspan>=1</text>
+
+        <!-- X-axis Middle (Animated Indicator Label) -->
+        <text x="570" y="420" text-anchor="middle" class="axis-label indicator-label" fill="#7209B7" font-weight="bold">x<tspan baseline-shift="sub" font-size="10">B</tspan>=0.4</text>
+
+        <!-- Raoult's Law Lines -->
+        <!-- P_A Line (Blue Dashed) -->
+        <line x1="450" y1="250" x2="750" y2="400" stroke="#3498db" stroke-width="3" stroke-dasharray="8 6" class="line-pa" />
+        <!-- P_B Line (Green Dashed) -->
+        <line x1="450" y1="400" x2="750" y2="150" stroke="#2ecc71" stroke-width="3" stroke-dasharray="8 6" class="line-pb" />
+        <!-- P_total Line (Red Solid) -->
+        <line x1="450" y1="250" x2="750" y2="150" stroke="#e74c3c" stroke-width="4" class="line-ptot" />
+
+        <!-- Current State Indicator Line -->
+        <line x1="0" y1="120" x2="0" y2="400" stroke="#7209B7" stroke-width="2" stroke-dasharray="4 4" class="indicator-line" />
+
+        <!-- Animated Intersection Points -->
+        <circle cx="0" cy="0" r="5" fill="#3498db" class="point-a" />
+        <circle cx="0" cy="0" r="5" fill="#2ecc71" class="point-b" />
+        <circle cx="0" cy="0" r="6" fill="#e74c3c" class="point-tot" />
+    </g>
+
+    <!-- ========================================== -->
+    <!-- FORMULAS OVERLAY                           -->
+    <!-- ========================================== -->
+    <g id="formulas" transform="translate(540, 410)">
+        <rect x="0" y="0" width="210" height="80" rx="6" fill="#ffffff" stroke="#cccccc" stroke-width="1" />
+        
+        <!-- P_total = P_A + P_B -->
+        <text x="15" y="25" class="math-text" fill="#e74c3c" font-weight="600">
+            P<tspan baseline-shift="sub" font-size="10">total</tspan> = P<tspan baseline-shift="sub" font-size="10">A</tspan> + P<tspan baseline-shift="sub" font-size="10">B</tspan>
+        </text>
+        
+        <!-- P_A = P_A^0 * x_A -->
+        <text x="15" y="47" class="math-text" fill="#3498db">
+            P<tspan baseline-shift="sub" font-size="10">A</tspan> = P<tspan baseline-shift="sub" font-size="10">A</tspan><tspan baseline-shift="super" font-size="10">0</tspan> · x<tspan baseline-shift="sub" font-size="10">A</tspan>
+        </text>
+        
+        <!-- P_B = P_B^0 * x_B -->
+        <text x="15" y="69" class="math-text" fill="#2ecc71">
+            P<tspan baseline-shift="sub" font-size="10">B</tspan> = P<tspan baseline-shift="sub" font-size="10">B</tspan><tspan baseline-shift="super" font-size="10">0</tspan> · x<tspan baseline-shift="sub" font-size="10">B</tspan>
+        </text>
+    </g>
+
+</svg>
+
+</body>
+</html>

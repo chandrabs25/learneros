@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gauss's Law Visualization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --pos-color: #FF3366;
+            --neg-color: #4361EE;
+            --gauss-color: #7209B7;
+            --area-color: #06D6A0;
+            --font-main: 'Inter', sans-serif;
+            --font-math: 'Roboto Mono', monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: var(--font-main);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #control-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--panel-border);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0 0 20px 0;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .control-value {
+            font-family: var(--font-math);
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--text-main);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+
+        /* Specific slider colors */
+        #shellRadius::-webkit-slider-thumb { background: #ff7b93; }
+        #totalCharge::-webkit-slider-thumb { background: var(--pos-color); }
+        #gaussRadius::-webkit-slider-thumb { background: var(--gauss-color); }
+
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .formula-line {
+            font-family: var(--font-math);
+            font-size: 1.1rem;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .formula-title {
+            font-family: var(--font-main);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .math-sym {
+            font-size: 1.3rem;
+            font-style: italic;
+        }
+
+        #graph-container {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 300px;
+            height: 200px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            padding: 10px;
+            z-index: 5;
+        }
+
+        canvas#graph {
+            width: 100%;
+            height: 100%;
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #control-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid var(--panel-border); }
+            #graph-container { display: none; } /* Hide graph on small screens */
+            #formula-card { top: 10px; left: 10px; padding: 10px; }
+            .formula-line { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Gauss's Law</div>
+            <div class="formula-line">
+                <span>&oint; <b style="color:var(--pos-color)">E</b> &middot; d<b style="color:var(--area-color)">A</b> = <span class="math-sym">Q</span><sub>encl</sub> / &epsilon;<sub>0</sub></span>
+            </div>
+            <hr style="border:0; border-top:1px solid rgba(0,0,0,0.1); margin:12px 0;">
+            <div class="formula-line">
+                <span class="math-sym">Q</span><sub>encl</sub> = <span id="val-qencl">20.0</span> nC
+            </div>
+            <div class="formula-line">
+                <span class="math-sym">&Phi;</span><sub>E</sub> = <span id="val-flux">2258</span> N&middot;m&sup2;/C
+            </div>
+            <div class="formula-line">
+                <b style="color:var(--pos-color)">|E|</b> = <span id="val-efield">71.9</span> N/C
+            </div>
+        </div>
+
+        <div id="graph-container">
+            <canvas id="graph"></canvas>
+        </div>
+    </div>
+
+    <div id="control-panel">
+        <div>
+            <h1>Spherical Shell</h1>
+            <p class="subtitle">Interactive Electrostatics</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Shell Radius (R)</span>
+                <span class="control-value"><span id="val-R">3.0</span> m</span>
+            </div>
+            <input type="range" id="shellRadius" min="1.0" max="5.0" step="0.1" value="3.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Total Charge (Q)</span>
+                <span class="control-value"><span id="val-Q">20.0</span> nC</span>
+            </div>
+            <input type="range" id="totalCharge" min="-50.0" max="50.0" step="1.0" value="20.0">
+        </div>
+
+        <div class="control-group" style="border-color: var(--gauss-color); background: rgba(114, 9, 183, 0.05);">
+            <div class="control-header">
+                <span class="control-label" style="color: var(--gauss-color);">Gaussian Radius (r)</span>
+                <span class="control-value"><span id="val-r">5.0</span> m</span>
+            </div>
+            <input type="range" id="gaussRadius" min="0.1" max="10.0" step="0.1" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Charge Density</span>
+                <span class="control-value"><span id="val-density">200</span></span>
+            </div>
+            <input type="range" id="density" min="50" max="500" step="50" value="200">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: var(--pos-color);"></div> E-Field (+Q)</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--neg-color);"></div> E-Field (-Q)</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--gauss-color);"></div> Gaussian Surface</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--area-color);"></div> Area Vector (dA)</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Constants ---
+        const EPSILON_0 = 8.854e-12; // F/m
+        const K = 1 / (4 * Math.PI * EPSILON_0); // Coulomb constant ~ 8.99e9
+
+        // --- State Variables ---
+        let state = {
+            R: 3.0,
+            Q: 20.0, // in nC
+            r: 5.0,
+            density: 200
+        };
+
+        // --- Colors ---
+        const colors = {
+            pos: 0xFF3366,
+            neg: 0x4361EE,
+            gauss: 0x7209B7,
+            area: 0x06D6A0,
+            bg: 0xf0f4f8
+        };
+
+        // --- DOM Elements ---
+        const els = {
+            R: document.getElementById('shellRadius'),
+            Q: document.getElementById('totalCharge'),
+            r: document.getElementById('gaussRadius'),
+            density: document.getElementById('density'),
+            valR: document.getElementById('val-R'),
+            valQ: document.getElementById('val-Q'),
+            valr: document.getElementById('val-r'),
+            valDensity: document.getElementById('val-density'),
+            valQencl: document.getElementById('val-qencl'),
+            valFlux: document.getElementById('val-flux'),
+            valEfield: document.getElementById('val-efield'),
+            graph: document.getElementById('graph')
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(colors.bg);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(8, 6, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Scene Objects ---
+
+        // 1. Charged Shell
+        const shellGroup = new THREE.Group();
+        scene.add(shellGroup);
+
+        const shellGeo = new THREE.SphereGeometry(1, 64, 64);
+        const shellMat = new THREE.MeshPhysicalMaterial({
+            color: colors.pos,
+            transparent: true,
+            opacity: 0.4,
+            roughness: 0.2,
+            transmission: 0.5,
+            side: THREE.DoubleSide
+        });
+        const shellMesh = new THREE.Mesh(shellGeo, shellMat);
+        shellGroup.add(shellMesh);
+
+        // Shell wireframe for "mesh" look
+        const shellWireGeo = new THREE.SphereGeometry(1.005, 32, 16);
+        const shellWireMat = new THREE.MeshBasicMaterial({
+            color: colors.pos,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.15
+        });
+        const shellWireMesh = new THREE.Mesh(shellWireGeo, shellWireMat);
+        shellGroup.add(shellWireMesh);
+
+        // 2. Point Charges (InstancedMesh)
+        const chargeGeo = new THREE.SphereGeometry(0.06, 8, 8);
+        const chargeMat = new THREE.MeshBasicMaterial({ color: colors.pos });
+        let chargeMesh = new THREE.InstancedMesh(chargeGeo, chargeMat, 500);
+        shellGroup.add(chargeMesh);
+
+        function updateCharges() {
+            const count = state.density;
+            chargeMesh.count = count;
+            const dummy = new THREE.Object3D();
+            
+            // Fibonacci sphere distribution
+            const phi = Math.PI * (3 - Math.sqrt(5));
+            for (let i = 0; i < count; i++) {
+                const y = 1 - (i / (count - 1)) * 2;
+                const radius = Math.sqrt(1 - y * y);
+                const theta = phi * i;
+                
+                const x = Math.cos(theta) * radius;
+                const z = Math.sin(theta) * radius;
+                
+                // Position strictly on surface (radius 1, scaled by group later)
+                dummy.position.set(x, y, z);
+                dummy.updateMatrix();
+                chargeMesh.setMatrixAt(i, dummy.matrix);
+            }
+            chargeMesh.instanceMatrix.needsUpdate = true;
+        }
+
+        // 3. Gaussian Surface
+        const gaussGeo = new THREE.SphereGeometry(1, 32, 16);
+        const gaussMat = new THREE.MeshBasicMaterial({
+            color: colors.gauss,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.25
+        });
+        const gaussMesh = new THREE.Mesh(gaussGeo, gaussMat);
+        scene.add(gaussMesh);
+
+        // 4. Electric Field Vectors (Arrows)
+        const arrows = [];
+        const numArrows = 60; // Fixed number of field lines
+        const arrowGroup = new THREE.Group();
+        scene.add(arrowGroup);
+
+        const phi = Math.PI * (3 - Math.sqrt(5));
+        for (let i = 0; i < numArrows; i++) {
+            const y = 1 - (i / (numArrows - 1)) * 2;
+            const radius = Math.sqrt(1 - y * y);
+            const theta = phi * i;
+            const dir = new THREE.Vector3(Math.cos(theta) * radius, y, Math.sin(theta) * radius).normalize();
+            
+            const arrow = new THREE.ArrowHelper(dir, new THREE.Vector3(0,0,0), 1, colors.pos, 0.3, 0.2);
+            arrows.push({ helper: arrow, baseDir: dir });
+            arrowGroup.add(arrow);
+        }
+
+        // 5. Area Vector (dA)
+        const areaDir = new THREE.Vector3(0, 1, 0);
+        const areaArrow = new THREE.ArrowHelper(areaDir, new THREE.Vector3(0,0,0), 1.5, colors.area, 0.4, 0.3);
+        scene.add(areaArrow);
+
+        // --- Physics & Update Logic ---
+
+        function updatePhysics() {
+            // 1. Update Geometry Scales
+            shellGroup.scale.set(state.R, state.R, state.R);
+            gaussMesh.scale.set(state.r, state.r, state.r);
+
+            // 2. Determine Colors based on Charge Sign
+            const isPos = state.Q >= 0;
+            const chargeColor = isPos ? colors.pos : colors.neg;
+            shellMat.color.setHex(chargeColor);
+            shellWireMat.color.setHex(chargeColor);
+            chargeMat.color.setHex(chargeColor);
+            
+            // Update UI slider thumb color dynamically
+            document.documentElement.style.setProperty('--pos-color', isPos ? '#FF3366' : '#4361EE');
+
+            // 3. Calculate Physics Values
+            const Q_real = state.Q * 1e-9; // Coulombs
+            let E = 0;
+            let Q_encl = 0;
+            let Flux = 0;
+
+            if (state.r >= state.R) {
+                // Outside shell
+                E = K * Math.abs(Q_real) / (state.r * state.r);
+                Q_encl = state.Q; // nC
+                Flux = (Q_encl * 1e-9) / EPSILON_0;
+            } else {
+                // Inside shell
+                E = 0;
+                Q_encl = 0;
+                Flux = 0;
+            }
+
+            // 4. Update UI Text
+            els.valQencl.innerText = Q_encl.toFixed(1);
+            els.valFlux.innerText = Flux.toExponential(2).replace('e+', ' x 10^');
+            if(Flux === 0) els.valFlux.innerText = "0";
+            els.valEfield.innerText = E.toFixed(1);
+
+            // 5. Update Arrows
+            // Scale arrow length non-linearly for better visualization
+            const scaleFactor = 0.25;
+            const arrowLength = E > 0 ? Math.sqrt(E) * scaleFactor : 0.001; 
+            const isVisible = E > 0 && state.Q !== 0;
+
+            arrows.forEach(a => {
+                // Position at Gaussian surface
+                a.helper.position.copy(a.baseDir).multiplyScalar(state.r);
+                
+                // Direction (outward if +, inward if -)
+                const dir = a.baseDir.clone();
+                if (!isPos) dir.negate();
+                a.helper.setDirection(dir);
+                
+                a.helper.setLength(arrowLength, arrowLength * 0.3, arrowLength * 0.2);
+                a.helper.setColor(chargeColor);
+                a.helper.visible = isVisible;
+            });
+
+            // 6. Update Area Vector
+            areaArrow.position.set(0, state.r, 0);
+            
+            // 7. Redraw Graph
+            drawGraph(E);
+        }
+
+        // --- 2D Graph Logic ---
+        const ctx = els.graph.getContext('2d');
+        
+        function drawGraph(currentE) {
+            const w = els.graph.width = els.graph.clientWidth * window.devicePixelRatio;
+            const h = els.graph.height = els.graph.clientHeight * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            const cw = els.graph.clientWidth;
+            const ch = els.graph.clientHeight;
+
+            ctx.clearRect(0, 0, cw, ch);
+
+            const padding = 30;
+            const graphW = cw - padding * 2;
+            const graphH = ch - padding * 2;
+
+            // Max values for scaling
+            const rMax = 10;
+            // Max E happens at r = R
+            const maxPossibleE = K * Math.abs(state.Q * 1e-9) / (state.R * state.R);
+            const eMax = Math.max(maxPossibleE * 1.2, 10); // Minimum scale
+
+            // Helper to map physics coords to canvas coords
+            const mapX = (r) => padding + (r / rMax) * graphW;
+            const mapY = (e) => ch - padding - (e / eMax) * graphH;
+
+            // Draw Axes
+            ctx.beginPath();
+            ctx.strokeStyle = '#a0aec0';
+            ctx.lineWidth = 1.5;
+            ctx.moveTo(padding, padding / 2);
+            ctx.lineTo(padding, ch - padding);
+            ctx.lineTo(cw - padding / 2, ch - padding);
+            ctx.stroke();
+
+            // Labels
+            ctx.fillStyle = '#4a5568';
+            ctx.font = '10px Inter';
+            ctx.fillText('r (m)', cw - padding + 5, ch - padding + 4);
+            ctx.fillText('E', padding - 15, padding - 5);
+            ctx.fillText(state.R.toFixed(1), mapX(state.R) - 10, ch - padding + 15);
+
+            // Draw R line (dashed)
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = '#cbd5e0';
+            ctx.moveTo(mapX(state.R), ch - padding);
+            ctx.lineTo(mapX(state.R), padding);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            if (state.Q !== 0) {
+                // Draw E vs r curve
+                ctx.beginPath();
+                ctx.strokeStyle = state.Q > 0 ? '#FF3366' : '#4361EE';
+                ctx.lineWidth = 2.5;
+
+                // Inside shell (E=0)
+                ctx.moveTo(mapX(0), mapY(0));
+                ctx.lineTo(mapX(state.R), mapY(0));
+
+                // Discontinuity jump
+                ctx.lineTo(mapX(state.R), mapY(maxPossibleE));
+
+                // Outside shell (1/r^2)
+                for (let r = state.R; r <= rMax; r += 0.1) {
+                    const e = K * Math.abs(state.Q * 1e-9) / (r * r);
+                    ctx.lineTo(mapX(r), mapY(e));
+                }
+                ctx.stroke();
+            }
+
+            // Draw current point
+            const currentX = mapX(state.r);
+            const currentY = mapY(currentE);
+            
+            ctx.beginPath();
+            ctx.fillStyle = '#7209B7'; // Gaussian color
+            ctx.arc(currentX, currentY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+        }
+
+        // --- Event Listeners ---
+        function attachListener(el, stateKey, valEl, isFloat = true) {
+            el.addEventListener('input', (e) => {
+                const val = isFloat ? parseFloat(e.target.value) : parseInt(e.target.value);
+                state[stateKey] = val;
+                valEl.innerText = isFloat ? val.toFixed(1) : val;
+                
+                if (stateKey === 'density') updateCharges();
+                updatePhysics();
+            });
+        }
+
+        attachListener(els.R, 'R', els.valR);
+        attachListener(els.Q, 'Q', els.valQ);
+        attachListener(els.r, 'r', els.valr);
+        attachListener(els.density, 'density', els.valDensity, false);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            updatePhysics(); // Redraws graph
+        });
+
+        // --- Initialization ---
+        updateCharges();
+        updatePhysics();
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            
+            // Slow rotation for visual appeal
+            shellGroup.rotation.y += 0.001;
+            shellGroup.rotation.x += 0.0005;
+            
+            renderer.render(scene, camera);
+        }
+        animate();
+
+    </script>
+</body>
+</html>

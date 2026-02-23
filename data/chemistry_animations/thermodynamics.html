@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Enthalpy and the First Law</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        text {
+            user-select: none;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Animations */
+        .vibrate {
+            animation: vibrate 0.3s infinite alternate ease-in-out;
+        }
+
+        @keyframes vibrate {
+            0% { transform: translate(-1px, 1px) rotate(-1deg); }
+            100% { transform: translate(1px, -1px) rotate(1deg); }
+        }
+
+        /* Reactants */
+        .ch4 { animation: ch4-move 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .o2-1 { animation: o2-1-move 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .o2-2 { animation: o2-2-move 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes ch4-move {
+            0%, 25% { transform: translate(200px, 320px); opacity: 1; }
+            41.6% { transform: translate(200px, 250px); opacity: 1; }
+            45.8% { transform: translate(200px, 250px); opacity: 0; }
+            100% { transform: translate(200px, 250px); opacity: 0; }
+        }
+        @keyframes o2-1-move {
+            0%, 25% { transform: translate(100px, 180px) rotate(20deg); opacity: 1; }
+            41.6% { transform: translate(165px, 225px) rotate(45deg); opacity: 1; }
+            45.8% { transform: translate(165px, 225px) rotate(45deg); opacity: 0; }
+            100% { transform: translate(165px, 225px) rotate(45deg); opacity: 0; }
+        }
+        @keyframes o2-2-move {
+            0%, 25% { transform: translate(300px, 180px) rotate(-20deg); opacity: 1; }
+            41.6% { transform: translate(235px, 225px) rotate(-45deg); opacity: 1; }
+            45.8% { transform: translate(235px, 225px) rotate(-45deg); opacity: 0; }
+            100% { transform: translate(235px, 225px) rotate(-45deg); opacity: 0; }
+        }
+
+        /* Products */
+        .co2 { animation: co2-move 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .h2o-1 { animation: h2o-1-move 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .h2o-2 { animation: h2o-2-move 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        @keyframes co2-move {
+            0%, 45.8% { transform: translate(200px, 250px) rotate(0deg); opacity: 0; }
+            50% { transform: translate(200px, 250px) rotate(0deg); opacity: 1; }
+            75%, 100% { transform: translate(200px, 160px) rotate(15deg); opacity: 1; }
+        }
+        @keyframes h2o-1-move {
+            0%, 45.8% { transform: translate(200px, 250px) rotate(0deg); opacity: 0; }
+            50% { transform: translate(200px, 250px) rotate(0deg); opacity: 1; }
+            75%, 100% { transform: translate(100px, 320px) rotate(-30deg); opacity: 1; }
+        }
+        @keyframes h2o-2-move {
+            0%, 45.8% { transform: translate(200px, 250px) rotate(0deg); opacity: 0; }
+            50% { transform: translate(200px, 250px) rotate(0deg); opacity: 1; }
+            75%, 100% { transform: translate(300px, 320px) rotate(30deg); opacity: 1; }
+        }
+
+        /* Transition State Flash */
+        .flash { animation: flash-anim 12s infinite ease-in-out; }
+        @keyframes flash-anim {
+            0%, 41.6% { opacity: 0; transform: translate(200px, 250px) scale(0.5); }
+            45.8% { opacity: 1; transform: translate(200px, 250px) scale(1.5); }
+            50%, 100% { opacity: 0; transform: translate(200px, 250px) scale(0.5); }
+        }
+
+        /* Heat Arrows */
+        .heat-1 { animation: heat-1-anim 12s infinite ease-out; }
+        .heat-2 { animation: heat-2-anim 12s infinite ease-out; }
+        .heat-3 { animation: heat-3-anim 12s infinite ease-out; }
+        .heat-4 { animation: heat-4-anim 12s infinite ease-out; }
+
+        @keyframes heat-1-anim {
+            0%, 50% { opacity: 0; transform: translate(200px, 250px) rotate(0deg) translateX(30px); }
+            55% { opacity: 1; }
+            70% { opacity: 0; transform: translate(200px, 250px) rotate(0deg) translateX(110px); }
+            100% { opacity: 0; }
+        }
+        @keyframes heat-2-anim {
+            0%, 50% { opacity: 0; transform: translate(200px, 250px) rotate(90deg) translateX(30px); }
+            55% { opacity: 1; }
+            70% { opacity: 0; transform: translate(200px, 250px) rotate(90deg) translateX(110px); }
+            100% { opacity: 0; }
+        }
+        @keyframes heat-3-anim {
+            0%, 50% { opacity: 0; transform: translate(200px, 250px) rotate(180deg) translateX(30px); }
+            55% { opacity: 1; }
+            70% { opacity: 0; transform: translate(200px, 250px) rotate(180deg) translateX(110px); }
+            100% { opacity: 0; }
+        }
+        @keyframes heat-4-anim {
+            0%, 50% { opacity: 0; transform: translate(200px, 250px) rotate(270deg) translateX(30px); }
+            55% { opacity: 1; }
+            70% { opacity: 0; transform: translate(200px, 250px) rotate(270deg) translateX(110px); }
+            100% { opacity: 0; }
+        }
+
+        /* Piston Movement */
+        .piston-group { animation: piston-move 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes piston-move {
+            0%, 50% { transform: translateY(0); }
+            75%, 100% { transform: translateY(-25px); }
+        }
+
+        /* Indicator Dot */
+        .indicator-dot { animation: dot-move 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes dot-move {
+            0%, 25% { transform: translate(490px, 150px); }
+            41.6%, 50% { transform: translate(600px, 100px); }
+            58% { transform: translate(620px, 150px); }
+            66% { transform: translate(650px, 260px); }
+            75%, 100% { transform: translate(720px, 350px); }
+        }
+
+        /* Delta H Arrow */
+        .delta-h { animation: delta-h-show 12s infinite; }
+        @keyframes delta-h-show {
+            0%, 70% { opacity: 0; }
+            75%, 100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Thermodynamics: Enthalpy of Combustion</title>
+            <desc>Animation showing the combustion of methane at constant pressure and the corresponding exothermic reaction coordinate diagram.</desc>
+            
+            <defs>
+                <!-- Atom Gradients -->
+                <radialGradient id="grad-c" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#777777"/>
+                    <stop offset="100%" stop-color="#404040"/>
+                </radialGradient>
+                <radialGradient id="grad-o" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#ff8888"/>
+                    <stop offset="100%" stop-color="#FF4444"/>
+                </radialGradient>
+                <radialGradient id="grad-h" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="100%" stop-color="#cccccc"/>
+                </radialGradient>
+
+                <!-- Glow Filter -->
+                <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                
+                <filter id="glow-flash" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="8" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+
+                <!-- Arrowheads -->
+                <marker id="arrow-axis" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                    <polygon points="0,0 10,5 0,10" fill="#333333"/>
+                </marker>
+                <marker id="arrow-heat" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                    <polygon points="0,0 10,5 0,10" fill="#F77F00"/>
+                </marker>
+                <marker id="arrow-purple-down" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
+                    <polygon points="0,0 10,5 0,10" fill="#7209B7"/>
+                </marker>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#ffffff" />
+            
+            <!-- Title -->
+            <text x="400" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#222">Thermodynamics: Enthalpy of Combustion (ΔH)</text>
+
+            <!-- ========================================== -->
+            <!-- LEFT PANEL: MOLECULAR REACTION CHAMBER     -->
+            <!-- ========================================== -->
+            
+            <!-- Cylinder -->
+            <path d="M 50 80 L 50 410 A 10 10 0 0 0 60 420 L 340 420 A 10 10 0 0 0 350 410 L 350 80" fill="#f8f9fa" stroke="#333" stroke-width="4"/>
+            
+            <!-- Piston Assembly -->
+            <g class="piston-group">
+                <rect x="190" y="10" width="20" height="100" fill="#cccccc" stroke="#666" stroke-width="2"/>
+                <rect x="52" y="110" width="296" height="20" fill="#dddddd" stroke="#666" stroke-width="2" rx="4"/>
+                <text x="200" y="100" text-anchor="middle" font-size="12" font-weight="600" fill="#555">Constant Pressure (P)</text>
+            </g>
+
+            <!-- Heat Arrows (qp) -->
+            <g class="heat-1">
+                <path d="M 0 0 Q 8 -8 16 0 T 32 0 T 48 0" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow-heat)"/>
+            </g>
+            <g class="heat-2">
+                <path d="M 0 0 Q 8 -8 16 0 T 32 0 T 48 0" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow-heat)"/>
+            </g>
+            <g class="heat-3">
+                <path d="M 0 0 Q 8 -8 16 0 T 32 0 T 48 0" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow-heat)"/>
+            </g>
+            <g class="heat-4">
+                <path d="M 0 0 Q 8 -8 16 0 T 32 0 T 48 0" fill="none" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow-heat)"/>
+            </g>
+
+            <!-- Transition State Flash -->
+            <circle class="flash" cx="0" cy="0" r="40" fill="#FFD700" filter="url(#glow-flash)"/>
+
+            <!-- REACTANTS -->
+            <!-- CH4 Molecule -->
+            <g class="ch4">
+                <g class="vibrate">
+                    <!-- Bonds -->
+                    <line x1="0" y1="0" x2="0" y2="-24" stroke="#666" stroke-width="3"/>
+                    <line x1="0" y1="0" x2="-22" y2="10" stroke="#666" stroke-width="3"/>
+                    <polygon points="0,-2 22,12 18,16 0,2" fill="#666"/> <!-- Wedge -->
+                    <line x1="0" y1="0" x2="12" y2="-12" stroke="#666" stroke-width="3" stroke-dasharray="3,2"/> <!-- Dash -->
+                    <!-- Atoms -->
+                    <circle cx="0" cy="0" r="14" fill="url(#grad-c)"/>
+                    <circle cx="0" cy="-24" r="8" fill="url(#grad-h)"/>
+                    <circle cx="-22" cy="10" r="8" fill="url(#grad-h)"/>
+                    <circle cx="22" cy="10" r="8" fill="url(#grad-h)"/>
+                    <circle cx="12" cy="-12" r="8" fill="url(#grad-h)"/>
+                </g>
+            </g>
+
+            <!-- O2 Molecule 1 -->
+            <g class="o2-1">
+                <g class="vibrate">
+                    <line x1="-14" y1="-3" x2="14" y2="-3" stroke="#666" stroke-width="3"/>
+                    <line x1="-14" y1="3" x2="14" y2="3" stroke="#666" stroke-width="3"/>
+                    <circle cx="-14" cy="0" r="12" fill="url(#grad-o)"/>
+                    <circle cx="14" cy="0" r="12" fill="url(#grad-o)"/>
+                </g>
+            </g>
+
+            <!-- O2 Molecule 2 -->
+            <g class="o2-2">
+                <g class="vibrate">
+                    <line x1="-14" y1="-3" x2="14" y2="-3" stroke="#666" stroke-width="3"/>
+                    <line x1="-14" y1="3" x2="14" y2="3" stroke="#666" stroke-width="3"/>
+                    <circle cx="-14" cy="0" r="12" fill="url(#grad-o)"/>
+                    <circle cx="14" cy="0" r="12" fill="url(#grad-o)"/>
+                </g>
+            </g>
+
+            <!-- PRODUCTS -->
+            <!-- CO2 Molecule -->
+            <g class="co2">
+                <g class="vibrate">
+                    <line x1="-26" y1="-3" x2="26" y2="-3" stroke="#666" stroke-width="3"/>
+                    <line x1="-26" y1="3" x2="26" y2="3" stroke="#666" stroke-width="3"/>
+                    <circle cx="0" cy="0" r="14" fill="url(#grad-c)"/>
+                    <circle cx="-26" cy="0" r="12" fill="url(#grad-o)"/>
+                    <circle cx="26" cy="0" r="12" fill="url(#grad-o)"/>
+                </g>
+            </g>
+
+            <!-- H2O Molecule 1 -->
+            <g class="h2o-1">
+                <g class="vibrate">
+                    <line x1="0" y1="0" x2="-16" y2="14" stroke="#666" stroke-width="3"/>
+                    <line x1="0" y1="0" x2="16" y2="14" stroke="#666" stroke-width="3"/>
+                    <circle cx="0" cy="0" r="12" fill="url(#grad-o)"/>
+                    <circle cx="-16" cy="14" r="8" fill="url(#grad-h)"/>
+                    <circle cx="16" cy="14" r="8" fill="url(#grad-h)"/>
+                </g>
+            </g>
+
+            <!-- H2O Molecule 2 -->
+            <g class="h2o-2">
+                <g class="vibrate">
+                    <line x1="0" y1="0" x2="-16" y2="14" stroke="#666" stroke-width="3"/>
+                    <line x1="0" y1="0" x2="16" y2="14" stroke="#666" stroke-width="3"/>
+                    <circle cx="0" cy="0" r="12" fill="url(#grad-o)"/>
+                    <circle cx="-16" cy="14" r="8" fill="url(#grad-h)"/>
+                    <circle cx="16" cy="14" r="8" fill="url(#grad-h)"/>
+                </g>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(60, 445)">
+                <circle cx="0" cy="0" r="6" fill="url(#grad-c)"/>
+                <text x="12" y="4" font-size="12" fill="#555">Carbon</text>
+                <circle cx="75" cy="0" r="6" fill="url(#grad-o)"/>
+                <text x="87" y="4" font-size="12" fill="#555">Oxygen</text>
+                <circle cx="150" cy="0" r="6" fill="url(#grad-h)"/>
+                <text x="162" y="4" font-size="12" fill="#555">Hydrogen</text>
+            </g>
+
+            <!-- Chemical Equation -->
+            <text x="200" y="480" text-anchor="middle" class="formula" font-size="16" fill="#333">
+                CH<tspan dy="4" font-size="12">4</tspan><tspan dy="-4">(g) + 2O</tspan><tspan dy="4" font-size="12">2</tspan><tspan dy="-4">(g) → CO</tspan><tspan dy="4" font-size="12">2</tspan><tspan dy="-4">(g) + 2H</tspan><tspan dy="4" font-size="12">2</tspan><tspan dy="-4">O(g)</tspan>
+            </text>
+
+
+            <!-- ========================================== -->
+            <!-- RIGHT PANEL: REACTION COORDINATE DIAGRAM   -->
+            <!-- ========================================== -->
+            
+            <!-- Axes -->
+            <line x1="450" y1="400" x2="760" y2="400" stroke="#333" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            <line x1="450" y1="400" x2="450" y2="80" stroke="#333" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            
+            <!-- Axis Labels -->
+            <text x="605" y="430" text-anchor="middle" font-size="14" font-weight="600" fill="#333">Reaction Progress</text>
+            <text x="-240" y="435" transform="rotate(-90)" text-anchor="middle" font-size="14" font-weight="600" fill="#333">Enthalpy (H)</text>
+
+            <!-- Grid Lines (Subtle) -->
+            <line x1="445" y1="150" x2="455" y2="150" stroke="#333" stroke-width="2"/>
+            <line x1="445" y1="350" x2="455" y2="350" stroke="#333" stroke-width="2"/>
+
+            <!-- Energy Curve -->
+            <path d="M 470 150 C 530 150, 560 100, 600 100 C 640 100, 640 350, 690 350 L 750 350" fill="none" stroke="#999999" stroke-width="4" stroke-linecap="round"/>
+
+            <!-- State Labels -->
+            <text x="490" y="135" text-anchor="middle" font-size="14" font-weight="600" fill="#555">Reactants</text>
+            <text x="720" y="335" text-anchor="middle" font-size="14" font-weight="600" fill="#555">Products</text>
+            <text x="600" y="85" text-anchor="middle" font-size="14" font-weight="600" fill="#FFD700" filter="url(#glow)">Transition State</text>
+
+            <!-- Activation Energy (Ea) -->
+            <line x1="600" y1="100" x2="600" y2="150" stroke="#999" stroke-width="2" stroke-dasharray="4,4"/>
+            <path d="M 580 150 L 580 105" stroke="#333" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            <text x="565" y="132" text-anchor="middle" font-size="14" font-weight="600" fill="#333">E<tspan dy="4" font-size="10">a</tspan></text>
+
+            <!-- Delta H Indicator -->
+            <g class="delta-h">
+                <line x1="520" y1="150" x2="730" y2="150" stroke="#999" stroke-width="2" stroke-dasharray="4,4"/>
+                <line x1="690" y1="350" x2="730" y2="350" stroke="#999" stroke-width="2" stroke-dasharray="4,4"/>
+                
+                <!-- Double headed arrow for Delta H -->
+                <path d="M 710 155 L 710 345" stroke="#7209B7" stroke-width="2" marker-end="url(#arrow-purple-down)"/>
+                <path d="M 710 345 L 710 155" stroke="#7209B7" stroke-width="2" marker-end="url(#arrow-purple-down)"/>
+                
+                <text x="745" y="255" text-anchor="middle" font-size="14" font-weight="700" fill="#7209B7">ΔH &lt; 0</text>
+            </g>
+
+            <!-- Thermodynamic Identities -->
+            <text x="605" y="460" text-anchor="middle" class="formula" font-size="14" fill="#555">
+                ΔH = q<tspan dy="4" font-size="10">p</tspan>
+            </text>
+            <text x="605" y="480" text-anchor="middle" class="formula" font-size="14" fill="#555">
+                ΔH = H<tspan dy="4" font-size="10">products</tspan><tspan dy="-4"> - H</tspan><tspan dy="4" font-size="10">reactants</tspan>
+            </text>
+
+            <!-- Indicator Dot -->
+            <circle class="indicator-dot" cx="0" cy="0" r="7" fill="#7209B7" filter="url(#glow)"/>
+
+        </svg>
+    </div>
+</body>
+</html>

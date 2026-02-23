@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bacteriophage Structure & Infection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* Typography */
+        .title { font-weight: 700; font-size: 22px; fill: #2C3E50; }
+        .subtitle { font-weight: 400; font-size: 14px; fill: #7F8C8D; }
+        .label { font-weight: 600; font-size: 14px; fill: #2C3E50; }
+        .mono { font-family: 'Roboto Mono', monospace; font-size: 12px; fill: #E74C3C; }
+        .mono-protein { font-family: 'Roboto Mono', monospace; font-size: 12px; fill: #27AE60; }
+        .process-label { font-weight: 700; font-size: 18px; fill: #34495E; opacity: 0; }
+        
+        /* Animations */
+        #phage-assembly {
+            animation: phage-landing 10s ease-in-out infinite;
+        }
+        #head-tube-group {
+            animation: head-contraction 10s ease-in-out infinite;
+        }
+        #sheath {
+            transform-origin: 400px 350px;
+            animation: sheath-contraction 10s ease-in-out infinite;
+        }
+        .tail-fiber-left {
+            transform-origin: 375px 354px;
+            animation: fiber-flex-left 10s ease-in-out infinite;
+        }
+        .tail-fiber-right {
+            transform-origin: 425px 354px;
+            animation: fiber-flex-right 10s ease-in-out infinite;
+        }
+        #dna-head {
+            animation: dna-head-fade 10s ease-in-out infinite;
+        }
+        #dna-inject {
+            stroke-dasharray: 300;
+            stroke-dashoffset: 300;
+            animation: dna-injection 10s ease-in-out infinite;
+        }
+        
+        /* Process Label Animations */
+        #label-adsorption { animation: fade-adsorption 10s ease-in-out infinite; }
+        #label-contraction { animation: fade-contraction 10s ease-in-out infinite; }
+        #label-injection { animation: fade-injection 10s ease-in-out infinite; }
+        #label-ghost { animation: fade-ghost 10s ease-in-out infinite; }
+
+        /* Keyframes */
+        @keyframes phage-landing {
+            0%, 5% { transform: translateY(-150px); opacity: 0; }
+            10% { opacity: 1; }
+            20%, 90% { transform: translateY(0); opacity: 1; }
+            95%, 100% { transform: translateY(0); opacity: 0; }
+        }
+        @keyframes head-contraction {
+            0%, 25% { transform: translateY(0); }
+            40%, 90% { transform: translateY(55px); }
+            95%, 100% { transform: translateY(0); }
+        }
+        @keyframes sheath-contraction {
+            0%, 25% { transform: scaleY(1); }
+            40%, 90% { transform: scaleY(0.4); }
+            95%, 100% { transform: scaleY(1); }
+        }
+        @keyframes fiber-flex-left {
+            0%, 15% { transform: rotate(-25deg); }
+            20%, 90% { transform: rotate(0deg); }
+            95%, 100% { transform: rotate(-25deg); }
+        }
+        @keyframes fiber-flex-right {
+            0%, 15% { transform: rotate(25deg); }
+            20%, 90% { transform: rotate(0deg); }
+            95%, 100% { transform: rotate(25deg); }
+        }
+        @keyframes dna-head-fade {
+            0%, 45% { opacity: 1; }
+            70%, 90% { opacity: 0.1; }
+            95%, 100% { opacity: 1; }
+        }
+        @keyframes dna-injection {
+            0%, 45% { stroke-dashoffset: 300; opacity: 0; }
+            46% { opacity: 1; stroke-dashoffset: 300; }
+            70%, 90% { stroke-dashoffset: 0; opacity: 1; }
+            95%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes fade-adsorption {
+            10%, 25% { opacity: 1; }
+            0%, 9%, 26%, 100% { opacity: 0; }
+        }
+        @keyframes fade-contraction {
+            30%, 45% { opacity: 1; }
+            0%, 29%, 46%, 100% { opacity: 0; }
+        }
+        @keyframes fade-injection {
+            50%, 70% { opacity: 1; }
+            0%, 49%, 71%, 100% { opacity: 0; }
+        }
+        @keyframes fade-ghost {
+            75%, 90% { opacity: 1; }
+            0%, 74%, 91%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Animated diagram showing a bacteriophage injecting DNA into a bacterium</title>
+            <desc>A T4 bacteriophage lands on a bacterial cell, contracts its sheath, and injects its DNA into the cytoplasm, leaving a protein ghost behind.</desc>
+            
+            <defs>
+                <!-- Capsid 3D Gradient -->
+                <linearGradient id="capsid-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#C8E6C9" />
+                    <stop offset="50%" stop-color="#98D8C8" />
+                    <stop offset="100%" stop-color="#76B5A5" />
+                </linearGradient>
+                
+                <!-- Sheath Contractile Rings Pattern -->
+                <pattern id="sheath-pattern" width="30" height="8" patternUnits="userSpaceOnUse">
+                    <rect width="30" height="8" fill="#98D8C8"/>
+                    <line x1="0" y1="8" x2="30" y2="8" stroke="#5A9687" stroke-width="2"/>
+                </pattern>
+
+                <!-- Drop Shadow for Phage -->
+                <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.1"/>
+                </filter>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#f8f9fa"/>
+
+            <!-- ================= BACTERIAL CELL ================= -->
+            <g id="bacterium">
+                <!-- Cell Wall -->
+                <path d="M 0 360 Q 400 340 800 360 L 800 375 Q 400 355 0 375 Z" fill="#85C1E9" />
+                <!-- Plasma Membrane -->
+                <path d="M 0 375 Q 400 355 800 375 L 800 385 Q 400 365 0 385 Z" fill="#4A90D9" />
+                <!-- Cytoplasm -->
+                <path d="M 0 385 Q 400 365 800 385 L 800 500 L 0 500 Z" fill="#E8F4FD" />
+                
+                <!-- Cell Labels -->
+                <text x="780" y="370" text-anchor="end" font-size="12" font-weight="600" fill="#2C3E50">Cell Wall</text>
+                <text x="780" y="395" text-anchor="end" font-size="12" font-weight="600" fill="#2C3E50">Plasma Membrane</text>
+                <text x="780" y="480" text-anchor="end" font-size="16" font-weight="700" fill="#4A90D9" opacity="0.5">Bacterial Cytoplasm</text>
+            </g>
+
+            <!-- ================= INJECTED DNA ================= -->
+            <!-- This path is revealed via stroke-dashoffset during Phase 3 -->
+            <path id="dna-inject" d="M 400 290 L 400 405 C 400 425, 360 420, 380 440 C 400 460, 440 450, 420 470 C 400 490, 430 490, 410 495" fill="none" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <!-- ================= BACTERIOPHAGE ================= -->
+            <g id="phage-assembly" filter="url(#drop-shadow)">
+                
+                <!-- Tail Fibers & Base Plate (Fixed relative to cell after landing) -->
+                <g id="base-plate-group">
+                    <!-- Left Tail Fibers -->
+                    <g class="tail-fiber-left">
+                        <path d="M 375 354 L 330 330 L 280 370" fill="none" stroke="#76B5A5" stroke-width="3" stroke-linejoin="round"/>
+                        <path d="M 375 354 L 340 345 L 310 375" fill="none" stroke="#5A9687" stroke-width="3" stroke-linejoin="round"/>
+                    </g>
+                    <!-- Right Tail Fibers -->
+                    <g class="tail-fiber-right">
+                        <path d="M 425 354 L 470 330 L 520 370" fill="none" stroke="#76B5A5" stroke-width="3" stroke-linejoin="round"/>
+                        <path d="M 425 354 L 460 345 L 490 375" fill="none" stroke="#5A9687" stroke-width="3" stroke-linejoin="round"/>
+                    </g>
+                    
+                    <!-- Base Plate -->
+                    <rect x="375" y="350" width="50" height="8" rx="2" fill="#76B5A5"/>
+                    <!-- Spikes -->
+                    <line x1="380" y1="358" x2="375" y2="366" stroke="#5A9687" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="390" y1="358" x2="388" y2="366" stroke="#5A9687" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="410" y1="358" x2="412" y2="366" stroke="#5A9687" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="420" y1="358" x2="425" y2="366" stroke="#5A9687" stroke-width="2" stroke-linecap="round"/>
+                </g>
+
+                <!-- Contractile Sheath (Scales Y during contraction) -->
+                <rect id="sheath" x="385" y="258" width="30" height="92" fill="url(#sheath-pattern)" stroke="#5A9687" stroke-width="1"/>
+
+                <!-- Head, Collar, and Core Tube (Translates down during contraction) -->
+                <g id="head-tube-group">
+                    <!-- Core Tube (Revealed when sheath contracts, penetrates cell) -->
+                    <rect id="core-tube" x="396" y="258" width="8" height="92" fill="#34495E"/>
+                    
+                    <!-- Collar -->
+                    <rect x="385" y="250" width="30" height="8" rx="2" fill="#76B5A5"/>
+                    
+                    <!-- Capsid (Icosahedral Head) -->
+                    <polygon points="400,160 435,180 435,230 400,250 365,230 365,180" fill="url(#capsid-grad)" stroke="#5A9687" stroke-width="2" stroke-linejoin="round"/>
+                    
+                    <!-- DNA inside Head -->
+                    <path id="dna-head" d="M 385 185 C 400 165, 415 165, 415 185 C 415 205, 385 195, 385 215 C 385 235, 415 225, 415 240 C 415 250, 400 250, 400 245 C 390 240, 380 230, 390 220 C 400 210, 410 200, 400 190 C 390 180, 395 170, 400 175" fill="none" stroke="#FF6B6B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+            </g>
+
+            <!-- ================= LABELS & ANNOTATIONS ================= -->
+            
+            <!-- Header -->
+            <text x="400" y="40" text-anchor="middle" class="title">Bacteriophage Structure: The Hershey-Chase Model</text>
+            <text x="400" y="65" text-anchor="middle" class="subtitle">Demonstrating DNA as the genetic material via viral infection</text>
+            
+            <!-- Legend -->
+            <rect x="270" y="85" width="120" height="24" rx="4" fill="#FADBD8" opacity="0.5"/>
+            <circle cx="285" cy="97" r="6" fill="#FF6B6B"/>
+            <text x="298" y="101" font-size="12" font-weight="600" fill="#C0392B">DNA (³²P)</text>
+            
+            <rect x="400" y="85" width="140" height="24" rx="4" fill="#D1F2EB" opacity="0.5"/>
+            <circle cx="415" cy="97" r="6" fill="#98D8C8"/>
+            <text x="428" y="101" font-size="12" font-weight="600" fill="#117A65">Protein (³⁵S)</text>
+
+            <!-- Static Structural Labels (Left) -->
+            <g class="static-labels">
+                <!-- Capsid -->
+                <text x="240" y="195" text-anchor="end" class="label">Capsid (Protein Coat)</text>
+                <text x="240" y="210" text-anchor="end" class="mono-protein">³⁵S (Protein Label)</text>
+                <polyline points="250,190 300,190 360,205" fill="none" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4,4"/>
+                <circle cx="360" cy="205" r="3" fill="#7F8C8D"/>
+
+                <!-- DNA -->
+                <text x="240" y="240" text-anchor="end" class="label">Double-stranded DNA</text>
+                <text x="240" y="255" text-anchor="end" class="mono">³²P (DNA Label)</text>
+                <polyline points="250,235 300,235 380,225" fill="none" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4,4"/>
+                <circle cx="380" cy="225" r="3" fill="#7F8C8D"/>
+
+                <!-- Sheath -->
+                <text x="240" y="305" text-anchor="end" class="label">Contractile Sheath</text>
+                <polyline points="250,300 380,300" fill="none" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4,4"/>
+                <circle cx="380" cy="300" r="3" fill="#7F8C8D"/>
+            </g>
+
+            <!-- Static Structural Labels (Right) -->
+            <g class="static-labels">
+                <!-- Tail Fibers -->
+                <text x="560" y="345" text-anchor="start" class="label">Tail Fibers</text>
+                <text x="560" y="360" text-anchor="start" font-size="11" fill="#7F8C8D">Bind to host receptors</text>
+                <polyline points="550,340 500,340 480,355" fill="none" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4,4"/>
+                <circle cx="480" cy="355" r="3" fill="#7F8C8D"/>
+            </g>
+
+            <!-- Animated Process Labels -->
+            <g id="process-labels">
+                <text id="label-adsorption" x="600" y="220" text-anchor="middle" class="process-label">Phase 1: Adsorption</text>
+                <text id="label-contraction" x="600" y="220" text-anchor="middle" class="process-label">Phase 2: Contraction</text>
+                <text id="label-injection" x="600" y="220" text-anchor="middle" class="process-label" fill="#C0392B">Phase 3: DNA Injection</text>
+                <text id="label-ghost" x="600" y="220" text-anchor="middle" class="process-label" fill="#7F8C8D">Phase 4: Protein Ghost</text>
+            </g>
+
+        </svg>
+    </div>
+</body>
+</html>

@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification of Elements: From Chaos to Order</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #e9ecef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            background: #f8f9fa;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            fill: #212529;
+            text-anchor: middle;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            font-weight: 400;
+            fill: #6c757d;
+            text-anchor: middle;
+        }
+
+        .stage-text {
+            font-size: 16px;
+            font-weight: 600;
+            fill: #7209B7;
+            text-anchor: middle;
+        }
+
+        .mol-label {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            fill: #343a40;
+            text-anchor: middle;
+        }
+
+        .grid-header {
+            font-size: 14px;
+            font-weight: 600;
+            fill: #495057;
+            text-anchor: middle;
+        }
+
+        .legend-text {
+            font-size: 12px;
+            font-weight: 600;
+            fill: #495057;
+        }
+
+        /* Atoms */
+        .atom {
+            filter: url(#shadow);
+            stroke: #ffffff;
+            stroke-width: 1.5px;
+            animation-duration: 15s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+        }
+
+        .atom-o {
+            fill: url(#grad-O);
+        }
+
+        .atom-c {
+            fill: url(#grad-C);
+        }
+
+        .atom-n {
+            fill: url(#grad-N);
+        }
+
+        .atom-h {
+            fill: url(#grad-H);
+        }
+
+        /* Bonds */
+        .bond {
+            stroke: #666666;
+            stroke-width: 4px;
+            stroke-linecap: round;
+            stroke-dasharray: 60;
+            stroke-dashoffset: 60;
+            animation: bond-anim 15s infinite ease-in-out;
+        }
+
+        /* Animations */
+        @keyframes bond-anim {
+
+            0%,
+            25% {
+                stroke-dashoffset: 60;
+                opacity: 0;
+            }
+
+            26.6% {
+                stroke-dashoffset: 60;
+                opacity: 1;
+            }
+
+            30%,
+            50% {
+                stroke-dashoffset: 0;
+                opacity: 1;
+            }
+
+            53.3%,
+            100% {
+                stroke-dashoffset: 0;
+                opacity: 0;
+            }
+        }
+
+        .labels-group {
+            animation: label-anim 15s infinite ease-in-out;
+        }
+
+        @keyframes label-anim {
+
+            0%,
+            26.6% {
+                opacity: 0;
+            }
+
+            30%,
+            50% {
+                opacity: 1;
+            }
+
+            53.3%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        .grid-group {
+            animation: grid-anim 15s infinite ease-in-out;
+        }
+
+        @keyframes grid-anim {
+
+            0%,
+            53.3% {
+                opacity: 0;
+            }
+
+            58%,
+            80% {
+                opacity: 1;
+            }
+
+            85%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* Stage Texts */
+        .st-1 {
+            animation: st-1-anim 15s infinite ease-in-out;
+        }
+
+        .st-2 {
+            animation: st-2-anim 15s infinite ease-in-out;
+        }
+
+        .st-3 {
+            animation: st-3-anim 15s infinite ease-in-out;
+        }
+
+        @keyframes st-1-anim {
+
+            0%,
+            20% {
+                opacity: 1;
+            }
+
+            25%,
+            85% {
+                opacity: 0;
+            }
+
+            90%,
+            100% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes st-2-anim {
+
+            0%,
+            20% {
+                opacity: 0;
+            }
+
+            25%,
+            50% {
+                opacity: 1;
+            }
+
+            55%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        @keyframes st-3-anim {
+
+            0%,
+            50% {
+                opacity: 0;
+            }
+
+            55%,
+            80% {
+                opacity: 1;
+            }
+
+            85%,
+            100% {
+                opacity: 0;
+            }
+        }
+
+        /* Atom Movements */
+        /* O */
+        @keyframes move-o {
+
+            0%,
+            100% {
+                transform: translate(100px, 120px);
+            }
+
+            15% {
+                transform: translate(130px, 90px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(200px, 240px);
+            }
+
+            60%,
+            80% {
+                transform: translate(550px, 160px);
+            }
+
+            90% {
+                transform: translate(100px, 120px);
+            }
+        }
+
+        .a-o {
+            animation-name: move-o;
+        }
+
+        /* H1 */
+        @keyframes move-h1 {
+
+            0%,
+            100% {
+                transform: translate(150px, 400px);
+            }
+
+            15% {
+                transform: translate(120px, 420px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(160px, 265px);
+            }
+
+            60%,
+            80% {
+                transform: translate(250px, 160px);
+            }
+
+            90% {
+                transform: translate(150px, 400px);
+            }
+        }
+
+        .a-h1 {
+            animation-name: move-h1;
+        }
+
+        /* H2 */
+        @keyframes move-h2 {
+
+            0%,
+            100% {
+                transform: translate(300px, 100px);
+            }
+
+            15% {
+                transform: translate(320px, 130px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(240px, 265px);
+            }
+
+            60%,
+            80% {
+                transform: translate(250px, 190px);
+            }
+
+            90% {
+                transform: translate(300px, 100px);
+            }
+        }
+
+        .a-h2 {
+            animation-name: move-h2;
+        }
+
+        /* C */
+        @keyframes move-c {
+
+            0%,
+            100% {
+                transform: translate(700px, 150px);
+            }
+
+            15% {
+                transform: translate(680px, 120px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(400px, 250px);
+            }
+
+            60%,
+            80% {
+                transform: translate(350px, 160px);
+            }
+
+            90% {
+                transform: translate(700px, 150px);
+            }
+        }
+
+        .a-c {
+            animation-name: move-c;
+        }
+
+        /* H3 */
+        @keyframes move-h3 {
+
+            0%,
+            100% {
+                transform: translate(500px, 80px);
+            }
+
+            15% {
+                transform: translate(530px, 60px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(400px, 200px);
+            }
+
+            60%,
+            80% {
+                transform: translate(250px, 220px);
+            }
+
+            90% {
+                transform: translate(500px, 80px);
+            }
+        }
+
+        .a-h3 {
+            animation-name: move-h3;
+        }
+
+        /* H4 */
+        @keyframes move-h4 {
+
+            0%,
+            100% {
+                transform: translate(750px, 300px);
+            }
+
+            15% {
+                transform: translate(770px, 330px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(450px, 250px);
+            }
+
+            60%,
+            80% {
+                transform: translate(250px, 250px);
+            }
+
+            90% {
+                transform: translate(750px, 300px);
+            }
+        }
+
+        .a-h4 {
+            animation-name: move-h4;
+        }
+
+        /* H5 */
+        @keyframes move-h5 {
+
+            0%,
+            100% {
+                transform: translate(400px, 450px);
+            }
+
+            15% {
+                transform: translate(380px, 470px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(400px, 300px);
+            }
+
+            60%,
+            80% {
+                transform: translate(250px, 280px);
+            }
+
+            90% {
+                transform: translate(400px, 450px);
+            }
+        }
+
+        .a-h5 {
+            animation-name: move-h5;
+        }
+
+        /* H6 */
+        @keyframes move-h6 {
+
+            0%,
+            100% {
+                transform: translate(50px, 250px);
+            }
+
+            15% {
+                transform: translate(70px, 230px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(350px, 250px);
+            }
+
+            60%,
+            80% {
+                transform: translate(250px, 310px);
+            }
+
+            90% {
+                transform: translate(50px, 250px);
+            }
+        }
+
+        .a-h6 {
+            animation-name: move-h6;
+        }
+
+        /* N */
+        @keyframes move-n {
+
+            0%,
+            100% {
+                transform: translate(650px, 400px);
+            }
+
+            15% {
+                transform: translate(620px, 420px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(600px, 230px);
+            }
+
+            60%,
+            80% {
+                transform: translate(450px, 160px);
+            }
+
+            90% {
+                transform: translate(650px, 400px);
+            }
+        }
+
+        .a-n {
+            animation-name: move-n;
+        }
+
+        /* H7 */
+        @keyframes move-h7 {
+
+            0%,
+            100% {
+                transform: translate(250px, 50px);
+            }
+
+            15% {
+                transform: translate(220px, 70px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(560px, 260px);
+            }
+
+            60%,
+            80% {
+                transform: translate(250px, 340px);
+            }
+
+            90% {
+                transform: translate(250px, 50px);
+            }
+        }
+
+        .a-h7 {
+            animation-name: move-h7;
+        }
+
+        /* H8 */
+        @keyframes move-h8 {
+
+            0%,
+            100% {
+                transform: translate(100px, 450px);
+            }
+
+            15% {
+                transform: translate(130px, 470px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(600px, 280px);
+            }
+
+            60%,
+            80% {
+                transform: translate(250px, 370px);
+            }
+
+            90% {
+                transform: translate(100px, 450px);
+            }
+        }
+
+        .a-h8 {
+            animation-name: move-h8;
+        }
+
+        /* H9 */
+        @keyframes move-h9 {
+
+            0%,
+            100% {
+                transform: translate(550px, 450px);
+            }
+
+            15% {
+                transform: translate(580px, 430px);
+            }
+
+            26.6%,
+            53.3% {
+                transform: translate(640px, 260px);
+            }
+
+            60%,
+            80% {
+                transform: translate(250px, 400px);
+            }
+
+            90% {
+                transform: translate(550px, 450px);
+            }
+        }
+
+        .a-h9 {
+            animation-name: move-h9;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Classification of Elements Animation</title>
+            <desc>An animation showing atoms assembling into molecules and then being classified into a periodic grid.
+            </desc>
+
+            <defs>
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.2" />
+                </filter>
+
+                <radialGradient id="grad-C" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#666666" />
+                    <stop offset="100%" stop-color="#404040" />
+                </radialGradient>
+
+                <radialGradient id="grad-O" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#ff8888" />
+                    <stop offset="100%" stop-color="#FF4444" />
+                </radialGradient>
+
+                <radialGradient id="grad-N" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#8888ff" />
+                    <stop offset="100%" stop-color="#4444FF" />
+                </radialGradient>
+
+                <radialGradient id="grad-H" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#ffffff" />
+                    <stop offset="100%" stop-color="#cccccc" />
+                </radialGradient>
+            </defs>
+
+            <!-- Static UI Elements -->
+            <g id="ui">
+                <text x="400" y="40" class="title">Classification of Elements: From Chaos to Order</text>
+                <text x="400" y="65" class="subtitle">Observe how atoms form molecules, then are classified by their
+                    fundamental properties.</text>
+
+                <!-- Dynamic Stage Indicators -->
+                <text x="400" y="95" class="stage-text st-1">Stage 1: The Primordial Soup (Random Atoms)</text>
+                <text x="400" y="95" class="stage-text st-2">Stage 2: Molecular Assembly (Chemical Bonds Form)</text>
+                <text x="400" y="95" class="stage-text st-3">Stage 3: The Need for Order (Classification by
+                    Element)</text>
+
+                <!-- Legend -->
+                <g transform="translate(20, 420)">
+                    <rect width="180" height="60" rx="6" fill="#ffffff" stroke="#dee2e6" filter="url(#shadow)" />
+                    <circle cx="30" cy="20" r="6" fill="url(#grad-C)" stroke="#fff" stroke-width="1" />
+                    <text x="45" y="24" class="legend-text">Carbon</text>
+                    <circle cx="105" cy="20" r="6" fill="url(#grad-O)" stroke="#fff" stroke-width="1" />
+                    <text x="120" y="24" class="legend-text">Oxygen</text>
+                    <circle cx="30" cy="40" r="6" fill="url(#grad-N)" stroke="#fff" stroke-width="1" />
+                    <text x="45" y="44" class="legend-text">Nitrogen</text>
+                    <circle cx="105" cy="40" r="6" fill="url(#grad-H)" stroke="#fff" stroke-width="1" />
+                    <text x="120" y="44" class="legend-text">Hydrogen</text>
+                </g>
+
+                <!-- Historical Context -->
+                <g transform="translate(560, 420)">
+                    <rect width="220" height="60" rx="6" fill="#ffffff" stroke="#dee2e6" filter="url(#shadow)" />
+                    <text x="110" y="24" font-size="12" font-weight="700" text-anchor="middle" fill="#343a40">Historical
+                        Context</text>
+                    <text x="110" y="44" font-size="11" font-weight="600" text-anchor="middle" fill="#495057">
+                        1800: 31 Elements <tspan fill="#7209B7">➔</tspan> 1865: 63
+                    </text>
+                </g>
+            </g>
+
+            <!-- Stage 3: Classification Grid -->
+            <g id="grid" class="grid-group">
+                <rect x="200" y="120" width="400" height="300" fill="#ffffff" stroke="#ced4da" stroke-width="2" rx="8"
+                    filter="url(#shadow)" />
+                <!-- Vertical Dividers -->
+                <line x1="300" y1="120" x2="300" y2="420" stroke="#e9ecef" stroke-width="2" />
+                <line x1="400" y1="120" x2="400" y2="420" stroke="#e9ecef" stroke-width="2" />
+                <line x1="500" y1="120" x2="500" y2="420" stroke="#e9ecef" stroke-width="2" />
+                <!-- Horizontal Header Divider -->
+                <line x1="200" y1="150" x2="600" y2="150" stroke="#ced4da" stroke-width="2" />
+
+                <!-- Headers -->
+                <text x="250" y="140" class="grid-header">Hydrogen</text>
+                <text x="350" y="140" class="grid-header">Carbon</text>
+                <text x="450" y="140" class="grid-header">Nitrogen</text>
+                <text x="550" y="140" class="grid-header">Oxygen</text>
+            </g>
+
+            <!-- Stage 2: Chemical Bonds -->
+            <g id="bonds">
+                <!-- H2O Bonds -->
+                <line class="bond" x1="200" y1="240" x2="160" y2="265" />
+                <line class="bond" x1="200" y1="240" x2="240" y2="265" />
+
+                <!-- CH4 Bonds -->
+                <line class="bond" x1="400" y1="250" x2="400" y2="200" />
+                <line class="bond" x1="400" y1="250" x2="450" y2="250" />
+                <line class="bond" x1="400" y1="250" x2="400" y2="300" />
+                <line class="bond" x1="400" y1="250" x2="350" y2="250" />
+
+                <!-- NH3 Bonds -->
+                <line class="bond" x1="600" y1="230" x2="560" y2="260" />
+                <line class="bond" x1="600" y1="230" x2="600" y2="280" />
+                <line class="bond" x1="600" y1="230" x2="640" y2="260" />
+            </g>
+
+            <!-- Stage 2: Molecular Labels -->
+            <g id="labels" class="labels-group">
+                <text x="200" y="330" class="mol-label">H<tspan baseline-shift="sub" font-size="12">2</tspan>O</text>
+                <text x="400" y="340" class="mol-label">CH<tspan baseline-shift="sub" font-size="12">4</tspan></text>
+                <text x="600" y="330" class="mol-label">NH<tspan baseline-shift="sub" font-size="12">3</tspan></text>
+            </g>
+
+            <!-- Atoms (Animated via CSS transforms) -->
+            <g id="atoms">
+                <!-- Oxygen -->
+                <circle cx="0" cy="0" r="16" class="atom atom-o a-o" />
+
+                <!-- Carbon -->
+                <circle cx="0" cy="0" r="18" class="atom atom-c a-c" />
+
+                <!-- Nitrogen -->
+                <circle cx="0" cy="0" r="16" class="atom atom-n a-n" />
+
+                <!-- Hydrogens -->
+                <circle cx="0" cy="0" r="12" class="atom atom-h a-h1" />
+                <circle cx="0" cy="0" r="12" class="atom atom-h a-h2" />
+                <circle cx="0" cy="0" r="12" class="atom atom-h a-h3" />
+                <circle cx="0" cy="0" r="12" class="atom atom-h a-h4" />
+                <circle cx="0" cy="0" r="12" class="atom atom-h a-h5" />
+                <circle cx="0" cy="0" r="12" class="atom atom-h a-h6" />
+                <circle cx="0" cy="0" r="12" class="atom atom-h a-h7" />
+                <circle cx="0" cy="0" r="12" class="atom atom-h a-h8" />
+                <circle cx="0" cy="0" r="12" class="atom atom-h a-h9" />
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heisenberg Uncertainty Principle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #404040;
+            --proton: #FF4444;
+            --neutron: #4444FF;
+            --electron: #FFD700;
+            --photon: #7209B7;
+            --orbital: #44CCFF;
+            --momentum: #F77F00;
+            --bohr-path: #CCCCCC;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .diagram-container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            position: relative;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- Animations --- */
+
+        /* 1. Bohr Model Fade (Visible 0-5s and 10-12s) */
+        @keyframes bohr-fade {
+            0%, 41.66% { opacity: 1; }
+            50%, 83.33% { opacity: 0; }
+            91.66%, 100% { opacity: 1; }
+        }
+        .bohr-anim {
+            animation: bohr-fade 12s infinite ease-in-out;
+        }
+
+        /* 2. Quantum Model Fade (Visible 5-10s) */
+        @keyframes quantum-fade {
+            0%, 41.66% { opacity: 0; }
+            50%, 83.33% { opacity: 1; }
+            91.66%, 100% { opacity: 0; }
+        }
+        .quantum-anim {
+            animation: quantum-fade 12s infinite ease-in-out;
+        }
+
+        /* 3. Electron Orbit & Jitter */
+        @keyframes orbit-path {
+            0% { offset-distance: 0%; transform: translate(0, 0); }
+            33.33% { offset-distance: 100%; transform: translate(0, 0); } /* Completes 1 orbit at 4s */
+            35% { offset-distance: 100%; transform: translate(-6px, 6px); }
+            37% { offset-distance: 100%; transform: translate(6px, -4px); }
+            39% { offset-distance: 100%; transform: translate(-5px, -7px); }
+            41.66% { offset-distance: 100%; transform: translate(7px, 5px); }
+            50%, 100% { offset-distance: 100%; transform: translate(0, 0); }
+        }
+        .electron-group {
+            offset-path: path('M 400 130 A 120 120 0 1 1 399.99 130 Z');
+            offset-rotate: auto;
+            animation: orbit-path 12s infinite linear;
+        }
+
+        /* 4. Velocity Arrow Erratic Change */
+        @keyframes velocity-jitter {
+            0%, 33.33% { transform: scale(1) rotate(0deg); }
+            35% { transform: scale(1.6) rotate(-55deg); }
+            37% { transform: scale(0.6) rotate(70deg); }
+            39% { transform: scale(2.4) rotate(-25deg); }
+            41.66% { transform: scale(1.9) rotate(-85deg); }
+            50%, 100% { transform: scale(1) rotate(0deg); }
+        }
+        .velocity-arrow-group {
+            transform-origin: 0px 0px;
+            animation: velocity-jitter 12s infinite linear;
+        }
+
+        /* 5. Photon Wave Entrance */
+        @keyframes photon-enter {
+            0%, 20% { transform: translateX(-400px); opacity: 0; }
+            21% { opacity: 1; }
+            33.33% { transform: translateX(0px); opacity: 1; } /* Hits at 4s */
+            35% { transform: translate(60px, -60px) scale(0.7); opacity: 0; } /* Scatters */
+            100% { transform: translate(60px, -60px) scale(0.7); opacity: 0; }
+        }
+        .photon-group {
+            animation: photon-enter 12s infinite linear;
+        }
+
+        /* 6. Measurement Flash */
+        @keyframes flash {
+            0%, 32% { opacity: 0; transform: scale(0); }
+            33.33% { opacity: 1; transform: scale(1); }
+            36%, 100% { opacity: 0; transform: scale(1.8); }
+        }
+        .flash-effect {
+            transform-origin: 400px 130px;
+            animation: flash 12s infinite ease-out;
+        }
+
+        /* 7. Uncertainty Markers Fade */
+        @keyframes marker-fade {
+            0%, 33.33% { opacity: 0; }
+            34%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        .uncertainty-markers {
+            animation: marker-fade 12s infinite;
+        }
+
+        /* 8. Ghost Electrons Flicker */
+        @keyframes flicker {
+            0% { opacity: 0; transform: scale(0.3); }
+            100% { opacity: 0.85; transform: scale(1.2); }
+        }
+        .ghost {
+            transform-origin: center;
+        }
+        .g1 { animation: flicker 0.4s infinite alternate 0.1s; transform-origin: 350px 200px; }
+        .g2 { animation: flicker 0.6s infinite alternate 0.4s; transform-origin: 430px 280px; }
+        .g3 { animation: flicker 0.5s infinite alternate 0.2s; transform-origin: 380px 320px; }
+        .g4 { animation: flicker 0.7s infinite alternate 0.5s; transform-origin: 450px 190px; }
+        .g5 { animation: flicker 0.4s infinite alternate 0.3s; transform-origin: 320px 260px; }
+        .g6 { animation: flicker 0.6s infinite alternate 0.6s; transform-origin: 470px 240px; }
+        .g7 { animation: flicker 0.5s infinite alternate 0.7s; transform-origin: 390px 180px; }
+        .g8 { animation: flicker 0.7s infinite alternate 0.8s; transform-origin: 410px 310px; }
+        .g9 { animation: flicker 0.4s infinite alternate 0.9s; transform-origin: 360px 270px; }
+        .g10 { animation: flicker 0.6s infinite alternate 0.2s; transform-origin: 440px 220px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="diagram-container">
+        <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet">
+            <!-- Definitions -->
+            <defs>
+                <!-- 1s Orbital Probability Density Gradient -->
+                <radialGradient id="orbitalGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#44CCFF" stop-opacity="0.85"/>
+                    <stop offset="25%" stop-color="#44CCFF" stop-opacity="0.55"/>
+                    <stop offset="60%" stop-color="#44CCFF" stop-opacity="0.15"/>
+                    <stop offset="100%" stop-color="#44CCFF" stop-opacity="0"/>
+                </radialGradient>
+
+                <!-- Photon Wave Gradient -->
+                <linearGradient id="waveGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#7209B7" stop-opacity="0"/>
+                    <stop offset="20%" stop-color="#7209B7" stop-opacity="1"/>
+                    <stop offset="80%" stop-color="#7209B7" stop-opacity="1"/>
+                    <stop offset="100%" stop-color="#7209B7" stop-opacity="0"/>
+                </linearGradient>
+
+                <!-- Arrowheads -->
+                <marker id="arrowhead-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00"/>
+                </marker>
+                <marker id="arrowhead-dark" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#404040"/>
+                </marker>
+
+                <!-- Nucleus Glow -->
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur"/>
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+            </defs>
+
+            <!-- Background -->
+            <rect width="800" height="500" fill="#f8f9fa"/>
+
+            <!-- Main Title -->
+            <text x="400" y="45" text-anchor="middle" font-size="26" font-weight="700" fill="#404040">Heisenberg Uncertainty Principle</text>
+
+            <!-- State Labels (Fading) -->
+            <text x="400" y="75" text-anchor="middle" font-size="18" font-weight="600" fill="#888888" class="bohr-anim">Bohr Model: Defined Path</text>
+            <text x="400" y="75" text-anchor="middle" font-size="18" font-weight="600" fill="#0099CC" class="quantum-anim">Quantum Model: Probability Cloud</text>
+
+            <!-- Nucleus (Always visible) -->
+            <g id="nucleus" filter="url(#glow)">
+                <circle cx="395" cy="245" r="6" fill="#FF4444"/>
+                <circle cx="405" cy="245" r="6" fill="#4444FF"/>
+                <circle cx="395" cy="255" r="6" fill="#4444FF"/>
+                <circle cx="405" cy="255" r="6" fill="#FF4444"/>
+                <circle cx="400" cy="250" r="6" fill="#FF4444"/>
+                <circle cx="390" cy="250" r="6" fill="#4444FF"/>
+            </g>
+
+            <!-- ================= QUANTUM MODEL ================= -->
+            <g id="quantum-model" class="quantum-anim">
+                <!-- 1s Orbital Cloud -->
+                <circle cx="400" cy="250" r="170" fill="url(#orbitalGrad)"/>
+                
+                <!-- Ghost Electrons (Probability Density) -->
+                <g class="ghosts">
+                    <circle cx="350" cy="200" r="3" fill="#FFD700" class="ghost g1"/>
+                    <circle cx="430" cy="280" r="3" fill="#FFD700" class="ghost g2"/>
+                    <circle cx="380" cy="320" r="3" fill="#FFD700" class="ghost g3"/>
+                    <circle cx="450" cy="190" r="3" fill="#FFD700" class="ghost g4"/>
+                    <circle cx="320" cy="260" r="3" fill="#FFD700" class="ghost g5"/>
+                    <circle cx="470" cy="240" r="3" fill="#FFD700" class="ghost g6"/>
+                    <circle cx="390" cy="180" r="3" fill="#FFD700" class="ghost g7"/>
+                    <circle cx="410" cy="310" r="3" fill="#FFD700" class="ghost g8"/>
+                    <circle cx="360" cy="270" r="3" fill="#FFD700" class="ghost g9"/>
+                    <circle cx="440" cy="220" r="3" fill="#FFD700" class="ghost g10"/>
+                </g>
+            </g>
+
+            <!-- ================= BOHR MODEL ================= -->
+            <g id="bohr-model" class="bohr-anim">
+                <!-- Dashed Orbit -->
+                <circle cx="400" cy="250" r="120" fill="none" stroke="#CCCCCC" stroke-dasharray="8,6" stroke-width="2"/>
+                
+                <!-- Moving Electron and Velocity Arrow -->
+                <g class="electron-group">
+                    <!-- Electron Particle -->
+                    <circle cx="0" cy="0" r="8" fill="#FFD700" stroke="#E6C200" stroke-width="1"/>
+                    
+                    <!-- Velocity Vector (Tangent to path) -->
+                    <g class="velocity-arrow-group">
+                        <line x1="0" y1="0" x2="55" y2="0" stroke="#F77F00" stroke-width="3" marker-end="url(#arrowhead-orange)"/>
+                        <text x="65" y="5" font-family="'Roboto Mono', monospace" font-size="16" font-weight="700" fill="#F77F00">Δp</text>
+                    </g>
+                </g>
+            </g>
+
+            <!-- ================= MEASUREMENT EVENT ================= -->
+            
+            <!-- Photon Wave Packet -->
+            <g class="photon-group">
+                <!-- Sine wave path -->
+                <path d="M 0 130 Q 10 110 20 130 T 40 130 T 60 130 T 80 130 T 100 130 T 120 130 T 140 130 T 160 130 T 180 130 T 200 130 T 220 130 T 240 130 T 260 130 T 280 130 T 300 130 T 320 130 T 340 130 T 360 130 T 380 130 T 400 130" 
+                      fill="none" stroke="url(#waveGrad)" stroke-width="4"/>
+                <text x="140" y="105" font-size="14" font-weight="600" fill="#7209B7">Incoming Photon (hν)</text>
+            </g>
+
+            <!-- Collision Flash -->
+            <circle cx="400" cy="130" r="25" fill="#FFFFFF" class="flash-effect"/>
+
+            <!-- Uncertainty Labels (Appear on collision) -->
+            <g class="uncertainty-markers">
+                <!-- Position Uncertainty (Delta x) -->
+                <path d="M 360 100 L 360 90 L 440 90 L 440 100" fill="none" stroke="#404040" stroke-width="2"/>
+                <text x="400" y="82" text-anchor="middle" font-size="13" font-weight="600" fill="#404040">Δx (Uncertainty in Position)</text>
+                
+                <!-- Momentum Uncertainty Label -->
+                <text x="480" y="105" font-size="13" font-weight="600" fill="#F77F00">Δp (Uncertainty in Momentum)</text>
+            </g>
+
+            <!-- ================= UI ELEMENTS ================= -->
+            
+            <!-- Heisenberg Formula Box -->
+            <g transform="translate(250, 430)">
+                <rect x="0" y="0" width="300" height="46" fill="#ffffff" rx="8" stroke="#e0e0e0" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.05))"/>
+                <text x="150" y="29" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="20" font-weight="700" fill="#404040">
+                    Δx · Δp<tspan dy="4" font-size="14">x</tspan><tspan dy="-4"> ≥ h / 4π</tspan>
+                </text>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(20, 400)">
+                <rect x="0" y="0" width="160" height="80" fill="#ffffff" rx="6" stroke="#e0e0e0" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.05))"/>
+                
+                <circle cx="15" cy="20" r="5" fill="#FFD700"/>
+                <text x="30" y="24" font-size="12" font-weight="600" fill="#404040">Electron</text>
+                
+                <path d="M 10 45 Q 15 40 20 45 T 30 45" fill="none" stroke="#7209B7" stroke-width="2"/>
+                <text x="35" y="49" font-size="12" font-weight="600" fill="#404040">Photon (Wave)</text>
+                
+                <line x1="10" y1="65" x2="25" y2="65" stroke="#F77F00" stroke-width="2" marker-end="url(#arrowhead-orange)"/>
+                <text x="35" y="69" font-size="12" font-weight="600" fill="#404040">Momentum (p)</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

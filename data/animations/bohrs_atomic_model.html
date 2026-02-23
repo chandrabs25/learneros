@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bohr's Atomic Model Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; fill: #333; }
+        .formula { font-family: 'Roboto Mono', monospace; font-size: 16px; fill: #555; }
+        .label { font-family: 'Roboto Mono', monospace; font-size: 14px; fill: #666; }
+        .label-bold { font-family: 'Roboto Mono', monospace; font-size: 14px; font-weight: 700; fill: #333; }
+        .legend-text { font-family: 'Inter', sans-serif; font-size: 12px; fill: #444; }
+
+        /* Animations */
+        .spin {
+            animation: spin 4s linear infinite;
+            transform-origin: 280px 340px;
+        }
+
+        .electron-jump {
+            animation: jump 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .electron-pulse {
+            animation: pulse-r 12s infinite;
+        }
+
+        .marker-jump {
+            animation: marker-jump 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        /* Photon Animations */
+        .photon-abs { animation: photon-abs-anim 12s linear infinite; }
+        .photon-em1 { animation: photon-em1-anim 12s linear infinite; }
+        .photon-em2 { animation: photon-em2-anim 12s linear infinite; }
+
+        /* Energy Arrow Animations */
+        .arrow-line-1 { stroke-dasharray: 350; animation: draw-up 12s infinite; }
+        .arrow-head-1 { animation: flash-head-1 12s infinite; }
+        
+        .arrow-line-2 { stroke-dasharray: 60; animation: draw-down-2 12s infinite; }
+        .arrow-head-2 { animation: flash-head-2 12s infinite; }
+        
+        .arrow-line-3 { stroke-dasharray: 310; animation: draw-down-3 12s infinite; }
+        .arrow-head-3 { animation: flash-head-3 12s infinite; }
+
+        /* Keyframes */
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes jump {
+            0%, 23.9% { transform: translateX(25px); }
+            24%, 49.9% { transform: translateX(225px); }
+            50%, 74.9% { transform: translateX(100px); }
+            75%, 100% { transform: translateX(25px); }
+        }
+
+        @keyframes pulse-r {
+            0%, 23.9% { r: 6px; }
+            24%, 49.9% { r: 9px; }
+            50%, 100% { r: 6px; }
+        }
+
+        @keyframes marker-jump {
+            0%, 23.9% { transform: translateY(540px); }
+            24%, 49.9% { transform: translateY(184.5px); }
+            50%, 74.9% { transform: translateY(240px); }
+            75%, 100% { transform: translateY(540px); }
+        }
+
+        @keyframes photon-abs-anim {
+            0%, 14.9% { transform: translate(50px, 340px); opacity: 0; }
+            15% { opacity: 1; transform: translate(50px, 340px); }
+            24% { transform: translate(165px, 340px); opacity: 1; }
+            24.1%, 100% { opacity: 0; transform: translate(165px, 340px); }
+        }
+
+        @keyframes photon-em1-anim {
+            0%, 49.9% { transform: translate(505px, 340px); opacity: 0; }
+            50% { opacity: 1; transform: translate(505px, 340px); }
+            59% { transform: translate(620px, 340px); opacity: 1; }
+            59.1%, 100% { opacity: 0; transform: translate(620px, 340px); }
+        }
+
+        @keyframes photon-em2-anim {
+            0%, 74.9% { transform: translate(380px, 370px); opacity: 0; }
+            75% { opacity: 1; transform: translate(380px, 370px); }
+            84% { transform: translate(530px, 370px); opacity: 1; }
+            84.1%, 100% { opacity: 0; transform: translate(530px, 370px); }
+        }
+
+        @keyframes draw-up {
+            0%, 23.9% { stroke-dashoffset: 350; opacity: 0; }
+            24% { opacity: 1; stroke-dashoffset: 350; }
+            28%, 49.9% { stroke-dashoffset: 0; opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        @keyframes flash-head-1 {
+            0%, 27.9% { opacity: 0; }
+            28%, 49.9% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        @keyframes draw-down-2 {
+            0%, 49.9% { stroke-dashoffset: 60; opacity: 0; }
+            50% { opacity: 1; stroke-dashoffset: 60; }
+            54%, 74.9% { stroke-dashoffset: 0; opacity: 1; }
+            75%, 100% { opacity: 0; }
+        }
+        @keyframes flash-head-2 {
+            0%, 53.9% { opacity: 0; }
+            54%, 74.9% { opacity: 1; }
+            75%, 100% { opacity: 0; }
+        }
+
+        @keyframes draw-down-3 {
+            0%, 74.9% { stroke-dashoffset: 310; opacity: 0; }
+            75% { opacity: 1; stroke-dashoffset: 310; }
+            79%, 99.9% { stroke-dashoffset: 0; opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes flash-head-3 {
+            0%, 78.9% { opacity: 0; }
+            79%, 99.9% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">Bohr's Atomic Model</title>
+        <desc id="svg-desc">Animated diagram showing electron transitions between quantized energy levels in a hydrogen-like atom, absorbing and emitting photons.</desc>
+
+        <!-- Definitions -->
+        <defs>
+            <!-- Glow Filter -->
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+
+            <!-- Proton Gradient -->
+            <radialGradient id="grad-proton" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#ff8888" />
+                <stop offset="100%" stop-color="#cc0000" />
+            </radialGradient>
+
+            <!-- Neutron Gradient -->
+            <radialGradient id="grad-neutron" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#8888ff" />
+                <stop offset="100%" stop-color="#0000cc" />
+            </radialGradient>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Header Texts -->
+        <text x="450" y="40" text-anchor="middle" class="title">Bohr’s Model: Quantized Electronic Transitions</text>
+        <text x="450" y="75" text-anchor="middle" class="formula">ΔE = hν = E<tspan baseline-shift="sub" font-size="12">final</tspan> - E<tspan baseline-shift="sub" font-size="12">initial</tspan></text>
+
+        <!-- ================= ATOM SECTION ================= -->
+        <g id="atom">
+            <!-- Orbits -->
+            <circle cx="280" cy="340" r="25" fill="none" stroke="#BBBBBB" stroke-width="2" stroke-dasharray="6 4" />
+            <circle cx="280" cy="340" r="100" fill="none" stroke="#BBBBBB" stroke-width="2" stroke-dasharray="8 6" />
+            <circle cx="280" cy="340" r="225" fill="none" stroke="#BBBBBB" stroke-width="2" stroke-dasharray="10 8" />
+
+            <!-- Orbit Labels -->
+            <text x="280" y="305" text-anchor="middle" class="label">n=1</text>
+            <text x="280" y="230" text-anchor="middle" class="label">n=2</text>
+            <text x="280" y="105" text-anchor="middle" class="label">n=3</text>
+
+            <!-- Nucleus -->
+            <g id="nucleus">
+                <circle cx="275" cy="335" r="6" fill="url(#grad-neutron)" />
+                <circle cx="285" cy="335" r="6" fill="url(#grad-proton)" />
+                <circle cx="273" cy="344" r="6" fill="url(#grad-proton)" />
+                <circle cx="287" cy="345" r="6" fill="url(#grad-neutron)" />
+                <circle cx="280" cy="340" r="6" fill="url(#grad-proton)" />
+            </g>
+            <text x="280" y="370" text-anchor="middle" class="label-bold" fill="#FF4444">Z+</text>
+
+            <!-- Electron System (Rotates) -->
+            <g class="spin">
+                <!-- Electron (Translates and Pulses) -->
+                <circle cx="280" cy="340" class="electron-jump electron-pulse" fill="#FFD700" filter="url(#glow)" />
+            </g>
+        </g>
+
+        <!-- ================= PHOTONS ================= -->
+        <!-- Absorption Photon (Orange, n=1 -> n=3) -->
+        <g class="photon-abs">
+            <path d="M 0 0 Q 5 -15, 10 0 T 20 0 T 30 0 T 40 0 T 50 0 T 60 0 T 70 0 T 80 0 T 90 0" fill="none" stroke="#F77F00" stroke-width="3" />
+            <polygon points="85,-5 95,0 85,5" fill="#F77F00" />
+            <text x="45" y="-20" text-anchor="middle" class="label-bold" fill="#F77F00">Absorption</text>
+        </g>
+
+        <!-- Emission Photon 1 (Purple, n=3 -> n=2) -->
+        <g class="photon-em1">
+            <path d="M 0 0 Q 10 -15, 20 0 T 40 0 T 60 0 T 80 0 T 100 0" fill="none" stroke="#7209B7" stroke-width="3" />
+            <polygon points="95,-5 105,0 95,5" fill="#7209B7" />
+            <text x="50" y="-20" text-anchor="middle" class="label-bold" fill="#7209B7">Emission 1</text>
+        </g>
+
+        <!-- Emission Photon 2 (Red, n=2 -> n=1) -->
+        <g class="photon-em2">
+            <path d="M 0 0 Q 15 -15, 30 0 T 60 0 T 90 0 T 120 0" fill="none" stroke="#D90429" stroke-width="3" />
+            <polygon points="115,-5 125,0 115,5" fill="#D90429" />
+            <text x="60" y="-20" text-anchor="middle" class="label-bold" fill="#D90429">Emission 2</text>
+        </g>
+
+        <!-- ================= ENERGY LEVEL DIAGRAM ================= -->
+        <g id="energy-diagram">
+            <!-- Axis -->
+            <line x1="700" y1="560" x2="700" y2="120" stroke="#333" stroke-width="2" />
+            <polygon points="695,125 705,125 700,115" fill="#333" />
+            <text x="700" y="100" text-anchor="middle" class="label-bold">Energy (E)</text>
+
+            <!-- Energy Levels -->
+            <!-- E1 (n=1) -->
+            <line x1="690" y1="540" x2="850" y2="540" stroke="#666" stroke-width="2" />
+            <text x="860" y="545" class="label">E<tspan baseline-shift="sub" font-size="10">1</tspan> (Ground)</text>
+            
+            <!-- E2 (n=2) -->
+            <line x1="690" y1="240" x2="850" y2="240" stroke="#666" stroke-width="2" />
+            <text x="860" y="245" class="label">E<tspan baseline-shift="sub" font-size="10">2</tspan></text>
+            
+            <!-- E3 (n=3) -->
+            <line x1="690" y1="184.5" x2="850" y2="184.5" stroke="#666" stroke-width="2" />
+            <text x="860" y="189.5" class="label">E<tspan baseline-shift="sub" font-size="10">3</tspan></text>
+
+            <!-- Energy Marker -->
+            <circle cx="700" cy="0" r="7" fill="#FFD700" filter="url(#glow)" class="marker-jump" />
+
+            <!-- Transition Arrows (Ghost Paths) -->
+            <!-- Arrow 1: n=1 -> n=3 (Up) -->
+            <g>
+                <line x1="730" y1="540" x2="730" y2="194.5" stroke="#F77F00" stroke-width="3" stroke-dasharray="6 4" class="arrow-line-1" />
+                <polygon points="725,194.5 735,194.5 730,184.5" fill="#F77F00" class="arrow-head-1" />
+            </g>
+
+            <!-- Arrow 2: n=3 -> n=2 (Down) -->
+            <g>
+                <line x1="770" y1="184.5" x2="770" y2="230" stroke="#7209B7" stroke-width="3" stroke-dasharray="6 4" class="arrow-line-2" />
+                <polygon points="765,230 775,230 770,240" fill="#7209B7" class="arrow-head-2" />
+            </g>
+
+            <!-- Arrow 3: n=2 -> n=1 (Down) -->
+            <g>
+                <line x1="810" y1="240" x2="810" y2="530" stroke="#D90429" stroke-width="3" stroke-dasharray="6 4" class="arrow-line-3" />
+                <polygon points="805,530 815,530 810,540" fill="#D90429" class="arrow-head-3" />
+            </g>
+        </g>
+
+        <!-- ================= LEGEND ================= -->
+        <g id="legend" transform="translate(20, 470)">
+            <rect width="160" height="110" fill="#ffffff" stroke="#dddddd" stroke-width="1" rx="6" />
+            <text x="80" y="20" text-anchor="middle" class="label-bold" font-size="12">Legend</text>
+            
+            <!-- Proton -->
+            <circle cx="20" cy="40" r="5" fill="url(#grad-proton)" />
+            <text x="35" y="44" class="legend-text">Proton</text>
+            
+            <!-- Neutron -->
+            <circle cx="90" cy="40" r="5" fill="url(#grad-neutron)" />
+            <text x="105" y="44" class="legend-text">Neutron</text>
+            
+            <!-- Electron -->
+            <circle cx="20" cy="65" r="5" fill="#FFD700" filter="url(#glow)" />
+            <text x="35" y="69" class="legend-text">Electron</text>
+            
+            <!-- Photon -->
+            <path d="M 85 65 Q 90 60, 95 65 T 105 65" fill="none" stroke="#F77F00" stroke-width="2" />
+            <polygon points="103,62 108,65 103,68" fill="#F77F00" />
+            <text x="112" y="69" class="legend-text">Photon</text>
+
+            <!-- Energy Jump -->
+            <line x1="20" y1="90" x2="40" y2="90" stroke="#7209B7" stroke-width="2" stroke-dasharray="4 2" />
+            <polygon points="38,87 43,90 38,93" fill="#7209B7" />
+            <text x="50" y="94" class="legend-text">Transition</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

@@ -30,6 +30,21 @@ class CurrentUser:
         return f"CurrentUser(uid={self.uid}, email={self.email}, role={self.role})"
 
 
+class CurrentIdentity:
+    """Authenticated identity independent of learner/teacher/admin domain models."""
+
+    def __init__(self, uid: str, email: str | None, name: str | None, role: str):
+        self.uid = uid
+        self.email = email
+        self.name = name
+        self.role = role
+        self.student_id = f"student:{uid}"
+        self.teacher_id = f"teacher:{uid}"
+
+    def __repr__(self):
+        return f"CurrentIdentity(uid={self.uid}, email={self.email}, role={self.role})"
+
+
 class CurrentTeacher:
     """Authenticated teacher info attached to teacher-only requests."""
 
@@ -73,16 +88,15 @@ def ensure_student(user: "CurrentUser") -> None:
         MERGE (s:Student {id: $student_id})
         ON CREATE SET s.name = $name,
                       s.email = $email,
-                      s.role = $role,
+                      s.role = 'student',
                       s.created_at = datetime()
         ON MATCH SET  s.name = $name,
                       s.email = $email,
-                      s.role = $role
+                      s.role = 'student'
         """,
         student_id=user.student_id,
         name=user.name or "",
         email=user.email or "",
-        role=user.role or "student",
     )
 
 
@@ -127,14 +141,43 @@ async def get_current_user(
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
+    role = str(decoded.get("role", "student")).lower()
+    # Claims are the source of truth for authorization.
+    # Empty/missing role defaults to student for backwards compatibility.
+    if role not in {"", "student"}:
+        raise HTTPException(status_code=403, detail="Student role required")
+
     user = CurrentUser(
         uid=decoded["uid"],
         email=decoded.get("email"),
         name=decoded.get("name"),
-        role=decoded.get("role", "student"),
+        role="student",
     )
     ensure_student(user)
     return user
+
+
+async def get_authenticated_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
+) -> CurrentIdentity:
+    """
+    REQUIRED auth identity dependency with no domain side-effects.
+    Use for shared profile/account routes that should work for all roles.
+    """
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+
+    try:
+        decoded = verify_id_token(credentials.credentials)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+
+    return CurrentIdentity(
+        uid=decoded["uid"],
+        email=decoded.get("email"),
+        name=decoded.get("name"),
+        role=str(decoded.get("role", "student")).lower() or "student",
+    )
 
 
 async def get_optional_user(
@@ -156,11 +199,17 @@ async def get_optional_user(
     except Exception:
         return None  # Bad token = treat as anonymous, don't block teaching
 
+    role = str(decoded.get("role", "student")).lower()
+    # Optional learner context is only valid for student identities.
+    # Elevated roles should not be auto-mapped into Student graph flows.
+    if role not in {"", "student"}:
+        return None
+
     user = CurrentUser(
         uid=decoded["uid"],
         email=decoded.get("email"),
         name=decoded.get("name"),
-        role=decoded.get("role", "student"),
+        role="student",
     )
     ensure_student(user)
     return user

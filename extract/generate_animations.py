@@ -36,7 +36,7 @@ from google import genai
 # Config
 # ---------------------------------------------------------------------------
 
-ANIMATIONS_DIR = Path("data/animations2")
+ANIMATIONS_DIR = Path("data/animations")
 PROMPTS_DIR = Path("data/animations/prompts")  # Original prompts directory
 CLASSIFICATIONS_FILE = Path("data/concept_classifications.json")
 

@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charge Conservation in a Resistor Cube</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2D3436;
+            --accent-red: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-green: #06D6A0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            position: absolute;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border-radius: 16px;
+            padding: 24px;
+            z-index: 10;
+        }
+
+        #formula-card {
+            top: 24px;
+            left: 24px;
+            min-width: 250px;
+        }
+
+        #control-panel {
+            top: 24px;
+            right: 24px;
+            width: 320px;
+        }
+
+        h1,
+        h2 {
+            margin: 0 0 16px 0;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-main);
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.05rem;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            margin: 16px 0;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .data-row span:last-child {
+            color: var(--accent-blue);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-red);
+        }
+
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--accent-red);
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        input[type=checkbox] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-green);
+            cursor: pointer;
+        }
+
+        .legend {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+        }
+
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .edge-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: opacity 0.2s ease;
+            opacity: 0;
+        }
+
+        @media (max-width: 768px) {
+            #formula-card {
+                top: auto;
+                bottom: 24px;
+                left: 24px;
+                right: 24px;
+                min-width: auto;
+            }
+
+            #control-panel {
+                width: auto;
+                left: 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="labels-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>Kirchhoff's Junction Rule</h2>
+        <div class="formula">R<sub>eq</sub> = <sup>5</sup>&frasl;<sub>6</sub> R</div>
+        <div class="formula">V<sub>in</sub> = I<sub>total</sub> &times; R<sub>eq</sub></div>
+        <hr>
+        <div class="data-row">
+            <span>R<sub>eq</sub> :</span>
+            <span id="val-req">4.17 &Omega;</span>
+        </div>
+        <div class="data-row">
+            <span>I<sub>total</sub> :</span>
+            <span id="val-itotal">2.88 A</span>
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <h2>Circuit Parameters</h2>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Input Voltage (V)</span>
+                <span class="control-value" id="lbl-voltage">12.0 V</span>
+            </div>
+            <input type="range" id="uVoltage" min="1" max="24" step="1" value="12">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Edge Resistance (R)</span>
+                <span class="control-value" id="lbl-resistance" style="color: var(--accent-blue);">5.0 &Omega;</span>
+            </div>
+            <input type="range" id="uResistance" min="1" max="10" step="0.5" value="5"
+                style="accent-color: var(--accent-blue);">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Simulation Speed</span>
+                <span class="control-value" id="lbl-speed" style="color: var(--accent-green);">1.0x</span>
+            </div>
+            <input type="range" id="uSpeed" min="0.1" max="2.0" step="0.1" value="1.0"
+                style="accent-color: var(--accent-green);">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="uShowLabels" checked>
+            Show Symmetry Labels
+        </label>
+
+        <hr>
+        <div class="legend">
+            <div class="legend-item">
+                <div class="color-box" style="background: #FF3366;"></div>
+                <span>High Current (I/3) & High Potential</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #4361EE;"></div>
+                <span>Low Current (I/6) & Low Potential</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #06D6A0;"></div>
+                <span>Current Direction Vectors</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Physics & State ---
+        const state = {
+            V: 12.0,
+            R: 5.0,
+            speed: 1.0,
+            showLabels: true,
+            Req: 0,
+            Itotal: 0,
+            I_tier1: 0,
+            I_tier2: 0,
+            I_tier3: 0
+        };
+
+        function updatePhysics() {
+            state.Req = (5 / 6) * state.R;
+            state.Itotal = state.V / state.Req;
+            state.I_tier1 = state.Itotal / 3;
+            state.I_tier2 = state.Itotal / 6;
+            state.I_tier3 = state.Itotal / 3;
+
+            document.getElementById('val-req').innerHTML = `${state.Req.toFixed(2)} &Omega;`;
+            document.getElementById('val-itotal').innerHTML = `${state.Itotal.toFixed(2)} A`;
+        }
+
+        // --- UI Listeners ---
+        document.getElementById('uVoltage').addEventListener('input', (e) => {
+            state.V = parseFloat(e.target.value);
+            document.getElementById('lbl-voltage').innerText = `${state.V.toFixed(1)} V`;
+            updatePhysics();
+        });
+
+        document.getElementById('uResistance').addEventListener('input', (e) => {
+            state.R = parseFloat(e.target.value);
+            document.getElementById('lbl-resistance').innerHTML = `${state.R.toFixed(1)} &Omega;`;
+            updatePhysics();
+        });
+
+        document.getElementById('uSpeed').addEventListener('input', (e) => {
+            state.speed = parseFloat(e.target.value);
+            document.getElementById('lbl-speed').innerText = `${state.speed.toFixed(1)}x`;
+        });
+
+        document.getElementById('uShowLabels').addEventListener('change', (e) => {
+            state.showLabels = e.target.checked;
+        });
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(16, 12, 22);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 15);
+        scene.add(dirLight);
+
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.3);
+        dirLight2.position.set(-10, -10, -10);
+        scene.add(dirLight2);
+
+        // --- Geometry Definition ---
+        const L = 4; // Half-size of the cube
+        const nodes = [
+            new THREE.Vector3(-L, -L, L),  // 0: Entry (High V)
+            new THREE.Vector3(L, -L, L),   // 1
+            new THREE.Vector3(L, L, L),    // 2
+            new THREE.Vector3(-L, L, L),   // 3
+            new THREE.Vector3(-L, -L, -L), // 4
+            new THREE.Vector3(L, -L, -L),  // 5
+            new THREE.Vector3(L, L, -L),   // 6: Exit (Ground)
+            new THREE.Vector3(-L, L, -L)   // 7
+        ];
+
+        // Edges: start node, end node, tier (1=entry, 2=mid, 3=exit)
+        const edgeDefs = [
+            { s: 0, e: 1, tier: 1 }, { s: 0, e: 3, tier: 1 }, { s: 0, e: 4, tier: 1 }, // Tier 1 (I/3)
+            { s: 1, e: 2, tier: 2 }, { s: 1, e: 5, tier: 2 },                          // Tier 2 (I/6)
+            { s: 3, e: 2, tier: 2 }, { s: 3, e: 7, tier: 2 },                          // Tier 2 (I/6)
+            { s: 4, e: 5, tier: 2 }, { s: 4, e: 7, tier: 2 },                          // Tier 2 (I/6)
+            { s: 2, e: 6, tier: 3 }, { s: 5, e: 6, tier: 3 }, { s: 7, e: 6, tier: 3 }  // Tier 3 (I/3)
+        ];
+
+        // Materials
+        const matResistor = new THREE.MeshStandardMaterial({ color: 0xD1D5DB, metalness: 0.2, roughness: 0.5 });
+        const matNodeNormal = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, metalness: 0.1, roughness: 0.2 });
+        const matNodeEntry = new THREE.MeshStandardMaterial({ color: 0xFF3366, emissive: 0xFF3366, emissiveIntensity: 0.4 });
+        const matNodeExit = new THREE.MeshStandardMaterial({ color: 0x4361EE, emissive: 0x4361EE, emissiveIntensity: 0.4 });
+        const matLead = new THREE.MeshStandardMaterial({ color: 0x9CA3AF, metalness: 0.5, roughness: 0.5 });
+
+        // Build Nodes
+        const nodeGeo = new THREE.SphereGeometry(0.45, 32, 32);
+        nodes.forEach((pos, idx) => {
+            let mat = matNodeNormal;
+            let scale = 1.0;
+            if (idx === 0) { mat = matNodeEntry; scale = 1.3; }
+            if (idx === 6) { mat = matNodeExit; scale = 1.3; }
+
+            const mesh = new THREE.Mesh(nodeGeo, mat);
+            mesh.position.copy(pos);
+            mesh.scale.setScalar(scale);
+            scene.add(mesh);
+        });
+
+        // Build Lead Wires
+        function createCylinder(p1, p2, radius, material) {
+            const dist = p1.distanceTo(p2);
+            const geo = new THREE.CylinderGeometry(radius, radius, dist, 16);
+            const mesh = new THREE.Mesh(geo, material);
+            mesh.position.addVectors(p1, p2).multiplyScalar(0.5);
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), p2.clone().sub(p1).normalize());
+            scene.add(mesh);
+            return mesh;
+        }
+
+        const leadInStart = new THREE.Vector3(-L - 4, -L - 4, L + 4);
+        createCylinder(leadInStart, nodes[0], 0.15, matLead);
+        const leadOutEnd = new THREE.Vector3(L + 4, L + 4, -L - 4);
+        createCylinder(nodes[6], leadOutEnd, 0.15, matLead);
+
+        // Build Edges, Particles, Arrows, Labels
+        const particles = [];
+        const arrows = [];
+        const htmlLabels = [];
+        const labelsContainer = document.getElementById('labels-container');
+
+        const particleGeo = new THREE.SphereGeometry(0.18, 16, 16);
+        const matParticleHigh = new THREE.MeshBasicMaterial({ color: 0xFF3366 });
+        const matParticleLow = new THREE.MeshBasicMaterial({ color: 0x4361EE });
+
+        edgeDefs.forEach((def, index) => {
+            const p1 = nodes[def.s];
+            const p2 = nodes[def.e];
+
+            // Resistor Cylinder
+            createCylinder(p1, p2, 0.08, matResistor);
+
+            // Particles (4 per edge for continuous flow)
+            const numParticles = 4;
+            const matP = (def.tier === 2) ? matParticleLow : matParticleHigh;
+
+            for (let i = 0; i < numParticles; i++) {
+                const mesh = new THREE.Mesh(particleGeo, matP);
+                scene.add(mesh);
+                particles.push({
+                    mesh: mesh,
+                    start: p1,
+                    end: p2,
+                    tier: def.tier,
+                    progress: i / numParticles
+                });
+            }
+
+            // Current Vectors (Arrows)
+            const dir = p2.clone().sub(p1).normalize();
+            // Offset origin slightly so it doesn't hide inside the node
+            const origin = p1.clone().add(dir.clone().multiplyScalar(0.8));
+            const arrow = new THREE.ArrowHelper(dir, origin, 1.5, 0x06D6A0, 0.4, 0.25);
+            scene.add(arrow);
+            arrows.push({ helper: arrow, tier: def.tier });
+
+            // HTML Labels
+            const midPoint = p1.clone().add(p2).divideScalar(2);
+            const div = document.createElement('div');
+            div.className = 'edge-label';
+            div.innerText = (def.tier === 2) ? 'I/6' : 'I/3';
+            labelsContainer.appendChild(div);
+            htmlLabels.push({ element: div, pos3D: midPoint });
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = clock.getDelta();
+            controls.update();
+
+            // Base velocity factor
+            const baseVel = 0.8 * state.speed;
+
+            // Velocities proportional to current (I/3 vs I/6)
+            // Since linear density is constant, v is directly proportional to I.
+            const v_tier13 = baseVel * state.I_tier1;
+            const v_tier2 = baseVel * state.I_tier2;
+
+            // Update Particles
+            particles.forEach(p => {
+                const v = (p.tier === 2) ? v_tier2 : v_tier13;
+                // Distance is 2*L = 8. Velocity is units per second.
+                // Progress is [0, 1]. So progress rate is v / distance.
+                const dist = 2 * L;
+                p.progress += (v / dist) * dt;
+
+                if (p.progress >= 1.0) p.progress -= 1.0;
+
+                p.mesh.position.lerpVectors(p.start, p.end, p.progress);
+            });
+
+            // Update Arrows
+            arrows.forEach(a => {
+                const I = (a.tier === 2) ? state.I_tier2 : state.I_tier1;
+                // Scale length based on current magnitude
+                const len = Math.max(0.6, I * 0.8);
+                a.helper.setLength(len, len * 0.3, len * 0.2);
+            });
+
+            // Update HTML Labels Position
+            htmlLabels.forEach(l => {
+                if (state.showLabels) {
+                    const pos = l.pos3D.clone();
+                    pos.project(camera);
+
+                    // Check if behind camera
+                    if (pos.z > 1) {
+                        l.element.style.opacity = 0;
+                        return;
+                    }
+
+                    const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (pos.y * -0.5 + 0.5) * window.innerHeight;
+
+                    l.element.style.left = `${x}px`;
+                    l.element.style.top = `${y}px`;
+                    l.element.style.opacity = 1;
+                } else {
+                    l.element.style.opacity = 0;
+                }
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Init
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+
+</html>

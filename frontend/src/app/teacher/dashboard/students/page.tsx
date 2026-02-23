@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 
@@ -34,7 +34,7 @@ function riskStyle(risk: string) {
   return { bg: "#dcfce7", fg: "#16a34a" };
 }
 
-export default function TeacherStudentsPage() {
+function TeacherStudentsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { getIdToken } = useAuth();
@@ -243,5 +243,13 @@ export default function TeacherStudentsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function TeacherStudentsPage() {
+  return (
+    <Suspense fallback={<main style={{ background: "#f5f8f8", minHeight: "calc(100vh - 72px)" }} />}>
+      <TeacherStudentsContent />
+    </Suspense>
   );
 }

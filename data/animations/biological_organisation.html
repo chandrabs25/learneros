@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Hierarchy of Biological Organisation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:ital@1&display=swap" rel="stylesheet">
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+        font-family: 'Inter', sans-serif;
+    }
+    
+    svg {
+        width: 100%;
+        max-width: 1200px;
+        height: auto;
+        max-height: 100vh;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        background-color: #ffffff;
+        border-radius: 12px;
+    }
+
+    /* Typography */
+    .title { font-size: 24px; font-weight: 700; fill: #2C3E50; text-anchor: middle; }
+    .label-title { font-size: 22px; font-weight: 700; fill: #2C3E50; text-anchor: middle; }
+    .label-sub { font-size: 14px; fill: #7F8C8D; text-anchor: middle; }
+    .sci-name { font-family: 'Roboto Mono', monospace; font-style: italic; }
+    .legend-text { font-size: 12px; fill: #2C3E50; }
+
+    /* Master Zoom Animation (10s Loop) */
+    #zoom-group {
+        transform-origin: 400px 230px;
+        animation: zoomOut 10s ease-in-out infinite;
+    }
+    #master-fade {
+        animation: fadeZoom 10s ease-in-out infinite;
+    }
+
+    @keyframes zoomOut {
+        0%, 10% { transform: translate(400px, 230px) scale(3.5); }
+        20%, 30% { transform: translate(400px, 230px) scale(1.8); }
+        40%, 50% { transform: translate(400px, 230px) scale(1.1); }
+        60%, 70% { transform: translate(400px, 230px) scale(0.75); }
+        80%, 90% { transform: translate(400px, 230px) scale(0.5); }
+        100% { transform: translate(400px, 230px) scale(3.5); }
+    }
+
+    @keyframes fadeZoom {
+        0%, 70% { opacity: 1; }
+        80%, 90% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    /* Element Visibility Keyframes */
+    #pop-group { animation: fadePop 10s ease-in-out infinite; }
+    #comm-group { animation: fadeComm 10s ease-in-out infinite; }
+    #eco-group { animation: fadeEco 10s ease-in-out infinite; }
+    #earth-group { 
+        transform-origin: 400px 230px;
+        animation: fadeEarth 10s ease-in-out infinite; 
+    }
+
+    @keyframes fadePop {
+        0%, 10% { opacity: 0; }
+        20%, 70% { opacity: 1; }
+        80%, 100% { opacity: 0; }
+    }
+    @keyframes fadeComm {
+        0%, 30% { opacity: 0; }
+        40%, 70% { opacity: 1; }
+        80%, 100% { opacity: 0; }
+    }
+    @keyframes fadeEco {
+        0%, 50% { opacity: 0; }
+        60%, 70% { opacity: 1; }
+        80%, 100% { opacity: 0; }
+    }
+    @keyframes fadeEarth {
+        0%, 70% { opacity: 0; transform: translate(400px, 230px) scale(0.8); }
+        80%, 90% { opacity: 1; transform: translate(400px, 230px) scale(1.2); }
+        100% { opacity: 0; transform: translate(400px, 230px) scale(1.5); }
+    }
+
+    /* Concentric Circle Strokes (Highlighting Active Level) */
+    .circle-container {
+        fill: rgba(74, 144, 217, 0.03);
+        stroke-dasharray: 6 6;
+        transition: all 0.5s;
+    }
+    #c1 { animation: strokeC1 10s ease-in-out infinite; }
+    #c2 { animation: strokeC2 10s ease-in-out infinite; }
+    #c3 { animation: strokeC3 10s ease-in-out infinite; }
+    #c4 { animation: strokeC4 10s ease-in-out infinite; }
+
+    @keyframes strokeC1 {
+        0%, 10% { stroke: #FF6B6B; stroke-width: 2.5; fill: rgba(255, 107, 107, 0.05); }
+        20%, 100% { stroke: #4A90D9; stroke-width: 1; }
+    }
+    @keyframes strokeC2 {
+        0%, 10% { stroke: #4A90D9; stroke-width: 1; }
+        20%, 30% { stroke: #FF6B6B; stroke-width: 2.5; fill: rgba(255, 107, 107, 0.05); }
+        40%, 100% { stroke: #4A90D9; stroke-width: 1; }
+    }
+    @keyframes strokeC3 {
+        0%, 30% { stroke: #4A90D9; stroke-width: 1; }
+        40%, 50% { stroke: #FF6B6B; stroke-width: 2.5; fill: rgba(255, 107, 107, 0.05); }
+        60%, 100% { stroke: #4A90D9; stroke-width: 1; }
+    }
+    @keyframes strokeC4 {
+        0%, 50% { stroke: #4A90D9; stroke-width: 1; }
+        60%, 70% { stroke: #FF6B6B; stroke-width: 2.5; fill: rgba(255, 107, 107, 0.05); }
+        80%, 100% { stroke: #4A90D9; stroke-width: 1; }
+    }
+
+    /* Dynamic Labels */
+    .label { opacity: 0; animation-duration: 10s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+    #label-org { animation-name: showL1; }
+    #label-pop { animation-name: showL2; }
+    #label-comm { animation-name: showL3; }
+    #label-eco { animation-name: showL4; }
+    #label-bio { animation-name: showL5; }
+
+    @keyframes showL1 { 0%, 10% {opacity: 1} 20%, 100% {opacity: 0} }
+    @keyframes showL2 { 0%, 10% {opacity: 0} 20%, 30% {opacity: 1} 40%, 100% {opacity: 0} }
+    @keyframes showL3 { 0%, 30% {opacity: 0} 40%, 50% {opacity: 1} 60%, 100% {opacity: 0} }
+    @keyframes showL4 { 0%, 50% {opacity: 0} 60%, 70% {opacity: 1} 80%, 100% {opacity: 0} }
+    @keyframes showL5 { 0%, 70% {opacity: 0} 80%, 90% {opacity: 1} 100% {opacity: 0} }
+
+    /* Micro-Animations */
+    .swimmer { animation: swim 3s infinite ease-in-out; transform-origin: center; }
+    .swimmer-1 { animation-delay: 0s; }
+    .swimmer-2 { animation-delay: -0.6s; }
+    .swimmer-3 { animation-delay: -1.2s; }
+    .swimmer-4 { animation-delay: -1.8s; }
+    .swimmer-5 { animation-delay: -2.4s; }
+    
+    @keyframes swim {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-3px) rotate(2deg); }
+    }
+
+    .plant-sway { animation: sway 4s infinite ease-in-out; transform-origin: bottom; }
+    .plant-sway-alt { animation: sway 4s infinite ease-in-out -2s; transform-origin: bottom; }
+    
+    @keyframes sway {
+        0%, 100% { transform: rotate(-2deg); }
+        50% { transform: rotate(2deg); }
+    }
+
+    .energy-flow {
+        stroke-dasharray: 6 6;
+        animation: flowAnim 1s linear infinite;
+    }
+    @keyframes flowAnim {
+        to { stroke-dashoffset: -12; }
+    }
+
+    .earth-spin {
+        transform-origin: 0 0;
+        animation: spinEarth 20s linear infinite;
+    }
+    @keyframes spinEarth {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+    
+    .pulse-sun {
+        animation: sunPulse 3s infinite ease-in-out;
+    }
+    @keyframes sunPulse {
+        0%, 100% { transform: scale(1); opacity: 0.8; }
+        50% { transform: scale(1.1); opacity: 1; }
+    }
+</style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" role="img" aria-labelledby="svg-title svg-desc">
+    <title id="svg-title">Hierarchy of Biological Organisation</title>
+    <desc id="svg-desc">Animated diagram showing the ecological levels of biological organization: Organism, Population, Community, Ecosystem, and Biosphere.</desc>
+
+    <defs>
+        <!-- Fish Symbol (Cyprinus carpio) -->
+        <g id="fish-master">
+            <!-- Tail -->
+            <path d="M -18 0 L -30 -10 L -26 0 L -30 10 Z" fill="#E67E22"/>
+            <!-- Dorsal Fin -->
+            <path d="M -8 -10 L 4 -16 L 8 -8 Z" fill="#E67E22"/>
+            <!-- Ventral Fin -->
+            <path d="M -5 10 L 0 16 L 5 10 Z" fill="#E67E22"/>
+            <!-- Body -->
+            <path d="M 22 0 C 22 -12, -12 -12, -22 0 C -12 12, 22 12, 22 0 Z" fill="#F39C12"/>
+            <!-- Pectoral Fin -->
+            <path d="M 8 4 L 2 12 L 12 8 Z" fill="#E67E22"/>
+            <!-- Eye -->
+            <circle cx="12" cy="-3" r="1.5" fill="#2C3E50"/>
+            <!-- Gills -->
+            <path d="M 5 -6 Q 2 0 5 6" stroke="#D35400" stroke-width="1" fill="none"/>
+        </g>
+
+        <!-- Aquatic Plant Symbol -->
+        <g id="plant-master">
+            <path d="M 0 30 Q -10 15 0 0 Q 10 15 0 30" fill="#2ECC71"/>
+            <path d="M 0 30 Q -15 20 -10 5 Q -5 15 0 30" fill="#27AE60"/>
+            <path d="M 0 30 Q 15 20 10 5 Q 5 15 0 30" fill="#27AE60"/>
+        </g>
+
+        <!-- Crab Symbol -->
+        <g id="crab-master">
+            <!-- Legs -->
+            <path d="M -8 2 L -16 10 M -4 5 L -8 14 M 4 5 L 8 14 M 8 2 L 16 10" stroke="#E74C3C" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            <!-- Claws -->
+            <path d="M -10 -2 Q -16 -8 -12 -12 Q -8 -8 -6 -2" fill="#C0392B"/>
+            <path d="M 10 -2 Q 16 -8 12 -12 Q 8 -8 6 -2" fill="#C0392B"/>
+            <!-- Body -->
+            <ellipse cx="0" cy="0" rx="10" ry="6" fill="#E74C3C"/>
+            <!-- Eyes -->
+            <circle cx="-4" cy="-5" r="1" fill="#2C3E50"/>
+            <circle cx="4" cy="-5" r="1" fill="#2C3E50"/>
+        </g>
+
+        <!-- Snail Symbol -->
+        <g id="snail-master">
+            <path d="M -4 4 L 6 4 L 8 2 L -6 2 Z" fill="#F39C12"/>
+            <circle cx="0" cy="0" r="4" fill="#95A5A6"/>
+            <path d="M 0 0 Q 2 -2 0 -4" stroke="#7F8C8D" stroke-width="0.5" fill="none"/>
+        </g>
+
+        <!-- Arrowhead for Energy Flow -->
+        <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <polygon points="0 0, 8 3, 0 6" fill="#F1C40F"/>
+        </marker>
+
+        <!-- Ecosystem Clip Path -->
+        <clipPath id="eco-clip">
+            <circle cx="0" cy="0" r="198"/>
+        </clipPath>
+
+        <!-- Earth Sphere Gradient -->
+        <radialGradient id="sphereGrad" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#ffffff" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#000000" stop-opacity="0.4"/>
+        </radialGradient>
+        
+        <!-- Earth Clip Path -->
+        <clipPath id="earth-clip">
+            <circle cx="0" cy="0" r="130"/>
+        </clipPath>
+    </defs>
+
+    <!-- Title -->
+    <text x="400" y="45" class="title">Biological Organisation: Ecological Hierarchy</text>
+
+    <!-- Legend -->
+    <g transform="translate(640, 380)">
+        <rect x="0" y="0" width="140" height="90" rx="6" fill="#ffffff" stroke="#E8F4FD" stroke-width="2" opacity="0.9"/>
+        <rect x="10" y="10" width="12" height="12" rx="2" fill="#F39C12"/>
+        <text x="30" y="20" class="legend-text">Animal Tissue</text>
+        
+        <rect x="10" y="30" width="12" height="12" rx="2" fill="#2ECC71"/>
+        <text x="30" y="40" class="legend-text">Plant Tissue</text>
+        
+        <rect x="10" y="50" width="12" height="12" rx="2" fill="#4A90D9"/>
+        <text x="30" y="60" class="legend-text">Abiotic / Water</text>
+        
+        <line x1="10" y1="76" x2="22" y2="76" stroke="#F1C40F" stroke-width="2" stroke-dasharray="3 3"/>
+        <text x="30" y="80" class="legend-text">Energy Flow</text>
+    </g>
+
+    <!-- MAIN ANIMATION SCENE -->
+    <g id="master-fade">
+        <g id="zoom-group">
+            
+            <!-- Hierarchy Containers (Concentric Circles) -->
+            <circle id="c4" class="circle-container" cx="0" cy="0" r="200"/>
+            <circle id="c3" class="circle-container" cx="0" cy="0" r="140"/>
+            <circle id="c2" class="circle-container" cx="0" cy="0" r="90"/>
+            <circle id="c1" class="circle-container" cx="0" cy="0" r="45"/>
+
+            <!-- LEVEL 4: ECOSYSTEM (Abiotic Factors) -->
+            <g id="eco-group">
+                <!-- Water Base -->
+                <g clip-path="url(#eco-clip)">
+                    <path d="M -200 60 Q -100 80 0 60 T 200 60 L 200 200 L -200 200 Z" fill="rgba(74, 144, 217, 0.15)"/>
+                    <path d="M -200 90 Q -100 110 0 90 T 200 90" stroke="#4A90D9" stroke-width="1" fill="none" stroke-dasharray="10 5" opacity="0.5"/>
+                    <path d="M -200 130 Q -100 150 0 130 T 200 130" stroke="#4A90D9" stroke-width="1" fill="none" stroke-dasharray="10 5" opacity="0.3"/>
+                    
+                    <!-- Rocks -->
+                    <path d="M -180 200 L -160 140 L -120 160 L -80 130 L -40 180 L 0 200 Z" fill="#7F8C8D"/>
+                    <path d="M 180 200 L 150 150 L 110 170 L 70 140 L 30 190 L 0 200 Z" fill="#95A5A6"/>
+                </g>
+
+                <!-- Sun -->
+                <g transform="translate(-110, -110)">
+                    <circle cx="0" cy="0" r="24" fill="#F1C40F" class="pulse-sun"/>
+                    <path d="M 0 -32 L 0 -42 M 0 32 L 0 42 M -32 0 L -42 0 M 32 0 L 42 0 M -23 -23 L -30 -30 M 23 23 L 30 30 M -23 23 L -30 30 M 23 -23 L 30 -30" stroke="#F1C40F" stroke-width="3" stroke-linecap="round" class="pulse-sun"/>
+                </g>
+
+                <!-- Energy Flow Arrows -->
+                <path d="M -90 -90 Q -40 -30 -10 40" stroke="#F1C40F" stroke-width="2" fill="none" class="energy-flow" marker-end="url(#arrowhead)"/>
+                <path d="M 10 50 Q 20 20 10 10" stroke="#F1C40F" stroke-width="2" fill="none" class="energy-flow" marker-end="url(#arrowhead)"/>
+            </g>
+
+            <!-- LEVEL 3: COMMUNITY (Other Species) -->
+            <g id="comm-group">
+                <!-- Aquatic Plants -->
+                <g transform="translate(-60, 70)" class="plant-sway"><use href="#plant-master"/></g>
+                <g transform="translate(-45, 85) scale(0.8)" class="plant-sway-alt"><use href="#plant-master"/></g>
+                <g transform="translate(0, 75)" class="plant-sway"><use href="#plant-master"/></g>
+                <g transform="translate(15, 90) scale(0.7)" class="plant-sway-alt"><use href="#plant-master"/></g>
+                <g transform="translate(60, 65)" class="plant-sway"><use href="#plant-master"/></g>
+
+                <!-- Crab -->
+                <g transform="translate(45, 95)"><use href="#crab-master"/></g>
+                
+                <!-- Snails -->
+                <g transform="translate(-25, 105)"><use href="#snail-master"/></g>
+                <g transform="translate(-80, 115) scale(0.8)"><use href="#snail-master"/></g>
+            </g>
+
+            <!-- LEVEL 2: POPULATION (Same Species Group) -->
+            <g id="pop-group">
+                <g transform="translate(-35, -25)"><g class="swimmer swimmer-2"><use href="#fish-master"/></g></g>
+                <g transform="translate(35, -20)"><g class="swimmer swimmer-3"><use href="#fish-master"/></g></g>
+                <g transform="translate(-25, 30)"><g class="swimmer swimmer-4"><use href="#fish-master"/></g></g>
+                <g transform="translate(30, 25)"><g class="swimmer swimmer-5"><use href="#fish-master"/></g></g>
+            </g>
+
+            <!-- LEVEL 1: ORGANISM (Individual) -->
+            <g id="org-group">
+                <g class="swimmer swimmer-1"><use href="#fish-master"/></g>
+            </g>
+
+        </g>
+    </g>
+
+    <!-- LEVEL 5: BIOSPHERE (Earth Globe) -->
+    <g id="earth-group">
+        <circle cx="0" cy="0" r="130" fill="#3498DB"/>
+        
+        <g clip-path="url(#earth-clip)">
+            <g class="earth-spin">
+                <!-- Continents Map 1 -->
+                <path d="M -60 -80 Q -10 -110 30 -70 Q 80 -30 50 20 Q 20 70 -40 50 Q -90 30 -100 -20 Q -110 -70 -60 -80 Z" fill="#27AE60"/>
+                <path d="M 60 -30 Q 110 -10 120 40 Q 130 90 80 110 Q 30 130 10 80 Q -10 30 60 -30 Z" fill="#27AE60"/>
+                <path d="M -120 40 Q -80 60 -70 100 Q -60 140 -110 130 Q -150 120 -120 40 Z" fill="#27AE60"/>
+                
+                <!-- Continents Map 2 (for seamless rotation illusion) -->
+                <path d="M 200 -80 Q 250 -110 290 -70 Q 340 -30 310 20 Q 280 70 220 50 Q 170 30 160 -20 Q 150 -70 200 -80 Z" fill="#27AE60"/>
+                <path d="M 320 -30 Q 370 -10 380 40 Q 390 90 340 110 Q 290 130 270 80 Q 250 30 320 -30 Z" fill="#27AE60"/>
+            </g>
+        </g>
+        
+        <!-- Sphere Shading -->
+        <circle cx="0" cy="0" r="130" fill="url(#sphereGrad)"/>
+        <!-- Biosphere Highlight Ring -->
+        <circle cx="0" cy="0" r="145" fill="none" stroke="#FF6B6B" stroke-width="2" stroke-dasharray="8 8"/>
+    </g>
+
+    <!-- DYNAMIC LABELS -->
+    <g id="labels">
+        <g id="label-org" class="label">
+            <text x="400" y="440" class="label-title">1. Individual Organism</text>
+            <text x="400" y="465" class="label-sub">A single living entity (<tspan class="sci-name">Cyprinus carpio</tspan>)</text>
+        </g>
+        
+        <g id="label-pop" class="label">
+            <text x="400" y="440" class="label-title">2. Population</text>
+            <text x="400" y="465" class="label-sub">A group of individuals of the same species living together</text>
+        </g>
+        
+        <g id="label-comm" class="label">
+            <text x="400" y="440" class="label-title">3. Community</text>
+            <text x="400" y="465" class="label-sub">Interacting populations of different species (Biotic factors)</text>
+        </g>
+        
+        <g id="label-eco" class="label">
+            <text x="400" y="440" class="label-title">4. Ecosystem</text>
+            <text x="400" y="465" class="label-sub">Community interacting with its physical environment (Abiotic factors)</text>
+        </g>
+        
+        <g id="label-bio" class="label">
+            <text x="400" y="440" class="label-title">5. Biosphere</text>
+            <text x="400" y="465" class="label-sub">The global sum of all ecosystems; the zone of life on Earth</text>
+        </g>
+    </g>
+
+</svg>
+
+</body>
+</html>

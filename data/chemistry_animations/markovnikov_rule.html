@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markovnikov Rule Mechanism</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* SVG Element Styles */
+        .atom-c { fill: #404040; }
+        .atom-o { fill: #FF4444; }
+        .atom-h { fill: #CCCCCC; }
+        .bond { stroke: #333333; stroke-width: 4; stroke-linecap: round; }
+        .bond-pi { stroke: #888888; stroke-width: 4; stroke-linecap: round; }
+        .charge { fill: #FFD700; }
+        .charge-text { fill: #000000; font-weight: bold; font-size: 14px; text-anchor: middle; dominant-baseline: central; }
+        
+        .arrow-mech { 
+            stroke: #F77F00; 
+            stroke-width: 3; 
+            fill: none; 
+            marker-end: url(#arrowhead); 
+            stroke-linecap: round; 
+            stroke-dasharray: 100;
+        }
+        .arrow-rxn { 
+            stroke: #7209B7; 
+            stroke-width: 4; 
+            fill: none; 
+            marker-end: url(#rxn-arrowhead); 
+            stroke-linecap: round; 
+            stroke-dasharray: 100;
+        }
+
+        .label { font-family: 'Inter', sans-serif; font-size: 14px; fill: #333; }
+        .label-bold { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; fill: #333; }
+        .title { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; fill: #111; text-anchor: middle; }
+        .formula { font-family: 'Roboto Mono', monospace; font-size: 14px; fill: #333; }
+
+        /* Animations */
+        .mechanism-container { animation: globalFade 12s infinite linear; }
+        
+        .arrow1 { animation: drawArrow1 12s infinite linear; }
+        .pi-bond { animation: fadePiBond 12s infinite linear; }
+        .h3o-proton { animation: moveProton 12s infinite linear; }
+        .h3o-proton-bond { animation: fadePiBond 12s infinite linear; }
+        .initial-reactants { animation: fadeReactants 12s infinite linear; }
+        
+        .bifurcation-arrow { animation: drawBifurcation 12s infinite linear; }
+        .carbocations { animation: fadeCarbocations 12s infinite linear; }
+        
+        .bottom-path { animation: fadeBottomPath 12s infinite linear; }
+        .red-x { animation: showRedX 12s infinite linear; transform-origin: 360px 380px; }
+        .top-path { animation: glowTopPath 12s infinite linear; }
+        
+        .water-molecule { animation: moveWater 12s infinite linear; }
+        .arrow2 { animation: drawArrow2 12s infinite linear; }
+        .water-bond { animation: formWaterBond 12s infinite linear; }
+        .carbocation-plus { animation: fadeCarboPlus 12s infinite linear; }
+        .water-plus { animation: showWaterPlus 12s infinite linear; }
+        
+        .arrow3 { animation: drawArrow3 12s infinite linear; }
+        .leaving-h { animation: moveLeavingH 12s infinite linear; }
+        .leaving-h-bond { animation: fadeCarboPlus 12s infinite linear; }
+        
+        .final-rxn-arrow { animation: drawFinalArrow 12s infinite linear; }
+        .final-product { animation: showFinalProduct 12s infinite linear; }
+
+        /* Keyframes mapped to 12s loop */
+        @keyframes globalFade {
+            0%, 92% { opacity: 1; }
+            96%, 100% { opacity: 0; }
+        }
+        @keyframes drawArrow1 {
+            0%, 10% { stroke-dashoffset: 100; opacity: 0; }
+            15% { stroke-dashoffset: 0; opacity: 1; }
+            20%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes fadePiBond {
+            0%, 15% { opacity: 1; }
+            20%, 100% { opacity: 0; }
+        }
+        @keyframes moveProton {
+            0%, 15% { transform: translateY(0); opacity: 1; }
+            20% { transform: translateY(77px); opacity: 1; }
+            22%, 100% { opacity: 0; }
+        }
+        @keyframes fadeReactants {
+            0%, 20% { opacity: 1; }
+            25%, 100% { opacity: 0; }
+        }
+        @keyframes drawBifurcation {
+            0%, 20% { stroke-dashoffset: 100; opacity: 0; }
+            25%, 100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+        @keyframes fadeCarbocations {
+            0%, 20% { opacity: 0; }
+            25%, 100% { opacity: 1; }
+        }
+        @keyframes fadeBottomPath {
+            0%, 35% { opacity: 1; }
+            40%, 100% { opacity: 0.2; }
+        }
+        @keyframes showRedX {
+            0%, 35% { transform: scale(0); opacity: 0; }
+            40%, 100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes glowTopPath {
+            0%, 35% { filter: drop-shadow(0 0 0px rgba(43, 147, 72, 0)); }
+            40%, 100% { filter: drop-shadow(0 0 10px rgba(43, 147, 72, 0.5)); }
+        }
+        @keyframes moveWater {
+            0%, 40% { transform: translateY(-30px); opacity: 0; }
+            45%, 100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes drawArrow2 {
+            0%, 45% { stroke-dashoffset: 100; opacity: 0; }
+            50% { stroke-dashoffset: 0; opacity: 1; }
+            55%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes formWaterBond {
+            0%, 50% { opacity: 0; }
+            55%, 100% { opacity: 1; }
+        }
+        @keyframes fadeCarboPlus {
+            0%, 50% { opacity: 1; }
+            55%, 100% { opacity: 0; }
+        }
+        @keyframes showWaterPlus {
+            0%, 50% { opacity: 0; }
+            55%, 60% { opacity: 1; }
+            65%, 100% { opacity: 0; }
+        }
+        @keyframes drawArrow3 {
+            0%, 55% { stroke-dashoffset: 100; opacity: 0; }
+            60% { stroke-dashoffset: 0; opacity: 1; }
+            65%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes moveLeavingH {
+            0%, 60% { transform: translate(0, 0); opacity: 1; }
+            65%, 100% { transform: translate(30px, -30px); opacity: 0; }
+        }
+        @keyframes drawFinalArrow {
+            0%, 65% { stroke-dashoffset: 100; opacity: 0; }
+            70%, 100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+        @keyframes showFinalProduct {
+            0%, 70% { opacity: 0; }
+            75%, 100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 550" width="100%" height="100%">
+        <!-- Definitions for Arrowheads -->
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00" />
+            </marker>
+            <marker id="rxn-arrowhead" markerWidth="10" markerHeight="7" refX="8" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#7209B7" />
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Title and Rule Summary -->
+        <text x="400" y="40" class="title">Markovnikov Rule: Acid-Catalyzed Hydration of Propene</text>
+        
+        <rect x="100" y="490" width="600" height="40" rx="8" fill="#e9ecef" stroke="#ced4da"/>
+        <text x="400" y="515" text-anchor="middle" class="label" fill="#495057">
+            <tspan font-weight="bold">Rule:</tspan> The electrophile (H⁺) adds to the carbon with more hydrogen atoms.
+        </text>
+
+        <!-- Legend -->
+        <g transform="translate(20, 470)">
+            <rect x="0" y="0" width="70" height="70" rx="5" fill="#ffffff" stroke="#dee2e6"/>
+            <circle cx="15" cy="15" r="5" class="atom-c"/><text x="25" y="19" class="label" font-size="10">Carbon</text>
+            <circle cx="15" cy="30" r="5" class="atom-o"/><text x="25" y="34" class="label" font-size="10">Oxygen</text>
+            <circle cx="15" cy="45" r="5" class="atom-h"/><text x="25" y="49" class="label" font-size="10">Hydrogen</text>
+            <circle cx="15" cy="60" r="5" class="charge"/><text x="15" y="60" class="charge-text" font-size="8">+</text><text x="25" y="64" class="label" font-size="10">Charge</text>
+        </g>
+
+        <!-- Global Animation Container -->
+        <g class="mechanism-container">
+
+            <!-- ================= PHASE 1: INITIAL REACTANTS ================= -->
+            <g class="initial-reactants">
+                <!-- Propene Molecule -->
+                <g id="propene">
+                    <!-- Bonds -->
+                    <line x1="60" y1="220" x2="100" y2="280" class="bond" />
+                    <line x1="100" y1="283" x2="160" y2="283" class="bond" />
+                    <line x1="100" y1="277" x2="160" y2="277" class="bond-pi pi-bond" />
+                    <line x1="60" y1="220" x2="20" y2="220" class="bond" />
+                    <line x1="60" y1="220" x2="60" y2="180" class="bond" />
+                    <line x1="60" y1="220" x2="90" y2="190" class="bond" />
+                    <line x1="100" y1="280" x2="100" y2="320" class="bond" />
+                    <line x1="160" y1="280" x2="160" y2="320" class="bond" />
+                    <line x1="160" y1="280" x2="200" y2="280" class="bond" />
+                    <!-- Atoms -->
+                    <circle cx="60" cy="220" r="14" class="atom-c" />
+                    <circle cx="100" cy="280" r="14" class="atom-c" />
+                    <circle cx="160" cy="280" r="14" class="atom-c" />
+                    <circle cx="20" cy="220" r="10" class="atom-h" />
+                    <circle cx="60" cy="180" r="10" class="atom-h" />
+                    <circle cx="90" cy="190" r="10" class="atom-h" />
+                    <circle cx="100" cy="320" r="10" class="atom-h" />
+                    <circle cx="160" cy="320" r="10" class="atom-h" />
+                    <circle cx="200" cy="280" r="10" class="atom-h" />
+                    <!-- Labels -->
+                    <text x="110" y="355" class="label-bold" text-anchor="middle">Propene</text>
+                    <text x="100" y="260" class="formula" font-size="12" fill="#fff">C<tspan baseline-shift="sub" font-size="9">2</tspan></text>
+                    <text x="160" y="260" class="formula" font-size="12" fill="#fff">C<tspan baseline-shift="sub" font-size="9">1</tspan></text>
+                </g>
+
+                <!-- Hydronium Ion -->
+                <g id="h3o">
+                    <line x1="130" y1="160" x2="95" y2="160" class="bond" />
+                    <line x1="130" y1="160" x2="165" y2="160" class="bond" />
+                    <line x1="130" y1="160" x2="130" y2="200" class="bond h3o-proton-bond" />
+                    <circle cx="130" cy="160" r="14" class="atom-o" />
+                    <circle cx="95" cy="160" r="10" class="atom-h" />
+                    <circle cx="165" cy="160" r="10" class="atom-h" />
+                    <g class="h3o-proton">
+                        <circle cx="130" cy="200" r="10" class="atom-h" />
+                    </g>
+                    <circle cx="130" cy="130" r="12" class="charge" />
+                    <text x="130" y="130" class="charge-text">+</text>
+                    <text x="130" y="100" class="label" text-anchor="middle">H<tspan baseline-shift="sub" font-size="10">3</tspan>O⁺ (Catalyst)</text>
+                </g>
+            </g>
+
+            <!-- Mechanism Arrow 1 (Pi bond to Proton) -->
+            <path d="M 130 277 Q 160 240 130 215" class="arrow-mech arrow1" pathLength="100" />
+
+            <!-- ================= PHASE 2: BIFURCATION ================= -->
+            <g class="bifurcation-arrows">
+                <path d="M 210 280 Q 240 280 270 200" class="arrow-rxn bifurcation-arrow" pathLength="100" />
+                <path d="M 210 280 Q 240 280 270 360" class="arrow-rxn bifurcation-arrow" pathLength="100" />
+                
+                <g class="carbocations">
+                    <text x="230" y="220" class="label-bold" font-size="12" fill="#2b9348" transform="rotate(-35, 230, 220)">Major</text>
+                    <text x="230" y="340" class="label-bold" font-size="12" fill="#d90429" transform="rotate(35, 230, 340)">Minor</text>
+                </g>
+            </g>
+
+            <g class="carbocations">
+                <!-- Top Path: 2° Carbocation (Major) -->
+                <g class="top-path">
+                    <line x1="320" y1="120" x2="360" y2="180" class="bond" />
+                    <line x1="360" y1="180" x2="420" y2="180" class="bond" />
+                    <line x1="320" y1="120" x2="280" y2="120" class="bond" />
+                    <line x1="320" y1="120" x2="320" y2="80" class="bond" />
+                    <line x1="320" y1="120" x2="350" y2="90" class="bond" />
+                    <line x1="360" y1="180" x2="360" y2="220" class="bond" />
+                    <line x1="420" y1="180" x2="420" y2="220" class="bond" />
+                    <line x1="420" y1="180" x2="460" y2="180" class="bond" />
+                    <line x1="420" y1="180" x2="420" y2="140" class="bond" stroke="#F77F00" /> <!-- New bond highlighted -->
+                    
+                    <circle cx="320" cy="120" r="14" class="atom-c" />
+                    <circle cx="360" cy="180" r="14" class="atom-c" />
+                    <circle cx="420" cy="180" r="14" class="atom-c" />
+                    
+                    <circle cx="280" cy="120" r="10" class="atom-h" />
+                    <circle cx="320" cy="80" r="10" class="atom-h" />
+                    <circle cx="350" cy="90" r="10" class="atom-h" />
+                    <circle cx="360" cy="220" r="10" class="atom-h" />
+                    <circle cx="420" cy="220" r="10" class="atom-h" />
+                    <circle cx="460" cy="180" r="10" class="atom-h" />
+                    <circle cx="420" cy="140" r="10" class="atom-h" stroke="#F77F00" stroke-width="2"/> <!-- Added H -->
+                    
+                    <g class="carbocation-plus">
+                        <circle cx="360" cy="145" r="12" class="charge" />
+                        <text x="360" y="145" class="charge-text">+</text>
+                    </g>
+                    
+                    <text x="370" y="255" class="label-bold" text-anchor="middle" fill="#2b9348">2° Carbocation (More Stable)</text>
+                </g>
+
+                <!-- Bottom Path: 1° Carbocation (Minor) -->
+                <g class="bottom-path">
+                    <line x1="320" y1="320" x2="360" y2="380" class="bond" />
+                    <line x1="360" y1="380" x2="420" y2="380" class="bond" />
+                    <line x1="320" y1="320" x2="280" y2="320" class="bond" />
+                    <line x1="320" y1="320" x2="320" y2="280" class="bond" />
+                    <line x1="320" y1="320" x2="350" y2="290" class="bond" />
+                    <line x1="360" y1="380" x2="360" y2="420" class="bond" />
+                    <line x1="360" y1="380" x2="360" y2="340" class="bond" stroke="#F77F00" /> <!-- New bond highlighted -->
+                    <line x1="420" y1="380" x2="420" y2="420" class="bond" />
+                    <line x1="420" y1="380" x2="460" y2="380" class="bond" />
+                    
+                    <circle cx="320" cy="320" r="14" class="atom-c" />
+                    <circle cx="360" cy="380" r="14" class="atom-c" />
+                    <circle cx="420" cy="380" r="14" class="atom-c" />
+                    
+                    <circle cx="280" cy="320" r="10" class="atom-h" />
+                    <circle cx="320" cy="280" r="10" class="atom-h" />
+                    <circle cx="350" cy="290" r="10" class="atom-h" />
+                    <circle cx="360" cy="420" r="10" class="atom-h" />
+                    <circle cx="360" cy="340" r="10" class="atom-h" stroke="#F77F00" stroke-width="2"/> <!-- Added H -->
+                    <circle cx="420" cy="420" r="10" class="atom-h" />
+                    <circle cx="460" cy="380" r="10" class="atom-h" />
+                    
+                    <circle cx="420" cy="345" r="12" class="charge" />
+                    <text x="420" y="345" class="charge-text">+</text>
+                    
+                    <text x="370" y="455" class="label-bold" text-anchor="middle" fill="#d90429">1° Carbocation (Less Stable)</text>
+                    
+                    <!-- Red X for forbidden path -->
+                    <g class="red-x">
+                        <line x1="320" y1="340" x2="400" y2="420" stroke="#d90429" stroke-width="8" stroke-linecap="round"/>
+                        <line x1="400" y1="340" x2="320" y2="420" stroke="#d90429" stroke-width="8" stroke-linecap="round"/>
+                    </g>
+                </g>
+            </g>
+
+            <!-- ================= PHASE 3: NUCLEOPHILIC ATTACK ================= -->
+            <!-- Water Molecule -->
+            <g class="water-molecule">
+                <line x1="360" y1="70" x2="330" y2="50" class="bond" />
+                <line x1="360" y1="70" x2="390" y2="50" class="bond leaving-h-bond" />
+                <circle cx="360" cy="70" r="14" class="atom-o" />
+                <circle cx="330" cy="50" r="10" class="atom-h" />
+                <g class="leaving-h">
+                    <circle cx="390" cy="50" r="10" class="atom-h" />
+                </g>
+                <g class="water-plus">
+                    <circle cx="390" cy="80" r="12" class="charge" />
+                    <text x="390" y="80" class="charge-text">+</text>
+                </g>
+                <text x="360" y="30" class="label" text-anchor="middle">H<tspan baseline-shift="sub" font-size="10">2</tspan>O (Nucleophile)</text>
+            </g>
+
+            <!-- Attack Arrow -->
+            <path d="M 360 85 Q 380 110 365 130" class="arrow-mech arrow2" pathLength="100" />
+            
+            <!-- New O-C Bond -->
+            <line x1="360" y1="84" x2="360" y2="166" class="bond water-bond" />
+
+            <!-- Deprotonation Arrow -->
+            <path d="M 375 60 Q 365 55 360 65" class="arrow-mech arrow3" pathLength="100" />
+
+            <!-- ================= PHASE 4: FINAL PRODUCT ================= -->
+            <!-- Final Reaction Arrow -->
+            <path d="M 480 180 L 560 180" class="arrow-rxn final-rxn-arrow" pathLength="100" />
+
+            <g class="final-product">
+                <line x1="620" y1="120" x2="660" y2="180" class="bond" />
+                <line x1="660" y1="180" x2="720" y2="180" class="bond" />
+                <line x1="660" y1="180" x2="660" y2="120" class="bond" />
+                <line x1="660" y1="120" x2="690" y2="100" class="bond" />
+                <line x1="620" y1="120" x2="580" y2="120" class="bond" />
+                <line x1="620" y1="120" x2="620" y2="80" class="bond" />
+                <line x1="620" y1="120" x2="650" y2="90" class="bond" />
+                <line x1="660" y1="180" x2="660" y2="220" class="bond" />
+                <line x1="720" y1="180" x2="720" y2="220" class="bond" />
+                <line x1="720" y1="180" x2="760" y2="180" class="bond" />
+                <line x1="720" y1="180" x2="720" y2="140" class="bond" />
+                
+                <circle cx="620" cy="120" r="14" class="atom-c" />
+                <circle cx="660" cy="180" r="14" class="atom-c" />
+                <circle cx="720" cy="180" r="14" class="atom-c" />
+                <circle cx="660" cy="120" r="14" class="atom-o" />
+                
+                <circle cx="690" cy="100" r="10" class="atom-h" />
+                <circle cx="580" cy="120" r="10" class="atom-h" />
+                <circle cx="620" cy="80" r="10" class="atom-h" />
+                <circle cx="650" cy="90" r="10" class="atom-h" />
+                <circle cx="660" cy="220" r="10" class="atom-h" />
+                <circle cx="720" cy="220" r="10" class="atom-h" />
+                <circle cx="760" cy="180" r="10" class="atom-h" />
+                <circle cx="720" cy="140" r="10" class="atom-h" />
+
+                <text x="670" y="255" class="label-bold" text-anchor="middle" fill="#7209B7">Propan-2-ol (Major Product)</text>
+            </g>
+
+        </g>
+    </svg>
+</div>
+
+</body>
+</html>

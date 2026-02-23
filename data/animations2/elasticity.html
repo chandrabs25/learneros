@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elasticity & Wave Propagation in a Medium</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #2D3436;
+            display: flex;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Glassmorphic Control Panel */
+        #ui-panel {
+            width: 25%;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            color: #2D3436;
+            line-height: 1.3;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .value-readout {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #CED4DA;
+            border-radius: 2px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #CED4DA;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            color: #2D3436;
+            outline: none;
+            cursor: pointer;
+        }
+
+        button {
+            background: #4361EE;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #3651D4;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin: 4px 0;
+        }
+
+        .math-highlight {
+            color: #FF3366;
+            font-weight: 500;
+        }
+
+        .legend {
+            margin-top: 12px;
+            font-size: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60vh; }
+            #ui-panel { width: 100%; height: 40vh; border-left: none; border-top: 1px solid rgba(255,255,255,0.8); }
+            #formula-card { top: 10px; left: 10px; padding: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div style="font-weight: 600; margin-bottom: 8px;">Physics Engine</div>
+            <div class="math-text">Hooke's Law: <span class="math-highlight">F = -kΔx</span></div>
+            <div class="math-text">Damping: F<sub>d</sub> = -γv</div>
+            <div class="math-text" style="margin-top: 8px;">Potential Energy (U):</div>
+            <div class="math-text" style="color: #4361EE; font-size: 1.1rem;" id="pe-readout">0.00 J</div>
+            
+            <div class="legend">
+                <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Restoring Force / Tension</div>
+                <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Velocity Vector</div>
+                <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Compression</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Elastic Lattice Dynamics</h1>
+        
+        <div class="control-group">
+            <label>Stiffness (k) <span class="value-readout" id="val-stiffness">50 N/m</span></label>
+            <input type="range" id="stiffness" min="10" max="200" step="10" value="50">
+        </div>
+
+        <div class="control-group">
+            <label>Damping (γ) <span class="value-readout" id="val-damping">0.05</span></label>
+            <input type="range" id="damping" min="0.0" max="0.5" step="0.01" value="0.05">
+        </div>
+
+        <div class="control-group">
+            <label>Amplitude (A) <span class="value-readout" id="val-amplitude">0.8 m</span></label>
+            <input type="range" id="amplitude" min="0.1" max="1.5" step="0.1" value="0.8">
+        </div>
+
+        <div class="control-group">
+            <label>Wave Type</label>
+            <select id="waveType">
+                <option value="longitudinal">Longitudinal (X-axis)</option>
+                <option value="transverse">Transverse (Y-axis)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Far Boundary</label>
+            <select id="boundary">
+                <option value="fixed">Fixed</option>
+                <option value="free">Free</option>
+            </select>
+        </div>
+
+        <button id="btn-pulse">Send Pulse</button>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const params = {
+            stiffness: 50,
+            damping: 0.05,
+            amplitude: 0.8,
+            waveType: 'longitudinal',
+            boundary: 'fixed',
+            mass: 1.0,
+            spacing: 2.5
+        };
+
+        const grid = { nx: 10, ny: 3, nz: 3 };
+        const particles = [];
+        const bonds = [];
+        
+        // Colors
+        const COLOR_ATOM = 0x4361EE;
+        const COLOR_EQ = new THREE.Color(0xCED4DA);
+        const COLOR_TENSION = new THREE.Color(0xFF3366);
+        const COLOR_COMPRESSION = new THREE.Color(0xF77F00);
+        const COLOR_FORCE = 0xFF3366;
+        const COLOR_VELOCITY = 0x06D6A0;
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(12, 10, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 0);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // Equilibrium Plane (Floor)
+        const gridHelper = new THREE.GridHelper(40, 40, 0xD1D9E6, 0xD1D9E6);
+        gridHelper.position.y = -(grid.ny * params.spacing) / 2 - 1;
+        scene.add(gridHelper);
+
+        // --- Build Lattice ---
+        const sphereGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        const sphereMat = new THREE.MeshStandardMaterial({ 
+            color: COLOR_ATOM, 
+            roughness: 0.2, 
+            metalness: 0.1 
+        });
+
+        const lineMat = new THREE.LineBasicMaterial({ color: COLOR_EQ, linewidth: 2 });
+
+        // Offset to center the lattice
+        const offsetX = (grid.nx - 1) * params.spacing / 2;
+        const offsetY = (grid.ny - 1) * params.spacing / 2;
+        const offsetZ = (grid.nz - 1) * params.spacing / 2;
+
+        // Create Particles
+        for (let x = 0; x < grid.nx; x++) {
+            for (let y = 0; y < grid.ny; y++) {
+                for (let z = 0; z < grid.nz; z++) {
+                    const px = x * params.spacing - offsetX;
+                    const py = y * params.spacing - offsetY;
+                    const pz = z * params.spacing - offsetZ;
+
+                    const mesh = new THREE.Mesh(sphereGeo, sphereMat);
+                    mesh.position.set(px, py, pz);
+                    scene.add(mesh);
+
+                    // Force Arrow (Red, points to equilibrium)
+                    const forceArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(px,py,pz), 0, COLOR_FORCE, 0.3, 0.2);
+                    scene.add(forceArrow);
+
+                    // Velocity Arrow (Green)
+                    const velArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(px,py,pz), 0, COLOR_VELOCITY, 0.3, 0.2);
+                    scene.add(velArrow);
+
+                    particles.push({
+                        ix: x, iy: y, iz: z,
+                        pos: new THREE.Vector3(px, py, pz),
+                        vel: new THREE.Vector3(0, 0, 0),
+                        acc: new THREE.Vector3(0, 0, 0),
+                        eq: new THREE.Vector3(px, py, pz), // Equilibrium position
+                        mesh: mesh,
+                        forceArrow: forceArrow,
+                        velArrow: velArrow,
+                        isFixed: false
+                    });
+                }
+            }
+        }
+
+        // Helper to get particle index
+        const getIndex = (x, y, z) => x * (grid.ny * grid.nz) + y * grid.nz + z;
+
+        // Create Bonds (Springs between nearest neighbors)
+        for (let x = 0; x < grid.nx; x++) {
+            for (let y = 0; y < grid.ny; y++) {
+                for (let z = 0; z < grid.nz; z++) {
+                    const p1Idx = getIndex(x, y, z);
+                    
+                    // Connect to x+1
+                    if (x < grid.nx - 1) addBond(p1Idx, getIndex(x + 1, y, z));
+                    // Connect to y+1
+                    if (y < grid.ny - 1) addBond(p1Idx, getIndex(x, y + 1, z));
+                    // Connect to z+1
+                    if (z < grid.nz - 1) addBond(p1Idx, getIndex(x, y, z + 1));
+                }
+            }
+        }
+
+        function addBond(idx1, idx2) {
+            const p1 = particles[idx1];
+            const p2 = particles[idx2];
+            const restLength = p1.eq.distanceTo(p2.eq);
+            
+            const geometry = new THREE.BufferGeometry().setFromPoints([p1.pos, p2.pos]);
+            // Use individual materials so we can color them independently based on strain
+            const material = new THREE.LineBasicMaterial({ color: COLOR_EQ });
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+
+            bonds.push({
+                p1: p1,
+                p2: p2,
+                restLength: restLength,
+                line: line
+            });
+        }
+
+        // --- Physics Engine ---
+        
+        // We use sub-stepping for numerical stability with high stiffness
+        const SUBSTEPS = 10; 
+        
+        function updatePhysics(dt) {
+            const subDt = dt / SUBSTEPS;
+            let totalPE = 0;
+
+            // Update boundary conditions
+            particles.forEach(p => {
+                if (p.ix === grid.nx - 1 && params.boundary === 'fixed') {
+                    p.isFixed = true;
+                } else {
+                    p.isFixed = false;
+                }
+            });
+
+            for (let step = 0; step < SUBSTEPS; step++) {
+                // 1. Reset accelerations
+                particles.forEach(p => p.acc.set(0, 0, 0));
+
+                // 2. Calculate forces from bonds (Nearest Neighbor coupling)
+                bonds.forEach(bond => {
+                    const d = new THREE.Vector3().subVectors(bond.p2.pos, bond.p1.pos);
+                    const dist = d.length();
+                    if (dist === 0) return;
+                    
+                    const dir = d.normalize();
+                    const stretch = dist - bond.restLength;
+                    
+                    // Hooke's Law: F = k * x
+                    const forceMag = params.stiffness * stretch;
+                    const forceVec = dir.multiplyScalar(forceMag);
+
+                    bond.p1.acc.add(forceVec); // Force on p1 is towards p2
+                    bond.p2.acc.sub(forceVec); // Force on p2 is towards p1
+
+                    // Calculate PE only on the last substep for UI
+                    if (step === SUBSTEPS - 1) {
+                        totalPE += 0.5 * params.stiffness * stretch * stretch;
+                    }
+                });
+
+                // 3. Calculate forces from structural anchors and damping
+                // To maintain the 3D lattice shape without diagonal springs, 
+                // we add a weak anchor to the absolute equilibrium position.
+                const anchorStiffness = params.stiffness * 0.1;
+
+                particles.forEach(p => {
+                    if (p.isFixed) {
+                        p.acc.set(0,0,0);
+                        p.vel.set(0,0,0);
+                        p.pos.copy(p.eq);
+                        return;
+                    }
+
+                    // Anchor force: F = -k(r - req)
+                    const displacement = new THREE.Vector3().subVectors(p.pos, p.eq);
+                    const anchorForce = displacement.clone().multiplyScalar(-anchorStiffness);
+                    p.acc.add(anchorForce);
+
+                    if (step === SUBSTEPS - 1) {
+                        totalPE += 0.5 * anchorStiffness * displacement.lengthSq();
+                    }
+
+                    // Damping force: F = -gamma * v
+                    const dampingForce = p.vel.clone().multiplyScalar(-params.damping * 60); // Scale damping for visual feel
+                    p.acc.add(dampingForce);
+
+                    // Newton's Second Law: a = F/m (m=1)
+                    // Semi-implicit Euler Integration
+                    p.vel.addScaledVector(p.acc, subDt);
+                    p.pos.addScaledVector(p.vel, subDt);
+                });
+            }
+
+            // Update UI
+            document.getElementById('pe-readout').innerText = totalPE.toFixed(2) + ' J';
+        }
+
+        // --- Visual Updates ---
+        const vec3 = new THREE.Vector3();
+
+        function updateVisuals() {
+            // Update Particles and Arrows
+            particles.forEach(p => {
+                p.mesh.position.copy(p.pos);
+
+                // Update Restoring Force Arrow (points to equilibrium)
+                const disp = vec3.subVectors(p.eq, p.pos);
+                const dispLen = disp.length();
+                if (dispLen > 0.05) {
+                    p.forceArrow.setDirection(disp.normalize());
+                    p.forceArrow.setLength(dispLen * 1.5, 0.2, 0.15);
+                    p.forceArrow.visible = true;
+                } else {
+                    p.forceArrow.visible = false;
+                }
+
+                // Update Velocity Arrow
+                const velLen = p.vel.length();
+                if (velLen > 0.1) {
+                    p.velArrow.setDirection(p.vel.clone().normalize());
+                    p.velArrow.setLength(velLen * 0.5, 0.2, 0.15);
+                    p.velArrow.visible = true;
+                } else {
+                    p.velArrow.visible = false;
+                }
+                
+                p.forceArrow.position.copy(p.pos);
+                p.velArrow.position.copy(p.pos);
+            });
+
+            // Update Bonds (Lines and Colors)
+            bonds.forEach(bond => {
+                const positions = bond.line.geometry.attributes.position.array;
+                positions[0] = bond.p1.pos.x;
+                positions[1] = bond.p1.pos.y;
+                positions[2] = bond.p1.pos.z;
+                positions[3] = bond.p2.pos.x;
+                positions[4] = bond.p2.pos.y;
+                positions[5] = bond.p2.pos.z;
+                bond.line.geometry.attributes.position.needsUpdate = true;
+
+                // Color based on strain
+                const currentLen = bond.p1.pos.distanceTo(bond.p2.pos);
+                const strain = (currentLen - bond.restLength) / bond.restLength;
+                
+                if (Math.abs(strain) < 0.01) {
+                    bond.line.material.color.copy(COLOR_EQ);
+                } else if (strain > 0) {
+                    // Tension -> Red
+                    const t = Math.min(strain * 5, 1);
+                    bond.line.material.color.lerpColors(COLOR_EQ, COLOR_TENSION, t);
+                } else {
+                    // Compression -> Orange
+                    const t = Math.min(Math.abs(strain) * 5, 1);
+                    bond.line.material.color.lerpColors(COLOR_EQ, COLOR_COMPRESSION, t);
+                }
+            });
+        }
+
+        // --- Interaction & UI ---
+        
+        function setupUI() {
+            const bindSlider = (id, paramKey, unit = '') => {
+                const el = document.getElementById(id);
+                const valEl = document.getElementById(`val-${id}`);
+                el.addEventListener('input', (e) => {
+                    params[paramKey] = parseFloat(e.target.value);
+                    valEl.innerText = e.target.value + (unit ? ' ' + unit : '');
+                });
+            };
+
+            bindSlider('stiffness', 'stiffness', 'N/m');
+            bindSlider('damping', 'damping');
+            bindSlider('amplitude', 'amplitude', 'm');
+
+            document.getElementById('waveType').addEventListener('change', (e) => {
+                params.waveType = e.target.value;
+            });
+
+            document.getElementById('boundary').addEventListener('change', (e) => {
+                params.boundary = e.target.value;
+            });
+
+            document.getElementById('btn-pulse').addEventListener('click', () => {
+                // Displace the first column of particles
+                particles.forEach(p => {
+                    if (p.ix === 0) {
+                        if (params.waveType === 'longitudinal') {
+                            p.pos.x += params.amplitude;
+                        } else if (params.waveType === 'transverse') {
+                            p.pos.y += params.amplitude;
+                        }
+                        p.vel.set(0,0,0);
+                    }
+                });
+            });
+        }
+
+        setupUI();
+
+        // --- Main Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Cap dt to prevent explosions if tab is inactive
+            let dt = clock.getDelta();
+            if (dt > 0.05) dt = 0.05; 
+
+            updatePhysics(dt);
+            updateVisuals();
+            
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        animate();
+
+    </script>
+</body>
+</html>

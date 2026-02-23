@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bacteriophage Life Cycle: High-Copy Number Vector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;1,400&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        svg {
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+        
+        /* Master Phage Animations */
+        @keyframes phage-descend {
+            0% { transform: translateY(-120px); opacity: 0; }
+            5% { transform: translateY(-120px); opacity: 1; }
+            15%, 90% { transform: translateY(0); opacity: 1; }
+            95%, 100% { transform: translateY(-120px); opacity: 0; }
+        }
+        @keyframes body-push {
+            0%, 20% { transform: translateY(0); }
+            25%, 90% { transform: translateY(30px); }
+            95%, 100% { transform: translateY(0); }
+        }
+        @keyframes sheath-shrink {
+            0%, 20% { transform: scaleY(1); }
+            25%, 90% { transform: scaleY(0.4); }
+            95%, 100% { transform: scaleY(1); }
+        }
+        @keyframes left-leg {
+            0%, 10% { transform: rotate(25deg); }
+            15%, 100% { transform: rotate(0deg); }
+        }
+        @keyframes right-leg {
+            0%, 10% { transform: rotate(-25deg); }
+            15%, 100% { transform: rotate(0deg); }
+        }
+        @keyframes label-fade {
+            0%, 10% { opacity: 0; }
+            15%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        /* DNA Injection Animations */
+        @keyframes dna-hide {
+            0%, 20% { stroke-dashoffset: 0; opacity: 1; }
+            25%, 90% { stroke-dashoffset: 150; opacity: 0; }
+            95%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes dna-travel {
+            0%, 20% { stroke-dashoffset: 85; opacity: 1; }
+            25% { stroke-dashoffset: 0; opacity: 1; }
+            30%, 100% { stroke-dashoffset: -85; opacity: 0; }
+        }
+        @keyframes dna-appear {
+            0%, 25% { stroke-dashoffset: 150; opacity: 1; }
+            30%, 75% { stroke-dashoffset: 0; opacity: 1; }
+            80%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        /* Replication Animations */
+        @keyframes copy-1 { 0%, 40% { opacity: 0; } 45%, 75% { opacity: 1; } 80%, 100% { opacity: 0; } }
+        @keyframes copy-2 { 0%, 45% { opacity: 0; } 50%, 75% { opacity: 1; } 80%, 100% { opacity: 0; } }
+        @keyframes copy-3 { 0%, 50% { opacity: 0; } 55%, 75% { opacity: 1; } 80%, 100% { opacity: 0; } }
+        @keyframes copy-4 { 0%, 55% { opacity: 0; } 60%, 75% { opacity: 1; } 80%, 100% { opacity: 0; } }
+        
+        @keyframes shiver {
+            0% { transform: translate(0px, 0px) rotate(0deg); }
+            25% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 1px) rotate(-1deg); }
+            75% { transform: translate(-1px, -1px) rotate(0deg); }
+            100% { transform: translate(0px, 0px) rotate(0deg); }
+        }
+
+        /* Assembly Animations */
+        @keyframes assemble-phage {
+            0%, 75% { opacity: 0; transform: scale(0.5); }
+            80%, 90% { opacity: 1; transform: scale(1); }
+            95%, 100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        /* Process Labels Animations */
+        @keyframes text-1 {
+            0%, 5% { opacity: 0.3; fill: #2C3E50; font-weight: normal; }
+            10%, 20% { opacity: 1; fill: #4A90D9; font-weight: bold; }
+            25%, 90% { opacity: 0.8; fill: #2C3E50; font-weight: normal; }
+            95%, 100% { opacity: 0.3; fill: #2C3E50; font-weight: normal; }
+        }
+        @keyframes text-2 {
+            0%, 20% { opacity: 0.3; fill: #2C3E50; font-weight: normal; }
+            25%, 40% { opacity: 1; fill: #4A90D9; font-weight: bold; }
+            45%, 90% { opacity: 0.8; fill: #2C3E50; font-weight: normal; }
+            95%, 100% { opacity: 0.3; fill: #2C3E50; font-weight: normal; }
+        }
+        @keyframes text-3 {
+            0%, 40% { opacity: 0.3; fill: #2C3E50; font-weight: normal; }
+            45%, 65% { opacity: 1; fill: #4A90D9; font-weight: bold; }
+            70%, 90% { opacity: 0.8; fill: #2C3E50; font-weight: normal; }
+            95%, 100% { opacity: 0.3; fill: #2C3E50; font-weight: normal; }
+        }
+        @keyframes text-4 {
+            0%, 65% { opacity: 0.3; fill: #2C3E50; font-weight: normal; }
+            70%, 85% { opacity: 1; fill: #4A90D9; font-weight: bold; }
+            90%, 90% { opacity: 0.8; fill: #2C3E50; font-weight: normal; }
+            95%, 100% { opacity: 0.3; fill: #2C3E50; font-weight: normal; }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 520" width="800" height="520" xmlns="http://www.w3.org/2000/svg">
+    <title>Bacteriophage Life Cycle: High-Copy Number Vector</title>
+    <desc>Animated diagram showing a bacteriophage injecting its DNA into an E. coli cell, followed by independent replication of the viral DNA and assembly of new phages.</desc>
+
+    <defs>
+        <!-- Glow filter for DNA -->
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+
+        <!-- Reusable Viral DNA Strand with 'ori' label -->
+        <g id="viral-dna-group">
+            <path d="M 0 0 C -20 20, 20 40, 0 60 C -20 80, 20 100, 0 120" fill="none" stroke="#FF6B6B" stroke-width="3.5" filter="url(#glow)"/>
+            <text x="12" y="65" font-family="'Roboto Mono', monospace" font-size="11" fill="#E74C3C" font-weight="bold">ori</text>
+        </g>
+
+        <!-- Reusable Mini-Phage for Assembly Phase -->
+        <g id="mini-phage">
+            <polygon points="0,-15 12,-4 12,10 0,18 -12,10 -12,-4" fill="#98D8C8" stroke="#7AB8A8" stroke-width="1.5"/>
+            <polygon points="0,-15 12,-4 0,4 -12,-4" fill="#ffffff" opacity="0.4"/>
+            <rect x="-3" y="18" width="6" height="15" fill="#7AB8A8"/>
+        </g>
+    </defs>
+
+    <!-- Title -->
+    <text x="400" y="40" font-family="'Inter', sans-serif" font-size="22" font-weight="bold" fill="#2C3E50" text-anchor="middle">Bacteriophage: High Copy Number Vector</text>
+
+    <!-- Legend / Key -->
+    <g transform="translate(640, 15)">
+        <rect x="0" y="0" width="140" height="85" rx="6" fill="#ffffff" stroke="#E8F4FD" stroke-width="2" opacity="0.95"/>
+        <text x="10" y="20" font-family="'Inter', sans-serif" font-size="12" font-weight="bold" fill="#2C3E50">Key</text>
+        <rect x="10" y="32" width="12" height="12" rx="2" fill="#98D8C8"/>
+        <text x="30" y="42" font-family="'Inter', sans-serif" font-size="11" fill="#2C3E50">Viral Proteins</text>
+        <rect x="10" y="50" width="12" height="12" rx="2" fill="#FF6B6B"/>
+        <text x="30" y="60" font-family="'Inter', sans-serif" font-size="11" fill="#2C3E50">Viral DNA</text>
+        <rect x="10" y="68" width="12" height="12" rx="2" fill="#2C3E50"/>
+        <text x="30" y="78" font-family="'Inter', sans-serif" font-size="11" fill="#2C3E50">Host DNA</text>
+    </g>
+
+    <!-- Process Labels -->
+    <g font-family="'Inter', sans-serif" font-size="14">
+        <text x="40" y="85" style="animation: text-1 15s infinite;">1. Adsorption</text>
+        <text x="40" y="115" style="animation: text-2 15s infinite;">2. DNA Injection</text>
+        <text x="40" y="145" style="animation: text-3 15s infinite;">3. Independent Replication</text>
+        <text x="40" y="175" style="animation: text-4 15s infinite;">4. Biosynthesis &amp; Assembly</text>
+    </g>
+
+    <!-- Host Cell (E. coli) -->
+    <g id="host-cell">
+        <!-- Outer Membrane -->
+        <rect x="100" y="180" width="600" height="260" rx="130" ry="130" fill="#E8F4FD" stroke="#4A90D9" stroke-width="8"/>
+        <!-- Inner Highlight for 3D effect -->
+        <rect x="106" y="186" width="588" height="248" rx="124" ry="124" fill="none" stroke="#ffffff" stroke-width="3" opacity="0.6"/>
+        
+        <!-- Cytoplasm details (Ribosomes/Proteins) -->
+        <circle cx="150" cy="250" r="3" fill="#98D8C8" opacity="0.6"/>
+        <circle cx="180" cy="380" r="2.5" fill="#98D8C8" opacity="0.5"/>
+        <circle cx="350" cy="220" r="4" fill="#98D8C8" opacity="0.4"/>
+        <circle cx="400" cy="400" r="3" fill="#98D8C8" opacity="0.7"/>
+        <circle cx="650" cy="350" r="2" fill="#98D8C8" opacity="0.5"/>
+        <circle cx="600" cy="210" r="3.5" fill="#98D8C8" opacity="0.6"/>
+
+        <!-- Bacterial Chromosome -->
+        <g id="nucleoid" stroke="#2C3E50" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" transform="translate(0, -10)">
+            <path d="M250,230 C280,200 320,220 330,260 C340,300 310,340 270,350 C230,360 190,340 170,300 C150,260 180,220 210,210 C240,200 270,240 250,270 C230,300 190,280 200,250 C210,220 260,210 290,240 C320,270 290,320 250,320 C210,320 180,290 210,260 C240,230 290,250 280,290 C270,330 220,310 230,270 C240,230 270,260 250,230" />
+        </g>
+        <!-- Host Chromosome Label -->
+        <line x1="120" y1="310" x2="160" y2="310" stroke="#2C3E50" stroke-width="1.5"/>
+        <text x="115" y="314" font-family="'Inter', sans-serif" font-size="13" fill="#2C3E50" text-anchor="end">Host Chromosome</text>
+        <text x="140" y="415" font-family="'Inter', sans-serif" font-size="15" fill="#2C3E50" font-style="italic">E. coli <tspan font-style="normal">Host Cell</tspan></text>
+    </g>
+
+    <!-- Independent Replication & Assembly (High Copy Number) -->
+    <g id="replication-pool">
+        <!-- Copy 1 -->
+        <g transform="translate(450, 210) rotate(15)">
+            <use href="#viral-dna-group" style="animation: copy-1 15s infinite, shiver 0.4s infinite alternate ease-in-out;" />
+            <g style="animation: assemble-phage 15s infinite; transform-origin: 0px 60px;">
+                <use href="#mini-phage" x="0" y="60" />
+            </g>
+        </g>
+        <!-- Copy 2 -->
+        <g transform="translate(550, 200) rotate(-10)">
+            <use href="#viral-dna-group" style="animation: copy-2 15s infinite, shiver 0.4s infinite alternate ease-in-out;" />
+            <g style="animation: assemble-phage 15s infinite; transform-origin: 0px 60px;">
+                <use href="#mini-phage" x="0" y="60" />
+            </g>
+        </g>
+        <!-- Copy 3 -->
+        <g transform="translate(600, 240) rotate(25)">
+            <use href="#viral-dna-group" style="animation: copy-3 15s infinite, shiver 0.4s infinite alternate ease-in-out;" />
+            <g style="animation: assemble-phage 15s infinite; transform-origin: 0px 60px;">
+                <use href="#mini-phage" x="0" y="60" />
+            </g>
+        </g>
+        <!-- Copy 4 -->
+        <g transform="translate(420, 260) rotate(-15)">
+            <use href="#viral-dna-group" style="animation: copy-4 15s infinite, shiver 0.4s infinite alternate ease-in-out;" />
+            <g style="animation: assemble-phage 15s infinite; transform-origin: 0px 60px;">
+                <use href="#mini-phage" x="0" y="60" />
+            </g>
+        </g>
+        <!-- Copy 5 -->
+        <g transform="translate(530, 280) rotate(5)">
+            <use href="#viral-dna-group" style="animation: copy-1 15s infinite, shiver 0.4s infinite alternate ease-in-out;" />
+            <g style="animation: assemble-phage 15s infinite; transform-origin: 0px 60px;">
+                <use href="#mini-phage" x="0" y="60" />
+            </g>
+        </g>
+        <!-- Copy 6 -->
+        <g transform="translate(620, 190) rotate(-20)">
+            <use href="#viral-dna-group" style="animation: copy-2 15s infinite, shiver 0.4s infinite alternate ease-in-out;" />
+            <g style="animation: assemble-phage 15s infinite; transform-origin: 0px 60px;">
+                <use href="#mini-phage" x="0" y="60" />
+            </g>
+        </g>
+        <!-- Copy 7 -->
+        <g transform="translate(470, 300) rotate(10)">
+            <use href="#viral-dna-group" style="animation: copy-3 15s infinite, shiver 0.4s infinite alternate ease-in-out;" />
+            <g style="animation: assemble-phage 15s infinite; transform-origin: 0px 60px;">
+                <use href="#mini-phage" x="0" y="60" />
+            </g>
+        </g>
+        <!-- Copy 8 -->
+        <g transform="translate(580, 310) rotate(-5)">
+            <use href="#viral-dna-group" style="animation: copy-4 15s infinite, shiver 0.4s infinite alternate ease-in-out;" />
+            <g style="animation: assemble-phage 15s infinite; transform-origin: 0px 60px;">
+                <use href="#mini-phage" x="0" y="60" />
+            </g>
+        </g>
+        
+        <!-- Original Injected Strand (Becomes Copy 9) -->
+        <g transform="translate(500, 230)">
+            <path d="M 0 0 C -20 20, 20 40, 0 60 C -20 80, 20 100, 0 120" fill="none" stroke="#FF6B6B" stroke-width="3.5" filter="url(#glow)" style="animation: dna-appear 15s infinite; stroke-dasharray: 150; stroke-dashoffset: 150;"/>
+            <g style="animation: assemble-phage 15s infinite; transform-origin: 0px 60px;">
+                <use href="#mini-phage" x="0" y="60" />
+            </g>
+        </g>
+    </g>
+
+    <!-- Master Bacteriophage (Infecting) -->
+    <g id="master-phage" style="animation: phage-descend 15s infinite;">
+        
+        <!-- Tail Fibers (Legs) -->
+        <g style="animation: left-leg 15s infinite; transform-origin: 490px 175px;">
+            <path d="M 490 175 L 450 195 L 430 225" fill="none" stroke="#98D8C8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 495 175 L 465 205" fill="none" stroke="#98D8C8" stroke-width="3" stroke-linecap="round"/>
+        </g>
+        <g style="animation: right-leg 15s infinite; transform-origin: 510px 175px;">
+            <path d="M 510 175 L 550 195 L 570 225" fill="none" stroke="#98D8C8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 505 175 L 535 205" fill="none" stroke="#98D8C8" stroke-width="3" stroke-linecap="round"/>
+        </g>
+
+        <!-- Baseplate -->
+        <rect x="482" y="175" width="36" height="6" fill="#98D8C8" rx="3"/>
+
+        <!-- Central Tube (Penetrates Membrane) -->
+        <rect x="496" y="125" width="8" height="55" fill="#E8F4FD" stroke="#98D8C8" stroke-width="2" style="animation: body-push 15s infinite;"/>
+        
+        <!-- DNA traveling down the tube -->
+        <line x1="500" y1="125" x2="500" y2="210" stroke="#FF6B6B" stroke-width="4" stroke-dasharray="85" stroke-dashoffset="85" style="animation: dna-travel 15s infinite;"/>
+
+        <!-- Contractile Sheath -->
+        <rect x="488" y="125" width="24" height="50" fill="#7AB8A8" rx="2" style="animation: sheath-shrink 15s infinite; transform-origin: 500px 175px;"/>
+
+        <!-- Phage Head (Capsid) & Internal DNA -->
+        <g style="animation: body-push 15s infinite;">
+            <!-- Icosahedral Capsid -->
+            <polygon points="500,65 530,85 530,110 500,125 470,110 470,85" fill="#98D8C8" stroke="#7AB8A8" stroke-width="2.5" stroke-linejoin="round"/>
+            <polygon points="500,65 530,85 500,100 470,85" fill="#ffffff" opacity="0.4"/>
+            <path d="M 470 85 L 500 100 L 530 85 M 500 100 L 500 125 M 500 65 L 500 100" fill="none" stroke="#7AB8A8" stroke-width="2"/>
+            
+            <!-- Viral DNA inside Head -->
+            <path d="M 500 75 C 525 75, 525 95, 500 95 C 475 95, 475 115, 500 115 C 525 115, 525 120, 500 120 L 500 125" fill="none" stroke="#FF6B6B" stroke-width="3.5" style="animation: dna-hide 15s infinite; stroke-dasharray: 150; stroke-dashoffset: 0;"/>
+        </g>
+
+        <!-- Phage Labels (Fade in when docked) -->
+        <g style="animation: label-fade 15s infinite;">
+            <line x1="540" y1="95" x2="580" y2="80" stroke="#98D8C8" stroke-width="1.5"/>
+            <text x="585" y="84" font-family="'Inter', sans-serif" font-size="13" fill="#2C3E50">Capsid (Head)</text>
+            
+            <line x1="545" y1="190" x2="580" y2="190" stroke="#98D8C8" stroke-width="1.5"/>
+            <text x="585" y="194" font-family="'Inter', sans-serif" font-size="13" fill="#2C3E50">Tail Fibers</text>
+        </g>
+    </g>
+
+    <!-- Bottom Annotation -->
+    <g transform="translate(40, 470)">
+        <rect x="0" y="0" width="720" height="36" rx="6" fill="#E8F4FD" stroke="#4A90D9" stroke-width="1.5"/>
+        <text x="360" y="23" font-family="'Inter', sans-serif" font-size="14" fill="#2C3E50" text-anchor="middle" font-weight="600">Phages replicate independently of chromosomal control, achieving high copy numbers per cell.</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

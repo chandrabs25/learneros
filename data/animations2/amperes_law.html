@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ampere's Law Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #1d1d1f;
+            --text-muted: #515154;
+            --accent-blue: #4361EE;
+            --accent-purple: #7209B7;
+            --accent-red: #FF3366;
+            --accent-green: #06D6A0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Sidebar UI */
+        #sidebar {
+            width: 320px;
+            min-width: 320px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        #current-slider::-webkit-slider-thumb { background: var(--accent-red); box-shadow: 0 2px 6px rgba(255, 51, 102, 0.4); }
+        #radius-slider::-webkit-slider-thumb { background: var(--accent-blue); box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4); }
+        #density-slider::-webkit-slider-thumb { background: var(--accent-purple); box-shadow: 0 2px 6px rgba(114, 9, 183, 0.4); }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .checkbox-group input {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent-purple);
+            cursor: pointer;
+        }
+
+        .checkbox-group label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        /* Canvas Area */
+        #canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            font-family: 'Roboto Mono', monospace;
+            z-index: 5;
+            min-width: 300px;
+        }
+
+        .math-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: var(--accent-purple);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .math-line {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: var(--text-main);
+        }
+
+        .math-line span.symbol {
+            color: var(--text-muted);
+        }
+
+        .math-divider {
+            height: 1px;
+            background: rgba(0,0,0,0.1);
+            margin: 12px 0;
+        }
+
+        .math-integral {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 12px 0;
+            color: var(--accent-purple);
+        }
+
+        .math-result {
+            font-weight: 700;
+            color: var(--accent-green);
+        }
+
+        /* Instructions */
+        #instructions {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #sidebar { width: 100%; height: auto; max-height: 40vh; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.8); }
+            #formula-card { top: 10px; left: 10px; padding: 12px; min-width: 250px; font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h1>Ampere's Law</h1>
+        <p class="subtitle">Interactive 3D visualization of the magnetic field generated by a steady current.</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Current (I)</span>
+                <span class="control-value" id="val-current">5.0 A</span>
+            </div>
+            <input type="range" id="current-slider" min="-10" max="10" step="0.5" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Amperian Loop Radius (r)</span>
+                <span class="control-value" id="val-radius">2.5 m</span>
+            </div>
+            <input type="range" id="radius-slider" min="1.0" max="5.0" step="0.1" value="2.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">B-Field Vectors</span>
+                <span class="control-value" id="val-density">12</span>
+            </div>
+            <input type="range" id="density-slider" min="4" max="24" step="1" value="12">
+            
+            <label class="checkbox-group">
+                <input type="checkbox" id="map-toggle">
+                <span>Show Field Map (XZ Plane)</span>
+            </label>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #2B2D42;"></div> Conductor (Wire)</div>
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Charge Carriers</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Amperian Loop</div>
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> Magnetic Field (B)</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Path Element (dl)</div>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="math-title">Live Calculations</div>
+            <div class="math-line"><span>Current <span class="symbol">I</span></span> <span id="math-i">5.00 A</span></div>
+            <div class="math-line"><span>Radius <span class="symbol">r</span></span> <span id="math-r">2.50 m</span></div>
+            <div class="math-divider"></div>
+            <div class="math-line"><span>Mag. Field <span class="symbol">B = &mu;₀I / 2&pi;r</span></span> <span id="math-b">4.00 &times; 10<sup>-7</sup> T</span></div>
+            <div class="math-integral">&oint; B &middot; dl = &mu;₀ I<sub>enc</sub></div>
+            <div class="math-line"><span><span class="symbol">B &times; (2&pi;r)</span></span> <span id="math-lhs">6.28 &times; 10<sup>-6</sup> T&middot;m</span></div>
+            <div class="math-line"><span><span class="symbol">&mu;₀ &times; I</span></span> <span class="math-result" id="math-rhs">6.28 &times; 10<sup>-6</sup> T&middot;m</span></div>
+        </div>
+        <div id="instructions">Left Click: Rotate | Right Click: Pan | Scroll: Zoom</div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const state = {
+            current: 5.0,
+            radius: 2.5,
+            numVectors: 12,
+            showMap: false
+        };
+
+        // Physics Constants (Scaled for visualization)
+        const MU_0_REAL = 4 * Math.PI * 1e-7; 
+        const VISUAL_B_SCALE = 1.5; // Multiplier for arrow lengths
+
+        // Colors
+        const COLORS = {
+            wire: 0x2B2D42,
+            particle: 0xFF3366,
+            loop: 0x4361EE,
+            bField: 0x7209B7,
+            dl: 0x06D6A0,
+            bg: 0xf0f4f8
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(COLORS.bg);
+        scene.fog = new THREE.FogExp2(COLORS.bg, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(8, 6, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Don't go too far below ground
+        controls.minDistance = 2;
+        controls.maxDistance = 30;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe0eaff, 0.4);
+        fillLight.position.set(-10, 5, -10);
+        scene.add(fillLight);
+
+        // --- Helper Function: Create Thick Arrow ---
+        function createThickArrow(color, shaftRadius, headRadius, headLength) {
+            const group = new THREE.Group();
+            
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: color, 
+                roughness: 0.2, 
+                metalness: 0.1 
+            });
+
+            // Shaft (Cylinder)
+            const shaftGeo = new THREE.CylinderGeometry(shaftRadius, shaftRadius, 1, 16);
+            shaftGeo.translate(0, 0.5, 0); // Origin at base
+            const shaft = new THREE.Mesh(shaftGeo, mat);
+            shaft.castShadow = true;
+
+            // Head (Cone)
+            const headGeo = new THREE.ConeGeometry(headRadius, headLength, 16);
+            headGeo.translate(0, headLength/2, 0); // Origin at base of cone
+            const head = new THREE.Mesh(headGeo, mat);
+            head.castShadow = true;
+
+            group.add(shaft);
+            group.add(head);
+            
+            // Function to update arrow dynamically
+            group.update = function(origin, direction, length) {
+                if (length < 0.05) {
+                    this.visible = false;
+                    return;
+                }
+                this.visible = true;
+                this.position.copy(origin);
+                
+                // Orient along direction
+                const axis = new THREE.Vector3(0, 1, 0);
+                this.quaternion.setFromUnitVectors(axis, direction.clone().normalize());
+
+                // Scale shaft and position head
+                const sLen = Math.max(0.01, length - headLength);
+                shaft.scale.set(1, sLen, 1);
+                head.position.y = sLen;
+            };
+
+            return group;
+        }
+
+        // --- Scene Objects ---
+
+        // 1. The Wire
+        const wireGeo = new THREE.CylinderGeometry(0.15, 0.15, 40, 32);
+        const wireMat = new THREE.MeshStandardMaterial({ color: COLORS.wire, roughness: 0.5, metalness: 0.8 });
+        const wire = new THREE.Mesh(wireGeo, wireMat);
+        wire.castShadow = true;
+        wire.receiveShadow = true;
+        scene.add(wire);
+
+        // Grid Helper for context
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xe5e5e5);
+        gridHelper.position.y = -5;
+        scene.add(gridHelper);
+
+        // 2. Charge Carriers (Particles)
+        const particles = new THREE.Group();
+        const particleGeo = new THREE.SphereGeometry(0.06, 16, 16);
+        const particleMat = new THREE.MeshBasicMaterial({ color: COLORS.particle });
+        const numParticles = 40;
+        
+        for(let i=0; i<numParticles; i++) {
+            const p = new THREE.Mesh(particleGeo, particleMat);
+            p.position.y = (Math.random() - 0.5) * 40;
+            // Slight random offset within wire
+            const angle = Math.random() * Math.PI * 2;
+            const r = Math.random() * 0.1;
+            p.position.x = r * Math.cos(angle);
+            p.position.z = r * Math.sin(angle);
+            particles.add(p);
+        }
+        scene.add(particles);
+
+        // 3. Amperian Loop
+        let loopMesh;
+        const loopMat = new THREE.MeshStandardMaterial({ 
+            color: COLORS.loop, 
+            transparent: true, 
+            opacity: 0.5,
+            roughness: 0.1,
+            metalness: 0.2,
+            side: THREE.DoubleSide
+        });
+
+        function updateLoopGeometry() {
+            if (loopMesh) scene.remove(loopMesh);
+            const loopGeo = new THREE.TorusGeometry(state.radius, 0.03, 16, 100);
+            loopGeo.rotateX(Math.PI / 2); // Lay flat on XZ plane
+            loopMesh = new THREE.Mesh(loopGeo, loopMat);
+            scene.add(loopMesh);
+        }
+        updateLoopGeometry();
+
+        // 4. B-Field Vectors on Loop
+        const bVectorsGroup = new THREE.Group();
+        scene.add(bVectorsGroup);
+        let bArrows = [];
+
+        function initBVectors() {
+            // Clear old
+            bArrows.forEach(a => bVectorsGroup.remove(a));
+            bArrows = [];
+            
+            for(let i=0; i<state.numVectors; i++) {
+                const arrow = createThickArrow(COLORS.bField, 0.04, 0.12, 0.3);
+                bArrows.push(arrow);
+                bVectorsGroup.add(arrow);
+            }
+        }
+        initBVectors();
+
+        function updateBVectors() {
+            const I = state.current;
+            const r = state.radius;
+            
+            // B = u0*I / 2*pi*r. Visual length proportional to I/r.
+            const bMagVisual = (Math.abs(I) / r) * VISUAL_B_SCALE * 0.2; 
+
+            for(let i=0; i<bArrows.length; i++) {
+                const angle = (i / bArrows.length) * Math.PI * 2;
+                const origin = new THREE.Vector3(r * Math.cos(angle), 0, r * Math.sin(angle));
+                
+                // Tangent direction (Right Hand Rule)
+                // If I > 0 (up), B is CCW. Tangent is (-sin, 0, cos)
+                let dirX = -Math.sin(angle);
+                let dirZ = Math.cos(angle);
+                
+                if (I < 0) {
+                    dirX = -dirX;
+                    dirZ = -dirZ;
+                }
+
+                const direction = new THREE.Vector3(dirX, 0, dirZ);
+                bArrows[i].update(origin, direction, bMagVisual);
+            }
+        }
+
+        // 5. Path Element (dl)
+        const dlArrow = createThickArrow(COLORS.dl, 0.06, 0.16, 0.4);
+        scene.add(dlArrow);
+        let dlAngle = 0;
+
+        // 6. Field Map (XZ Plane)
+        const fieldMapGroup = new THREE.Group();
+        scene.add(fieldMapGroup);
+        const mapArrows = [];
+        const mapSize = 8;
+        const mapStep = 1.5;
+
+        for(let x = -mapSize; x <= mapSize; x += mapStep) {
+            for(let z = -mapSize; z <= mapSize; z += mapStep) {
+                if (Math.abs(x) < 0.5 && Math.abs(z) < 0.5) continue; // Skip center
+                const arrow = createThickArrow(COLORS.bField, 0.02, 0.08, 0.2);
+                // Store base position
+                arrow.userData = { baseX: x, baseZ: z };
+                mapArrows.push(arrow);
+                fieldMapGroup.add(arrow);
+            }
+        }
+        fieldMapGroup.visible = false;
+
+        function updateFieldMap() {
+            if (!state.showMap) return;
+            const I = state.current;
+            
+            mapArrows.forEach(arrow => {
+                const x = arrow.userData.baseX;
+                const z = arrow.userData.baseZ;
+                const r = Math.sqrt(x*x + z*z);
+                
+                const bMagVisual = (Math.abs(I) / r) * VISUAL_B_SCALE * 0.15;
+                
+                // Angle of position vector
+                const angle = Math.atan2(z, x);
+                
+                let dirX = -Math.sin(angle);
+                let dirZ = Math.cos(angle);
+                
+                if (I < 0) {
+                    dirX = -dirX;
+                    dirZ = -dirZ;
+                }
+                
+                const origin = new THREE.Vector3(x, 0, z);
+                const direction = new THREE.Vector3(dirX, 0, dirZ);
+                
+                // Cap length to avoid massive arrows near center
+                const length = Math.min(bMagVisual, 1.5);
+                arrow.update(origin, direction, length);
+            });
+        }
+
+        // --- UI & Math Updates ---
+        
+        function formatSci(num) {
+            if (num === 0) return "0.00 &times; 10<sup>0</sup>";
+            const exp = num.toExponential(2);
+            const parts = exp.split('e');
+            return `${parts[0]} &times; 10<sup>${parseInt(parts[1])}</sup>`;
+        }
+
+        function updateMathUI() {
+            const I = state.current;
+            const r = state.radius;
+            
+            // Real physics calculations
+            const B_real = (MU_0_REAL * Math.abs(I)) / (2 * Math.PI * r);
+            const integral = B_real * (2 * Math.PI * r);
+            const rhs = MU_0_REAL * Math.abs(I);
+
+            document.getElementById('math-i').innerHTML = `${I.toFixed(2)} A`;
+            document.getElementById('math-r').innerHTML = `${r.toFixed(2)} m`;
+            
+            if (I === 0) {
+                document.getElementById('math-b').innerHTML = `0.00 T`;
+                document.getElementById('math-lhs').innerHTML = `0.00 T&middot;m`;
+                document.getElementById('math-rhs').innerHTML = `0.00 T&middot;m`;
+            } else {
+                document.getElementById('math-b').innerHTML = `${formatSci(B_real)} T`;
+                document.getElementById('math-lhs').innerHTML = `${formatSci(integral)} T&middot;m`;
+                document.getElementById('math-rhs').innerHTML = `${formatSci(rhs)} T&middot;m`;
+            }
+        }
+
+        function syncState() {
+            updateLoopGeometry();
+            updateBVectors();
+            updateFieldMap();
+            updateMathUI();
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('current-slider').addEventListener('input', (e) => {
+            state.current = parseFloat(e.target.value);
+            document.getElementById('val-current').innerText = state.current.toFixed(1) + ' A';
+            syncState();
+        });
+
+        document.getElementById('radius-slider').addEventListener('input', (e) => {
+            state.radius = parseFloat(e.target.value);
+            document.getElementById('val-radius').innerText = state.radius.toFixed(1) + ' m';
+            syncState();
+        });
+
+        document.getElementById('density-slider').addEventListener('input', (e) => {
+            state.numVectors = parseInt(e.target.value);
+            document.getElementById('val-density').innerText = state.numVectors;
+            initBVectors();
+            syncState();
+        });
+
+        document.getElementById('map-toggle').addEventListener('change', (e) => {
+            state.showMap = e.target.checked;
+            fieldMapGroup.visible = state.showMap;
+            if(state.showMap) updateFieldMap();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Initialize scene state
+        syncState();
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+
+            // 1. Animate Charge Carriers
+            const speed = state.current * 2.0; // Visual speed multiplier
+            particles.children.forEach(p => {
+                p.position.y += speed * delta;
+                // Wrap around
+                if (p.position.y > 20) p.position.y -= 40;
+                if (p.position.y < -20) p.position.y += 40;
+            });
+
+            // 2. Animate dl Vector (Integration Path)
+            // Always moves CCW as the path of integration is conventionally positive CCW
+            dlAngle += 0.5 * delta; 
+            if (dlAngle > Math.PI * 2) dlAngle -= Math.PI * 2;
+            
+            const dlOrigin = new THREE.Vector3(state.radius * Math.cos(dlAngle), 0, state.radius * Math.sin(dlAngle));
+            const dlDir = new THREE.Vector3(-Math.sin(dlAngle), 0, Math.cos(dlAngle));
+            
+            // Fixed visual length for dl
+            dlArrow.update(dlOrigin, dlDir, 1.0);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+    </script>
+</body>
+</html>

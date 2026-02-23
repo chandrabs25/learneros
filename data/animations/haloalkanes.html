@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wurtz Reaction Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;1,400&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        .bond {
+            stroke: #333333;
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+
+        .text-title {
+            font-size: 22px;
+            font-weight: 700;
+            fill: #333333;
+            text-anchor: middle;
+        }
+
+        .text-formula {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 18px;
+            font-weight: 700;
+            fill: #333333;
+            text-anchor: middle;
+        }
+
+        .text-condition {
+            font-size: 14px;
+            font-style: italic;
+            fill: #F77F00;
+            text-anchor: middle;
+        }
+
+        .text-note {
+            font-size: 14px;
+            fill: #666666;
+            text-anchor: middle;
+        }
+
+        .text-legend {
+            font-size: 12px;
+            fill: #444444;
+        }
+
+        .atom-label {
+            font-size: 14px;
+            font-weight: 700;
+            fill: #ffffff;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+
+        /* Animations */
+        .scene { animation: fadeScene 12s infinite ease-in-out; }
+        .anim-left-methyl { animation: moveLeftMethyl 12s infinite ease-in-out; }
+        .anim-right-methyl { animation: moveRightMethyl 12s infinite ease-in-out; }
+        .anim-fade-bond { animation: fadeBond 12s infinite ease-in-out; }
+        .anim-left-br { animation: moveLeftBr 12s infinite ease-in-out; }
+        .anim-right-br { animation: moveRightBr 12s infinite ease-in-out; }
+        .anim-na1 { animation: moveNa1 12s infinite ease-in-out; }
+        .anim-na2 { animation: moveNa2 12s infinite ease-in-out; }
+        .anim-arrow {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: drawArrows 12s infinite ease-in-out;
+        }
+        .anim-radical { animation: showRadical 12s infinite ease-in-out; }
+        .anim-c-c-bond {
+            stroke-dasharray: 80;
+            stroke-dashoffset: 80;
+            animation: drawCCBond 12s infinite ease-in-out;
+        }
+        .anim-ion { animation: showIon 12s infinite ease-in-out; }
+
+        @keyframes fadeScene {
+            0%, 5% { opacity: 0; }
+            10%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes moveLeftMethyl {
+            0%, 15% { transform: translate(200px, 250px); }
+            25%, 55% { transform: translate(220px, 250px); }
+            70%, 90% { transform: translate(360px, 250px); }
+            100% { transform: translate(200px, 250px); }
+        }
+
+        @keyframes moveRightMethyl {
+            0%, 15% { transform: translate(600px, 250px); }
+            25%, 55% { transform: translate(580px, 250px); }
+            70%, 90% { transform: translate(440px, 250px); }
+            100% { transform: translate(600px, 250px); }
+        }
+
+        @keyframes fadeBond {
+            0%, 34% { opacity: 1; }
+            36%, 100% { opacity: 0; }
+        }
+
+        @keyframes moveLeftBr {
+            0%, 15% { transform: translate(280px, 250px); }
+            25%, 35% { transform: translate(300px, 250px); }
+            40%, 55% { transform: translate(280px, 250px); }
+            70%, 90% { transform: translate(200px, 400px); }
+            100% { transform: translate(280px, 250px); }
+        }
+
+        @keyframes moveRightBr {
+            0%, 15% { transform: translate(520px, 250px); }
+            25%, 35% { transform: translate(500px, 250px); }
+            40%, 55% { transform: translate(520px, 250px); }
+            70%, 90% { transform: translate(600px, 400px); }
+            100% { transform: translate(520px, 250px); }
+        }
+
+        @keyframes moveNa1 {
+            0%, 10% { transform: translate(400px, 150px); }
+            25%, 55% { transform: translate(320px, 250px); }
+            70%, 90% { transform: translate(240px, 400px); }
+            100% { transform: translate(400px, 150px); }
+        }
+
+        @keyframes moveNa2 {
+            0%, 10% { transform: translate(400px, 350px); }
+            25%, 55% { transform: translate(480px, 250px); }
+            70%, 90% { transform: translate(560px, 400px); }
+            100% { transform: translate(400px, 350px); }
+        }
+
+        @keyframes drawArrows {
+            0%, 25% { stroke-dashoffset: 100; opacity: 0; }
+            26% { opacity: 1; stroke-dashoffset: 100; }
+            32%, 35% { stroke-dashoffset: 0; opacity: 1; }
+            36%, 100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+
+        @keyframes showRadical {
+            0%, 34% { opacity: 0; transform: scale(0); }
+            36%, 65% { opacity: 1; transform: scale(1); }
+            68%, 100% { opacity: 0; transform: scale(0); }
+        }
+
+        @keyframes drawCCBond {
+            0%, 60% { stroke-dashoffset: 80; opacity: 0; }
+            65% { opacity: 1; stroke-dashoffset: 80; }
+            75%, 90% { stroke-dashoffset: 0; opacity: 1; }
+            95%, 100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+
+        @keyframes showIon {
+            0%, 35% { opacity: 0; }
+            40%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Gradients for 3D Atom effect -->
+        <radialGradient id="gradC" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#666666"/>
+            <stop offset="100%" stop-color="#222222"/>
+        </radialGradient>
+        <radialGradient id="gradH" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFFFFF"/>
+            <stop offset="100%" stop-color="#DDDDDD"/>
+        </radialGradient>
+        <radialGradient id="gradBr" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#D2691E"/>
+            <stop offset="100%" stop-color="#8B0000"/>
+        </radialGradient>
+        <radialGradient id="gradNa" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#BBA0E8"/>
+            <stop offset="100%" stop-color="#6A5ACD"/>
+        </radialGradient>
+
+        <!-- Arrow Markers -->
+        <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 Z" fill="#333333"/>
+        </marker>
+        <marker id="fishhook" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+            <path d="M 2 2 L 8 5 L 2 5" fill="none" stroke="#F77F00" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+    </defs>
+
+    <!-- Background -->
+    <rect width="800" height="500" fill="#f8f9fa" rx="12"/>
+
+    <!-- Static UI Elements -->
+    <text x="400" y="40" class="text-title">Wurtz Reaction: Synthesis of Higher Alkanes</text>
+    
+    <!-- Reaction Equation -->
+    <text x="400" y="95" class="text-formula">
+        2CH<tspan dy="5" font-size="12">3</tspan><tspan dy="-5">Br + 2Na </tspan>
+        <tspan fill="#F77F00" font-weight="bold"> &nbsp; &nbsp; &nbsp; &nbsp; </tspan>
+        <tspan> CH</tspan><tspan dy="5" font-size="12">3</tspan><tspan dy="-5">-CH</tspan><tspan dy="5" font-size="12">3</tspan><tspan dy="-5"> + 2NaBr</tspan>
+    </text>
+    <path d="M 340 90 L 450 90" stroke="#333333" stroke-width="2" marker-end="url(#arrowhead)"/>
+    <text x="395" y="80" class="text-condition">dry ether</text>
+
+    <!-- Mechanism Note -->
+    <text x="400" y="480" class="text-note">Mechanism: Homolytic Fission &amp; Radical Coupling</text>
+
+    <!-- Legend -->
+    <g transform="translate(20, 420)">
+        <rect x="0" y="0" width="180" height="60" fill="#ffffff" stroke="#dddddd" rx="6" shadow="0 2px 5px rgba(0,0,0,0.1)"/>
+        <circle cx="15" cy="20" r="6" fill="url(#gradC)"/>
+        <text x="28" y="24" class="text-legend">Carbon</text>
+        
+        <circle cx="15" cy="40" r="6" fill="url(#gradH)" stroke="#CCCCCC" stroke-width="1"/>
+        <text x="28" y="44" class="text-legend">Hydrogen</text>
+        
+        <circle cx="100" cy="20" r="6" fill="url(#gradBr)"/>
+        <text x="113" y="24" class="text-legend">Bromine</text>
+        
+        <circle cx="100" cy="40" r="6" fill="url(#gradNa)"/>
+        <text x="113" y="44" class="text-legend">Sodium</text>
+    </g>
+
+    <!-- Animated Reaction Scene -->
+    <g class="scene">
+        
+        <!-- C-C Coupling Bond (Appears later) -->
+        <line x1="360" y1="250" x2="440" y2="250" class="bond anim-c-c-bond"/>
+
+        <!-- Left Methyl Group -->
+        <g class="anim-left-methyl">
+            <!-- C-Br Bond (Fades out) -->
+            <line x1="0" y1="0" x2="80" y2="0" class="bond anim-fade-bond"/>
+            
+            <!-- C-H Bonds -->
+            <line x1="0" y1="0" x2="-55" y2="0" class="bond"/>
+            <line x1="0" y1="0" x2="-20" y2="-55" class="bond"/>
+            <line x1="0" y1="0" x2="-20" y2="55" class="bond"/>
+            
+            <!-- Hydrogen Atoms -->
+            <circle cx="-55" cy="0" r="12" fill="url(#gradH)" stroke="#CCCCCC" stroke-width="2"/>
+            <circle cx="-20" cy="-55" r="12" fill="url(#gradH)" stroke="#CCCCCC" stroke-width="2"/>
+            <circle cx="-20" cy="55" r="12" fill="url(#gradH)" stroke="#CCCCCC" stroke-width="2"/>
+            
+            <!-- Carbon Atom -->
+            <circle cx="0" cy="0" r="18" fill="url(#gradC)"/>
+            
+            <!-- Radical Dot -->
+            <circle cx="22" cy="-15" r="5" fill="#F77F00" opacity="0.3" class="anim-radical"/>
+            <circle cx="22" cy="-15" r="3" fill="#F77F00" class="anim-radical"/>
+        </g>
+
+        <!-- Right Methyl Group -->
+        <g class="anim-right-methyl">
+            <!-- C-Br Bond (Fades out) -->
+            <line x1="0" y1="0" x2="-80" y2="0" class="bond anim-fade-bond"/>
+            
+            <!-- C-H Bonds -->
+            <line x1="0" y1="0" x2="55" y2="0" class="bond"/>
+            <line x1="0" y1="0" x2="20" y2="-55" class="bond"/>
+            <line x1="0" y1="0" x2="20" y2="55" class="bond"/>
+            
+            <!-- Hydrogen Atoms -->
+            <circle cx="55" cy="0" r="12" fill="url(#gradH)" stroke="#CCCCCC" stroke-width="2"/>
+            <circle cx="20" cy="-55" r="12" fill="url(#gradH)" stroke="#CCCCCC" stroke-width="2"/>
+            <circle cx="20" cy="55" r="12" fill="url(#gradH)" stroke="#CCCCCC" stroke-width="2"/>
+            
+            <!-- Carbon Atom -->
+            <circle cx="0" cy="0" r="18" fill="url(#gradC)"/>
+            
+            <!-- Radical Dot -->
+            <circle cx="-22" cy="-15" r="5" fill="#F77F00" opacity="0.3" class="anim-radical"/>
+            <circle cx="-22" cy="-15" r="3" fill="#F77F00" class="anim-radical"/>
+        </g>
+
+        <!-- Left Bromine -->
+        <g class="anim-left-br">
+            <circle cx="0" cy="0" r="20" fill="url(#gradBr)"/>
+            <text x="0" y="1" class="atom-label">Br</text>
+            <text x="18" y="-12" class="atom-label anim-ion" fill="#F77F00" font-size="18">-</text>
+        </g>
+
+        <!-- Right Bromine -->
+        <g class="anim-right-br">
+            <circle cx="0" cy="0" r="20" fill="url(#gradBr)"/>
+            <text x="0" y="1" class="atom-label">Br</text>
+            <text x="-18" y="-12" class="atom-label anim-ion" fill="#F77F00" font-size="18">-</text>
+        </g>
+
+        <!-- Sodium 1 (Left) -->
+        <g class="anim-na1">
+            <circle cx="0" cy="0" r="16" fill="url(#gradNa)"/>
+            <text x="0" y="1" class="atom-label" font-size="12">Na</text>
+            <text x="16" y="-10" class="atom-label anim-ion" fill="#F77F00" font-size="16">+</text>
+        </g>
+
+        <!-- Sodium 2 (Right) -->
+        <g class="anim-na2">
+            <circle cx="0" cy="0" r="16" fill="url(#gradNa)"/>
+            <text x="0" y="1" class="atom-label" font-size="12">Na</text>
+            <text x="-16" y="-10" class="atom-label anim-ion" fill="#F77F00" font-size="16">+</text>
+        </g>
+
+        <!-- Electron Flow Fishhook Arrows -->
+        <!-- Left C-Br homolytic cleavage -->
+        <path d="M 260 245 Q 280 210 295 230" fill="none" stroke="#F77F00" stroke-width="2" marker-end="url(#fishhook)" class="anim-arrow"/>
+        <path d="M 260 255 Q 240 290 225 270" fill="none" stroke="#F77F00" stroke-width="2" marker-end="url(#fishhook)" class="anim-arrow"/>
+        
+        <!-- Right C-Br homolytic cleavage -->
+        <path d="M 540 245 Q 520 210 505 230" fill="none" stroke="#F77F00" stroke-width="2" marker-end="url(#fishhook)" class="anim-arrow"/>
+        <path d="M 540 255 Q 560 290 575 270" fill="none" stroke="#F77F00" stroke-width="2" marker-end="url(#fishhook)" class="anim-arrow"/>
+        
+        <!-- Na to Br electron transfer -->
+        <path d="M 320 240 Q 310 210 305 230" fill="none" stroke="#F77F00" stroke-width="2" marker-end="url(#fishhook)" class="anim-arrow"/>
+        <path d="M 480 240 Q 490 210 495 230" fill="none" stroke="#F77F00" stroke-width="2" marker-end="url(#fishhook)" class="anim-arrow"/>
+
+    </g>
+</svg>
+
+</body>
+</html>

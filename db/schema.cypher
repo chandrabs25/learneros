@@ -1,5 +1,5 @@
 // =============================================================================
-// AI Tutor — Neo4j Schema: Constraints & Indexes
+// LearnerOS — Neo4j Schema: Constraints & Indexes
 // Run this once against a fresh Neo4j database to set up the schema.
 // =============================================================================
 

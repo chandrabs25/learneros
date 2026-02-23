@@ -1,4 +1,4 @@
-/* ─── AI Tutor Design System (Reference-Matched) ─── */
+/* ─── LearnerOS Design System (Reference-Matched) ─── */
 :root {
   --primary: #14b8a6;
   --primary-accent: #14b8a6;
@@ -127,7 +127,7 @@ body {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.25rem;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: -0.02em;
 }
 
@@ -849,9 +849,18 @@ body {
 
 .atlas-page .page-header {
   display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.atlas-page .header-left-group {
+  display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 3rem;
 }
 
 .atlas-page .page-header h1 {
@@ -860,6 +869,7 @@ body {
   font-size: clamp(2.5rem, 4vw, 3.75rem);
   letter-spacing: -0.03em;
   color: var(--text);
+  margin-top: 0.25rem;
 }
 
 .atlas-page .page-header p {
@@ -868,60 +878,153 @@ body {
   max-width: 36rem;
 }
 
+/* Header Filters (Tabs) */
+.header-filters {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 0.35rem;
+  border-radius: 9999px;
+}
+
+.filter-pill {
+  padding: 0.6rem 1.25rem;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-body);
+}
+
+.filter-pill.active {
+  background: var(--white);
+  color: var(--black);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.filter-pill:hover:not(.active) {
+  color: var(--black);
+}
+
 .subject-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-auto-rows: 320px;
   gap: 1.5rem;
+  grid-auto-flow: dense;
 }
 
 .subject-card {
   background: var(--white);
   border: 1px solid rgba(0, 0, 0, 0.05);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-3xl);
   box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  padding: 2rem;
+    0 10px 25px -5px rgba(0, 0, 0, 0.02),
+    0 4px 10px -5px rgba(0, 0, 0, 0.02);
+  padding: 2.5rem;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  min-height: 280px;
-  transition: all 0.3s ease-out;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   text-decoration: none;
   color: inherit;
+  position: relative;
 }
 
 .subject-card:hover {
-  border-color: #a1a1aa;
   box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
-  transform: translateY(-4px);
+  transform: translateY(-6px);
 }
 
 .subject-card.featured {
   grid-column: span 2;
   grid-row: span 2;
-  min-height: unset;
+  background: var(--white);
+}
+
+/* priority tag in the big card */
+.priority-badge {
+  background: #f1f5f9;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
 }
 
 .subject-card .card-top {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .subject-card .progress-ring {
   position: relative;
-  width: 3rem;
-  height: 3rem;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.subject-card .progress-ring .ring-text {
+.subject-card .progress-ring-text {
   position: absolute;
-  font-size: 0.625rem;
-  font-weight: 700;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--black);
+}
+
+.card-image-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem 0;
+}
+
+.featured-image-placeholder {
+  width: 240px;
+  height: 240px;
+  background: conic-gradient(from 180deg at 50% 50%, #0f172a -43.13deg, #1e293b 65.62deg, #020617 210deg, #0f172a 316.87deg);
+  border-radius: 24px;
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.featured-image-placeholder::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, transparent 40%, rgba(0, 0, 0, 0.6) 100%);
+}
+
+.orb-core {
+  width: 80px;
+  height: 80px;
+  background: #14b8a6;
+  border-radius: 50%;
+  box-shadow: inset -10px -10px 20px rgba(0, 0, 0, 0.5), 0 0 40px rgba(20, 184, 166, 0.4);
+  position: relative;
+  z-index: 2;
+}
+
+.orb-ring {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  transform: rotateX(70deg) rotateY(20deg);
+  z-index: 1;
 }
 
 .subject-card .card-icon {
@@ -931,18 +1034,24 @@ body {
   padding: 1rem 0;
   font-size: 3.5rem;
   transition: transform 0.3s;
+  flex: 1;
 }
 
 .subject-card:hover .card-icon {
-  transform: translateY(-4px);
+  transform: translateY(-4px) scale(1.05);
 }
 
 .subject-card .card-bottom h3 {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   color: var(--text);
   margin-bottom: 0.25rem;
+}
+
+.subject-card.featured .card-bottom h3 {
+  font-size: 2.5rem;
+  letter-spacing: -0.02em;
 }
 
 .subject-card .card-bottom .tag {
@@ -956,23 +1065,62 @@ body {
 .subject-card .card-meta {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  color: var(--text-muted);
+  gap: 1.25rem;
   font-size: 0.875rem;
-  font-weight: 500;
-  margin-top: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.5rem;
+  color: var(--text-muted);
+}
+
+.subject-card .card-meta span {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.icon-small {
+  font-size: 1.1rem !important;
 }
 
 .subject-card.coming-soon {
-  opacity: 0.8;
+  opacity: 0.95;
   background: var(--white);
   cursor: default;
-  border-style: dashed;
+  border-color: rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
 }
 
 .subject-card.coming-soon:hover {
   transform: none;
-  box-shadow: none;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.02), 0 4px 10px -5px rgba(0, 0, 0, 0.02);
+}
+
+.fab-button {
+  position: fixed;
+  bottom: 2.5rem;
+  right: 2.5rem;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background: var(--black);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  border: none;
+  z-index: 100;
+  transition: transform 0.2s;
+}
+
+.fab-button:hover {
+  transform: scale(1.08);
+}
+
+.fab-button .material-symbols-outlined {
+  font-size: 2rem;
 }
 
 /* ─── Deep Dive: Chapter Explorer ─── */

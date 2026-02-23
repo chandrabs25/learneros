@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Isomerism in C4H8</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        svg {
+            max-width: 1000px;
+            width: 100%;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Animation Global Settings */
+        .anim {
+            animation-duration: 12s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+        }
+
+        /* Atom Keyframes (cx, cy) */
+        @keyframes kf_CA {
+            0%, 25% { cx: 260px; cy: 250px; }
+            33.3%, 58.3% { cx: 320px; cy: 180.7px; }
+            66.6%, 91.6% { cx: 320px; cy: 180.7px; }
+            100% { cx: 260px; cy: 250px; }
+        }
+        @keyframes kf_CB {
+            0%, 25% { cx: 340px; cy: 250px; }
+            33.3%, 58.3% { cx: 360px; cy: 250px; }
+            66.6%, 91.6% { cx: 360px; cy: 250px; }
+            100% { cx: 340px; cy: 250px; }
+        }
+        @keyframes kf_CC {
+            0%, 25% { cx: 380px; cy: 180.7px; }
+            33.3%, 58.3% { cx: 440px; cy: 250px; }
+            66.6%, 91.6% { cx: 440px; cy: 250px; }
+            100% { cx: 380px; cy: 180.7px; }
+        }
+        @keyframes kf_CD {
+            0%, 25% { cx: 460px; cy: 180.7px; }
+            33.3%, 58.3% { cx: 480px; cy: 180.7px; }
+            66.6%, 91.6% { cx: 480px; cy: 319.3px; }
+            100% { cx: 460px; cy: 180.7px; }
+        }
+
+        /* Hydrogen Keyframes */
+        @keyframes kf_HA1 {
+            0%, 25% { cx: 220px; cy: 180.7px; }
+            33.3%, 58.3% { cx: 240px; cy: 180.7px; }
+            66.6%, 91.6% { cx: 240px; cy: 180.7px; }
+            100% { cx: 220px; cy: 180.7px; }
+        }
+        @keyframes kf_HA2 {
+            0%, 25% { cx: 220px; cy: 319.3px; }
+            33.3%, 58.3% { cx: 360px; cy: 111.4px; }
+            66.6%, 91.6% { cx: 360px; cy: 111.4px; }
+            100% { cx: 220px; cy: 319.3px; }
+        }
+        @keyframes kf_HB1 {
+            0%, 25% { cx: 380px; cy: 319.3px; }
+            33.3%, 58.3% { cx: 320px; cy: 319.3px; }
+            66.6%, 91.6% { cx: 320px; cy: 319.3px; }
+            100% { cx: 380px; cy: 319.3px; }
+        }
+        @keyframes kf_HC1 {
+            0%, 25% { cx: 340px; cy: 111.4px; }
+            33.3%, 58.3% { cx: 480px; cy: 319.3px; }
+            66.6%, 91.6% { cx: 480px; cy: 180.7px; }
+            100% { cx: 340px; cy: 111.4px; }
+        }
+        @keyframes kf_Hmig {
+            0%, 25% { cx: 420px; cy: 111.4px; }
+            33.3%, 58.3% { cx: 280px; cy: 111.4px; }
+            66.6%, 91.6% { cx: 280px; cy: 111.4px; }
+            100% { cx: 420px; cy: 111.4px; }
+        }
+        @keyframes kf_HD1 {
+            0%, 25% { cx: 500px; cy: 111.4px; }
+            33.3%, 58.3% { cx: 560px; cy: 180.7px; }
+            66.6%, 91.6% { cx: 560px; cy: 319.3px; }
+            100% { cx: 500px; cy: 111.4px; }
+        }
+        @keyframes kf_HD2 {
+            0%, 25% { cx: 540px; cy: 180.7px; }
+            33.3%, 58.3% { cx: 440px; cy: 111.4px; }
+            66.6%, 91.6% { cx: 440px; cy: 388.6px; }
+            100% { cx: 540px; cy: 180.7px; }
+        }
+        @keyframes kf_HD3 {
+            0%, 25% { cx: 500px; cy: 250px; }
+            33.3%, 58.3% { cx: 520px; cy: 250px; }
+            66.6%, 91.6% { cx: 520px; cy: 250px; }
+            100% { cx: 500px; cy: 250px; }
+        }
+
+        /* Bond Keyframes (d attribute) */
+        @keyframes kf_bond_AB {
+            0%, 25% { d: path('M 260 250 L 340 250'); }
+            33.3%, 58.3% { d: path('M 320 180.7 L 360 250'); }
+            66.6%, 91.6% { d: path('M 320 180.7 L 360 250'); }
+            100% { d: path('M 260 250 L 340 250'); }
+        }
+        @keyframes kf_bond_BC {
+            0%, 25% { d: path('M 340 250 L 380 180.7'); }
+            33.3%, 58.3% { d: path('M 360 250 L 440 250'); }
+            66.6%, 91.6% { d: path('M 360 250 L 440 250'); }
+            100% { d: path('M 340 250 L 380 180.7'); }
+        }
+        @keyframes kf_bond_CD {
+            0%, 25% { d: path('M 380 180.7 L 460 180.7'); }
+            33.3%, 58.3% { d: path('M 440 250 L 480 180.7'); }
+            66.6%, 91.6% { d: path('M 440 250 L 480 319.3'); }
+            100% { d: path('M 380 180.7 L 460 180.7'); }
+        }
+        @keyframes kf_bond_pi {
+            0%, 25% { d: path('M 260 242 L 340 242'); }
+            33.3%, 58.3% { d: path('M 360 242 L 440 242'); }
+            66.6%, 91.6% { d: path('M 360 242 L 440 242'); }
+            100% { d: path('M 260 242 L 340 242'); }
+        }
+        @keyframes kf_bond_HA1 {
+            0%, 25% { d: path('M 260 250 L 220 180.7'); }
+            33.3%, 58.3% { d: path('M 320 180.7 L 240 180.7'); }
+            66.6%, 91.6% { d: path('M 320 180.7 L 240 180.7'); }
+            100% { d: path('M 260 250 L 220 180.7'); }
+        }
+        @keyframes kf_bond_HA2 {
+            0%, 25% { d: path('M 260 250 L 220 319.3'); }
+            33.3%, 58.3% { d: path('M 320 180.7 L 360 111.4'); }
+            66.6%, 91.6% { d: path('M 320 180.7 L 360 111.4'); }
+            100% { d: path('M 260 250 L 220 319.3'); }
+        }
+        @keyframes kf_bond_HB1 {
+            0%, 25% { d: path('M 340 250 L 380 319.3'); }
+            33.3%, 58.3% { d: path('M 360 250 L 320 319.3'); }
+            66.6%, 91.6% { d: path('M 360 250 L 320 319.3'); }
+            100% { d: path('M 340 250 L 380 319.3'); }
+        }
+        @keyframes kf_bond_HC1 {
+            0%, 25% { d: path('M 380 180.7 L 340 111.4'); }
+            33.3%, 58.3% { d: path('M 440 250 L 480 319.3'); }
+            66.6%, 91.6% { d: path('M 440 250 L 480 180.7'); }
+            100% { d: path('M 380 180.7 L 340 111.4'); }
+        }
+        @keyframes kf_bond_Hmig {
+            0%, 25% { d: path('M 380 180.7 L 420 111.4'); }
+            33.3%, 58.3% { d: path('M 320 180.7 L 280 111.4'); }
+            66.6%, 91.6% { d: path('M 320 180.7 L 280 111.4'); }
+            100% { d: path('M 380 180.7 L 420 111.4'); }
+        }
+        @keyframes kf_bond_HD1 {
+            0%, 25% { d: path('M 460 180.7 L 500 111.4'); }
+            33.3%, 58.3% { d: path('M 480 180.7 L 560 180.7'); }
+            66.6%, 91.6% { d: path('M 480 319.3 L 560 319.3'); }
+            100% { d: path('M 460 180.7 L 500 111.4'); }
+        }
+        @keyframes kf_bond_HD2 {
+            0%, 25% { d: path('M 460 180.7 L 540 180.7'); }
+            33.3%, 58.3% { d: path('M 480 180.7 L 440 111.4'); }
+            66.6%, 91.6% { d: path('M 480 319.3 L 440 388.6'); }
+            100% { d: path('M 460 180.7 L 540 180.7'); }
+        }
+        @keyframes kf_bond_HD3 {
+            0%, 25% { d: path('M 460 180.7 L 500 250'); }
+            33.3%, 58.3% { d: path('M 480 180.7 L 520 250'); }
+            66.6%, 91.6% { d: path('M 480 319.3 L 520 250'); }
+            100% { d: path('M 460 180.7 L 500 250'); }
+        }
+
+        /* Arrows and Highlights Keyframes */
+        @keyframes kf_arrow_transA {
+            0%, 24% { opacity: 0; }
+            26%, 31% { opacity: 1; }
+            33.3%, 100% { opacity: 0; }
+        }
+        @keyframes kf_arrow_transB {
+            0%, 57% { opacity: 0; }
+            59%, 65% { opacity: 1; }
+            66.6%, 100% { opacity: 0; }
+        }
+
+        /* Label Keyframes */
+        @keyframes kf_label1 {
+            0%, 25% { opacity: 1; transform: translateY(0); }
+            28%, 100% { opacity: 0; transform: translateY(10px); }
+            97%, 100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes kf_label2 {
+            0%, 30% { opacity: 0; transform: translateY(-10px); }
+            33.3%, 58.3% { opacity: 1; transform: translateY(0); }
+            61%, 100% { opacity: 0; transform: translateY(10px); }
+        }
+        @keyframes kf_label3 {
+            0%, 63% { opacity: 0; transform: translateY(-10px); }
+            66.6%, 91.6% { opacity: 1; transform: translateY(0); }
+            94%, 100% { opacity: 0; transform: translateY(10px); }
+        }
+
+        /* SVG Element Styling */
+        .atom-c { fill: #404040; stroke: #222; stroke-width: 2px; }
+        .atom-h { fill: #CCCCCC; stroke: #999; stroke-width: 1px; }
+        .bond { fill: none; stroke: #666666; stroke-width: 4px; stroke-linecap: round; }
+        .bond-pi { fill: none; stroke: #999999; stroke-width: 4px; stroke-linecap: round; }
+        .bond-glow { fill: none; stroke: #F77F00; stroke-width: 16px; opacity: 0.15; stroke-linecap: round; }
+        
+        .arrow-orange { fill: none; stroke: #F77F00; stroke-width: 3px; stroke-dasharray: 6 4; marker-end: url(#head-orange); }
+        .arrow-purple { fill: none; stroke: #7209B7; stroke-width: 3px; stroke-dasharray: 6 4; marker-end: url(#head-purple); }
+
+        .text-title { font-size: 24px; font-weight: 700; fill: #2b2b2b; text-anchor: middle; }
+        .text-formula { font-family: 'Roboto Mono', monospace; font-size: 20px; font-weight: 500; fill: #4a4a4a; text-anchor: end; }
+        .text-label { font-size: 20px; font-weight: 600; fill: #1a1a1a; text-anchor: middle; }
+        .text-sublabel { font-size: 14px; font-weight: 400; fill: #666; text-anchor: middle; }
+        .text-legend { font-size: 12px; fill: #555; alignment-baseline: middle; }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Isomerism in C4H8</title>
+        <desc>An animated diagram showing the transition between But-1-ene, cis-But-2-ene, and trans-But-2-ene to illustrate positional and geometrical isomerism.</desc>
+
+        <defs>
+            <marker id="head-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+            </marker>
+            <marker id="head-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7" />
+            </marker>
+        </defs>
+
+        <!-- Static UI Elements -->
+        <text x="400" y="45" class="text-title">Isomerism: Structural vs. Stereoisomerism</text>
+        <text x="760" y="45" class="text-formula">C<tspan baseline-shift="sub" font-size="0.75em">4</tspan>H<tspan baseline-shift="sub" font-size="0.75em">8</tspan></text>
+
+        <!-- Legend -->
+        <g transform="translate(30, 420)">
+            <rect x="0" y="0" width="180" height="65" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" />
+            <circle cx="15" cy="15" r="5" class="atom-c" />
+            <text x="28" y="16" class="text-legend">Carbon</text>
+            <circle cx="15" cy="32" r="4" class="atom-h" />
+            <text x="28" y="33" class="text-legend">Hydrogen</text>
+            <line x1="100" y1="15" x2="120" y2="15" class="arrow-orange" stroke-width="2" />
+            <text x="128" y="16" class="text-legend">e⁻ Flow</text>
+            <line x1="100" y1="32" x2="120" y2="32" class="arrow-purple" stroke-width="2" />
+            <text x="128" y="33" class="text-legend">Rotation</text>
+            <line x1="10" y1="49" x2="25" y2="49" class="bond" stroke-width="2" />
+            <line x1="10" y1="53" x2="25" y2="53" class="bond-pi" stroke-width="2" />
+            <text x="28" y="52" class="text-legend">Double Bond (Rigid)</text>
+        </g>
+
+        <!-- Dynamic Labels -->
+        <g transform="translate(400, 440)">
+            <g class="anim" style="animation-name: kf_label1;">
+                <text x="0" y="0" class="text-label">But-1-ene</text>
+                <text x="0" y="20" class="text-sublabel">(Positional Isomer)</text>
+            </g>
+            <g class="anim" style="animation-name: kf_label2; opacity: 0;">
+                <text x="0" y="0" class="text-label">cis-But-2-ene</text>
+                <text x="0" y="20" class="text-sublabel">(Geometrical Isomer)</text>
+            </g>
+            <g class="anim" style="animation-name: kf_label3; opacity: 0;">
+                <text x="0" y="0" class="text-label">trans-But-2-ene</text>
+                <text x="0" y="20" class="text-sublabel">(Geometrical Isomer)</text>
+            </g>
+        </g>
+
+        <!-- Transition Arrows -->
+        <g class="anim" style="animation-name: kf_arrow_transA; opacity: 0;">
+            <!-- H Migration -->
+            <path d="M 420 95 Q 350 30 280 95" class="arrow-purple" />
+            <!-- Pi Bond Shift -->
+            <path d="M 300 225 Q 340 190 380 225" class="arrow-orange" />
+        </g>
+        <g class="anim" style="animation-name: kf_arrow_transB; opacity: 0;">
+            <!-- 180 Rotation -->
+            <path d="M 510 180 A 70 70 0 0 1 510 320" class="arrow-purple" />
+        </g>
+
+        <!-- Molecule Group -->
+        <g id="molecule">
+            <!-- Bonds -->
+            <path class="bond anim" style="animation-name: kf_bond_AB;" />
+            <path class="bond anim" style="animation-name: kf_bond_BC;" />
+            <path class="bond anim" style="animation-name: kf_bond_CD;" />
+            
+            <path class="bond-glow anim" style="animation-name: kf_bond_pi;" />
+            <path class="bond-pi anim" style="animation-name: kf_bond_pi;" />
+
+            <path class="bond anim" style="animation-name: kf_bond_HA1;" />
+            <path class="bond anim" style="animation-name: kf_bond_HA2;" />
+            <path class="bond anim" style="animation-name: kf_bond_HB1;" />
+            <path class="bond anim" style="animation-name: kf_bond_HC1;" />
+            <path class="bond anim" style="animation-name: kf_bond_Hmig;" />
+            <path class="bond anim" style="animation-name: kf_bond_HD1;" />
+            <path class="bond anim" style="animation-name: kf_bond_HD2;" />
+            <path class="bond anim" style="animation-name: kf_bond_HD3;" />
+
+            <!-- Hydrogen Atoms -->
+            <circle r="10" class="atom-h anim" style="animation-name: kf_HA1;" />
+            <circle r="10" class="atom-h anim" style="animation-name: kf_HA2;" />
+            <circle r="10" class="atom-h anim" style="animation-name: kf_HB1;" />
+            <circle r="10" class="atom-h anim" style="animation-name: kf_HC1;" />
+            <circle r="10" class="atom-h anim" style="animation-name: kf_Hmig;" />
+            <circle r="10" class="atom-h anim" style="animation-name: kf_HD1;" />
+            <circle r="10" class="atom-h anim" style="animation-name: kf_HD2;" />
+            <circle r="10" class="atom-h anim" style="animation-name: kf_HD3;" />
+
+            <!-- Carbon Atoms -->
+            <circle r="15" class="atom-c anim" style="animation-name: kf_CA;" />
+            <circle r="15" class="atom-c anim" style="animation-name: kf_CB;" />
+            <circle r="15" class="atom-c anim" style="animation-name: kf_CC;" />
+            <circle r="15" class="atom-c anim" style="animation-name: kf_CD;" />
+        </g>
+
+    </svg>
+
+</body>
+</html>

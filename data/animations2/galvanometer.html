@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moving Coil Galvanometer Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2D3436;
+            --accent-blue: #4361EE;
+            --accent-red: #FF3366;
+            --border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            flex-grow: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        /* Glassmorphic Control Panel */
+        #ui-panel {
+            width: 320px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--border-color);
+            box-shadow: -5px 0 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 0.8rem;
+            color: #636e72;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #dfe6e9;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--border-color);
+            padding: 15px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            margin: 5px 0;
+            color: var(--text-main);
+        }
+
+        .math-highlight {
+            color: var(--accent-red);
+            font-weight: 700;
+        }
+
+        .legend {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 0.75rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .color-box {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+            }
+            #ui-panel {
+                width: 100%;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+            }
+            #canvas-container {
+                height: 60%;
+            }
+            #formula-card {
+                top: 10px;
+                left: 10px;
+                padding: 10px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div style="font-weight: 600; margin-bottom: 8px; font-size: 0.9rem;">Physics Engine</div>
+            <div class="math-line">τ_d = N·I·A·B</div>
+            <div class="math-line">τ_r = k·φ</div>
+            <div class="math-line" style="border-top: 1px solid #ccc; padding-top: 5px; margin-top: 5px;">
+                φ = (N·A·B / k) · I
+            </div>
+            <div class="math-line">
+                Deflection: <span id="out-angle" class="math-highlight">0.00°</span>
+            </div>
+            <div class="legend">
+                <div class="legend-item"><div class="color-box" style="background:#7209B7"></div> B-Field</div>
+                <div class="legend-item"><div class="color-box" style="background:#4361EE"></div> Current</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Moving Coil Galvanometer</h1>
+        <p class="subtitle">Interactive 3D Simulation of electromagnetic torque and radial magnetic fields.</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Current (I)</span>
+                <span class="control-value"><span id="val-currI">1.0</span> mA</span>
+            </div>
+            <input type="range" id="currI" min="-5.0" max="5.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Number of Turns (N)</span>
+                <span class="control-value"><span id="val-numN">100</span></span>
+            </div>
+            <input type="range" id="numN" min="10" max="500" step="10" value="100">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Magnetic Field (B)</span>
+                <span class="control-value"><span id="val-magB">0.50</span> T</span>
+            </div>
+            <input type="range" id="magB" min="0.1" max="1.5" step="0.05" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Coil Area (A)</span>
+                <span class="control-value"><span id="val-areaA">2.0</span> cm²</span>
+            </div>
+            <input type="range" id="areaA" min="1.0" max="4.0" step="0.2" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Spring Constant (k)</span>
+                <span class="control-value"><span id="val-torsK">2.0</span> x10⁻⁴</span>
+            </div>
+            <input type="range" id="torsK" min="1.0" max="10.0" step="0.5" value="2.0">
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const state = {
+            currI: 1.0,
+            numN: 100,
+            magB: 0.5,
+            areaA: 2.0,
+            torsK: 2.0,
+            currentAngle: 0,
+            targetAngle: 0,
+            particleOffset: 0
+        };
+
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0, 8, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Don't go too far below ground
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.left = -10;
+        dirLight.shadow.camera.right = 10;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-5, 5, -5);
+        scene.add(fillLight);
+
+        // --- Materials ---
+        const matNorth = new THREE.MeshStandardMaterial({ color: 0xFF5F6D, roughness: 0.3, metalness: 0.2 });
+        const matSouth = new THREE.MeshStandardMaterial({ color: 0x5D9CEC, roughness: 0.3, metalness: 0.2 });
+        const matCore = new THREE.MeshStandardMaterial({ color: 0xBDC3C7, roughness: 0.4, metalness: 0.8 });
+        const matCoil = new THREE.MeshStandardMaterial({ color: 0xF77F00, roughness: 0.2, metalness: 0.9 });
+        const matPointer = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.2 });
+        const matScale = new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, roughness: 0.1 });
+        const matTick = new THREE.MeshBasicMaterial({ color: 0x2D3436 });
+        const matSpring = new THREE.LineBasicMaterial({ color: 0xFFD700, linewidth: 2 });
+
+        // --- Geometry Builders ---
+
+        // 1. Concave Magnets
+        function createConcaveMagnet(isNorth) {
+            const shape = new THREE.Shape();
+            const width = 2.5;
+            const height = 3;
+            const radius = 1.6; // Core radius is 1.4, leaving 0.2 air gap
+
+            shape.moveTo(0, height/2);
+            shape.lineTo(width, height/2);
+            shape.lineTo(width, -height/2);
+            shape.lineTo(0, -height/2);
+            // Concave cutout
+            shape.absarc(0, 0, radius, -Math.PI/2, Math.PI/2, true);
+
+            const extrudeSettings = { depth: 4, bevelEnabled: true, bevelSegments: 2, steps: 2, bevelSize: 0.05, bevelThickness: 0.05, curveSegments: 32 };
+            const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            geo.center();
+
+            const mesh = new THREE.Mesh(geo, isNorth ? matNorth : matSouth);
+            mesh.rotation.x = Math.PI / 2;
+            mesh.position.x = isNorth ? -2.8 : 2.8;
+            if (!isNorth) mesh.rotation.y = Math.PI;
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            return mesh;
+        }
+
+        const northPole = createConcaveMagnet(true);
+        const southPole = createConcaveMagnet(false);
+        scene.add(northPole);
+        scene.add(southPole);
+
+        // 2. Soft Iron Core
+        const coreGeo = new THREE.CylinderGeometry(1.4, 1.4, 3.8, 64);
+        const core = new THREE.Mesh(coreGeo, matCore);
+        core.castShadow = true;
+        core.receiveShadow = true;
+        scene.add(core);
+
+        // 3. The Coil (Rotating Group)
+        const coilGroup = new THREE.Group();
+        scene.add(coilGroup);
+
+        // Coil Frame (4 boxes forming a rectangle)
+        let coilWidth = 3.0; // Based on area
+        let coilHeight = 4.2;
+        let coilThickness = 0.15; // Based on N
+
+        const topGeo = new THREE.BoxGeometry(coilWidth, coilThickness, coilThickness);
+        const sideGeo = new THREE.BoxGeometry(coilThickness, coilHeight, coilThickness);
+
+        const coilTop = new THREE.Mesh(topGeo, matCoil);
+        coilTop.position.y = coilHeight / 2;
+        const coilBottom = new THREE.Mesh(topGeo, matCoil);
+        coilBottom.position.y = -coilHeight / 2;
+        
+        const coilLeft = new THREE.Mesh(sideGeo, matCoil);
+        coilLeft.position.x = -coilWidth / 2;
+        const coilRight = new THREE.Mesh(sideGeo, matCoil);
+        coilRight.position.x = coilWidth / 2;
+
+        [coilTop, coilBottom, coilLeft, coilRight].forEach(m => {
+            m.castShadow = true;
+            coilGroup.add(m);
+        });
+
+        // 4. Pointer
+        const pointerGeo = new THREE.CylinderGeometry(0.03, 0.08, 4.5, 16);
+        pointerGeo.translate(0, 2.25, 0); // Move origin to bottom
+        const pointer = new THREE.Mesh(pointerGeo, matPointer);
+        pointer.rotation.x = Math.PI / 2; // Point forward (Z)
+        pointer.position.y = coilHeight / 2 + 0.1;
+        coilGroup.add(pointer);
+
+        // 5. Scale
+        const scaleGroup = new THREE.Group();
+        scaleGroup.position.set(0, coilHeight / 2 + 0.2, 4.5);
+        scene.add(scaleGroup);
+
+        const scaleGeo = new THREE.RingGeometry(4.2, 4.8, 64, 1, Math.PI/4, Math.PI/2);
+        const scaleMesh = new THREE.Mesh(scaleGeo, matScale);
+        scaleMesh.rotation.x = -Math.PI / 2;
+        scaleMesh.position.set(0, -0.1, -4.5);
+        scaleGroup.add(scaleMesh);
+
+        // Ticks
+        for(let i = -5; i <= 5; i++) {
+            const angle = (i / 5) * (Math.PI / 4); // Max deflection 45 deg
+            const tickGeo = new THREE.BoxGeometry(0.05, 0.1, i%5===0 ? 0.4 : 0.2);
+            const tick = new THREE.Mesh(tickGeo, matTick);
+            tick.position.set(4.5 * Math.sin(angle), 0, 4.5 * Math.cos(angle) - 4.5);
+            tick.rotation.y = angle;
+            scaleGroup.add(tick);
+        }
+
+        // 6. Hairsprings
+        function createSpring() {
+            const points = [];
+            const turns = 4;
+            for (let i = 0; i <= 100; i++) {
+                const t = i / 100;
+                const angle = t * Math.PI * 2 * turns;
+                const radius = 0.2 + t * 0.6;
+                points.push(new THREE.Vector3(radius * Math.cos(angle), 0, radius * Math.sin(angle)));
+            }
+            const geo = new THREE.BufferGeometry().setFromPoints(points);
+            return new THREE.Line(geo, matSpring);
+        }
+
+        const topSpring = createSpring();
+        topSpring.position.y = coilHeight / 2 + 0.1;
+        scene.add(topSpring);
+
+        const bottomSpring = createSpring();
+        bottomSpring.position.y = -coilHeight / 2 - 0.1;
+        scene.add(bottomSpring);
+
+        // 7. Radial Magnetic Field Lines (Arrows)
+        const arrows = [];
+        const arrowColor = 0x7209B7;
+        const gapRadius = 1.5;
+
+        function createFieldArrows() {
+            // Remove old arrows
+            arrows.forEach(a => scene.remove(a));
+            arrows.length = 0;
+
+            const numArrows = Math.floor(state.magB * 16); // Density based on B
+            
+            for(let i=0; i<numArrows; i++) {
+                // Left gap (N to Core)
+                const angleL = -Math.PI/4 + (Math.PI/2) * (i / (numArrows-1 || 1));
+                const dirL = new THREE.Vector3(Math.cos(angleL), 0, Math.sin(angleL)).normalize();
+                const originL = new THREE.Vector3(-2.0, (Math.random()-0.5)*3, 0); // Start near N pole
+                // Point towards center radially
+                const radialDirL = new THREE.Vector3(-Math.cos(angleL), 0, -Math.sin(angleL)).normalize();
+                const arrowL = new THREE.ArrowHelper(radialDirL, new THREE.Vector3(-2.2 * Math.cos(angleL), originL.y, -2.2 * Math.sin(angleL)), 0.7, arrowColor, 0.2, 0.1);
+                
+                // Right gap (Core to S)
+                const angleR = -Math.PI/4 + (Math.PI/2) * (i / (numArrows-1 || 1));
+                const originR = new THREE.Vector3(1.4 * Math.cos(angleR), (Math.random()-0.5)*3, 1.4 * Math.sin(angleR));
+                const radialDirR = new THREE.Vector3(Math.cos(angleR), 0, Math.sin(angleR)).normalize();
+                const arrowR = new THREE.ArrowHelper(radialDirR, originR, 0.7, arrowColor, 0.2, 0.1);
+
+                // Make them semi-transparent
+                arrowL.line.material.transparent = true; arrowL.line.material.opacity = 0.5;
+                arrowL.cone.material.transparent = true; arrowL.cone.material.opacity = 0.5;
+                arrowR.line.material.transparent = true; arrowR.line.material.opacity = 0.5;
+                arrowR.cone.material.transparent = true; arrowR.cone.material.opacity = 0.5;
+
+                scene.add(arrowL);
+                scene.add(arrowR);
+                arrows.push(arrowL, arrowR);
+            }
+        }
+        createFieldArrows();
+
+        // 8. Current Particles
+        const particles = [];
+        const numParticles = 12;
+        const particleGeo = new THREE.SphereGeometry(0.08, 8, 8);
+        const particleMat = new THREE.MeshBasicMaterial({ color: 0x4361EE });
+
+        for(let i=0; i<numParticles; i++) {
+            const p = new THREE.Mesh(particleGeo, particleMat);
+            coilGroup.add(p);
+            particles.push({ mesh: p, offset: i / numParticles });
+        }
+
+        // Helper to position particles on the rectangular coil
+        function getPointOnRect(t, w, h) {
+            t = t % 1.0;
+            if (t < 0) t += 1.0;
+            const perimeter = 2*w + 2*h;
+            const d = t * perimeter;
+            
+            if (d < w) return new THREE.Vector3(-w/2 + d, h/2, 0); // Top
+            if (d < w + h) return new THREE.Vector3(w/2, h/2 - (d-w), 0); // Right
+            if (d < 2*w + h) return new THREE.Vector3(w/2 - (d-w-h), -h/2, 0); // Bottom
+            return new THREE.Vector3(-w/2, -h/2 + (d-2*w-h), 0); // Left
+        }
+
+        // Text Sprites for Labels
+        function createTextSprite(text, color) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.font = 'Bold 120px Arial';
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, 128, 128);
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(1.5, 1.5, 1);
+            return sprite;
+        }
+
+        const labelN = createTextSprite('N', '#ffffff');
+        labelN.position.set(-3.5, 2.5, 0);
+        scene.add(labelN);
+
+        const labelS = createTextSprite('S', '#ffffff');
+        labelS.position.set(3.5, 2.5, 0);
+        scene.add(labelS);
+
+
+        // --- UI Interaction & Physics Logic ---
+        const inputs = ['currI', 'numN', 'magB', 'areaA', 'torsK'];
+        
+        function updatePhysics() {
+            // Read UI
+            inputs.forEach(id => {
+                state[id] = parseFloat(document.getElementById(id).value);
+                document.getElementById(`val-${id}`).innerText = state[id].toFixed(id==='numN'?0:1);
+            });
+
+            // Update Geometry based on Area and Turns
+            coilWidth = 2.0 + (state.areaA - 1.0) * 0.5; // Scale width visually
+            coilThickness = 0.05 + (state.numN / 500) * 0.15;
+            
+            coilTop.scale.set(coilWidth / 3.0, coilThickness / 0.15, coilThickness / 0.15);
+            coilBottom.scale.set(coilWidth / 3.0, coilThickness / 0.15, coilThickness / 0.15);
+            coilLeft.scale.set(coilThickness / 0.15, 1, coilThickness / 0.15);
+            coilLeft.position.x = -coilWidth / 2;
+            coilRight.scale.set(coilThickness / 0.15, 1, coilThickness / 0.15);
+            coilRight.position.x = coilWidth / 2;
+
+            // Update Field Arrows if B changes
+            createFieldArrows();
+
+            // Calculate Physics
+            // Formula: phi = (N * A * B / k) * I
+            // Real units: N, A(10^-4 m^2), B(T), I(10^-3 A), k(10^-4 Nm/rad)
+            // phi (rad) = (N * A * 1e-4 * B * I * 1e-3) / (k * 1e-4)
+            // phi (rad) = (N * A * B * I / k) * 1e-3
+            
+            const realPhiRad = (state.numN * state.areaA * state.magB * state.currI / state.torsK) * 0.001;
+            const realPhiDeg = realPhiRad * (180 / Math.PI);
+            
+            // Update UI Formula
+            document.getElementById('out-angle').innerText = realPhiDeg.toFixed(2) + '°';
+
+            // Visual Scaling: To make the simulation interactive and visible, 
+            // we scale the rotation so max values hit roughly 45 degrees (PI/4)
+            // Max theoretical realPhiRad is ~0.015 rad. We multiply by ~50 for visual effect.
+            const visualScale = 50; 
+            let target = realPhiRad * visualScale;
+            
+            // Clamp visual rotation to prevent clipping into magnets
+            const maxVisualAngle = Math.PI / 3;
+            state.targetAngle = Math.max(-maxVisualAngle, Math.min(maxVisualAngle, target));
+        }
+
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', updatePhysics);
+        });
+        updatePhysics(); // Init
+
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            // Damped harmonic oscillator / Lerp for coil rotation
+            state.currentAngle += (state.targetAngle - state.currentAngle) * 10 * delta;
+            coilGroup.rotation.y = -state.currentAngle; // Negative so +I goes right
+
+            // Animate Springs (twist)
+            topSpring.rotation.y = -state.currentAngle;
+            bottomSpring.rotation.y = state.currentAngle; // Opposite wind
+
+            // Animate Particles
+            // Speed proportional to current
+            state.particleOffset += state.currI * 0.5 * delta;
+            
+            particles.forEach(p => {
+                const t = p.offset + state.particleOffset;
+                const pos = getPointOnRect(t, coilWidth, coilHeight);
+                p.mesh.position.copy(pos);
+                // Hide particles if current is 0
+                p.mesh.visible = Math.abs(state.currI) > 0.01;
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>

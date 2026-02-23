@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spermatogenesis Animated Diagram</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #f8f9fa;
+        }
+
+        /* Typography */
+        .title { font-size: 22px; font-weight: 700; fill: #2C3E50; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #7f8c8d; }
+        .label { font-size: 13px; font-weight: 600; fill: #2C3E50; dominant-baseline: middle; }
+        .label-process { font-size: 13px; font-weight: 700; fill: #E74C3C; dominant-baseline: middle; text-anchor: end; }
+        .ploidy { font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 500; }
+        .ploidy-2n { fill: #2C3E50; }
+        .ploidy-n { fill: #FF6B6B; }
+        .lumen-text { font-size: 18px; font-weight: 700; fill: #3498DB; letter-spacing: 2px; text-anchor: middle; opacity: 0.6; }
+
+        /* Leader Lines */
+        .leader-line {
+            stroke: #2C3E50;
+            stroke-width: 1;
+            fill: none;
+            stroke-dasharray: 3 3;
+            opacity: 0.5;
+        }
+        .timeline {
+            stroke: #E74C3C;
+            stroke-width: 2;
+            fill: none;
+        }
+
+        /* Animations */
+        .sperm-tail {
+            transform-origin: 0px 5px;
+            animation: tail-swing 0.4s infinite ease-in-out;
+        }
+        .sperm-tail-alt {
+            transform-origin: 0px 5px;
+            animation: tail-swing 0.5s infinite ease-in-out reverse;
+        }
+
+        @keyframes tail-swing {
+            0% { transform: rotate(-12deg); }
+            50% { transform: rotate(12deg); }
+            100% { transform: rotate(-12deg); }
+        }
+
+        @keyframes pulse-base {
+            0%, 100% { transform: translate(400px, 460px) scale(1); }
+            50% { transform: translate(400px, 460px) scale(1.05); }
+        }
+
+        /* 15-Second Continuous Loop Keyframes */
+        /* Stage 1: Mitosis (0-3s / 0-20%) */
+        @keyframes anim-stage1 {
+            0% { transform: translate(400px, 460px) scale(1); opacity: 0; }
+            2% { transform: translate(400px, 460px) scale(1); opacity: 1; }
+            10% { transform: translate(400px, 460px) scale(1); }
+            20% { transform: translate(400px, 410px) scale(1); }
+            30% { transform: translate(400px, 360px) scale(1.4); }
+            39.9% { transform: translate(400px, 360px) scale(1.4); opacity: 1; }
+            40%, 100% { transform: translate(400px, 360px) scale(1.4); opacity: 0; }
+        }
+
+        /* Stage 2: Meiosis I (3-6s / 20-40% for growth, 40-60% for split) */
+        @keyframes anim-stage2-L {
+            0%, 39.9% { transform: translate(400px, 360px); opacity: 0; }
+            40% { transform: translate(400px, 360px); opacity: 1; }
+            50% { transform: translate(350px, 280px); }
+            59.9% { transform: translate(350px, 280px); opacity: 1; }
+            60%, 100% { transform: translate(350px, 280px); opacity: 0; }
+        }
+        @keyframes anim-stage2-R {
+            0%, 39.9% { transform: translate(400px, 360px); opacity: 0; }
+            40% { transform: translate(400px, 360px); opacity: 1; }
+            50% { transform: translate(450px, 280px); }
+            59.9% { transform: translate(450px, 280px); opacity: 1; }
+            60%, 100% { transform: translate(450px, 280px); opacity: 0; }
+        }
+
+        /* Stage 3: Meiosis II (6-9s / 40-60%) */
+        @keyframes anim-stage3-LL {
+            0%, 59.9% { transform: translate(350px, 280px); opacity: 0; }
+            60% { transform: translate(350px, 280px); opacity: 1; }
+            70% { transform: translate(320px, 200px); opacity: 1; }
+            75% { transform: translate(320px, 200px); opacity: 1; }
+            80%, 100% { transform: translate(320px, 200px); opacity: 0; }
+        }
+        @keyframes anim-stage3-LR {
+            0%, 59.9% { transform: translate(350px, 280px); opacity: 0; }
+            60% { transform: translate(350px, 280px); opacity: 1; }
+            70% { transform: translate(370px, 200px); opacity: 1; }
+            75% { transform: translate(370px, 200px); opacity: 1; }
+            80%, 100% { transform: translate(370px, 200px); opacity: 0; }
+        }
+        @keyframes anim-stage3-RL {
+            0%, 59.9% { transform: translate(450px, 280px); opacity: 0; }
+            60% { transform: translate(450px, 280px); opacity: 1; }
+            70% { transform: translate(430px, 200px); opacity: 1; }
+            75% { transform: translate(430px, 200px); opacity: 1; }
+            80%, 100% { transform: translate(430px, 200px); opacity: 0; }
+        }
+        @keyframes anim-stage3-RR {
+            0%, 59.9% { transform: translate(450px, 280px); opacity: 0; }
+            60% { transform: translate(450px, 280px); opacity: 1; }
+            70% { transform: translate(480px, 200px); opacity: 1; }
+            75% { transform: translate(480px, 200px); opacity: 1; }
+            80%, 100% { transform: translate(480px, 200px); opacity: 0; }
+        }
+
+        /* Stage 4 & 5: Spermiogenesis & Spermiation (9-15s / 60-100%) */
+        @keyframes anim-stage4-LL {
+            0%, 75% { transform: translate(320px, 200px); opacity: 0; }
+            80% { transform: translate(320px, 200px); opacity: 1; }
+            90% { transform: translate(320px, 200px); opacity: 1; }
+            98% { transform: translate(300px, 80px); opacity: 1; }
+            100% { transform: translate(300px, 70px); opacity: 0; }
+        }
+        @keyframes anim-stage4-LR {
+            0%, 75% { transform: translate(370px, 200px); opacity: 0; }
+            80% { transform: translate(370px, 200px); opacity: 1; }
+            90% { transform: translate(370px, 200px); opacity: 1; }
+            98% { transform: translate(360px, 80px); opacity: 1; }
+            100% { transform: translate(360px, 70px); opacity: 0; }
+        }
+        @keyframes anim-stage4-RL {
+            0%, 75% { transform: translate(430px, 200px); opacity: 0; }
+            80% { transform: translate(430px, 200px); opacity: 1; }
+            90% { transform: translate(430px, 200px); opacity: 1; }
+            98% { transform: translate(440px, 80px); opacity: 1; }
+            100% { transform: translate(440px, 70px); opacity: 0; }
+        }
+        @keyframes anim-stage4-RR {
+            0%, 75% { transform: translate(480px, 200px); opacity: 0; }
+            80% { transform: translate(480px, 200px); opacity: 1; }
+            90% { transform: translate(480px, 200px); opacity: 1; }
+            98% { transform: translate(500px, 80px); opacity: 1; }
+            100% { transform: translate(500px, 70px); opacity: 0; }
+        }
+
+        /* Apply Animations */
+        .anim-cohort-1 { animation: anim-stage1 15s infinite ease-in-out; }
+        .anim-cohort-2L { animation: anim-stage2-L 15s infinite ease-in-out; }
+        .anim-cohort-2R { animation: anim-stage2-R 15s infinite ease-in-out; }
+        .anim-cohort-3LL { animation: anim-stage3-LL 15s infinite ease-in-out; }
+        .anim-cohort-3LR { animation: anim-stage3-LR 15s infinite ease-in-out; }
+        .anim-cohort-3RL { animation: anim-stage3-RL 15s infinite ease-in-out; }
+        .anim-cohort-3RR { animation: anim-stage3-RR 15s infinite ease-in-out; }
+        .anim-cohort-4LL { animation: anim-stage4-LL 15s infinite ease-in-out; }
+        .anim-cohort-4LR { animation: anim-stage4-LR 15s infinite ease-in-out; }
+        .anim-cohort-4RL { animation: anim-stage4-RL 15s infinite ease-in-out; }
+        .anim-cohort-4RR { animation: anim-stage4-RR 15s infinite ease-in-out; }
+        .anim-base-pulse { animation: pulse-base 3s infinite ease-in-out; }
+
+        /* Floating background sperm */
+        @keyframes float-sperm {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.4; }
+            90% { opacity: 0.4; }
+            100% { transform: translate(-30px, -40px) rotate(15deg); opacity: 0; }
+        }
+        .bg-sperm-1 { animation: float-sperm 8s infinite linear; transform-origin: center; }
+        .bg-sperm-2 { animation: float-sperm 10s infinite linear 3s; transform-origin: center; }
+    </style>
+</head>
+<body>
+
+<svg width="800" height="500" viewBox="0 0 800 500" role="img" aria-labelledby="svg-title svg-desc">
+    <title id="svg-title">Spermatogenesis: Gamete Development</title>
+    <desc id="svg-desc">Animated cross-section of a seminiferous tubule showing the 15-second continuous cycle of spermatogenesis, from diploid spermatogonia at the basement membrane to haploid spermatozoa in the lumen.</desc>
+
+    <defs>
+        <!-- Gradients for 3D Cell Appearance -->
+        <radialGradient id="grad-cytoplasm" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="40%" stop-color="#E8F4FD"/>
+            <stop offset="100%" stop-color="#4A90D9"/>
+        </radialGradient>
+        
+        <radialGradient id="grad-nuc-2n" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#4A90D9"/>
+            <stop offset="100%" stop-color="#2C3E50"/>
+        </radialGradient>
+
+        <radialGradient id="grad-nuc-n" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FFB6B6"/>
+            <stop offset="100%" stop-color="#FF6B6B"/>
+        </radialGradient>
+
+        <linearGradient id="sertoli-grad" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="#98D8C8" stop-opacity="0.4"/>
+            <stop offset="100%" stop-color="#98D8C8" stop-opacity="0.1"/>
+        </linearGradient>
+
+        <!-- Arrow Marker for Timeline -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#E74C3C" />
+        </marker>
+
+        <!-- Reusable Cell Components -->
+        <g id="cell-2n">
+            <circle r="12" fill="url(#grad-cytoplasm)" stroke="#4A90D9" stroke-width="1.5"/>
+            <circle r="5.5" fill="url(#grad-nuc-2n)"/>
+        </g>
+
+        <g id="cell-n">
+            <circle r="9" fill="url(#grad-cytoplasm)" stroke="#4A90D9" stroke-width="1.5"/>
+            <circle r="4" fill="url(#grad-nuc-n)"/>
+        </g>
+
+        <g id="sperm-cell">
+            <path class="sperm-tail" d="M 0 5 Q 4 15, -2 25 T 0 45" fill="none" stroke="#2C3E50" stroke-width="1.5"/>
+            <rect x="-1.5" y="3" width="3" height="4" fill="#E74C3C" rx="1"/> <!-- Mitochondria -->
+            <path d="M 0 -7 C 4 -7, 4 2, 0 4 C -4 2, -4 -7, 0 -7" fill="#F39C12"/> <!-- Acrosome/Head -->
+            <circle cy="-1" r="1.5" fill="#2C3E50"/> <!-- Compact Nucleus -->
+        </g>
+        
+        <g id="sperm-cell-alt">
+            <path class="sperm-tail-alt" d="M 0 5 Q -4 15, 2 25 T 0 45" fill="none" stroke="#2C3E50" stroke-width="1.5"/>
+            <rect x="-1.5" y="3" width="3" height="4" fill="#E74C3C" rx="1"/>
+            <path d="M 0 -7 C 4 -7, 4 2, 0 4 C -4 2, -4 -7, 0 -7" fill="#F39C12"/>
+            <circle cy="-1" r="1.5" fill="#2C3E50"/>
+        </g>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#f8f9fa"/>
+
+    <!-- Title & Legend -->
+    <text x="30" y="40" class="title">Spermatogenesis: Gamete Development</text>
+    <text x="30" y="60" class="subtitle">Continuous 15-second cycle within the Seminiferous Tubule</text>
+
+    <rect x="610" y="20" width="160" height="65" fill="#ffffff" stroke="#E8F4FD" stroke-width="2" rx="6"/>
+    <circle cx="625" cy="40" r="5" fill="url(#grad-nuc-2n)"/>
+    <text x="640" y="41" class="label" style="font-size: 12px;">Diploid <tspan class="ploidy ploidy-2n">(2n)</tspan> DNA</text>
+    <circle cx="625" cy="65" r="5" fill="url(#grad-nuc-n)"/>
+    <text x="640" y="66" class="label" style="font-size: 12px;">Haploid <tspan class="ploidy ploidy-n">(n)</tspan> DNA</text>
+
+    <!-- Structural Background Elements -->
+    
+    <!-- Lumen Area -->
+    <text x="400" y="50" class="lumen-text">LUMEN</text>
+    <path d="M 150 90 Q 400 110 650 90" fill="none" stroke="#3498DB" stroke-width="1" stroke-dasharray="8 4" opacity="0.3"/>
+
+    <!-- Background Floating Sperm in Lumen -->
+    <g class="bg-sperm-1" transform="translate(350, 60)">
+        <use href="#sperm-cell" transform="rotate(70) scale(0.8)"/>
+    </g>
+    <g class="bg-sperm-2" transform="translate(480, 70)">
+        <use href="#sperm-cell-alt" transform="rotate(-45) scale(0.8)"/>
+    </g>
+
+    <!-- Sertoli Cells (Scaffolding) -->
+    <!-- Left partial Sertoli -->
+    <path d="M 50 480 C 100 400, 150 350, 180 250 C 190 200, 200 150, 220 120 L 100 120 Z" fill="url(#sertoli-grad)" stroke="#98D8C8" stroke-width="2"/>
+    <!-- Right partial Sertoli -->
+    <path d="M 750 480 C 700 400, 650 350, 620 250 C 610 200, 600 150, 580 120 L 700 120 Z" fill="url(#sertoli-grad)" stroke="#98D8C8" stroke-width="2"/>
+    <!-- Central Main Sertoli Cell -->
+    <path d="M 250 480 C 280 400, 300 350, 320 250 C 330 200, 340 150, 360 120 L 440 120 C 460 150, 470 200, 480 250 C 500 350, 520 400, 550 480 Z" fill="url(#sertoli-grad)" stroke="#98D8C8" stroke-width="2"/>
+    
+    <!-- Sertoli Cell Nucleus (Basal) -->
+    <ellipse cx="400" cy="445" rx="22" ry="12" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1.5" opacity="0.8"/>
+    <circle cx="400" cy="445" r="4" fill="#2C3E50" opacity="0.6"/> <!-- Nucleolus -->
+
+    <!-- Blood-Testis Barrier (Tight Junctions) -->
+    <path d="M 265 430 L 275 425 L 265 420 L 275 415" stroke="#E74C3C" stroke-width="2" fill="none" opacity="0.6"/>
+    <path d="M 535 430 L 525 425 L 535 420 L 525 415" stroke="#E74C3C" stroke-width="2" fill="none" opacity="0.6"/>
+
+    <!-- Basement Membrane -->
+    <path d="M 50 480 Q 400 495 750 480" fill="none" stroke="#2C3E50" stroke-width="6" stroke-linecap="round"/>
+    <path d="M 50 486 Q 400 501 750 486" fill="none" stroke="#F39C12" stroke-width="2" stroke-linecap="round" opacity="0.5"/> <!-- Peritubular tissue hint -->
+
+    <!-- Static Context Cells (To show tissue environment) -->
+    <g transform="translate(280, 465)"><use href="#cell-2n"/></g>
+    <g transform="translate(340, 470)"><use href="#cell-2n"/></g>
+    <g transform="translate(460, 470)"><use href="#cell-2n"/></g>
+    <g transform="translate(520, 465)"><use href="#cell-2n"/></g>
+    
+    <g transform="translate(300, 380) scale(1.3)"><use href="#cell-2n"/></g>
+    <g transform="translate(500, 380) scale(1.3)"><use href="#cell-2n"/></g>
+
+    <g transform="translate(280, 220)"><use href="#cell-n"/></g>
+    <g transform="translate(520, 220)"><use href="#cell-n"/></g>
+
+    <!-- ANIMATED COHORT (The 15-second loop) -->
+    
+    <!-- Base Pulsing Spermatogonium (Self-Renewal) -->
+    <g class="anim-base-pulse"><use href="#cell-2n"/></g>
+
+    <!-- Stage 1: Spermatogonium -> Primary Spermatocyte -->
+    <g class="anim-cohort-1"><use href="#cell-2n"/></g>
+
+    <!-- Stage 2: Secondary Spermatocytes -->
+    <g class="anim-cohort-2L"><use href="#cell-n"/></g>
+    <g class="anim-cohort-2R"><use href="#cell-n"/></g>
+
+    <!-- Stage 3: Spermatids -->
+    <g class="anim-cohort-3LL"><use href="#cell-n"/></g>
+    <g class="anim-cohort-3LR"><use href="#cell-n"/></g>
+    <g class="anim-cohort-3RL"><use href="#cell-n"/></g>
+    <g class="anim-cohort-3RR"><use href="#cell-n"/></g>
+
+    <!-- Stage 4 & 5: Spermatozoa (Spermiogenesis -> Spermiation) -->
+    <g class="anim-cohort-4LL"><use href="#sperm-cell"/></g>
+    <g class="anim-cohort-4LR"><use href="#sperm-cell-alt"/></g>
+    <g class="anim-cohort-4RL"><use href="#sperm-cell"/></g>
+    <g class="anim-cohort-4RR"><use href="#sperm-cell-alt"/></g>
+
+
+    <!-- LABELS AND ANNOTATIONS -->
+
+    <!-- Timeline Arrow (Left) -->
+    <line x1="110" y1="460" x2="110" y2="110" class="timeline" marker-end="url(#arrow)"/>
+    
+    <!-- Process Labels (Left) -->
+    <text x="95" y="440" class="label-process">Mitosis</text>
+    <text x="95" y="360" class="label-process">Meiosis I</text>
+    <text x="95" y="280" class="label-process">Meiosis II</text>
+    <text x="95" y="200" class="label-process">Spermiogenesis</text>
+    <text x="95" y="110" class="label-process">Spermiation</text>
+
+    <!-- Cell Type Labels & Ploidy (Right) -->
+    <text x="590" y="460" class="label">Spermatogonium <tspan class="ploidy ploidy-2n">(2n)</tspan></text>
+    <text x="590" y="360" class="label">Primary Spermatocyte <tspan class="ploidy ploidy-2n">(2n)</tspan></text>
+    <text x="590" y="280" class="label">Secondary Spermatocytes <tspan class="ploidy ploidy-n">(n)</tspan></text>
+    <text x="590" y="200" class="label">Spermatids <tspan class="ploidy ploidy-n">(n)</tspan></text>
+    <text x="590" y="110" class="label">Spermatozoa <tspan class="ploidy ploidy-n">(n)</tspan></text>
+
+    <!-- Structural Labels -->
+    <text x="630" y="490" class="label" style="fill: #7f8c8d; font-size: 12px;">Basement Membrane</text>
+    <text x="590" y="320" class="label" style="fill: #27AE60; font-size: 12px;">Sertoli Cell</text>
+
+    <!-- Leader Lines -->
+    <!-- To Cells -->
+    <path d="M 580 460 L 430 460" class="leader-line"/>
+    <path d="M 580 360 L 440 360" class="leader-line"/>
+    <path d="M 580 280 L 470 280" class="leader-line"/>
+    <path d="M 580 200 L 500 200" class="leader-line"/>
+    <path d="M 580 110 L 520 110" class="leader-line"/>
+    
+    <!-- To Structures -->
+    <path d="M 620 490 L 550 485" class="leader-line"/>
+    <path d="M 580 320 L 510 320" class="leader-line"/>
+
+</svg>
+
+</body>
+</html>

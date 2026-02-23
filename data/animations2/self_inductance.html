@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self Inductance in AC Circuit</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        .glass-panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        }
+        #ui-panel {
+            right: 20px;
+            top: 20px;
+            width: 280px;
+        }
+        #info-panel {
+            left: 20px;
+            top: 20px;
+            width: 300px;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: #111;
+            margin-bottom: 16px;
+        }
+        .formula-box {
+            background: rgba(67, 97, 238, 0.1);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: center;
+            border: 1px solid rgba(67, 97, 238, 0.2);
+        }
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+        }
+        .math.voltage { color: #FF3366; }
+        .math.current { color: #4361EE; }
+        .math.bfield { color: #7209B7; }
+        
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .legend {
+            margin-top: 16px;
+            font-size: 0.9rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        .slider-group {
+            margin-bottom: 20px;
+        }
+        .slider-group:last-child {
+            margin-bottom: 0;
+        }
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d5db;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="info-panel" class="glass-panel">
+        <h2>Self Inductance</h2>
+        <div class="formula-box">
+            <span class="math" style="color:#111; font-size: 1.1rem;">v(t) = L · di/dt</span>
+        </div>
+        <div class="data-row">
+            <span>Reactance (X<sub>L</sub>):</span>
+            <span class="math"><span id="val-xl">2.00</span> Ω</span>
+        </div>
+        <div class="data-row">
+            <span>Voltage v(t):</span>
+            <span class="math voltage"><span id="val-v">0.00</span> V</span>
+        </div>
+        <div class="data-row">
+            <span>Current i(t):</span>
+            <span class="math current"><span id="val-i">0.00</span> A</span>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="color-box" style="background: #FF3366;"></div>
+                <span>Source Voltage v(t)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #4361EE;"></div>
+                <span>Inductor Current i(t)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: #7209B7;"></div>
+                <span>Magnetic Field (B)</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel" class="glass-panel">
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Inductance (L)</span>
+                <span class="math" id="lbl-L">1.0 H</span>
+            </div>
+            <input type="range" id="slider-L" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Peak Voltage (V<sub>m</sub>)</span>
+                <span class="math" id="lbl-Vm">5.0 V</span>
+            </div>
+            <input type="range" id="slider-Vm" min="1.0" max="10.0" step="0.5" value="5.0">
+        </div>
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Angular Freq (ω)</span>
+                <span class="math" id="lbl-omega">2.0 rad/s</span>
+            </div>
+            <input type="range" id="slider-omega" min="0.5" max="5.0" step="0.1" value="2.0">
+        </div>
+        <div class="slider-group">
+            <div class="slider-header">
+                <span>Simulation Speed</span>
+                <span class="math" id="lbl-speed">1.0x</span>
+            </div>
+            <input type="range" id="slider-speed" min="0" max="2" step="0.1" value="1.0">
+        </div>
+    </div>
+
+    <script>
+        // --- Parameters ---
+        const params = {
+            L: 1.0,
+            Vm: 5.0,
+            omega: 2.0,
+            speed: 1.0
+        };
+
+        // --- Scene Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 12, 28);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 2, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0x4361EE, 0.5, 50);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        // --- Grid ---
+        const grid = new THREE.GridHelper(60, 60, 0xcccccc, 0xe2e8f0);
+        grid.position.y = -4;
+        scene.add(grid);
+
+        // --- Custom Helix Curve ---
+        class HelixCurve extends THREE.Curve {
+            constructor(radius, length, turns) {
+                super();
+                this.radius = radius;
+                this.length = length;
+                this.turns = turns;
+            }
+            getPoint(t, optionalTarget = new THREE.Vector3()) {
+                const angle = 2 * Math.PI * this.turns * t;
+                const x = this.length * (t - 0.5);
+                const y = this.radius * Math.sin(angle);
+                const z = this.radius * Math.cos(angle);
+                return optionalTarget.set(x, y, z);
+            }
+        }
+
+        // --- Objects ---
+        let helixMesh, helixCurve;
+        const helixRadius = 2;
+        const helixLength = 12;
+        
+        const particles = [];
+        const particleCount = 120;
+        const particleGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        const particleMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4361EE, 
+            emissive: 0x4361EE, 
+            emissiveIntensity: 0.6,
+            roughness: 0.2,
+            metalness: 0.1
+        });
+
+        // Initialize Particles
+        for(let i = 0; i < particleCount; i++) {
+            const p = new THREE.Mesh(particleGeo, particleMat);
+            scene.add(p);
+            particles.push({ mesh: p, offset: i / particleCount });
+        }
+
+        function createHelix() {
+            if (helixMesh) {
+                helixMesh.geometry.dispose();
+                scene.remove(helixMesh);
+            }
+            // Turns proportional to Inductance L
+            const turns = Math.max(1, params.L * 8);
+            helixCurve = new HelixCurve(helixRadius, helixLength, turns);
+            
+            const geometry = new THREE.TubeGeometry(helixCurve, Math.floor(turns * 32), 0.25, 16, false);
+            const material = new THREE.MeshStandardMaterial({ 
+                color: 0x9ca3af, 
+                metalness: 0.9, 
+                roughness: 0.3 
+            });
+            helixMesh = new THREE.Mesh(geometry, material);
+            scene.add(helixMesh);
+        }
+
+        // --- Magnetic Field Lines ---
+        const bFieldLoops = [];
+        const bFieldMat = new THREE.MeshBasicMaterial({ 
+            color: 0x7209B7, 
+            transparent: true, 
+            opacity: 0.0,
+            depthWrite: false
+        });
+
+        for(let i = 0; i < 6; i++) {
+            // Create an ellipse curve for the B-field loop
+            const ellipseCurve = new THREE.EllipseCurve(
+                0, 0, 
+                helixLength * 0.6, helixRadius * 2.5, 
+                0, 2 * Math.PI, 
+                false, 0
+            );
+            const points = ellipseCurve.getPoints(64).map(p => new THREE.Vector3(p.x, p.y, 0));
+            const path = new THREE.CatmullRomCurve3(points);
+            const geo = new THREE.TubeGeometry(path, 64, 0.08, 8, true);
+            
+            const mesh = new THREE.Mesh(geo, bFieldMat.clone());
+            // Rotate around X axis to form a 3D field
+            mesh.rotation.x = (Math.PI / 3) * i;
+            scene.add(mesh);
+            bFieldLoops.push(mesh);
+        }
+
+        // --- Phasors ---
+        const phasorOrigin = new THREE.Vector3(-12, 4, 0);
+        
+        // Background circle for phasors
+        const circleGeo = new THREE.RingGeometry(4.8, 5, 64);
+        const circleMat = new THREE.MeshBasicMaterial({ color: 0xcccccc, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
+        const phasorCircle = new THREE.Mesh(circleGeo, circleMat);
+        phasorCircle.position.copy(phasorOrigin);
+        scene.add(phasorCircle);
+
+        const vArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), phasorOrigin, 5, 0xFF3366, 0.8, 0.4);
+        const iArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), phasorOrigin, 5, 0x4361EE, 0.8, 0.4);
+        scene.add(vArrow);
+        scene.add(iArrow);
+
+        // --- Sine Wave Graph ---
+        const graphOrigin = new THREE.Vector3(0, 8, -6);
+        const graphPoints = 300;
+        const graphWidth = 20;
+        
+        const vGraphGeo = new THREE.BufferGeometry();
+        const iGraphGeo = new THREE.BufferGeometry();
+        const vGraphPos = new Float32Array(graphPoints * 3);
+        const iGraphPos = new Float32Array(graphPoints * 3);
+        
+        vGraphGeo.setAttribute('position', new THREE.BufferAttribute(vGraphPos, 3));
+        iGraphGeo.setAttribute('position', new THREE.BufferAttribute(iGraphPos, 3));
+        
+        const vGraphLine = new THREE.Line(vGraphGeo, new THREE.LineBasicMaterial({ color: 0xFF3366, linewidth: 2 }));
+        const iGraphLine = new THREE.Line(iGraphGeo, new THREE.LineBasicMaterial({ color: 0x4361EE, linewidth: 2 }));
+        scene.add(vGraphLine);
+        scene.add(iGraphLine);
+
+        // Graph Axis
+        const axisGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(graphOrigin.x + graphWidth/2, graphOrigin.y, graphOrigin.z),
+            new THREE.Vector3(graphOrigin.x - graphWidth/2, graphOrigin.y, graphOrigin.z)
+        ]);
+        const axisLine = new THREE.Line(axisGeo, new THREE.LineBasicMaterial({ color: 0xaaaaaa }));
+        scene.add(axisLine);
+
+        // --- Initialization ---
+        createHelix();
+
+        // --- UI Event Listeners ---
+        document.getElementById('slider-L').addEventListener('input', (e) => {
+            params.L = parseFloat(e.target.value);
+            document.getElementById('lbl-L').innerText = params.L.toFixed(1) + ' H';
+            createHelix();
+        });
+        document.getElementById('slider-Vm').addEventListener('input', (e) => {
+            params.Vm = parseFloat(e.target.value);
+            document.getElementById('lbl-Vm').innerText = params.Vm.toFixed(1) + ' V';
+        });
+        document.getElementById('slider-omega').addEventListener('input', (e) => {
+            params.omega = parseFloat(e.target.value);
+            document.getElementById('lbl-omega').innerText = params.omega.toFixed(1) + ' rad/s';
+        });
+        document.getElementById('slider-speed').addEventListener('input', (e) => {
+            params.speed = parseFloat(e.target.value);
+            document.getElementById('lbl-speed').innerText = params.speed.toFixed(1) + 'x';
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const dt = clock.getDelta() * params.speed;
+            time += dt;
+
+            // Physics Calculations
+            const w = params.omega;
+            const L = params.L;
+            const Vm = params.Vm;
+            
+            const X_L = w * L;
+            const Im = Vm / X_L;
+
+            // v(t) = Vm * sin(wt)
+            const v_t = Vm * Math.sin(w * time);
+            
+            // i(t) = - (Vm / wL) * cos(wt)  [which is Im * sin(wt - pi/2)]
+            const i_t = -Im * Math.cos(w * time);
+
+            // Update UI Data
+            document.getElementById('val-xl').innerText = X_L.toFixed(2);
+            document.getElementById('val-v').innerText = (v_t > 0 ? '+' : '') + v_t.toFixed(2);
+            document.getElementById('val-i').innerText = (i_t > 0 ? '+' : '') + i_t.toFixed(2);
+
+            // Update Particles (Current flow)
+            // Velocity is proportional to instantaneous current i(t)
+            const particleSpeedFactor = 0.05;
+            particles.forEach(p => {
+                p.offset += i_t * dt * particleSpeedFactor;
+                // Handle wrap around smoothly
+                p.offset = (p.offset % 1.0 + 1.0) % 1.0; 
+                const pos = helixCurve.getPoint(p.offset);
+                p.mesh.position.copy(pos);
+            });
+
+            // Update Magnetic Field (Lenz's Law / B-field magnitude)
+            // B-field is proportional to current. Max when |i(t)| is max.
+            const bFieldIntensity = Math.abs(i_t) / Im; // Normalized 0 to 1
+            bFieldLoops.forEach(loop => {
+                // Opacity pulses with current magnitude
+                loop.material.opacity = bFieldIntensity * 0.7;
+                // Thickness/Scale pulses slightly
+                const scale = 1.0 + 0.3 * bFieldIntensity;
+                loop.scale.set(1, scale, scale);
+            });
+
+            // Update Phasors
+            const vAngle = w * time;
+            const iAngle = w * time - Math.PI / 2; // Current lags by 90 degrees
+            
+            vArrow.setDirection(new THREE.Vector3(Math.cos(vAngle), Math.sin(vAngle), 0));
+            // Scale visual length so it fits nicely
+            vArrow.setLength(Math.min(Vm * 0.5, 5), 0.6, 0.4);
+            
+            iArrow.setDirection(new THREE.Vector3(Math.cos(iAngle), Math.sin(iAngle), 0));
+            iArrow.setLength(Math.min(Im * 0.5, 5), 0.6, 0.4);
+
+            // Update Sine Wave Graph
+            const dx = graphWidth / graphPoints;
+            const startX = graphOrigin.x + graphWidth / 2;
+            
+            for(let j = 0; j < graphPoints; j++) {
+                // Time history goes backwards along the X axis
+                const t_hist = time - j * 0.03; 
+                
+                const v_hist = Vm * Math.sin(w * t_hist);
+                const i_hist = -Im * Math.cos(w * t_hist);
+
+                // Visual scaling for the graph
+                const visual_V = v_hist * 0.4;
+                const visual_I = i_hist * 0.4;
+
+                vGraphPos[j*3] = startX - j * dx;
+                vGraphPos[j*3+1] = graphOrigin.y + visual_V;
+                vGraphPos[j*3+2] = graphOrigin.z;
+
+                iGraphPos[j*3] = startX - j * dx;
+                iGraphPos[j*3+1] = graphOrigin.y + visual_I;
+                iGraphPos[j*3+2] = graphOrigin.z;
+            }
+            
+            vGraphGeo.attributes.position.needsUpdate = true;
+            iGraphGeo.attributes.position.needsUpdate = true;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

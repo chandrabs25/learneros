@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Einstein's Mass-Energy Equivalence (E=mc²)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 1);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent-blue: #4361EE;
+            --accent-red: #FF3366;
+            --accent-green: #06D6A0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            width: 25%;
+            min-width: 320px;
+            max-width: 400px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--panel-border);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            padding: 2rem;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(45deg, var(--accent-blue), var(--accent-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        label {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent-blue);
+            font-weight: 700;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #efficiency-slider::-webkit-slider-thumb { background: var(--accent-red); box-shadow: 0 2px 6px rgba(255, 51, 102, 0.4); }
+        #time-slider::-webkit-slider-thumb { background: var(--accent-green); box-shadow: 0 2px 6px rgba(6, 214, 160, 0.4); }
+
+        .btn-convert {
+            margin-top: auto;
+            background: linear-gradient(135deg, var(--accent-red), #F77F00);
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 800;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(255, 51, 102, 0.3);
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .btn-convert:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 51, 102, 0.4);
+        }
+
+        .btn-convert:active {
+            transform: translateY(1px);
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            pointer-events: none;
+            min-width: 300px;
+        }
+
+        .formula-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            font-family: 'Roboto Mono', monospace;
+            color: var(--text-main);
+            text-align: center;
+            letter-spacing: -1px;
+        }
+
+        .math-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+        }
+
+        .math-label { color: var(--text-muted); }
+        .math-value { font-weight: 700; color: var(--text-main); }
+        
+        .result-box {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed #cbd5e1;
+        }
+
+        .result-energy {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--accent-red);
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .result-context {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-align: center;
+            background: #e2e8f0;
+            padding: 0.5rem;
+            border-radius: 6px;
+        }
+
+        .context-highlight {
+            font-weight: 700;
+            color: var(--accent-blue);
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #ui-panel { width: 100%; height: auto; max-width: none; border-left: none; border-top: 1px solid var(--panel-border); padding: 1.5rem; }
+            #canvas-container { height: 50vh; flex: none; }
+            #formula-card { top: 1rem; left: 1rem; right: 1rem; min-width: 0; padding: 1rem; }
+            .formula-title { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">E = mc²</div>
+            <div class="math-row">
+                <span class="math-label">Mass (m):</span>
+                <span class="math-value" id="math-mass">0.00 kg</span>
+            </div>
+            <div class="math-row">
+                <span class="math-label">Speed of Light (c):</span>
+                <span class="math-value">299,792,458 m/s</span>
+            </div>
+            <div class="math-row">
+                <span class="math-label">Conversion (η):</span>
+                <span class="math-value" id="math-eff">100%</span>
+            </div>
+            <div class="result-box">
+                <div class="result-energy" id="math-energy">0.00e+0 J</div>
+                <div class="result-context">
+                    Powers an average home for <br>
+                    <span class="context-highlight" id="math-homes">0</span> months
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Mass-Energy Chamber</h1>
+        <p class="subtitle">Observe how a minuscule amount of mass contains a gargantuan amount of energy.</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="mass-slider">Mass (m)</label>
+                <span class="value-display" id="mass-val">5.0 mg</span>
+            </div>
+            <input type="range" id="mass-slider" min="0.1" max="10.0" step="0.1" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="efficiency-slider">Conversion % (η)</label>
+                <span class="value-display" id="efficiency-val" style="color: var(--accent-red); background: rgba(255, 51, 102, 0.1);">100%</span>
+            </div>
+            <input type="range" id="efficiency-slider" min="1" max="100" step="1" value="100">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="time-slider">Time Scale</label>
+                <span class="value-display" id="time-val" style="color: var(--accent-green); background: rgba(6, 214, 160, 0.1);">1.0x</span>
+            </div>
+            <input type="range" id="time-slider" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <button class="btn-convert" id="btn-convert">Convert Mass to Energy</button>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Constants & State ---
+        const C = 299792458; // Speed of light in m/s
+        const C_SQUARED = C * C;
+        const JOULES_PER_HOME_MONTH = 3.6e9; // ~1000 kWh
+
+        const params = {
+            mass_mg: 5.0,
+            efficiency: 100,
+            timeScale: 1.0
+        };
+
+        let isConverting = false;
+        let conversionTime = 0;
+        let targetMassRadius = 0;
+        let currentMassRadius = 0;
+
+        // --- DOM Elements ---
+        const massSlider = document.getElementById('mass-slider');
+        const effSlider = document.getElementById('efficiency-slider');
+        const timeSlider = document.getElementById('time-slider');
+        const massVal = document.getElementById('mass-val');
+        const effVal = document.getElementById('efficiency-val');
+        const timeVal = document.getElementById('time-val');
+        const btnConvert = document.getElementById('btn-convert');
+
+        const mathMass = document.getElementById('math-mass');
+        const mathEff = document.getElementById('math-eff');
+        const mathEnergy = document.getElementById('math-energy');
+        const mathHomes = document.getElementById('math-homes');
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(8, 4, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below grid
+        controls.minDistance = 3;
+        controls.maxDistance = 30;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+
+        // Flash light for conversion
+        const burstLight = new THREE.PointLight(0xFF3366, 0, 20);
+        burstLight.position.set(0, 0, 0);
+        scene.add(burstLight);
+
+        // --- Environment ---
+        // Space-Time Grid
+        const gridHelper = new THREE.GridHelper(40, 40, 0xD1D9E6, 0xD1D9E6);
+        gridHelper.position.y = -2;
+        scene.add(gridHelper);
+
+        // --- Objects ---
+        // 1. The Mass Sphere
+        const sphereGeo = new THREE.SphereGeometry(1, 64, 64);
+        const sphereMat = new THREE.MeshStandardMaterial({
+            color: 0x4361EE,
+            roughness: 0.2,
+            metalness: 0.1,
+            emissive: 0x4361EE,
+            emissiveIntensity: 0.2
+        });
+        const massSphere = new THREE.Mesh(sphereGeo, sphereMat);
+        scene.add(massSphere);
+
+        // 2. The Energy Particles (BufferGeometry)
+        const particleCount = 20000;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePos = new Float32Array(particleCount * 3);
+        const particleVel = new Float32Array(particleCount * 3);
+        const particleCol = new Float32Array(particleCount * 3);
+
+        const colorRed = new THREE.Color(0xFF3366);
+        const colorOrange = new THREE.Color(0xF77F00);
+
+        for (let i = 0; i < particleCount; i++) {
+            // Initial position at center
+            particlePos[i * 3] = 0;
+            particlePos[i * 3 + 1] = 0;
+            particlePos[i * 3 + 2] = 0;
+
+            // Isotropic spherical velocities
+            const u = Math.random();
+            const v = Math.random();
+            const theta = 2 * Math.PI * u;
+            const phi = Math.acos(2 * v - 1);
+            
+            // Base speed + variance
+            const speed = 5 + Math.random() * 15; 
+
+            particleVel[i * 3] = Math.sin(phi) * Math.cos(theta) * speed;
+            particleVel[i * 3 + 1] = Math.sin(phi) * Math.sin(theta) * speed;
+            particleVel[i * 3 + 2] = Math.cos(phi) * speed;
+
+            // Gradient colors
+            const mixedColor = colorRed.clone().lerp(colorOrange, Math.random());
+            particleCol[i * 3] = mixedColor.r;
+            particleCol[i * 3 + 1] = mixedColor.g;
+            particleCol[i * 3 + 2] = mixedColor.b;
+        }
+
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+        particleGeo.setAttribute('color', new THREE.BufferAttribute(particleCol, 3));
+
+        const particleMat = new THREE.PointsMaterial({
+            size: 0.15,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const particleSystem = new THREE.Points(particleGeo, particleMat);
+        scene.add(particleSystem);
+
+        // 3. The "c" Vectors (Speed of light representation)
+        const vectors = new THREE.Group();
+        const arrowLength = 2;
+        const arrowColor = 0x06D6A0;
+        
+        const dirX = new THREE.Vector3(1, 0, 0);
+        const arrowX = new THREE.ArrowHelper(dirX, new THREE.Vector3(0,0,0), arrowLength, arrowColor, 0.5, 0.3);
+        
+        const dirY = new THREE.Vector3(0, 1, 0);
+        const arrowY = new THREE.ArrowHelper(dirY, new THREE.Vector3(0,0,0), arrowLength, arrowColor, 0.5, 0.3);
+        
+        const dirZ = new THREE.Vector3(0, 0, 1);
+        const arrowZ = new THREE.ArrowHelper(dirZ, new THREE.Vector3(0,0,0), arrowLength, arrowColor, 0.5, 0.3);
+
+        vectors.add(arrowX, arrowY, arrowZ);
+        vectors.scale.set(0.01, 0.01, 0.01);
+        vectors.visible = false;
+        scene.add(vectors);
+
+        // --- Logic & Calculations ---
+        function getRadiusFromMass(m) {
+            // r proportional to cube root of mass
+            return Math.cbrt(m) * 0.8; // 0.8 is a visual scale factor
+        }
+
+        function updateCalculations() {
+            const m_mg = params.mass_mg;
+            const m_kg = m_mg * 1e-6;
+            const eff = params.efficiency / 100;
+            
+            const total_E = m_kg * C_SQUARED;
+            const released_E = total_E * eff;
+            const homes = released_E / JOULES_PER_HOME_MONTH;
+
+            // Update UI
+            mathMass.innerText = `${m_kg.toExponential(2)} kg`;
+            mathEff.innerText = `${params.efficiency}%`;
+            mathEnergy.innerText = `${released_E.toExponential(3)} J`;
+            mathHomes.innerText = homes.toLocaleString(undefined, {maximumFractionDigits: 0});
+
+            // If not currently animating a conversion, update sphere size immediately
+            if (!isConverting) {
+                currentMassRadius = getRadiusFromMass(params.mass_mg);
+                resetScene();
+            }
+        }
+
+        function resetScene() {
+            isConverting = false;
+            burstLight.intensity = 0;
+            particleMat.opacity = 0;
+            vectors.visible = false;
+            
+            // Reset particle positions
+            const positions = particleSystem.geometry.attributes.position.array;
+            for (let i = 0; i < particleCount * 3; i++) {
+                positions[i] = 0;
+            }
+            particleSystem.geometry.attributes.position.needsUpdate = true;
+        }
+
+        function startConversion() {
+            if (isConverting) return;
+            
+            isConverting = true;
+            conversionTime = 0;
+            
+            // Calculate target mass remaining
+            const remainingMass = params.mass_mg * (1 - params.efficiency / 100);
+            targetMassRadius = getRadiusFromMass(remainingMass);
+
+            // Reset particles to center
+            resetScene();
+            isConverting = true; // re-set after resetScene
+            
+            particleMat.opacity = 0.9;
+            burstLight.intensity = 3;
+            
+            vectors.visible = true;
+            vectors.scale.set(0.1, 0.1, 0.1);
+            
+            // Flash effect
+            scene.background = new THREE.Color(0xffffff);
+            setTimeout(() => {
+                scene.background = new THREE.Color(0xf0f4f8);
+            }, 50);
+        }
+
+        // --- Event Listeners ---
+        massSlider.addEventListener('input', (e) => {
+            params.mass_mg = parseFloat(e.target.value);
+            massVal.innerText = `${params.mass_mg.toFixed(1)} mg`;
+            updateCalculations();
+        });
+
+        effSlider.addEventListener('input', (e) => {
+            params.efficiency = parseInt(e.target.value);
+            effVal.innerText = `${params.efficiency}%`;
+            updateCalculations();
+        });
+
+        timeSlider.addEventListener('input', (e) => {
+            params.timeScale = parseFloat(e.target.value);
+            timeVal.innerText = `${params.timeScale.toFixed(1)}x`;
+        });
+
+        btnConvert.addEventListener('click', startConversion);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            controls.update();
+
+            if (isConverting) {
+                conversionTime += delta * params.timeScale;
+
+                // 1. Shrink Sphere
+                // Smooth lerp towards target radius
+                currentMassRadius += (targetMassRadius - currentMassRadius) * 0.1 * params.timeScale;
+                
+                // Prevent negative scale due to float imprecision
+                const displayRadius = Math.max(0.001, currentMassRadius);
+                massSphere.scale.set(displayRadius, displayRadius, displayRadius);
+
+                // 2. Expand Particles
+                const positions = particleSystem.geometry.attributes.position.array;
+                const activeParticles = Math.floor(particleCount * (params.efficiency / 100)); // Only emit based on efficiency
+                
+                for (let i = 0; i < activeParticles; i++) {
+                    positions[i * 3] += particleVel[i * 3] * delta * params.timeScale;
+                    positions[i * 3 + 1] += particleVel[i * 3 + 1] * delta * params.timeScale;
+                    positions[i * 3 + 2] += particleVel[i * 3 + 2] * delta * params.timeScale;
+                }
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+
+                // Fade out particles
+                if (conversionTime > 0.5) {
+                    particleMat.opacity = Math.max(0, particleMat.opacity - delta * 0.5 * params.timeScale);
+                }
+
+                // 3. Animate "c" Vectors
+                if (conversionTime < 1.0) {
+                    const vScale = 0.1 + conversionTime * 5;
+                    vectors.scale.set(vScale, vScale, vScale);
+                } else {
+                    vectors.visible = false;
+                }
+
+                // 4. Fade Light
+                burstLight.intensity = Math.max(0, burstLight.intensity - delta * 2 * params.timeScale);
+
+                // End conversion state
+                if (particleMat.opacity <= 0 && currentMassRadius - targetMassRadius < 0.01) {
+                    isConverting = false;
+                    currentMassRadius = targetMassRadius;
+                }
+
+            } else {
+                // Breathing animation when idle
+                const breath = 1 + 0.03 * Math.sin(time * 2);
+                const r = Math.max(0.001, currentMassRadius * breath);
+                massSphere.scale.set(r, r, r);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updateCalculations();
+        animate();
+
+    </script>
+</body>
+</html>

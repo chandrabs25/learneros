@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>First Law of Thermodynamics - Interactive 3D Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2b2d42;
+            --text-muted: #6c757d;
+            --accent-red: #FF3366;
+            --accent-green: #06D6A0;
+            --accent-orange: #F77F00;
+            --accent-blue: #4361EE;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* UI Panel (Left) */
+        #ui-panel {
+            width: 320px;
+            min-width: 320px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid var(--panel-border);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 5px;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 2px 8px;
+            border-radius: 6px;
+            color: var(--accent-blue);
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        #q-slider::-webkit-slider-thumb { background: var(--accent-red); }
+        #p-slider::-webkit-slider-thumb { background: var(--accent-orange); }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .toggle-group input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-blue);
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            user-select: none;
+        }
+
+        button.reset-btn {
+            background: var(--text-main);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: auto;
+        }
+
+        button.reset-btn:hover {
+            background: #1a1b26;
+        }
+
+        /* Canvas Area (Right) */
+        #canvas-container {
+            flex-grow: 1;
+            position: relative;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            min-width: 280px;
+        }
+
+        .formula-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .formula-main {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.2rem;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .formula-main span.q { color: var(--accent-red); }
+        .formula-main span.u { color: var(--accent-blue); }
+        .formula-main span.w { color: var(--accent-green); }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .data-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .data-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .data-val {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+
+        .val-q { color: var(--accent-red); }
+        .val-w { color: var(--accent-green); }
+        .val-u { color: var(--accent-blue); }
+        .val-t { color: #8338ec; }
+        .val-v { color: var(--text-main); }
+        .val-p { color: var(--accent-orange); }
+
+        /* Legend */
+        #legend {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid var(--panel-border);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            font-size: 0.8rem;
+            pointer-events: none;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .legend-item:last-child { margin-bottom: 0; }
+        .color-box { width: 12px; height: 12px; border-radius: 3px; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #ui-panel { width: 100%; height: 40%; border-right: none; border-bottom: 1px solid var(--panel-border); }
+            #canvas-container { height: 60%; }
+            #formula-card { top: 10px; left: 10px; padding: 12px; min-width: 200px; }
+            .formula-main { font-size: 1rem; }
+            .data-val { font-size: 0.85rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- UI Panel -->
+    <div id="ui-panel">
+        <div>
+            <h1>Thermodynamics</h1>
+            <p class="subtitle">First Law: Piston-Cylinder System</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Heat Input Rate (Q̇)</span>
+                <span class="control-value" id="q-val">0 J/s</span>
+            </div>
+            <input type="range" id="q-slider" min="-200" max="200" step="1" value="0">
+            
+            <label class="toggle-group">
+                <input type="checkbox" id="adiabatic-toggle">
+                <span class="toggle-label">Adiabatic Wall (Q = 0)</span>
+            </label>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">External Pressure (P_ext)</span>
+                <span class="control-value" id="p-val">1.0 atm</span>
+            </div>
+            <input type="range" id="p-slider" min="0.5" max="5.0" step="0.1" value="1.0">
+            
+            <label class="toggle-group">
+                <input type="checkbox" id="lock-toggle">
+                <span class="toggle-label">Lock Piston (Isochoric)</span>
+            </label>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Moles of Gas (n)</span>
+                <span class="control-value" id="n-val">0.20 mol</span>
+            </div>
+            <input type="range" id="n-slider" min="0.1" max="0.5" step="0.05" value="0.2">
+        </div>
+
+        <button class="reset-btn" id="reset-btn">Reset Simulation</button>
+    </div>
+
+    <!-- Canvas Area -->
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">First Law of Thermodynamics</div>
+            <div class="formula-main">
+                <span class="q">ΔQ</span> = <span class="u">ΔU</span> + <span class="w">W</span>
+            </div>
+            <div class="data-grid">
+                <div class="data-item">
+                    <span class="data-label">Total Heat (Q)</span>
+                    <span class="data-val val-q" id="disp-q">0.0 J</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Internal Energy (U)</span>
+                    <span class="data-val val-u" id="disp-u">748.3 J</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Work Done (W)</span>
+                    <span class="data-val val-w" id="disp-w">0.0 J</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Temperature (T)</span>
+                    <span class="data-val val-t" id="disp-t">300.0 K</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Volume (V)</span>
+                    <span class="data-val val-v" id="disp-v">4.92 L</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Gas Pressure (P)</span>
+                    <span class="data-val val-p" id="disp-pgas">1.00 atm</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="legend">
+            <div class="legend-item"><div class="color-box" style="background: var(--accent-red);"></div> Heat Added / High Temp</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--accent-blue);"></div> Heat Removed / Low Temp</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--accent-green);"></div> Work (Expansion)</div>
+            <div class="legend-item"><div class="color-box" style="background: var(--accent-orange);"></div> Heat Source</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- PHYSICS ENGINE ---
+        const R = 8.314; // Ideal gas constant J/(mol·K)
+        const ATM_TO_PA = 101325;
+        const AREA = 0.01; // Cross-sectional area of cylinder (m^2)
+        const PISTON_MASS = 5.0; // kg
+        const DT = 1/60; // Fixed time step for integration
+
+        let state = {
+            n: 0.2,
+            T: 300,
+            P_ext_atm: 1.0,
+            Q_dot: 0,
+            isAdiabatic: false,
+            isLocked: false,
+            
+            // Calculated
+            U: 0,
+            V: 0,
+            h: 0,
+            P_gas: 0,
+            v_piston: 0,
+            
+            // Accumulators
+            Q_total: 0,
+            W_total: 0
+        };
+
+        function initPhysics() {
+            state.U = 1.5 * state.n * R * state.T;
+            let P_ext_pa = state.P_ext_atm * ATM_TO_PA;
+            state.V = (state.n * R * state.T) / P_ext_pa;
+            state.h = state.V / AREA;
+            state.P_gas = P_ext_pa;
+            state.v_piston = 0;
+            state.Q_total = 0;
+            state.W_total = 0;
+        }
+
+        initPhysics();
+
+        // --- THREE.JS SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(12, 8, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 4, 0);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        // --- VISUAL MAPPING ---
+        // 1 meter in physics = 10 units in Three.js
+        const SCALE = 10;
+        const VISUAL_RADIUS = Math.sqrt(AREA / Math.PI) * SCALE * 3; // Scaled up radius for better visibility
+        const MAX_VISUAL_HEIGHT = 12;
+
+        // Materials
+        const glassMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.9,
+            opacity: 0.3,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+
+        const adiabaticMaterial = new THREE.MeshStandardMaterial({
+            color: 0x888888,
+            metalness: 0.3,
+            roughness: 0.7,
+            side: THREE.DoubleSide
+        });
+
+        const pistonMaterial = new THREE.MeshStandardMaterial({
+            color: 0xCED4DA,
+            metalness: 0.8,
+            roughness: 0.3
+        });
+
+        const heaterMaterial = new THREE.MeshStandardMaterial({
+            color: 0x333333,
+            emissive: 0xF77F00,
+            emissiveIntensity: 0
+        });
+
+        // Meshes
+        // Cylinder
+        const cylinderGeo = new THREE.CylinderGeometry(VISUAL_RADIUS, VISUAL_RADIUS, MAX_VISUAL_HEIGHT, 32, 1, true);
+        cylinderGeo.translate(0, MAX_VISUAL_HEIGHT/2, 0);
+        const cylinder = new THREE.Mesh(cylinderGeo, glassMaterial);
+        scene.add(cylinder);
+
+        // Base/Heater
+        const baseGeo = new THREE.CylinderGeometry(VISUAL_RADIUS + 0.1, VISUAL_RADIUS + 0.1, 0.4, 32);
+        const base = new THREE.Mesh(baseGeo, heaterMaterial);
+        base.position.y = -0.2;
+        scene.add(base);
+
+        // Piston
+        const pistonGeo = new THREE.CylinderGeometry(VISUAL_RADIUS - 0.05, VISUAL_RADIUS - 0.05, 0.4, 32);
+        const piston = new THREE.Mesh(pistonGeo, pistonMaterial);
+        scene.add(piston);
+
+        // Particles (InstancedMesh)
+        const MAX_PARTICLES = 100;
+        const particleGeo = new THREE.SphereGeometry(0.15, 8, 8);
+        const particleMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+        const particlesMesh = new THREE.InstancedMesh(particleGeo, particleMat, MAX_PARTICLES);
+        scene.add(particlesMesh);
+
+        // Particle Data
+        const particlesData = [];
+        for(let i=0; i<MAX_PARTICLES; i++) {
+            particlesData.push({
+                pos: new THREE.Vector3(
+                    (Math.random() - 0.5) * VISUAL_RADIUS * 1.5,
+                    Math.random() * 4,
+                    (Math.random() - 0.5) * VISUAL_RADIUS * 1.5
+                ),
+                vel: new THREE.Vector3(
+                    (Math.random() - 0.5),
+                    (Math.random() - 0.5),
+                    (Math.random() - 0.5)
+                ).normalize()
+            });
+        }
+
+        const dummy = new THREE.Object3D();
+        const colorCold = new THREE.Color('#4361EE');
+        const colorHot = new THREE.Color('#FF3366');
+        const tempColor = new THREE.Color();
+
+        // Arrows
+        const heatArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,-1,0), 0, 0xFF3366, 0.5, 0.3);
+        scene.add(heatArrow);
+
+        const workArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 0, 0x06D6A0, 0.5, 0.3);
+        scene.add(workArrow);
+
+        // --- UI BINDINGS ---
+        const qSlider = document.getElementById('q-slider');
+        const pSlider = document.getElementById('p-slider');
+        const nSlider = document.getElementById('n-slider');
+        const adiabaticToggle = document.getElementById('adiabatic-toggle');
+        const lockToggle = document.getElementById('lock-toggle');
+        const resetBtn = document.getElementById('reset-btn');
+
+        const qVal = document.getElementById('q-val');
+        const pVal = document.getElementById('p-val');
+        const nVal = document.getElementById('n-val');
+
+        const dispQ = document.getElementById('disp-q');
+        const dispU = document.getElementById('disp-u');
+        const dispW = document.getElementById('disp-w');
+        const dispT = document.getElementById('disp-t');
+        const dispV = document.getElementById('disp-v');
+        const dispPgas = document.getElementById('disp-pgas');
+
+        qSlider.addEventListener('input', (e) => {
+            if(state.isAdiabatic) { e.target.value = 0; return; }
+            state.Q_dot = parseFloat(e.target.value);
+            qVal.innerText = `${state.Q_dot > 0 ? '+' : ''}${state.Q_dot} J/s`;
+        });
+
+        pSlider.addEventListener('input', (e) => {
+            state.P_ext_atm = parseFloat(e.target.value);
+            pVal.innerText = `${state.P_ext_atm.toFixed(1)} atm`;
+        });
+
+        nSlider.addEventListener('input', (e) => {
+            let newN = parseFloat(e.target.value);
+            // Adjust U to maintain current T when n changes
+            state.U = 1.5 * newN * R * state.T;
+            state.n = newN;
+            nVal.innerText = `${state.n.toFixed(2)} mol`;
+        });
+
+        adiabaticToggle.addEventListener('change', (e) => {
+            state.isAdiabatic = e.target.checked;
+            if(state.isAdiabatic) {
+                state.Q_dot = 0;
+                qSlider.value = 0;
+                qVal.innerText = `0 J/s`;
+                qSlider.disabled = true;
+                cylinder.material = adiabaticMaterial;
+            } else {
+                qSlider.disabled = false;
+                cylinder.material = glassMaterial;
+            }
+        });
+
+        lockToggle.addEventListener('change', (e) => {
+            state.isLocked = e.target.checked;
+            if(state.isLocked) state.v_piston = 0;
+        });
+
+        resetBtn.addEventListener('click', () => {
+            qSlider.value = 0;
+            pSlider.value = 1.0;
+            nSlider.value = 0.2;
+            adiabaticToggle.checked = false;
+            lockToggle.checked = false;
+            
+            qSlider.disabled = false;
+            cylinder.material = glassMaterial;
+            
+            state.n = 0.2;
+            state.T = 300;
+            state.P_ext_atm = 1.0;
+            state.Q_dot = 0;
+            state.isAdiabatic = false;
+            state.isLocked = false;
+            
+            qVal.innerText = `0 J/s`;
+            pVal.innerText = `1.0 atm`;
+            nVal.innerText = `0.20 mol`;
+            
+            initPhysics();
+        });
+
+        // --- MAIN LOOP ---
+        function updatePhysics() {
+            // 1. Heat Input
+            let dQ = state.Q_dot * DT;
+            state.Q_total += dQ;
+
+            // 2. Forces and Piston Movement
+            let P_ext_pa = state.P_ext_atm * ATM_TO_PA;
+            state.P_gas = (state.n * R * state.T) / state.V;
+            
+            let F_net = (state.P_gas - P_ext_pa) * AREA;
+            
+            let dh = 0;
+            if (!state.isLocked) {
+                let a = F_net / PISTON_MASS;
+                state.v_piston += a * DT;
+                state.v_piston *= 0.85; // Damping for stability
+                
+                dh = state.v_piston * DT;
+                
+                // Constraints
+                if (state.h + dh < 0.05) {
+                    dh = 0.05 - state.h;
+                    state.v_piston = 0;
+                }
+                if (state.h + dh > (MAX_VISUAL_HEIGHT/SCALE)) {
+                    dh = (MAX_VISUAL_HEIGHT/SCALE) - state.h;
+                    state.v_piston = 0;
+                }
+                
+                state.h += dh;
+            }
+
+            // 3. Work Done
+            let dV = dh * AREA;
+            let dW = state.P_gas * dV;
+            state.W_total += dW;
+
+            // 4. Internal Energy & Temperature
+            let dU = dQ - dW;
+            state.U += dU;
+            
+            // Prevent absolute zero or negative temp
+            if(state.U < 10) state.U = 10; 
+            
+            state.T = state.U / (1.5 * state.n * R);
+            state.V = state.h * AREA;
+            state.P_gas = (state.n * R * state.T) / state.V;
+        }
+
+        function updateVisuals() {
+            let visualH = state.h * SCALE;
+            piston.position.y = visualH;
+
+            // Update Heater Glow
+            if(state.Q_dot > 0) {
+                heaterMaterial.emissiveIntensity = Math.min(1, state.Q_dot / 100);
+                heaterMaterial.emissive.setHex(0xF77F00);
+            } else if (state.Q_dot < 0) {
+                heaterMaterial.emissiveIntensity = Math.min(1, Math.abs(state.Q_dot) / 100);
+                heaterMaterial.emissive.setHex(0x4361EE);
+            } else {
+                heaterMaterial.emissiveIntensity = 0;
+            }
+
+            // Update Arrows
+            if(Math.abs(state.Q_dot) > 1) {
+                heatArrow.visible = true;
+                let dir = state.Q_dot > 0 ? 1 : -1;
+                heatArrow.setDirection(new THREE.Vector3(0, dir, 0));
+                heatArrow.setLength(1 + Math.abs(state.Q_dot)/50, 0.5, 0.3);
+                heatArrow.setColor(state.Q_dot > 0 ? 0xFF3366 : 0x4361EE);
+                heatArrow.position.y = state.Q_dot > 0 ? -1 : 0.5;
+            } else {
+                heatArrow.visible = false;
+            }
+
+            if(!state.isLocked && Math.abs(state.v_piston) > 0.01) {
+                workArrow.visible = true;
+                let dir = state.v_piston > 0 ? 1 : -1;
+                workArrow.setDirection(new THREE.Vector3(0, dir, 0));
+                workArrow.setLength(1 + Math.abs(state.v_piston)*2, 0.5, 0.3);
+                workArrow.position.set(0, visualH + 0.2, 0);
+                workArrow.setColor(dir > 0 ? 0x06D6A0 : 0x06D6A0); // Green for work
+            } else {
+                workArrow.visible = false;
+            }
+
+            // Update Particles
+            let activeParticles = Math.floor((state.n / 0.5) * MAX_PARTICLES);
+            particlesMesh.count = activeParticles;
+
+            // Map Temp to Color (100K to 600K)
+            let tFactor = Math.max(0, Math.min(1, (state.T - 100) / 500));
+            tempColor.lerpColors(colorCold, colorHot, tFactor);
+            
+            let speed = 0.05 * Math.sqrt(state.T / 300);
+
+            for(let i=0; i<activeParticles; i++) {
+                let p = particlesData[i];
+                
+                // Move
+                p.pos.addScaledVector(p.vel, speed);
+                
+                // Bounce Y
+                if(p.pos.y < 0.2) { p.pos.y = 0.2; p.vel.y *= -1; }
+                if(p.pos.y > visualH - 0.2) { p.pos.y = visualH - 0.2; p.vel.y *= -1; }
+                
+                // Bounce XZ (Cylinder walls)
+                let r2 = p.pos.x*p.pos.x + p.pos.z*p.pos.z;
+                let maxR = VISUAL_RADIUS - 0.2;
+                if(r2 > maxR*maxR) {
+                    let r = Math.sqrt(r2);
+                    let nx = p.pos.x / r;
+                    let nz = p.pos.z / r;
+                    
+                    // Reflect velocity: v = v - 2(v.n)n
+                    let dot = p.vel.x*nx + p.vel.z*nz;
+                    p.vel.x -= 2 * dot * nx;
+                    p.vel.z -= 2 * dot * nz;
+                    
+                    // Push inside
+                    p.pos.x = nx * maxR;
+                    p.pos.z = nz * maxR;
+                }
+
+                dummy.position.copy(p.pos);
+                dummy.updateMatrix();
+                particlesMesh.setMatrixAt(i, dummy.matrix);
+                particlesMesh.setColorAt(i, tempColor);
+            }
+            particlesMesh.instanceMatrix.needsUpdate = true;
+            if(particlesMesh.instanceColor) particlesMesh.instanceColor.needsUpdate = true;
+
+            // Update UI Text
+            dispQ.innerText = `${state.Q_total > 0 ? '+' : ''}${state.Q_total.toFixed(1)} J`;
+            dispU.innerText = `${state.U.toFixed(1)} J`;
+            dispW.innerText = `${state.W_total > 0 ? '+' : ''}${state.W_total.toFixed(1)} J`;
+            dispT.innerText = `${state.T.toFixed(1)} K`;
+            dispV.innerText = `${(state.V * 1000).toFixed(2)} L`; // m^3 to L
+            dispPgas.innerText = `${(state.P_gas / ATM_TO_PA).toFixed(2)} atm`;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            updatePhysics();
+            updateVisuals();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>

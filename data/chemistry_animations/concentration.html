@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Dynamics: Concentration & Osmosis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        svg {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Typography */
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #212529;
+        }
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            fill: #495057;
+        }
+
+        /* Continuous Vibrational Motion */
+        .h2o-vib {
+            animation: vibrate 2s infinite ease-in-out alternate;
+        }
+        .h2o-vib-delay-1 { animation: vibrate 2.2s infinite ease-in-out alternate-reverse; }
+        .h2o-vib-delay-2 { animation: vibrate 1.8s infinite ease-in-out alternate; }
+        
+        @keyframes vibrate {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(1px, -1px) rotate(3deg); }
+            50% { transform: translate(-1px, 1px) rotate(-2deg); }
+            75% { transform: translate(2px, 0px) rotate(1deg); }
+            100% { transform: translate(-1px, -1px) rotate(-1deg); }
+        }
+
+        /* Evaporation Animations (3-7s of the 15s loop -> 20% to 46%) */
+        .evap-1 { animation: evap-1 15s infinite ease-out; }
+        .evap-2 { animation: evap-2 15s infinite ease-out; }
+        .evap-3 { animation: evap-3 15s infinite ease-out; }
+
+        @keyframes evap-1 {
+            0%, 20% { opacity: 0; transform: translate(0, 0); }
+            25% { opacity: 1; transform: translate(0, -30px); }
+            40% { opacity: 1; transform: translate(-15px, -60px); }
+            60% { opacity: 1; transform: translate(10px, -80px); }
+            80% { opacity: 1; transform: translate(-5px, -70px); }
+            90% { opacity: 1; transform: translate(0, -75px); }
+            95%, 100% { opacity: 0; transform: translate(0, -75px); }
+        }
+
+        @keyframes evap-2 {
+            0%, 20% { opacity: 0; transform: translate(0, 0); }
+            25% { opacity: 1; transform: translate(0, -25px); }
+            40% { opacity: 1; transform: translate(15px, -50px); }
+            60% { opacity: 1; transform: translate(-10px, -75px); }
+            80% { opacity: 1; transform: translate(5px, -65px); }
+            90% { opacity: 1; transform: translate(0, -70px); }
+            95%, 100% { opacity: 0; transform: translate(0, -70px); }
+        }
+
+        @keyframes evap-3 {
+            0%, 20% { opacity: 0; transform: translate(0, 0); }
+            25% { opacity: 1; transform: translate(0, -35px); }
+            40% { opacity: 1; transform: translate(-5px, -55px); }
+            60% { opacity: 1; transform: translate(15px, -65px); }
+            80% { opacity: 1; transform: translate(-10px, -80px); }
+            90% { opacity: 1; transform: translate(0, -75px); }
+            95%, 100% { opacity: 0; transform: translate(0, -75px); }
+        }
+
+        /* Evaporation Arrows */
+        .evap-arrow { animation: evap-arrow-anim 15s infinite ease-in-out; }
+        @keyframes evap-arrow-anim {
+            0%, 20% { opacity: 0; transform: translateY(10px); }
+            25%, 40% { opacity: 1; transform: translateY(-10px); }
+            45%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* Osmosis Arrows (7-12s -> 46% to 80%) */
+        .osmosis-arrow { animation: osmosis-arrow-anim 15s infinite ease-in-out; }
+        .osmosis-arrow-delay { animation: osmosis-arrow-anim-delay 15s infinite ease-in-out; }
+        
+        @keyframes osmosis-arrow-anim {
+            0%, 45% { opacity: 0; transform: translateX(-10px); }
+            50%, 70% { opacity: 1; transform: translateX(15px); }
+            75%, 100% { opacity: 0; transform: translateX(15px); }
+        }
+        @keyframes osmosis-arrow-anim-delay {
+            0%, 50% { opacity: 0; transform: translateX(-10px); }
+            55%, 75% { opacity: 1; transform: translateX(15px); }
+            80%, 100% { opacity: 0; transform: translateX(15px); }
+        }
+
+        /* Osmosis Molecules Flow */
+        .osmosis-mol-1 { animation: osmosis-mol-1 15s infinite ease-in-out; }
+        .osmosis-mol-2 { animation: osmosis-mol-2 15s infinite ease-in-out; }
+
+        @keyframes osmosis-mol-1 {
+            0%, 46% { opacity: 0; transform: translate(0, 0); }
+            48% { opacity: 1; transform: translate(0, 0); }
+            65% { opacity: 1; transform: translate(60px, -10px); }
+            70%, 100% { opacity: 0; transform: translate(60px, -10px); }
+        }
+        @keyframes osmosis-mol-2 {
+            0%, 52% { opacity: 0; transform: translate(0, 0); }
+            54% { opacity: 1; transform: translate(0, 0); }
+            70% { opacity: 1; transform: translate(60px, 10px); }
+            75%, 100% { opacity: 0; transform: translate(60px, 10px); }
+        }
+
+        /* Liquid Level Shift (12-15s -> 80% to 100%, resetting at 98%) */
+        .liq-left { animation: shift-left-liq 15s infinite ease-in-out; }
+        .liq-right { animation: shift-right-liq 15s infinite ease-in-out; }
+        .shift-left-mols { animation: shift-left-mols 15s infinite ease-in-out; }
+        .shift-right-mols { animation: shift-right-mols 15s infinite ease-in-out; }
+
+        @keyframes shift-left-liq {
+            0%, 75% { y: 250px; height: 160px; }
+            85%, 92% { y: 290px; height: 120px; }
+            98%, 100% { y: 250px; height: 160px; }
+        }
+        @keyframes shift-right-liq {
+            0%, 75% { y: 250px; height: 160px; }
+            85%, 92% { y: 210px; height: 200px; }
+            98%, 100% { y: 250px; height: 160px; }
+        }
+        @keyframes shift-left-mols {
+            0%, 75% { transform: translateY(0); }
+            85%, 92% { transform: translateY(40px); }
+            98%, 100% { transform: translateY(0); }
+        }
+        @keyframes shift-right-mols {
+            0%, 75% { transform: translateY(0); }
+            85%, 92% { transform: translateY(-40px); }
+            98%, 100% { transform: translateY(0); }
+        }
+
+        /* Vapor Density Indicators */
+        .vapor-density-left { animation: vapor-density-left 15s infinite ease-in-out; }
+        .vapor-density-right { animation: vapor-density-right 15s infinite ease-in-out; }
+
+        @keyframes vapor-density-left {
+            0%, 20% { opacity: 0; }
+            35%, 92% { opacity: 1; }
+            98%, 100% { opacity: 0; }
+        }
+        @keyframes vapor-density-right {
+            0%, 20% { opacity: 0; }
+            35%, 92% { opacity: 0.4; }
+            98%, 100% { opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Water Molecule (Bent Geometry) -->
+            <g id="h2o">
+                <line x1="0" y1="0" x2="-6" y2="6" stroke="#333" stroke-width="2"/>
+                <line x1="0" y1="0" x2="6" y2="6" stroke="#333" stroke-width="2"/>
+                <circle cx="0" cy="0" r="6" fill="#FF4444"/>
+                <circle cx="-6" cy="6" r="4" fill="#CCCCCC"/>
+                <circle cx="6" cy="6" r="4" fill="#CCCCCC"/>
+            </g>
+
+            <!-- Solute Particle (Glucose/Non-volatile) -->
+            <g id="solute">
+                <circle cx="0" cy="0" r="14" fill="#44CC44"/>
+                <circle cx="-4" cy="-4" r="5" fill="#88EE88" opacity="0.6"/>
+            </g>
+
+            <!-- Up Arrow (Evaporation) -->
+            <g id="up-arrow">
+                <path d="M 0 0 L 0 -20 M 0 -20 L -5 -15 M 0 -20 L 5 -15" stroke="#F77F00" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+
+            <!-- Right Arrow (Osmosis) -->
+            <g id="right-arrow">
+                <path d="M 0 0 L 30 0 M 30 0 L 20 -6 M 30 0 L 20 6" stroke="#7209B7" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </g>
+
+            <!-- U-Tube Clip Path -->
+            <clipPath id="utube-clip">
+                <path d="M 200 150 L 200 450 A 50 50 0 0 0 250 500 L 550 500 A 50 50 0 0 0 600 450 L 600 150 L 480 150 L 480 380 A 20 20 0 0 1 460 400 L 340 400 A 20 20 0 0 1 320 380 L 320 150 Z" />
+            </clipPath>
+
+            <!-- Liquid Gradient (userSpaceOnUse ensures seamless blending across rects) -->
+            <linearGradient id="liq-grad" x1="0" y1="250" x2="0" y2="500" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#D0EFFF" />
+                <stop offset="100%" stop-color="#A9D6E5" />
+            </linearGradient>
+            
+            <!-- Vapor Gradient -->
+            <radialGradient id="vapor-grad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#D0EFFF" stop-opacity="0.4" />
+                <stop offset="100%" stop-color="#D0EFFF" stop-opacity="0" />
+            </radialGradient>
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="40" text-anchor="middle" font-size="24" font-weight="700">Molecular Dynamics: Concentration &amp; Osmosis</text>
+
+        <!-- Legend -->
+        <rect x="610" y="20" width="170" height="70" fill="#ffffff" stroke="#dee2e6" stroke-width="1" rx="6"/>
+        <use href="#h2o" x="635" y="40"/>
+        <text x="655" y="44" font-size="12">Solvent (H₂O)</text>
+        <use href="#solute" x="635" y="65" transform="scale(0.6) translate(425, 43)"/>
+        <text x="655" y="69" font-size="12">Solute Particle</text>
+
+        <!-- Vapor Pressure Labels -->
+        <text x="260" y="90" text-anchor="middle" font-size="16" font-weight="600" fill="#FF4444">High Vapor Pressure</text>
+        <text x="260" y="115" text-anchor="middle" class="formula" font-size="16">P<tspan dy="-5" font-size="12">°</tspan><tspan dy="10" font-size="12">solvent</tspan></text>
+        
+        <text x="540" y="90" text-anchor="middle" font-size="16" font-weight="600" fill="#7209B7">Lowered Vapor Pressure</text>
+        <text x="540" y="115" text-anchor="middle" class="formula" font-size="16">P<tspan dy="5" font-size="12">solution</tspan> &lt; P<tspan dy="-10" font-size="12">°</tspan><tspan dy="10" font-size="12">solvent</tspan></text>
+
+        <!-- Vapor Density Visuals -->
+        <circle cx="260" cy="200" r="60" fill="url(#vapor-grad)" class="vapor-density-left" />
+        <circle cx="540" cy="200" r="60" fill="url(#vapor-grad)" class="vapor-density-right" />
+
+        <!-- U-Tube System -->
+        <g id="u-tube-system">
+            <!-- Background Fill -->
+            <path d="M 200 150 L 200 450 A 50 50 0 0 0 250 500 L 550 500 A 50 50 0 0 0 600 450 L 600 150 L 480 150 L 480 380 A 20 20 0 0 1 460 400 L 340 400 A 20 20 0 0 1 320 380 L 320 150 Z" fill="#E9ECEF" opacity="0.4"/>
+
+            <!-- Clipped Liquid and Molecules -->
+            <g clip-path="url(#utube-clip)">
+                <!-- Liquid Rectangles -->
+                <rect class="liq-left" x="190" y="250" width="140" height="160" fill="url(#liq-grad)"/>
+                <rect class="liq-right" x="470" y="250" width="140" height="160" fill="url(#liq-grad)"/>
+                <rect class="liq-bottom" x="190" y="400" width="420" height="110" fill="url(#liq-grad)"/>
+
+                <!-- Left Side Molecules (Pure Solvent) -->
+                <g class="shift-left-mols">
+                    <!-- Bulk Liquid -->
+                    <use href="#h2o" class="h2o-vib" x="220" y="270"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="250" y="265"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="280" y="275"/>
+                    <use href="#h2o" class="h2o-vib" x="300" y="260"/>
+                    
+                    <use href="#h2o" class="h2o-vib-delay-1" x="230" y="300"/>
+                    <use href="#h2o" class="h2o-vib" x="260" y="310"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="290" y="295"/>
+                    
+                    <use href="#h2o" class="h2o-vib" x="220" y="340"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="255" y="335"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="285" y="345"/>
+                    <use href="#h2o" class="h2o-vib" x="310" y="330"/>
+
+                    <use href="#h2o" class="h2o-vib-delay-1" x="235" y="375"/>
+                    <use href="#h2o" class="h2o-vib" x="270" y="380"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="300" y="370"/>
+
+                    <!-- Bottom Pipe Left -->
+                    <use href="#h2o" class="h2o-vib" x="240" y="420"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="280" y="430"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="320" y="425"/>
+                    <use href="#h2o" class="h2o-vib" x="360" y="435"/>
+                    
+                    <use href="#h2o" class="h2o-vib-delay-2" x="260" y="460"/>
+                    <use href="#h2o" class="h2o-vib" x="300" y="470"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="340" y="465"/>
+                    <use href="#h2o" class="h2o-vib" x="380" y="475"/>
+
+                    <use href="#h2o" class="h2o-vib-delay-1" x="280" y="490"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="330" y="495"/>
+                    <use href="#h2o" class="h2o-vib" x="370" y="490"/>
+                </g>
+
+                <!-- Right Side Molecules (Solution) -->
+                <g class="shift-right-mols">
+                    <!-- Surface Blocking Solutes -->
+                    <use href="#solute" x="500" y="260"/>
+                    <use href="#solute" x="540" y="260"/>
+                    <use href="#solute" x="580" y="260"/>
+
+                    <!-- Bulk Liquid -->
+                    <use href="#h2o" class="h2o-vib" x="520" y="270"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="560" y="275"/>
+                    
+                    <use href="#h2o" class="h2o-vib-delay-2" x="495" y="300"/>
+                    <use href="#solute" x="530" y="310"/>
+                    <use href="#h2o" class="h2o-vib" x="570" y="305"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="590" y="320"/>
+
+                    <use href="#h2o" class="h2o-vib" x="505" y="345"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="545" y="350"/>
+                    <use href="#solute" x="580" y="360"/>
+                    
+                    <use href="#solute" x="510" y="390"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="550" y="385"/>
+                    <use href="#h2o" class="h2o-vib" x="590" y="395"/>
+
+                    <!-- Bottom Pipe Right -->
+                    <use href="#h2o" class="h2o-vib-delay-2" x="420" y="430"/>
+                    <use href="#solute" x="460" y="435"/>
+                    <use href="#h2o" class="h2o-vib" x="490" y="425"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="530" y="435"/>
+                    <use href="#h2o" class="h2o-vib" x="570" y="430"/>
+
+                    <use href="#h2o" class="h2o-vib" x="430" y="470"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="470" y="465"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="510" y="475"/>
+                    <use href="#solute" x="550" y="480"/>
+                    <use href="#h2o" class="h2o-vib" x="580" y="465"/>
+
+                    <use href="#h2o" class="h2o-vib-delay-1" x="450" y="495"/>
+                    <use href="#h2o" class="h2o-vib" x="490" y="490"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="530" y="495"/>
+
+                    <!-- Hidden Extra Molecules (Slide up during level shift) -->
+                    <use href="#h2o" class="h2o-vib" x="430" y="520"/>
+                    <use href="#solute" x="470" y="525"/>
+                    <use href="#h2o" class="h2o-vib-delay-1" x="510" y="520"/>
+                    <use href="#h2o" class="h2o-vib-delay-2" x="550" y="530"/>
+                    <use href="#h2o" class="h2o-vib" x="580" y="525"/>
+                </g>
+            </g>
+
+            <!-- U-Tube Outline -->
+            <path d="M 200 150 L 200 450 A 50 50 0 0 0 250 500 L 550 500 A 50 50 0 0 0 600 450 L 600 150 L 480 150 L 480 380 A 20 20 0 0 1 460 400 L 340 400 A 20 20 0 0 1 320 380 L 320 150 Z" stroke="#6C757D" stroke-width="4" fill="none"/>
+
+            <!-- Semi-Permeable Membrane -->
+            <line x1="400" y1="400" x2="400" y2="500" stroke="#6C757D" stroke-width="4" stroke-dasharray="8,5" />
+        </g>
+
+        <!-- Evaporating Molecules (Left: 5, Right: 2) -->
+        <g>
+            <use href="#h2o" class="evap-1" x="230" y="250"/>
+            <use href="#h2o" class="evap-2" x="250" y="250"/>
+            <use href="#h2o" class="evap-3" x="270" y="250"/>
+            <use href="#h2o" class="evap-1" x="290" y="250"/>
+            <use href="#h2o" class="evap-2" x="310" y="250"/>
+
+            <use href="#h2o" class="evap-3" x="520" y="250"/>
+            <use href="#h2o" class="evap-1" x="560" y="250"/>
+        </g>
+
+        <!-- Osmosis Flow Molecules -->
+        <g>
+            <use href="#h2o" class="osmosis-mol-1" x="360" y="440"/>
+            <use href="#h2o" class="osmosis-mol-2" x="360" y="470"/>
+        </g>
+
+        <!-- Arrows -->
+        <g>
+            <!-- Evaporation Arrows Left -->
+            <use href="#up-arrow" x="240" y="240" class="evap-arrow"/>
+            <use href="#up-arrow" x="280" y="240" class="evap-arrow" style="animation-delay: 0.5s"/>
+            <use href="#up-arrow" x="300" y="240" class="evap-arrow" style="animation-delay: 1s"/>
+
+            <!-- Evaporation Arrow Right -->
+            <use href="#up-arrow" x="540" y="240" class="evap-arrow"/>
+
+            <!-- Osmosis Arrows -->
+            <use href="#right-arrow" x="370" y="435" class="osmosis-arrow"/>
+            <use href="#right-arrow" x="370" y="475" class="osmosis-arrow-delay"/>
+        </g>
+
+        <!-- Annotations & Labels -->
+        <text x="260" y="540" text-anchor="middle" font-size="16" font-weight="600">Pure Solvent (H₂O)</text>
+        <text x="540" y="540" text-anchor="middle" font-size="16" font-weight="600">Solution (Solute + H₂O)</text>
+
+        <!-- Membrane Label -->
+        <text x="400" y="380" text-anchor="middle" font-size="14" font-weight="600" fill="#6C757D">Semi-Permeable Membrane</text>
+        <path d="M 400 385 L 400 395" stroke="#6C757D" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+        <!-- Solute Blocking Annotation -->
+        <text x="680" y="265" font-size="14" font-weight="600" fill="#44CC44">Solute blocks surface</text>
+        <path d="M 675 260 L 600 260" stroke="#44CC44" stroke-width="2" stroke-dasharray="4,2"/>
+        <polygon points="600,260 608,256 608,264" fill="#44CC44"/>
+
+        <!-- Raoult's Law Formula -->
+        <text x="780" y="540" text-anchor="end" class="formula" font-size="18" font-weight="600">
+            P<tspan dy="5" font-size="12">1</tspan><tspan dy="-5"> = x</tspan><tspan dy="5" font-size="12">1</tspan><tspan dy="-5"> P</tspan><tspan dy="-5" font-size="12">°</tspan><tspan dy="10" font-size="12">1</tspan>
+        </text>
+        <text x="780" y="560" text-anchor="end" font-size="12" fill="#6C757D">Raoult's Law</text>
+
+    </svg>
+
+</body>
+</html>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravitational Field of a Hemispherical Shell</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #sidebar {
+            width: 25%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            padding: 25px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.03);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            color: #1e293b;
+            line-height: 1.4;
+        }
+
+        p.desc {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin: 0 0 15px 0;
+            line-height: 1.5;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Specific slider colors */
+        #slider_z::-webkit-slider-thumb { background: #FF3366; box-shadow: 0 2px 5px rgba(255, 51, 102, 0.4); }
+        #slider_M::-webkit-slider-thumb { background: #7209B7; box-shadow: 0 2px 5px rgba(114, 9, 183, 0.4); }
+        #slider_res::-webkit-slider-thumb { background: #F77F00; box-shadow: 0 2px 5px rgba(247, 127, 0, 0.4); }
+
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 1);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .formula-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            color: #1e293b;
+            margin-bottom: 15px;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .live-data {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        .data-label {
+            font-weight: 600;
+        }
+
+        .data-val {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 600;
+        }
+
+        .val-e { color: #7209B7; }
+        .val-f { color: #FF3366; }
+
+        .floating-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: opacity 0.1s;
+            white-space: nowrap;
+        }
+
+        #label-m { color: #FF3366; }
+        #label-cm { color: #111111; }
+
+        .legend {
+            margin-top: auto;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #sidebar { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.8); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-title">Numerical Integration</div>
+            <div class="math">E<sub>z</sub> = &int; (G&middot;dm / r&sup2;) cos(&theta;)</div>
+            <div class="live-data">
+                <div class="data-row">
+                    <span class="data-label">Net Field (E<sub>net</sub>):</span>
+                    <span class="data-val val-e" id="out-e">0.00e0 N/kg</span>
+                </div>
+                <div class="data-row">
+                    <span class="data-label">Force on m (F<sub>net</sub>):</span>
+                    <span class="data-val val-f" id="out-f">0.00e0 N</span>
+                </div>
+            </div>
+        </div>
+        <div id="label-m" class="floating-label">Test Mass (m)</div>
+        <div id="label-cm" class="floating-label">Center of Mass</div>
+    </div>
+
+    <div id="sidebar">
+        <div>
+            <h1>Gravitational Field: Hemispherical Shell</h1>
+            <p class="desc">Explore how a rigid extended body exerts gravitational force. Notice how horizontal components cancel out due to symmetry, and observe the non-zero field inside the shell.</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Shell Radius (R)</span>
+                <span class="control-value" id="val-R">3.0 m</span>
+            </div>
+            <input type="range" id="slider_R" min="1.0" max="5.0" step="0.1" value="3.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Test Mass Position (z)</span>
+                <span class="control-value" style="color: #FF3366;" id="val-z">2.0 m</span>
+            </div>
+            <input type="range" id="slider_z" min="-5.0" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Shell Mass (M)</span>
+                <span class="control-value" style="color: #7209B7;" id="val-M">5.0e11 kg</span>
+            </div>
+            <input type="range" id="slider_M" min="10000000000" max="1000000000000" step="10000000000" value="500000000000">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Integration Resolution</span>
+                <span class="control-value" style="color: #F77F00;" id="val-res">20</span>
+            </div>
+            <input type="range" id="slider_res" min="4" max="40" step="4" value="20">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Hemispherical Shell</div>
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Test Mass (m = 1 kg)</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> dF (Force from mass element)</div>
+            <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> F_net (Total Net Force)</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Constants & Variables ---
+        const G = 6.674e-11;
+        const testMass_m = 1.0; // kg
+        
+        let params = {
+            R: 3.0,
+            z: 2.0,
+            M: 5e11,
+            res: 20
+        };
+
+        // --- DOM Elements ---
+        const container = document.getElementById('canvas-container');
+        const labelM = document.getElementById('label-m');
+        const labelCM = document.getElementById('label-cm');
+        const outE = document.getElementById('out-e');
+        const outF = document.getElementById('out-f');
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        // Z is up in physics, configure camera accordingly
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.up.set(0, 0, 1);
+        camera.position.set(7, 7, 5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 0, 1.5);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        fillLight.position.set(-5, -10, -7);
+        scene.add(fillLight);
+
+        // --- Visual Objects ---
+
+        // 1. Coordinate System / Grid
+        const gridHelper = new THREE.PolarGridHelper(6, 16, 8, 64, 0xcbd5e1, 0xe2e8f0);
+        gridHelper.rotation.x = Math.PI / 2; // Rotate to XY plane
+        scene.add(gridHelper);
+
+        const zAxisMat = new THREE.LineBasicMaterial({ color: 0x94a3b8, transparent: true, opacity: 0.5 });
+        const zAxisGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,-6), new THREE.Vector3(0,0,6)]);
+        const zAxis = new THREE.Line(zAxisGeo, zAxisMat);
+        scene.add(zAxis);
+
+        // 2. Hemispherical Shell (Surface + Points)
+        const shellGroup = new THREE.Group();
+        scene.add(shellGroup);
+
+        // Base surface (radius 1, scaled later)
+        const shellGeo = new THREE.SphereGeometry(1, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+        const shellMat = new THREE.MeshPhysicalMaterial({
+            color: 0x4361EE,
+            transparent: true,
+            opacity: 0.25,
+            side: THREE.DoubleSide,
+            depthWrite: false,
+            roughness: 0.2,
+            metalness: 0.1
+        });
+        const shellMesh = new THREE.Mesh(shellGeo, shellMat);
+        shellGroup.add(shellMesh);
+
+        // Points (Mass elements)
+        const pointsGeo = new THREE.BufferGeometry();
+        const pointsMat = new THREE.PointsMaterial({ color: 0x4361EE, size: 0.08, sizeAttenuation: true });
+        const pointsMesh = new THREE.Points(pointsGeo, pointsMat);
+        shellGroup.add(pointsMesh);
+
+        // 3. Center of Mass Marker
+        const cmGeo = new THREE.SphereGeometry(0.08, 16, 16);
+        const cmMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const cmMarker = new THREE.Mesh(cmGeo, cmMat);
+        scene.add(cmMarker);
+
+        // 4. Test Mass
+        const tmGeo = new THREE.SphereGeometry(0.15, 32, 32);
+        const tmMat = new THREE.MeshPhongMaterial({ color: 0xFF3366, shininess: 100 });
+        const testMass = new THREE.Mesh(tmGeo, tmMat);
+        scene.add(testMass);
+
+        // 5. Force Vectors
+        const dFArrows = []; // Object pool for orange arrows
+        
+        // Custom Thick Arrow for Net Force
+        const netForceGroup = new THREE.Group();
+        const nfMat = new THREE.MeshPhongMaterial({ color: 0x7209B7, shininess: 80 });
+        
+        const nfCylGeo = new THREE.CylinderGeometry(0.06, 0.06, 1, 16);
+        const nfCyl = new THREE.Mesh(nfCylGeo, nfMat);
+        nfCyl.rotation.x = Math.PI / 2; // Align with Z
+        
+        const nfConeGeo = new THREE.ConeGeometry(0.18, 0.35, 16);
+        const nfCone = new THREE.Mesh(nfConeGeo, nfMat);
+        
+        netForceGroup.add(nfCyl);
+        netForceGroup.add(nfCone);
+        scene.add(netForceGroup);
+
+
+        // --- Physics & Update Logic ---
+
+        function updateSimulation() {
+            const { R, z, M, res } = params;
+
+            // Update Geometries
+            shellMesh.scale.set(R, R, R);
+            testMass.position.set(0, 0, z);
+            cmMarker.position.set(0, 0, R / 2); // CM of thin hemispherical shell is at R/2
+
+            // Shell opacity based on mass (visual flair)
+            const normalizedM = (M - 1e10) / (1e12 - 1e10);
+            shellMat.opacity = 0.15 + normalizedM * 0.3;
+
+            // Integration Variables
+            let netEz = 0;
+            let arrowIndex = 0;
+            
+            // Grid divisions
+            const numPhi = Math.max(2, Math.floor(res / 2));
+            const numTheta = res;
+            
+            const dPhi = (Math.PI / 2) / numPhi;
+            const dTheta = (Math.PI * 2) / numTheta;
+            
+            const surfaceArea = 2 * Math.PI * R * R;
+            const sigma = M / surfaceArea;
+
+            const pointPositions = [];
+
+            // Numerical Integration Loop
+            for (let i = 0; i < numPhi; i++) {
+                let phi = i * dPhi + dPhi / 2; // Midpoint of element
+                
+                for (let j = 0; j < numTheta; j++) {
+                    let theta = j * dTheta + dTheta / 2;
+
+                    // Area of this element: dA = R^2 * sin(phi) * dPhi * dTheta
+                    let dA = R * R * Math.sin(phi) * dPhi * dTheta;
+                    let dm = sigma * dA;
+
+                    // Cartesian coordinates of dm
+                    let x_dm = R * Math.sin(phi) * Math.cos(theta);
+                    let y_dm = R * Math.sin(phi) * Math.sin(theta);
+                    let z_dm = R * Math.cos(phi);
+
+                    pointPositions.push(x_dm, y_dm, z_dm);
+
+                    // Vector from test mass to dm (r_vec)
+                    let rx = x_dm - 0;
+                    let ry = y_dm - 0;
+                    let rz = z_dm - z;
+
+                    let distSq = rx*rx + ry*ry + rz*rz;
+                    
+                    // Prevent singularity if test mass is exactly on the shell
+                    if (distSq < 0.001) distSq = 0.001; 
+                    
+                    let dist = Math.sqrt(distSq);
+
+                    // Magnitude of dE = G * dm / r^2
+                    let dE = G * dm / distSq;
+
+                    // Z-component: dEz = dE * cos(alpha), where cos(alpha) = rz / dist
+                    let dEz = dE * (rz / dist);
+                    netEz += dEz;
+
+                    // --- Visualizing dF Arrows ---
+                    // To keep arrow lengths visually consistent regardless of resolution,
+                    // we scale the visual length by the ratio of total area to element area.
+                    let areaFactor = surfaceArea / dA;
+                    let visualLength = dE * areaFactor * 0.08; // Scaling constant
+                    
+                    // Clamp visual length to avoid massive arrows near singularity
+                    visualLength = Math.min(visualLength, 4.0);
+
+                    if (visualLength > 0.05) {
+                        updateDFArrow(arrowIndex++, rx, ry, rz, dist, visualLength);
+                    }
+                }
+            }
+
+            // Update Points Geometry
+            pointsGeo.setAttribute('position', new THREE.Float32BufferAttribute(pointPositions, 3));
+
+            // Hide unused arrows in pool
+            for (let i = arrowIndex; i < dFArrows.length; i++) {
+                dFArrows[i].visible = false;
+            }
+
+            // --- Update Net Force Arrow ---
+            updateNetForceArrow(netEz);
+
+            // --- Update UI Text ---
+            outE.innerText = Math.abs(netEz).toExponential(2) + " N/kg";
+            let netF = Math.abs(netEz) * testMass_m;
+            outF.innerText = netF.toExponential(2) + " N";
+            
+            // Add direction indicator
+            if(Math.abs(netEz) > 1e-15) {
+                let dirText = netEz > 0 ? " (+z, Up)" : " (-z, Down)";
+                outF.innerText += dirText;
+            }
+        }
+
+        function updateDFArrow(index, dirX, dirY, dirZ, dist, length) {
+            if (!dFArrows[index]) {
+                // Create new arrow if pool is empty
+                const arrow = new THREE.ArrowHelper(
+                    new THREE.Vector3(0,0,1), 
+                    new THREE.Vector3(0,0,0), 
+                    1, 
+                    0xF77F00, 
+                    0.15, 
+                    0.08
+                );
+                scene.add(arrow);
+                dFArrows.push(arrow);
+            }
+            
+            const arrow = dFArrows[index];
+            arrow.visible = true;
+            arrow.position.set(0, 0, params.z);
+            
+            const dir = new THREE.Vector3(dirX, dirY, dirZ).normalize();
+            arrow.setDirection(dir);
+            arrow.setLength(length, length * 0.2, length * 0.1);
+        }
+
+        function updateNetForceArrow(netEz) {
+            const E_mag = Math.abs(netEz);
+            const E_sign = Math.sign(netEz) || 1;
+            
+            // Base visual scale for net force
+            // Max typical E is ~3.7. We want arrow length ~ 2.5
+            let arrowLen = E_mag * 0.7; 
+            
+            if (arrowLen < 0.05) {
+                netForceGroup.visible = false;
+                return;
+            }
+            
+            netForceGroup.visible = true;
+            
+            // Cylinder scaling and positioning
+            nfCyl.scale.set(1, arrowLen, 1);
+            nfCyl.position.set(0, 0, params.z + E_sign * (arrowLen / 2));
+            
+            // Cone positioning and rotation
+            nfCone.position.set(0, 0, params.z + E_sign * arrowLen);
+            if (E_sign > 0) {
+                nfCone.rotation.x = Math.PI / 2; // Point +Z
+            } else {
+                nfCone.rotation.x = -Math.PI / 2; // Point -Z
+            }
+        }
+
+        // --- UI Event Listeners ---
+        const sliders = ['R', 'z', 'M', 'res'];
+        sliders.forEach(id => {
+            const el = document.getElementById('slider_' + id);
+            const valEl = document.getElementById('val_' + id);
+            el.addEventListener('input', (e) => {
+                let val = parseFloat(e.target.value);
+                params[id] = val;
+                
+                // Format display values
+                if(id === 'M') valEl.innerText = val.toExponential(1) + " kg";
+                else if(id === 'res') valEl.innerText = val;
+                else valEl.innerText = val.toFixed(1) + " m";
+                
+                updateSimulation();
+            });
+        });
+
+        // --- 2D Label Projection ---
+        function updateLabels() {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Test Mass Label
+            const tmPos = new THREE.Vector3(0, 0, params.z);
+            tmPos.project(camera);
+            if (tmPos.z < 1) { // Check if behind camera
+                labelM.style.display = 'block';
+                labelM.style.left = (tmPos.x * 0.5 + 0.5) * width + 20 + 'px';
+                labelM.style.top = (-tmPos.y * 0.5 + 0.5) * height - 20 + 'px';
+            } else {
+                labelM.style.display = 'none';
+            }
+
+            // CM Label
+            const cmPos = new THREE.Vector3(0, 0, params.R / 2);
+            cmPos.project(camera);
+            if (cmPos.z < 1) {
+                labelCM.style.display = 'block';
+                labelCM.style.left = (cmPos.x * 0.5 + 0.5) * width + 15 + 'px';
+                labelCM.style.top = (-cmPos.y * 0.5 + 0.5) * height + 15 + 'px';
+            } else {
+                labelCM.style.display = 'none';
+            }
+        }
+
+        // --- Window Resize ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updateSimulation();
+        animate();
+
+    </script>
+</body>
+</html>

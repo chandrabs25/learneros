@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Mole Concept: Bridging Scales</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+  body {
+    margin: 0;
+    padding: 20px;
+    background-color: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+  }
+
+  h1 {
+    color: #333;
+    margin-bottom: 20px;
+    font-size: 28px;
+    text-align: center;
+    font-weight: 700;
+  }
+
+  .svg-container {
+    width: 100%;
+    max-width: 900px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+  }
+
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* --- Animations (17s Total Loop) --- */
+  
+  /* 1. Water Filling (0s - 3s) */
+  .water-fill {
+    animation: waterFill 17s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes waterFill {
+    0% { y: 338px; height: 0px; }
+    17.6% { y: 255px; height: 83px; }
+    100% { y: 255px; height: 83px; }
+  }
+
+  .meniscus {
+    animation: meniscusRise 17s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @keyframes meniscusRise {
+    0% { cy: 338px; opacity: 0; }
+    2% { opacity: 0.9; }
+    17.6% { cy: 255px; opacity: 0.9; }
+    100% { cy: 255px; opacity: 0.9; }
+  }
+
+  /* 2. Scale Text Counting (0s - 3s) */
+  .st1 { animation: st1 17s infinite; }
+  @keyframes st1 { 0%, 3.4% { opacity: 1; } 3.5%, 100% { opacity: 0; } }
+  
+  .st2 { animation: st2 17s infinite; opacity: 0; }
+  @keyframes st2 { 0%, 3.4% { opacity: 0; } 3.5%, 6.9% { opacity: 1; } 7.0%, 100% { opacity: 0; } }
+  
+  .st3 { animation: st3 17s infinite; opacity: 0; }
+  @keyframes st3 { 0%, 6.9% { opacity: 0; } 7.0%, 10.4% { opacity: 1; } 10.5%, 100% { opacity: 0; } }
+  
+  .st4 { animation: st4 17s infinite; opacity: 0; }
+  @keyframes st4 { 0%, 10.4% { opacity: 0; } 10.5%, 14.0% { opacity: 1; } 14.1%, 100% { opacity: 0; } }
+  
+  .st5 { animation: st5 17s infinite; opacity: 0; }
+  @keyframes st5 { 0%, 14.0% { opacity: 0; } 14.1%, 100% { opacity: 1; } }
+
+  /* 3. Magnifying Lines (3s - 5s) */
+  .mag-line {
+    animation: fadeMag 17s infinite ease-in-out;
+    opacity: 0;
+  }
+  @keyframes fadeMag {
+    0%, 17.6% { opacity: 0; stroke-dashoffset: 20; }
+    29.4%, 100% { opacity: 0.4; stroke-dashoffset: 0; }
+  }
+
+  /* 4. Molecules Fade In (5s - 8s) */
+  .molecules-group {
+    animation: fadeMol 17s infinite ease-out;
+    opacity: 0;
+    transform-origin: 650px 280px;
+  }
+  @keyframes fadeMol {
+    0%, 29.4% { opacity: 0; transform: scale(0.8); }
+    47%, 100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* 5. Brownian Motion / Jiggling (Continuous after fade in) */
+  .j1 { animation: jiggle1 2.2s infinite ease-in-out; }
+  .j2 { animation: jiggle2 2.7s infinite ease-in-out; }
+  .j3 { animation: jiggle3 1.9s infinite ease-in-out; }
+  
+  @keyframes jiggle1 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(2px, -3px) rotate(4deg); }
+    50% { transform: translate(-2px, 2px) rotate(-2deg); }
+    75% { transform: translate(-1px, -2px) rotate(3deg); }
+  }
+  @keyframes jiggle2 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    33% { transform: translate(-3px, 1px) rotate(-5deg); }
+    66% { transform: translate(2px, -2px) rotate(3deg); }
+  }
+  @keyframes jiggle3 {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    20% { transform: translate(1px, 3px) rotate(2deg); }
+    60% { transform: translate(-2px, -1px) rotate(-4deg); }
+    80% { transform: translate(3px, 1px) rotate(1deg); }
+  }
+
+  /* 6. Formulas Appear (8s - 11s) */
+  .formula1 { animation: form1 17s infinite ease-out; opacity: 0; }
+  @keyframes form1 {
+    0%, 47% { opacity: 0; transform: translateY(10px); }
+    53%, 100% { opacity: 1; transform: translateY(0); }
+  }
+
+  .formula2 { animation: form2 17s infinite ease-out; opacity: 0; }
+  @keyframes form2 {
+    0%, 55.8% { opacity: 0; transform: translateY(10px); }
+    61.7%, 100% { opacity: 1; transform: translateY(0); }
+  }
+
+  /* 7. Conversion Pulses (8s - 11s) */
+  .pulse1 { animation: p1 17s infinite cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; }
+  @keyframes p1 {
+    0%, 47% { opacity: 0; transform: translateX(0); }
+    48% { opacity: 1; transform: translateX(0); }
+    54% { opacity: 1; transform: translateX(110px); }
+    55%, 100% { opacity: 0; transform: translateX(110px); }
+  }
+
+  .pulse2 { animation: p2 17s infinite cubic-bezier(0.4, 0, 0.2, 1); opacity: 0; }
+  @keyframes p2 {
+    0%, 55.8% { opacity: 0; transform: translateX(0); }
+    56.8% { opacity: 1; transform: translateX(0); }
+    62.8% { opacity: 1; transform: translateX(50px); }
+    63.8%, 100% { opacity: 0; transform: translateX(50px); }
+  }
+
+  /* 8. Glowing Elements */
+  .na-glow {
+    animation: goldGlow 17s infinite ease-in-out;
+  }
+  @keyframes goldGlow {
+    0%, 55% { filter: drop-shadow(0 0 0px rgba(255, 215, 0, 0)); }
+    60%, 80% { filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.8)); }
+    100% { filter: drop-shadow(0 0 0px rgba(255, 215, 0, 0)); }
+  }
+
+  .hub-glow {
+    animation: hubGlow 17s infinite ease-in-out;
+  }
+  @keyframes hubGlow {
+    0%, 45% { filter: drop-shadow(0 0 0px rgba(114, 9, 183, 0)); }
+    50%, 75% { filter: drop-shadow(0 0 15px rgba(114, 9, 183, 0.4)); }
+    100% { filter: drop-shadow(0 0 0px rgba(114, 9, 183, 0)); }
+  }
+</style>
+</head>
+<body>
+
+<h1>The Mole Concept: Bridging Scales</h1>
+
+<div class="svg-container">
+  <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animation showing the conversion of 18.02 grams of water to 1 mole and 6.022e23 molecules.">
+    <title>The Mole Concept Bridge</title>
+    <desc>A macroscopic scale weighing 18.02g of water connects through a 1 Mole bridge to a microscopic view of 6.022e23 jiggling water molecules.</desc>
+
+    <defs>
+      <!-- Gradients for Atoms -->
+      <radialGradient id="gradO" cx="35%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#ff8888"/>
+        <stop offset="100%" stop-color="#FF4444"/>
+      </radialGradient>
+      <radialGradient id="gradH" cx="35%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#ffffff"/>
+        <stop offset="100%" stop-color="#CCCCCC"/>
+      </radialGradient>
+
+      <!-- H2O Molecule Symbol (Bent geometry ~104.5 deg) -->
+      <symbol id="h2o" overflow="visible">
+        <!-- Bonds -->
+        <line x1="0" y1="0" x2="-11" y2="8.5" stroke="#404040" stroke-width="4" stroke-linecap="round"/>
+        <line x1="0" y1="0" x2="11" y2="8.5" stroke="#404040" stroke-width="4" stroke-linecap="round"/>
+        <!-- Atoms -->
+        <circle cx="0" cy="0" r="10" fill="url(#gradO)"/>
+        <circle cx="-11" cy="8.5" r="6" fill="url(#gradH)"/>
+        <circle cx="11" cy="8.5" r="6" fill="url(#gradH)"/>
+      </symbol>
+
+      <!-- Arrowhead Marker -->
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7"/>
+      </marker>
+
+      <!-- Viewport Clip Path -->
+      <clipPath id="viewClip">
+        <circle cx="650" cy="280" r="96"/>
+      </clipPath>
+    </defs>
+
+    <!-- ================= BACKGROUND / LEGEND ================= -->
+    <g id="legend" font-family="Inter" font-size="11" fill="#555">
+      <rect x="640" y="20" width="140" height="60" rx="6" fill="#f8f9fa" stroke="#e9ecef" stroke-width="2"/>
+      <circle cx="658" cy="36" r="6" fill="url(#gradO)"/>
+      <text x="672" y="40">Oxygen (O)</text>
+      <circle cx="658" cy="58" r="4" fill="url(#gradH)"/>
+      <text x="672" y="62">Hydrogen (H)</text>
+    </g>
+
+    <!-- ================= MACROSCOPIC (LEFT) ================= -->
+    <g id="macroscopic">
+      <!-- Scale Base -->
+      <rect x="70" y="350" width="160" height="25" rx="4" fill="#ced4da"/>
+      <path d="M 90 340 L 210 340 L 200 350 L 100 350 Z" fill="#adb5bd"/>
+      
+      <!-- Digital Display -->
+      <rect x="110" y="353" width="80" height="18" rx="3" fill="#212529"/>
+      <g font-family="Roboto Mono" font-size="13" fill="#4CC9F0" text-anchor="middle">
+        <text x="150" y="366" class="st1">0.00 g</text>
+        <text x="150" y="366" class="st2">4.50 g</text>
+        <text x="150" y="366" class="st3">9.01 g</text>
+        <text x="150" y="366" class="st4">13.51 g</text>
+        <text x="150" y="366" class="st5">18.02 g</text>
+      </g>
+
+      <!-- Beaker & Water -->
+      <g id="beaker">
+        <!-- Water Fill -->
+        <rect x="112" y="338" width="76" height="0" fill="#4CC9F0" opacity="0.7" class="water-fill"/>
+        <ellipse cx="150" cy="338" rx="38" ry="5" fill="#4CC9F0" opacity="0" class="meniscus"/>
+        
+        <!-- Glass Outline -->
+        <path d="M 110 220 L 110 336 A 4 4 0 0 0 114 340 L 186 340 A 4 4 0 0 0 190 336 L 190 220" fill="none" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+        <line x1="104" y1="220" x2="116" y2="220" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+        <line x1="184" y1="220" x2="196" y2="220" stroke="#333" stroke-width="4" stroke-linecap="round"/>
+        
+        <!-- Volume Marks -->
+        <line x1="110" y1="260" x2="125" y2="260" stroke="#333" stroke-width="2"/>
+        <line x1="110" y1="300" x2="125" y2="300" stroke="#333" stroke-width="2"/>
+      </g>
+      
+      <!-- Label -->
+      <text x="150" y="410" font-family="Inter" font-size="16" font-weight="600" text-anchor="middle" fill="#333">
+        18.02 g of H<tspan dy="4" font-size="12">2</tspan><tspan dy="-4">O</tspan>
+      </text>
+      <text x="150" y="430" font-family="Inter" font-size="13" fill="#666" text-anchor="middle">Mass (m)</text>
+    </g>
+
+    <!-- ================= CONVERSION BRIDGE (CENTER) ================= -->
+    <g id="bridge">
+      <!-- Connection Arrows -->
+      <path d="M 210 280 L 330 280" fill="none" stroke="#7209B7" stroke-width="6" marker-end="url(#arrow)"/>
+      <path d="M 470 280 L 530 280" fill="none" stroke="#7209B7" stroke-width="6" marker-end="url(#arrow)"/>
+      
+      <!-- Animated Pulses -->
+      <circle cx="210" cy="280" r="6" fill="#F77F00" class="pulse1"/>
+      <circle cx="470" cy="280" r="6" fill="#F77F00" class="pulse2"/>
+
+      <!-- Formula 1: Moles = Mass / Molar Mass -->
+      <g class="formula1">
+        <!-- Molar Mass Box -->
+        <rect x="245" y="195" width="50" height="30" rx="6" fill="#e9ecef" stroke="#4CC9F0" stroke-width="2"/>
+        <text x="270" y="215" font-family="Roboto Mono" font-size="16" font-weight="bold" fill="#333" text-anchor="middle">M</text>
+        
+        <!-- Math -->
+        <g transform="translate(245, 245)" font-family="Roboto Mono" font-size="16" font-weight="bold" fill="#7209B7">
+          <text x="0" y="15">n =</text>
+          <text x="38" y="5" text-anchor="middle">m</text>
+          <line x1="28" y1="10" x2="48" y2="10" stroke="#7209B7" stroke-width="2"/>
+          <text x="38" y="26" text-anchor="middle">M</text>
+        </g>
+        <text x="270" y="315" font-family="Roboto Mono" font-size="12" fill="#555" text-anchor="middle">M = 18.02 g/mol</text>
+      </g>
+
+      <!-- Formula 2: Particles = Moles * Avogadro -->
+      <g class="formula2">
+        <!-- Avogadro Box -->
+        <rect x="475" y="195" width="50" height="30" rx="6" fill="#FFD700" stroke="#F77F00" stroke-width="2" class="na-glow"/>
+        <text x="500" y="215" font-family="Roboto Mono" font-size="16" font-weight="bold" fill="#333" text-anchor="middle">N<tspan dy="4" font-size="11">A</tspan></text>
+        
+        <!-- Math -->
+        <g transform="translate(465, 260)" font-family="Roboto Mono" font-size="16" font-weight="bold" fill="#7209B7">
+          <text x="0" y="0">N = n × N<tspan dy="4" font-size="11">A</tspan></text>
+        </g>
+        <text x="500" y="315" font-family="Roboto Mono" font-size="12" fill="#555" text-anchor="middle">N<tspan dy="3" font-size="9">A</tspan><tspan dy="-3"> = 6.022×10</tspan><tspan dy="-5" font-size="9">23</tspan></text>
+      </g>
+
+      <!-- Central Hub (The Mole) -->
+      <rect x="350" y="240" width="100" height="80" rx="16" fill="#ffffff" stroke="#7209B7" stroke-width="4" class="hub-glow"/>
+      <text x="400" y="278" font-family="Inter" font-size="22" font-weight="700" text-anchor="middle" fill="#333">1.0</text>
+      <text x="400" y="300" font-family="Inter" font-size="16" font-weight="600" text-anchor="middle" fill="#7209B7">mole</text>
+      <text x="400" y="345" font-family="Inter" font-size="13" fill="#666" text-anchor="middle">Amount (n)</text>
+    </g>
+
+    <!-- ================= MICROSCOPIC (RIGHT) ================= -->
+    <g id="microscopic">
+      <!-- Magnifying Projection Lines -->
+      <line x1="190" y1="220" x2="563" y2="230" stroke="#7209B7" stroke-width="2" stroke-dasharray="6,6" class="mag-line"/>
+      <line x1="190" y1="340" x2="563" y2="330" stroke="#7209B7" stroke-width="2" stroke-dasharray="6,6" class="mag-line"/>
+      
+      <!-- Viewport Circle -->
+      <circle cx="650" cy="280" r="100" fill="#ffffff" stroke="#333" stroke-width="6"/>
+      
+      <!-- Animated Molecules inside Viewport -->
+      <g clip-path="url(#viewClip)" class="molecules-group">
+        <!-- Background tint for water -->
+        <circle cx="650" cy="280" r="100" fill="#4CC9F0" opacity="0.1"/>
+        
+        <!-- H2O Molecules with individual jiggle animations -->
+        <g class="j1"><use href="#h2o" x="600" y="230" transform="rotate(15 600 230)"/></g>
+        <g class="j2"><use href="#h2o" x="660" y="210" transform="rotate(-45 660 210)"/></g>
+        <g class="j3"><use href="#h2o" x="710" y="250" transform="rotate(70 710 250)"/></g>
+        <g class="j2"><use href="#h2o" x="580" y="280" transform="rotate(-110 580 280)"/></g>
+        <g class="j1"><use href="#h2o" x="640" y="270" transform="rotate(30 640 270)"/></g>
+        <g class="j3"><use href="#h2o" x="690" y="300" transform="rotate(-20 690 300)"/></g>
+        <g class="j3"><use href="#h2o" x="610" y="330" transform="rotate(140 610 330)"/></g>
+        <g class="j1"><use href="#h2o" x="660" y="340" transform="rotate(-75 660 340)"/></g>
+        <g class="j2"><use href="#h2o" x="720" y="320" transform="rotate(5 720 320)"/></g>
+        <g class="j1"><use href="#h2o" x="570" y="320" transform="rotate(55 570 320)"/></g>
+        <g class="j3"><use href="#h2o" x="680" y="250" transform="rotate(-135 680 250)"/></g>
+      </g>
+      
+      <!-- Label -->
+      <text x="650" y="410" font-family="Inter" font-size="16" font-weight="600" text-anchor="middle" fill="#333">
+        <tspan fill="#F77F00">6.022 × 10</tspan><tspan fill="#F77F00" dy="-8" font-size="12">23</tspan>
+        <tspan dy="8" fill="#333"> molecules</tspan>
+      </text>
+      <text x="650" y="430" font-family="Inter" font-size="13" fill="#666" text-anchor="middle">Particles (N)</text>
+    </g>
+  </svg>
+</div>
+
+</body>
+</html>

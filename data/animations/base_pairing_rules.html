@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Molecular Logic of Base Pairing</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Typography */
+        .title { font-size: 28px; font-weight: 700; fill: #2C3E50; }
+        .subtitle { font-size: 16px; font-weight: 400; fill: #7f8c8d; }
+        .base-text { font-family: 'Roboto Mono', monospace; font-size: 18px; font-weight: 700; pointer-events: none; }
+        .polarity { font-family: 'Roboto Mono', monospace; font-size: 16px; font-weight: 700; fill: #E74C3C; }
+        .legend-text { font-size: 14px; fill: #2C3E50; }
+        .anno-text { font-size: 14px; font-weight: 600; fill: #2C3E50; }
+
+        /* Animation Classes */
+        .left-strand {
+            animation: unzip-left 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            will-change: transform;
+        }
+        .right-strand {
+            animation: unzip-right 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            will-change: transform;
+        }
+        .new-base-right {
+            animation: fly-in-right 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            will-change: transform, opacity;
+        }
+        .new-base-left {
+            animation: fly-in-left 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            will-change: transform, opacity;
+        }
+        .new-backbone-right {
+            animation: fade-in-backbone 12s ease-in-out infinite;
+            transform: translate(-180px, 0);
+        }
+        .new-backbone-left {
+            animation: fade-in-backbone 12s ease-in-out infinite;
+            transform: translate(180px, 0);
+        }
+        .orig-hbonds {
+            animation: fade-orig-hbonds 12s ease-in-out infinite;
+        }
+        .new-hbonds {
+            animation: pulse-new-hbonds 12s ease-in-out infinite;
+        }
+        .fade-anno {
+            animation: fade-annotations 12s ease-in-out infinite;
+        }
+
+        /* Keyframes */
+        @keyframes unzip-left {
+            0%, 15% { transform: translateX(0); }
+            25%, 85% { transform: translateX(-180px); }
+            95%, 100% { transform: translateX(0); }
+        }
+
+        @keyframes unzip-right {
+            0%, 15% { transform: translateX(0); }
+            25%, 85% { transform: translateX(180px); }
+            95%, 100% { transform: translateX(0); }
+        }
+
+        @keyframes fly-in-right {
+            0%, 25% { opacity: 0; transform: translate(var(--start-x), var(--start-y)) rotate(var(--rot)); }
+            35% { opacity: 1; transform: translate(-160px, 0) rotate(0deg); }
+            45%, 85% { opacity: 1; transform: translate(-180px, 0) rotate(0deg); }
+            90%, 100% { opacity: 0; transform: translate(-180px, 0) rotate(0deg); }
+        }
+
+        @keyframes fly-in-left {
+            0%, 25% { opacity: 0; transform: translate(var(--start-x), var(--start-y)) rotate(var(--rot)); }
+            35% { opacity: 1; transform: translate(160px, 0) rotate(0deg); }
+            45%, 85% { opacity: 1; transform: translate(180px, 0) rotate(0deg); }
+            90%, 100% { opacity: 0; transform: translate(180px, 0) rotate(0deg); }
+        }
+
+        @keyframes fade-in-backbone {
+            0%, 45% { opacity: 0; }
+            50%, 85% { opacity: 1; }
+            90%, 100% { opacity: 0; }
+        }
+
+        @keyframes fade-orig-hbonds {
+            0%, 15% { opacity: 1; }
+            20%, 90% { opacity: 0; }
+            95%, 100% { opacity: 1; }
+        }
+
+        @keyframes pulse-new-hbonds {
+            0%, 45% { opacity: 0; stroke-width: 1; }
+            50% { opacity: 0.5; stroke-width: 1.5; }
+            55% { opacity: 1; stroke-width: 3; }
+            60% { opacity: 0.5; stroke-width: 1.5; }
+            65% { opacity: 1; stroke-width: 3; }
+            70% { opacity: 0.5; stroke-width: 1.5; }
+            75% { opacity: 1; stroke-width: 3; }
+            80%, 85% { opacity: 1; stroke-width: 2; }
+            90%, 100% { opacity: 0; }
+        }
+
+        @keyframes fade-annotations {
+            0%, 10% { opacity: 1; }
+            15%, 95% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        .h-bond {
+            stroke: #95a5a6;
+            stroke-dasharray: 4, 4;
+            fill: none;
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+    <title>DNA Base Pairing & Complementarity</title>
+    <desc>Animated diagram showing Chargaff's rules of DNA base pairing during replication. Adenine pairs with Thymine via 2 hydrogen bonds, and Guanine pairs with Cytosine via 3 hydrogen bonds.</desc>
+
+    <defs>
+        <!-- Drop Shadow for 3D effect -->
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="2" dy="3" stdDeviation="2" flood-color="#000000" flood-opacity="0.15"/>
+        </filter>
+
+        <!-- Backbone Gradient -->
+        <linearGradient id="backbone-grad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#1A252F"/>
+            <stop offset="50%" stop-color="#2C3E50"/>
+            <stop offset="100%" stop-color="#1A252F"/>
+        </linearGradient>
+
+        <!-- Arrowhead for annotations -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#95a5a6"/>
+        </marker>
+    </defs>
+
+    <!-- UI & Titles -->
+    <text x="400" y="40" class="title" text-anchor="middle">DNA Base Pairing & Complementarity</text>
+    <text x="400" y="65" class="subtitle" text-anchor="middle">Replication: Free nucleotides follow Chargaff's Rules to form new strands</text>
+
+    <!-- Legend -->
+    <g transform="translate(110, 500)">
+        <rect x="0" y="0" width="580" height="70" rx="8" fill="#ffffff" stroke="#e0e0e0" filter="url(#shadow)"/>
+        
+        <!-- A=T -->
+        <rect x="20" y="15" width="16" height="16" rx="3" fill="#FF6B6B"/>
+        <text x="45" y="28" class="legend-text">Adenine (Purine)</text>
+        <rect x="20" y="40" width="16" height="16" rx="3" fill="#FFD93D"/>
+        <text x="45" y="53" class="legend-text">Thymine (Pyrimidine)</text>
+        
+        <!-- G=C -->
+        <rect x="220" y="15" width="16" height="16" rx="3" fill="#4A90D9"/>
+        <text x="245" y="28" class="legend-text">Guanine (Purine)</text>
+        <rect x="220" y="40" width="16" height="16" rx="3" fill="#98D8C8"/>
+        <text x="245" y="53" class="legend-text">Cytosine (Pyrimidine)</text>
+
+        <!-- H-Bonds -->
+        <line x1="420" y1="23" x2="460" y2="23" class="h-bond" stroke-width="2"/>
+        <line x1="420" y1="28" x2="460" y2="28" class="h-bond" stroke-width="2"/>
+        <text x="470" y="28" class="legend-text">2 H-Bonds (A=T)</text>
+
+        <line x1="420" y1="43" x2="460" y2="43" class="h-bond" stroke-width="2"/>
+        <line x1="420" y1="48" x2="460" y2="48" class="h-bond" stroke-width="2"/>
+        <line x1="420" y1="53" x2="460" y2="53" class="h-bond" stroke-width="2"/>
+        <text x="470" y="53" class="legend-text">3 H-Bonds (G≡C)</text>
+    </g>
+
+    <!-- Annotations (Fade out during unzipping) -->
+    <g class="fade-anno">
+        <text x="160" y="150" class="anno-text" text-anchor="end">Purines</text>
+        <text x="160" y="170" class="subtitle" text-anchor="end" font-size="12">Double-ring, larger</text>
+        <path d="M 170 145 L 280 155" stroke="#95a5a6" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+
+        <text x="640" y="150" class="anno-text" text-anchor="start">Pyrimidines</text>
+        <text x="640" y="170" class="subtitle" text-anchor="start" font-size="12">Single-ring, smaller</text>
+        <path d="M 630 145 L 520 155" stroke="#95a5a6" stroke-width="1.5" fill="none" marker-end="url(#arrow)"/>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- ANIMATION CONTAINER                        -->
+    <!-- ========================================== -->
+    <g id="dna-complex">
+
+        <!-- ORIGINAL H-BONDS (Center) -->
+        <g class="orig-hbonds">
+            <!-- A-T (2 bonds) -->
+            <line x1="415" y1="150" x2="435" y2="150" class="h-bond" stroke-width="2"/>
+            <line x1="415" y1="170" x2="435" y2="170" class="h-bond" stroke-width="2"/>
+            <!-- C-G (3 bonds) -->
+            <line x1="365" y1="230" x2="385" y2="230" class="h-bond" stroke-width="2"/>
+            <line x1="365" y1="240" x2="385" y2="240" class="h-bond" stroke-width="2"/>
+            <line x1="365" y1="250" x2="385" y2="250" class="h-bond" stroke-width="2"/>
+            <!-- G-C (3 bonds) -->
+            <line x1="395" y1="310" x2="415" y2="310" class="h-bond" stroke-width="2"/>
+            <line x1="395" y1="320" x2="415" y2="320" class="h-bond" stroke-width="2"/>
+            <line x1="395" y1="330" x2="415" y2="330" class="h-bond" stroke-width="2"/>
+            <!-- T-A (2 bonds) -->
+            <line x1="365" y1="390" x2="385" y2="390" class="h-bond" stroke-width="2"/>
+            <line x1="365" y1="410" x2="385" y2="410" class="h-bond" stroke-width="2"/>
+        </g>
+
+        <!-- NEW H-BONDS LEFT (Pairing with Left Strand) -->
+        <g class="new-hbonds" transform="translate(-180, 0)">
+            <line x1="415" y1="150" x2="435" y2="150" class="h-bond"/>
+            <line x1="415" y1="170" x2="435" y2="170" class="h-bond"/>
+            <line x1="365" y1="230" x2="385" y2="230" class="h-bond"/>
+            <line x1="365" y1="240" x2="385" y2="240" class="h-bond"/>
+            <line x1="365" y1="250" x2="385" y2="250" class="h-bond"/>
+            <line x1="395" y1="310" x2="415" y2="310" class="h-bond"/>
+            <line x1="395" y1="320" x2="415" y2="320" class="h-bond"/>
+            <line x1="395" y1="330" x2="415" y2="330" class="h-bond"/>
+            <line x1="365" y1="390" x2="385" y2="390" class="h-bond"/>
+            <line x1="365" y1="410" x2="385" y2="410" class="h-bond"/>
+        </g>
+
+        <!-- NEW H-BONDS RIGHT (Pairing with Right Strand) -->
+        <g class="new-hbonds" transform="translate(180, 0)">
+            <line x1="415" y1="150" x2="435" y2="150" class="h-bond"/>
+            <line x1="415" y1="170" x2="435" y2="170" class="h-bond"/>
+            <line x1="365" y1="230" x2="385" y2="230" class="h-bond"/>
+            <line x1="365" y1="240" x2="385" y2="240" class="h-bond"/>
+            <line x1="365" y1="250" x2="385" y2="250" class="h-bond"/>
+            <line x1="395" y1="310" x2="415" y2="310" class="h-bond"/>
+            <line x1="395" y1="320" x2="415" y2="320" class="h-bond"/>
+            <line x1="395" y1="330" x2="415" y2="330" class="h-bond"/>
+            <line x1="365" y1="390" x2="385" y2="390" class="h-bond"/>
+            <line x1="365" y1="410" x2="385" y2="410" class="h-bond"/>
+        </g>
+
+        <!-- NEW BACKBONES (Fade in after snap) -->
+        <g class="new-backbone-right">
+            <rect x="500" y="110" width="20" height="340" rx="10" fill="url(#backbone-grad)" filter="url(#shadow)"/>
+            <text x="510" y="95" class="polarity" text-anchor="middle">3'</text>
+            <text x="510" y="475" class="polarity" text-anchor="middle">5'</text>
+        </g>
+        <g class="new-backbone-left">
+            <rect x="280" y="110" width="20" height="340" rx="10" fill="url(#backbone-grad)" filter="url(#shadow)"/>
+            <text x="290" y="95" class="polarity" text-anchor="middle">5'</text>
+            <text x="290" y="475" class="polarity" text-anchor="middle">3'</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- LEFT STRAND (Template 1)                   -->
+        <!-- ========================================== -->
+        <g class="left-strand">
+            <!-- Backbone -->
+            <rect x="280" y="110" width="20" height="340" rx="10" fill="url(#backbone-grad)" filter="url(#shadow)"/>
+            <text x="290" y="95" class="polarity" text-anchor="middle">5'</text>
+            <text x="290" y="475" class="polarity" text-anchor="middle">3'</text>
+
+            <g filter="url(#shadow)">
+                <!-- Left A (Purine, Pointy) -->
+                <path d="M 300 140 L 410 140 L 430 160 L 410 180 L 300 180 Z" fill="#FF6B6B"/>
+                <text x="345" y="166" class="base-text" fill="#ffffff" text-anchor="middle">A</text>
+
+                <!-- Left C (Pyrimidine, Blunt Notch) -->
+                <path d="M 300 220 L 380 220 L 380 230 L 360 230 L 360 250 L 380 250 L 380 260 L 300 260 Z" fill="#98D8C8"/>
+                <text x="335" y="246" class="base-text" fill="#2C3E50" text-anchor="middle">C</text>
+
+                <!-- Left G (Purine, Blunt Point) -->
+                <path d="M 300 300 L 410 300 L 410 310 L 390 310 L 390 330 L 410 330 L 410 340 L 300 340 Z" fill="#4A90D9"/>
+                <text x="345" y="326" class="base-text" fill="#ffffff" text-anchor="middle">G</text>
+
+                <!-- Left T (Pyrimidine, Pointy Notch) -->
+                <path d="M 300 380 L 380 380 L 360 400 L 380 420 L 300 420 Z" fill="#FFD93D"/>
+                <text x="335" y="406" class="base-text" fill="#2C3E50" text-anchor="middle">T</text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- RIGHT STRAND (Template 2)                  -->
+        <!-- ========================================== -->
+        <g class="right-strand">
+            <!-- Backbone -->
+            <rect x="500" y="110" width="20" height="340" rx="10" fill="url(#backbone-grad)" filter="url(#shadow)"/>
+            <text x="510" y="95" class="polarity" text-anchor="middle">3'</text>
+            <text x="510" y="475" class="polarity" text-anchor="middle">5'</text>
+
+            <g filter="url(#shadow)">
+                <!-- Right T (Pyrimidine, Pointy Notch) -->
+                <path d="M 500 140 L 420 140 L 440 160 L 420 180 L 500 180 Z" fill="#FFD93D"/>
+                <text x="465" y="166" class="base-text" fill="#2C3E50" text-anchor="middle">T</text>
+
+                <!-- Right G (Purine, Blunt Point) -->
+                <path d="M 500 220 L 390 220 L 390 230 L 370 230 L 370 250 L 390 250 L 390 260 L 500 260 Z" fill="#4A90D9"/>
+                <text x="455" y="246" class="base-text" fill="#ffffff" text-anchor="middle">G</text>
+
+                <!-- Right C (Pyrimidine, Blunt Notch) -->
+                <path d="M 500 300 L 420 300 L 420 310 L 400 310 L 400 330 L 420 330 L 420 340 L 500 340 Z" fill="#98D8C8"/>
+                <text x="465" y="326" class="base-text" fill="#2C3E50" text-anchor="middle">C</text>
+
+                <!-- Right A (Purine, Pointy) -->
+                <path d="M 500 380 L 390 380 L 370 400 L 390 420 L 500 420 Z" fill="#FF6B6B"/>
+                <text x="455" y="406" class="base-text" fill="#ffffff" text-anchor="middle">A</text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- NEW RIGHT BASES (Fly to Left Strand)       -->
+        <!-- ========================================== -->
+        <g filter="url(#shadow)">
+            <!-- New Right T -->
+            <g class="new-base-right" style="--start-x: 120px; --start-y: -100px; --rot: 30deg;">
+                <path d="M 500 140 L 420 140 L 440 160 L 420 180 L 500 180 Z" fill="#FFD93D"/>
+                <text x="465" y="166" class="base-text" fill="#2C3E50" text-anchor="middle">T</text>
+            </g>
+            <!-- New Right G -->
+            <g class="new-base-right" style="--start-x: 180px; --start-y: -20px; --rot: 60deg;">
+                <path d="M 500 220 L 390 220 L 390 230 L 370 230 L 370 250 L 390 250 L 390 260 L 500 260 Z" fill="#4A90D9"/>
+                <text x="455" y="246" class="base-text" fill="#ffffff" text-anchor="middle">G</text>
+            </g>
+            <!-- New Right C -->
+            <g class="new-base-right" style="--start-x: 150px; --start-y: 60px; --rot: 15deg;">
+                <path d="M 500 300 L 420 300 L 420 310 L 400 310 L 400 330 L 420 330 L 420 340 L 500 340 Z" fill="#98D8C8"/>
+                <text x="465" y="326" class="base-text" fill="#2C3E50" text-anchor="middle">C</text>
+            </g>
+            <!-- New Right A -->
+            <g class="new-base-right" style="--start-x: 100px; --start-y: 120px; --rot: 45deg;">
+                <path d="M 500 380 L 390 380 L 370 400 L 390 420 L 500 420 Z" fill="#FF6B6B"/>
+                <text x="455" y="406" class="base-text" fill="#ffffff" text-anchor="middle">A</text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- NEW LEFT BASES (Fly to Right Strand)       -->
+        <!-- ========================================== -->
+        <g filter="url(#shadow)">
+            <!-- New Left A -->
+            <g class="new-base-left" style="--start-x: -120px; --start-y: -100px; --rot: -30deg;">
+                <path d="M 300 140 L 410 140 L 430 160 L 410 180 L 300 180 Z" fill="#FF6B6B"/>
+                <text x="345" y="166" class="base-text" fill="#ffffff" text-anchor="middle">A</text>
+            </g>
+            <!-- New Left C -->
+            <g class="new-base-left" style="--start-x: -180px; --start-y: -20px; --rot: -60deg;">
+                <path d="M 300 220 L 380 220 L 380 230 L 360 230 L 360 250 L 380 250 L 380 260 L 300 260 Z" fill="#98D8C8"/>
+                <text x="335" y="246" class="base-text" fill="#2C3E50" text-anchor="middle">C</text>
+            </g>
+            <!-- New Left G -->
+            <g class="new-base-left" style="--start-x: -150px; --start-y: 60px; --rot: -15deg;">
+                <path d="M 300 300 L 410 300 L 410 310 L 390 310 L 390 330 L 410 330 L 410 340 L 300 340 Z" fill="#4A90D9"/>
+                <text x="345" y="326" class="base-text" fill="#ffffff" text-anchor="middle">G</text>
+            </g>
+            <!-- New Left T -->
+            <g class="new-base-left" style="--start-x: -100px; --start-y: 120px; --rot: -45deg;">
+                <path d="M 300 380 L 380 380 L 360 400 L 380 420 L 300 420 Z" fill="#FFD93D"/>
+                <text x="335" y="406" class="base-text" fill="#2C3E50" text-anchor="middle">T</text>
+            </g>
+        </g>
+
+    </g>
+</svg>
+
+</body>
+</html>

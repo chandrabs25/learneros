@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnus Effect & Bernoulli's Principle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --color-v: #06D6A0;
+            --color-omega: #7209B7;
+            --color-rho: #3A86FF;
+            --color-r: #FF006E;
+            --color-lift: #F77F00;
+            --color-high-p: #4361EE;
+            --color-low-p: #FF3366;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            position: absolute;
+            z-index: 10;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        #ui-panel {
+            top: 24px;
+            right: 24px;
+            width: 320px;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+        }
+
+        #formula-card {
+            top: 24px;
+            left: 24px;
+            width: 340px;
+        }
+
+        h1, h2 {
+            margin: 0;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        h1 { font-size: 1.25rem; color: var(--text-main); }
+        h2 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            background: rgba(0,0,0,0.05);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus { outline: none; }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: 2px solid var(--thumb-color, #000);
+        }
+
+        #slider-v { --thumb-color: var(--color-v); }
+        #slider-omega { --thumb-color: var(--color-omega); }
+        #slider-rho { --thumb-color: var(--color-rho); }
+        #slider-r { --thumb-color: var(--color-r); }
+
+        .formula-box {
+            background: rgba(255,255,255,0.9);
+            border-left: 4px solid var(--text-main);
+            padding: 12px;
+            border-radius: 4px 8px 8px 4px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .calc-row:last-child { border-bottom: none; }
+        .calc-val { font-family: 'Roboto Mono', monospace; }
+
+        .color-lift { color: var(--color-lift); }
+        .color-dp { color: var(--color-low-p); }
+
+        #labels-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .3d-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            background: var(--glass-bg);
+            backdrop-filter: blur(4px);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: opacity 0.2s;
+            opacity: 0;
+        }
+
+        .label-low { color: var(--color-low-p); border: 1px solid var(--color-low-p); }
+        .label-high { color: var(--color-high-p); border: 1px solid var(--color-high-p); }
+        .label-lift { color: var(--color-lift); border: 1px solid var(--color-lift); background: white; }
+
+        .legend {
+            display: flex;
+            gap: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+        .legend-item { display: flex; align-items: center; gap: 4px; }
+        .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .dot-blue { background: var(--color-high-p); }
+        .dot-red { background: var(--color-low-p); }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="labels-container">
+        <div id="label-top" class="3d-label"></div>
+        <div id="label-bottom" class="3d-label"></div>
+        <div id="label-lift" class="3d-label label-lift">F_L</div>
+    </div>
+
+    <div id="formula-card" class="glass-panel">
+        <h1>Bernoulli & Magnus Effect</h1>
+        <div class="formula-box">
+            P + ½ρv² = constant
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0; line-height: 1.4;">
+            As fluid velocity (v) increases, pressure (P) decreases. Spin drags air, creating a velocity differential.
+        </p>
+        
+        <div style="margin-top: 8px;">
+            <h2>Live Calculations</h2>
+            <div class="calc-row">
+                <span>Lift Force (F<sub>L</sub>)</span>
+                <span class="calc-val color-lift" id="val-fl">0.00 N</span>
+            </div>
+            <div class="calc-row">
+                <span>Pressure Diff (ΔP)</span>
+                <span class="calc-val color-dp" id="val-dp">0.00 Pa</span>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="dot dot-blue"></div> Low Velocity / High P</div>
+            <div class="legend-item"><div class="dot dot-red"></div> High Velocity / Low P</div>
+        </div>
+    </div>
+
+    <div id="ui-panel" class="glass-panel">
+        <h2>Simulation Controls</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: var(--color-v)">Fluid Velocity (v)</span>
+                <span class="value-display" id="disp-v">50 m/s</span>
+            </div>
+            <input type="range" id="slider-v" min="10" max="100" value="50" step="1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: var(--color-omega)">Spin (ω) <span style="font-size:0.7em;color:#888;">CW is +</span></span>
+                <span class="value-display" id="disp-omega">10 rad/s</span>
+            </div>
+            <input type="range" id="slider-omega" min="-20" max="20" value="10" step="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: var(--color-rho)">Fluid Density (ρ)</span>
+                <span class="value-display" id="disp-rho">1.2 kg/m³</span>
+            </div>
+            <input type="range" id="slider-rho" min="0.1" max="2.0" value="1.225" step="0.1">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: var(--color-r)">Ball Radius (r)</span>
+                <span class="value-display" id="disp-r">1.0 m</span>
+            </div>
+            <input type="range" id="slider-r" min="0.5" max="2.0" value="1.0" step="0.1">
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Parameters ---
+        const params = {
+            v: 50,
+            omega: 10,
+            rho: 1.225,
+            r: 1.0
+        };
+
+        // --- DOM Elements ---
+        const dispV = document.getElementById('disp-v');
+        const dispOmega = document.getElementById('disp-omega');
+        const dispRho = document.getElementById('disp-rho');
+        const dispR = document.getElementById('disp-r');
+        const valFl = document.getElementById('val-fl');
+        const valDp = document.getElementById('val-dp');
+        const labelTop = document.getElementById('label-top');
+        const labelBottom = document.getElementById('label-bottom');
+        const labelLift = document.getElementById('label-lift');
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 2, 16);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(-1, 0, 0); // Offset to left to balance UI
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+        const fillLight = new THREE.PointLight(0xffffff, 0.3);
+        fillLight.position.set(-5, -2, -5);
+        scene.add(fillLight);
+
+        // --- Procedural Textures ---
+        function createBallTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.fillStyle = '#E2E8F0';
+            ctx.fillRect(0, 0, 512, 512);
+            
+            ctx.strokeStyle = '#CBD5E1';
+            ctx.lineWidth = 4;
+            for(let i=0; i<=512; i+=32) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 512); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(512, i); ctx.stroke();
+            }
+            
+            ctx.strokeStyle = '#94A3B8';
+            ctx.lineWidth = 12;
+            ctx.beginPath(); ctx.moveTo(0, 256); ctx.lineTo(512, 256); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(256, 0); ctx.lineTo(256, 512); ctx.stroke();
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+            return tex;
+        }
+
+        function createParticleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 32; canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+            gradient.addColorStop(0.4, 'rgba(255,255,255,0.8)');
+            gradient.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0,0,32,32);
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- Objects ---
+        // 1. The Ball
+        const ballGeo = new THREE.SphereGeometry(1, 64, 64);
+        const ballMat = new THREE.MeshStandardMaterial({ 
+            map: createBallTexture(),
+            roughness: 0.4,
+            metalness: 0.1
+        });
+        const ball = new THREE.Mesh(ballGeo, ballMat);
+        scene.add(ball);
+
+        // 2. Pressure Halo (Custom Shader)
+        const haloGeo = new THREE.SphereGeometry(1.05, 64, 64);
+        const haloMat = new THREE.ShaderMaterial({
+            uniforms: {
+                pressureDiff: { value: 0.0 },
+                colorHigh: { value: new THREE.Color('#4361EE') },
+                colorLow: { value: new THREE.Color('#FF3366') }
+            },
+            vertexShader: `
+                varying vec3 vNormal;
+                varying vec3 vViewPosition;
+                void main() {
+                    vNormal = normalize(normalMatrix * normal);
+                    vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                    vViewPosition = -mvPosition.xyz;
+                    gl_Position = projectionMatrix * mvPosition;
+                }
+            `,
+            fragmentShader: `
+                uniform float pressureDiff;
+                uniform vec3 colorHigh;
+                uniform vec3 colorLow;
+                varying vec3 vNormal;
+                varying vec3 vViewPosition;
+                void main() {
+                    vec3 normal = normalize(vNormal);
+                    vec3 viewDir = normalize(vViewPosition);
+                    float fresnel = 1.0 - max(dot(viewDir, normal), 0.0);
+                    fresnel = pow(fresnel, 3.0);
+
+                    float mixVal = normal.y * pressureDiff * 0.02; 
+                    vec3 finalColor = vec3(1.0);
+                    
+                    if (mixVal > 0.0) {
+                        finalColor = mix(vec3(1.0), colorLow, min(mixVal, 1.0));
+                    } else {
+                        finalColor = mix(vec3(1.0), colorHigh, min(-mixVal, 1.0));
+                    }
+
+                    float alpha = fresnel * 0.8 * min(abs(pressureDiff)*0.05, 0.8);
+                    gl_FragColor = vec4(finalColor, alpha);
+                }
+            `,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        const halo = new THREE.Mesh(haloGeo, haloMat);
+        scene.add(halo);
+
+        // 3. Force Arrows
+        const arrowLift = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, 0xF77F00, 0.4, 0.2);
+        scene.add(arrowLift);
+
+        const arrowVel = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(-3,0,0), 2, 0x06D6A0, 0.4, 0.2);
+        scene.add(arrowVel);
+
+        // Spin Arrow (Curved)
+        const spinGroup = new THREE.Group();
+        const torusGeo = new THREE.TorusGeometry(1.2, 0.04, 8, 32, Math.PI);
+        const spinMat = new THREE.MeshBasicMaterial({ color: 0x7209B7 });
+        const torus = new THREE.Mesh(torusGeo, spinMat);
+        torus.rotation.x = Math.PI / 2;
+        spinGroup.add(torus);
+        
+        const coneGeo = new THREE.ConeGeometry(0.15, 0.4, 16);
+        const cone1 = new THREE.Mesh(coneGeo, spinMat);
+        cone1.position.set(1.2, 0, 0);
+        cone1.rotation.z = -Math.PI / 2;
+        spinGroup.add(cone1);
+        scene.add(spinGroup);
+
+        // --- Particle System (Streamlines) ---
+        const particleCount = 2500;
+        const pGeo = new THREE.BufferGeometry();
+        const pPos = new Float32Array(particleCount * 3);
+        const pCol = new Float32Array(particleCount * 3);
+        const pLife = new Float32Array(particleCount);
+
+        for(let i=0; i<particleCount; i++) {
+            pPos[i*3] = -12 + Math.random() * 24;
+            pPos[i*3+1] = -5 + Math.random() * 10;
+            pPos[i*3+2] = -2 + Math.random() * 4;
+            pLife[i] = Math.random();
+        }
+
+        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+        pGeo.setAttribute('color', new THREE.BufferAttribute(pCol, 3));
+
+        const pMat = new THREE.PointsMaterial({
+            size: 0.15,
+            vertexColors: true,
+            map: createParticleTexture(),
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+
+        const particles = new THREE.Points(pGeo, pMat);
+        scene.add(particles);
+
+        const colorBlue = new THREE.Color('#4361EE');
+        const colorRed = new THREE.Color('#FF3366');
+        const tempColor = new THREE.Color();
+
+        // --- Physics & Update Logic ---
+        let calculatedFL = 0;
+        let calculatedDP = 0;
+
+        function updatePhysics() {
+            // Scale parameters for visual representation
+            const V_sim = params.v / 15; 
+            const R = params.r;
+            const W = params.omega;
+            const Rho = params.rho;
+
+            // Update Ball Scale
+            ball.scale.set(R, R, R);
+            halo.scale.set(R, R, R);
+            spinGroup.scale.set(R, R, R);
+
+            // Calculate Forces (Simplified proportional models for visualization)
+            // Delta P ~ rho * v * omega * r
+            calculatedDP = 2.0 * Rho * params.v * W * R; 
+            // F_L ~ rho * r^3 * omega * v
+            calculatedFL = 0.02 * Rho * Math.pow(R, 3) * W * params.v;
+
+            // Update UI Text
+            valFl.innerText = Math.abs(calculatedFL).toFixed(2) + ' N';
+            valDp.innerText = Math.abs(calculatedDP).toFixed(2) + ' Pa';
+
+            // Update Halo
+            haloMat.uniforms.pressureDiff.value = calculatedDP;
+
+            // Update Lift Arrow
+            if (Math.abs(calculatedFL) > 0.1) {
+                arrowLift.visible = true;
+                const dir = calculatedFL > 0 ? 1 : -1;
+                arrowLift.setDirection(new THREE.Vector3(0, dir, 0));
+                const len = Math.max(0.5, Math.min(Math.abs(calculatedFL) * 0.05, 6));
+                arrowLift.setLength(len, 0.4, 0.2);
+                arrowLift.position.set(0, dir * R, 0);
+            } else {
+                arrowLift.visible = false;
+            }
+
+            // Update Velocity Arrow
+            arrowVel.position.set(-R - 2, 0, 0);
+            arrowVel.setLength(1 + params.v * 0.03, 0.4, 0.2);
+
+            // Update Spin Arrow
+            if (Math.abs(W) > 0.1) {
+                spinGroup.visible = true;
+                // CW spin (W > 0) -> rotation around Z is negative
+                spinGroup.rotation.z = W > 0 ? 0 : Math.PI;
+                cone1.rotation.z = W > 0 ? -Math.PI/2 : Math.PI/2;
+                cone1.position.set(W > 0 ? 1.2 : -1.2, 0, 0);
+            } else {
+                spinGroup.visible = false;
+            }
+
+            // Update Labels
+            updateLabels(R, W, calculatedFL);
+        }
+
+        function updateLabels(R, W, FL) {
+            if (Math.abs(W) < 1) {
+                labelTop.style.opacity = 0;
+                labelBottom.style.opacity = 0;
+                labelLift.style.opacity = 0;
+                return;
+            }
+
+            labelTop.style.opacity = 1;
+            labelBottom.style.opacity = 1;
+            labelLift.style.opacity = 1;
+
+            if (W > 0) { // CW -> Lift UP -> Low P Top
+                labelTop.innerText = "Low Pressure";
+                labelTop.className = "3d-label label-low";
+                labelBottom.innerText = "High Pressure";
+                labelBottom.className = "3d-label label-high";
+            } else {
+                labelTop.innerText = "High Pressure";
+                labelTop.className = "3d-label label-high";
+                labelBottom.innerText = "Low Pressure";
+                labelBottom.className = "3d-label label-low";
+            }
+
+            const posTop = new THREE.Vector3(0, R + 0.8, 0).project(camera);
+            const posBot = new THREE.Vector3(0, -R - 0.8, 0).project(camera);
+            
+            const xTop = (posTop.x * .5 + .5) * window.innerWidth;
+            const yTop = (posTop.y * -.5 + .5) * window.innerHeight;
+            labelTop.style.left = `${xTop}px`;
+            labelTop.style.top = `${yTop}px`;
+
+            const xBot = (posBot.x * .5 + .5) * window.innerWidth;
+            const yBot = (posBot.y * -.5 + .5) * window.innerHeight;
+            labelBottom.style.left = `${xBot}px`;
+            labelBottom.style.top = `${yBot}px`;
+
+            // Lift Label
+            const dir = FL > 0 ? 1 : -1;
+            const len = Math.max(0.5, Math.min(Math.abs(FL) * 0.05, 6));
+            const posLift = new THREE.Vector3(0, dir * (R + len + 0.3), 0).project(camera);
+            labelLift.style.left = `${(posLift.x * .5 + .5) * window.innerWidth}px`;
+            labelLift.style.top = `${(posLift.y * -.5 + .5) * window.innerHeight}px`;
+        }
+
+        function updateParticlesSystem(dt) {
+            const V = params.v / 15; 
+            const R = params.r;
+            const W = params.omega;
+            const k_circ = 0.4; // Circulation strength multiplier
+
+            const pos = pGeo.attributes.position.array;
+            const col = pGeo.attributes.color.array;
+
+            // Opacity based on density
+            pMat.opacity = 0.3 + (params.rho / 2.0) * 0.7;
+
+            for(let i=0; i<particleCount; i++) {
+                let x = pos[i*3];
+                let y = pos[i*3+1];
+                let z = pos[i*3+2];
+
+                let r2 = x*x + y*y + z*z;
+                let r_dist = Math.sqrt(r2);
+
+                // Collision with sphere
+                if (r_dist < R) {
+                    let scale = (R + 0.02) / r_dist;
+                    x *= scale; y *= scale; z *= scale;
+                }
+
+                r2 = x*x + y*y + z*z;
+                r_dist = Math.sqrt(r2);
+
+                // 3D Potential Flow
+                let term = (R*R*R) / (2 * r2 * r_dist);
+                let u_pot = V + V * term * (3 * x * x / r2 - 1);
+                let v_pot = V * term * (3 * x * y / r2);
+                let w_pot = V * term * (3 * x * z / r2);
+
+                // Magnus Circulation (decaying vortex)
+                let u_circ = 0, v_circ = 0;
+                let r_xy2 = x*x + y*y;
+                if (r_xy2 > 0.01) {
+                    let gamma = k_circ * W * R * R; 
+                    let decay = 1.0 / (r_dist * r_dist * r_dist) * R * R * R;
+                    u_circ = gamma * y * decay;
+                    v_circ = -gamma * x * decay;
+                }
+
+                let u = u_pot + u_circ;
+                let v = v_pot + v_circ;
+                let w = w_pot;
+
+                // Integration
+                x += u * dt;
+                y += v * dt;
+                z += w * dt;
+
+                // Reset upstream
+                if (x > 12 || Math.abs(y) > 8 || Math.abs(z) > 4) {
+                    x = -12;
+                    y = -5 + Math.random() * 10;
+                    z = -2 + Math.random() * 4;
+                }
+
+                pos[i*3] = x;
+                pos[i*3+1] = y;
+                pos[i*3+2] = z;
+
+                // Color mapping based on speed
+                let speed = Math.sqrt(u*u + v*v + w*w);
+                let speedNorm = (speed - V*0.6) / (V * 1.2); 
+                speedNorm = Math.max(0, Math.min(1, speedNorm));
+                
+                tempColor.lerpColors(colorBlue, colorRed, speedNorm);
+                col[i*3] = tempColor.r;
+                col[i*3+1] = tempColor.g;
+                col[i*3+2] = tempColor.b;
+            }
+
+            pGeo.attributes.position.needsUpdate = true;
+            pGeo.attributes.color.needsUpdate = true;
+        }
+
+        // --- Event Listeners ---
+        function bindSlider(id, paramKey, dispElement, unit) {
+            document.getElementById(id).addEventListener('input', (e) => {
+                params[paramKey] = parseFloat(e.target.value);
+                dispElement.innerText = params[paramKey] + ' ' + unit;
+                updatePhysics();
+            });
+        }
+
+        bindSlider('slider-v', 'v', dispV, 'm/s');
+        bindSlider('slider-omega', 'omega', dispOmega, 'rad/s');
+        bindSlider('slider-rho', 'rho', dispRho, 'kg/m³');
+        bindSlider('slider-r', 'r', dispR, 'm');
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        updatePhysics(); // Initial call
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.05); // Cap dt to prevent physics explosion
+
+            // Rotate ball visually
+            // W > 0 is CW. In Threejs, rotation around Z: positive is CCW.
+            ball.rotation.z -= params.omega * dt;
+            ball.rotation.x += 0.5 * dt; // slight tumble for realism
+
+            updateParticlesSystem(dt);
+            controls.update();
+            
+            // Update labels position continuously based on camera
+            updateLabels(params.r, params.omega, calculatedFL);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+    </script>
+</body>
+</html>

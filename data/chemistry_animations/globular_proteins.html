@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Globular Protein Dynamics</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap');
+
+  :root {
+    --cycle: 12s;
+    --bg-color: #f8f9fa;
+    --text-main: #333333;
+    --c-carbon: #404040;
+    --c-oxygen: #FF4444;
+    --c-nitrogen: #4444FF;
+    --c-sulfur: #FFCC00;
+    --c-hydrogen: #CCCCCC;
+    --c-substrate: #00AFB9;
+    --c-arrow-flow: #F77F00;
+    --c-arrow-rxn: #7209B7;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Inter', sans-serif;
+  }
+
+  svg {
+    max-width: 100%;
+    max-height: 100vh;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    background-color: #ffffff;
+    border-radius: 12px;
+  }
+
+  /* Typography */
+  .title { font-size: 22px; font-weight: 600; fill: var(--text-main); }
+  .subtitle { font-size: 14px; font-weight: 400; fill: #666; }
+  .legend-text { font-size: 12px; font-weight: 500; fill: #555; }
+  .label { font-size: 13px; font-weight: 500; fill: var(--text-main); }
+  .formula { font-family: 'Roboto Mono', monospace; font-size: 18px; font-weight: 500; fill: var(--text-main); }
+  .sub-label { font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 500; fill: #fff; }
+
+  /* Animations */
+  .aa {
+    animation: fold var(--cycle) ease-in-out infinite;
+  }
+  @keyframes fold {
+    0% { transform: translate(var(--sx), var(--sy)); }
+    20%, 90% { transform: translate(var(--ex), var(--ey)); }
+    100% { transform: translate(var(--sx), var(--sy)); }
+  }
+
+  .core-base {
+    animation: core-darken var(--cycle) ease-in-out infinite;
+  }
+  @keyframes core-darken {
+    0%, 10% { fill: #e0e0e0; }
+    20%, 90% { fill: #b0b0b0; }
+    100% { fill: #e0e0e0; }
+  }
+
+  .protein-complex {
+    transform-origin: 380px 250px;
+    animation: protein-rotate var(--cycle) ease-in-out infinite;
+  }
+  @keyframes protein-rotate {
+    0%, 20% { transform: rotate(0deg); }
+    25%, 85% { transform: rotate(-4deg); }
+    90%, 100% { transform: rotate(0deg); }
+  }
+
+  .jaw-top {
+    animation: jaw-top-move var(--cycle) ease-in-out infinite;
+  }
+  @keyframes jaw-top-move {
+    0%, 41% { transform: translate(var(--ex), var(--ey)); }
+    50%, 66% { transform: translate(calc(var(--ex) + 4px), calc(var(--ey) + 10px)); }
+    75%, 100% { transform: translate(var(--ex), var(--ey)); }
+  }
+
+  .jaw-bot {
+    animation: jaw-bot-move var(--cycle) ease-in-out infinite;
+  }
+  @keyframes jaw-bot-move {
+    0%, 41% { transform: translate(var(--ex), var(--ey)); }
+    50%, 66% { transform: translate(calc(var(--ex) + 4px), calc(var(--ey) - 10px)); }
+    75%, 100% { transform: translate(var(--ex), var(--ey)); }
+  }
+
+  .substrate-group {
+    animation: sub-dock var(--cycle) ease-in-out infinite;
+  }
+  @keyframes sub-dock {
+    0%, 25% { transform: translate(750px, 250px); opacity: 0; }
+    28% { opacity: 1; }
+    35%, 100% { transform: translate(475px, 250px); opacity: 1; }
+  }
+
+  .sub-intact {
+    animation: sub-intact-fade var(--cycle) step-end infinite;
+  }
+  @keyframes sub-intact-fade {
+    0%, 54% { opacity: 1; }
+    55%, 100% { opacity: 0; }
+  }
+
+  .p1 {
+    animation: p1-leave var(--cycle) ease-in-out infinite;
+  }
+  @keyframes p1-leave {
+    0%, 54% { transform: translate(0, 0); opacity: 0; }
+    55%, 60% { transform: translate(0, 0); opacity: 1; }
+    75%, 100% { transform: translate(60px, -120px); opacity: 0; }
+  }
+
+  .p2 {
+    animation: p2-leave var(--cycle) ease-in-out infinite;
+  }
+  @keyframes p2-leave {
+    0%, 54% { transform: translate(0, 0); opacity: 0; }
+    55%, 60% { transform: translate(0, 0); opacity: 1; }
+    75%, 100% { transform: translate(60px, 120px); opacity: 0; }
+  }
+
+  .flash {
+    transform-origin: 465px 250px;
+    animation: flash-anim var(--cycle) ease-out infinite;
+  }
+  @keyframes flash-anim {
+    0%, 53% { transform: scale(0); opacity: 0; }
+    54% { transform: scale(1); opacity: 1; }
+    60%, 100% { transform: scale(3); opacity: 0; }
+  }
+
+  .label-fade {
+    animation: fade-in-out var(--cycle) ease-in-out infinite;
+  }
+  @keyframes fade-in-out {
+    0%, 20% { opacity: 0; }
+    25%, 85% { opacity: 1; }
+    90%, 100% { opacity: 0; }
+  }
+
+  .sub-arrow {
+    animation: arrow-fade var(--cycle) ease-in-out infinite;
+  }
+  @keyframes arrow-fade {
+    0%, 25% { opacity: 0; transform: translateX(10px); }
+    28%, 32% { opacity: 1; transform: translateX(0); }
+    35%, 100% { opacity: 0; transform: translateX(-10px); }
+  }
+
+</style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
+  <title id="svg-title">The Architecture of a Globular Protein: From Folding to Catalysis</title>
+  <desc id="svg-desc">Animation showing a linear polypeptide folding into a globular enzyme, undergoing an induced fit to catalyze a substrate, and releasing products.</desc>
+
+  <defs>
+    <!-- 3D Sphere Shading Overlay -->
+    <radialGradient id="sphereGrad" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="40%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.5"/>
+    </radialGradient>
+
+    <!-- Catalysis Flash Gradient -->
+    <radialGradient id="flashGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="30%" stop-color="#ffffaa" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffaa00" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Arrowheads -->
+    <marker id="arrow-orange" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00" />
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#7209B7" />
+    </marker>
+  </defs>
+
+  <!-- Background is handled by CSS on SVG element -->
+
+  <!-- Title & Subtitle -->
+  <text x="30" y="40" class="title">Globular Protein Dynamics</text>
+  <text x="30" y="60" class="subtitle">Enzyme Folding, Induced Fit, and Catalysis</text>
+
+  <!-- Legend -->
+  <g transform="translate(650, 30)">
+    <rect x="-10" y="-15" width="140" height="115" rx="6" fill="#f8f9fa" stroke="#e0e0e0" stroke-width="1"/>
+    <circle cx="0" cy="0" r="6" fill="var(--c-carbon)" />
+    <circle cx="0" cy="0" r="6" fill="url(#sphereGrad)" />
+    <text x="15" y="4" class="legend-text">Carbon (C)</text>
+
+    <circle cx="0" cy="20" r="6" fill="var(--c-oxygen)" />
+    <circle cx="0" cy="20" r="6" fill="url(#sphereGrad)" />
+    <text x="15" y="24" class="legend-text">Oxygen (O)</text>
+
+    <circle cx="0" cy="40" r="6" fill="var(--c-nitrogen)" />
+    <circle cx="0" cy="40" r="6" fill="url(#sphereGrad)" />
+    <text x="15" y="44" class="legend-text">Nitrogen (N)</text>
+
+    <circle cx="0" cy="60" r="6" fill="var(--c-sulfur)" />
+    <circle cx="0" cy="60" r="6" fill="url(#sphereGrad)" />
+    <text x="15" y="64" class="legend-text">Sulfur (S)</text>
+
+    <circle cx="0" cy="80" r="6" fill="var(--c-substrate)" />
+    <circle cx="0" cy="80" r="6" fill="url(#sphereGrad)" />
+    <text x="15" y="84" class="legend-text">Substrate</text>
+  </g>
+
+  <!-- Reaction Equation -->
+  <g transform="translate(400, 470)" text-anchor="middle">
+    <text class="formula">
+      E + S <tspan fill="var(--c-arrow-rxn)">⇌</tspan> [ES] <tspan fill="var(--c-arrow-rxn)">→</tspan> E + P<tspan dy="5" font-size="12">1</tspan><tspan dy="-5"> + P</tspan><tspan dy="5" font-size="12">2</tspan>
+    </text>
+  </g>
+
+  <!-- Labels & Annotations (Fade in when folded) -->
+  <g class="label-fade">
+    <!-- Hydrophobic Core Label -->
+    <line x1="220" y1="150" x2="360" y2="240" stroke="#888" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="215" y="145" text-anchor="end" class="label">Hydrophobic Core</text>
+
+    <!-- Hydrophilic Surface Label -->
+    <line x1="220" y1="350" x2="310" y2="280" stroke="#888" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="215" y="355" text-anchor="end" class="label">Hydrophilic Surface</text>
+
+    <!-- Active Site Label -->
+    <line x1="550" y1="150" x2="460" y2="220" stroke="#888" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="555" y="145" text-anchor="start" class="label">Active Site Cleft</text>
+
+    <!-- Disulfide Bridge Label -->
+    <line x1="250" y1="200" x2="335" y2="215" stroke="#888" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="245" y="195" text-anchor="end" class="label">Disulfide Bridge (-S-S-)</text>
+
+    <!-- H-Bond Label -->
+    <line x1="250" y1="280" x2="325" y2="245" stroke="#888" stroke-width="1" stroke-dasharray="2,2"/>
+    <text x="245" y="285" text-anchor="end" class="label">H-Bond</text>
+
+    <!-- Structural Bonds (Only visible when folded) -->
+    <line x1="360" y1="210" x2="340" y2="230" stroke="var(--c-sulfur)" stroke-width="4" />
+    <line x1="330" y1="220" x2="320" y2="250" stroke="var(--c-hydrogen)" stroke-width="3" stroke-dasharray="4,4" />
+  </g>
+
+  <!-- Substrate Entry Arrow -->
+  <path d="M 580 250 L 520 250" stroke="var(--c-arrow-flow)" stroke-width="3" marker-end="url(#arrow-orange)" class="sub-arrow" fill="none"/>
+
+  <!-- Protein Complex -->
+  <g class="protein-complex">
+    
+    <!-- Core Amino Acids (Hydrophobic) -->
+    <!-- sx, sy map out a wavy unfolded chain. ex, ey cluster in the center -->
+    <g class="aa" style="--sx: 50px; --sy: 100px; --ex: 380px; --ey: 250px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 75px; --sy: 120px; --ex: 360px; --ey: 240px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 100px; --sy: 100px; --ex: 400px; --ey: 260px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 125px; --sy: 80px; --ex: 370px; --ey: 270px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 150px; --sy: 100px; --ex: 390px; --ey: 230px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 175px; --sy: 120px; --ex: 350px; --ey: 260px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 200px; --sy: 140px; --ex: 380px; --ey: 220px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 225px; --sy: 120px; --ex: 390px; --ey: 270px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 250px; --sy: 100px; --ex: 370px; --ey: 230px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 275px; --sy: 80px; --ex: 400px; --ey: 240px;">
+      <circle r="15" class="core-base" /><circle r="15" fill="url(#sphereGrad)" />
+    </g>
+
+    <!-- Surface Amino Acids (Hydrophilic) -->
+    <!-- Nitrogen (Blue) -->
+    <g class="aa" style="--sx: 300px; --sy: 100px; --ex: 320px; --ey: 250px;">
+      <circle r="14" fill="var(--c-nitrogen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 325px; --sy: 120px; --ex: 350px; --ey: 200px;">
+      <circle r="14" fill="var(--c-nitrogen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 350px; --sy: 140px; --ex: 410px; --ey: 300px;">
+      <circle r="14" fill="var(--c-nitrogen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 375px; --sy: 160px; --ex: 380px; --ey: 190px;">
+      <circle r="14" fill="var(--c-nitrogen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 400px; --sy: 140px; --ex: 330px; --ey: 280px;">
+      <circle r="14" fill="var(--c-nitrogen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+
+    <!-- Oxygen (Red) -->
+    <g class="aa" style="--sx: 425px; --sy: 120px; --ex: 330px; --ey: 220px;">
+      <circle r="14" fill="var(--c-oxygen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 450px; --sy: 100px; --ex: 410px; --ey: 200px;">
+      <circle r="14" fill="var(--c-oxygen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 475px; --sy: 80px; --ex: 350px; --ey: 300px;">
+      <circle r="14" fill="var(--c-oxygen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 500px; --sy: 100px; --ex: 300px; --ey: 250px;">
+      <circle r="14" fill="var(--c-oxygen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 525px; --sy: 120px; --ex: 380px; --ey: 310px;">
+      <circle r="14" fill="var(--c-oxygen)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+
+    <!-- Carbon (Dark Gray) -->
+    <g class="aa" style="--sx: 550px; --sy: 140px; --ex: 340px; --ey: 240px;">
+      <circle r="14" fill="var(--c-carbon)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 575px; --sy: 160px; --ex: 360px; --ey: 280px;">
+      <circle r="14" fill="var(--c-carbon)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 600px; --sy: 180px; --ex: 390px; --ey: 290px;">
+      <circle r="14" fill="var(--c-carbon)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 625px; --sy: 160px; --ex: 370px; --ey: 210px;">
+      <circle r="14" fill="var(--c-carbon)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 650px; --sy: 140px; --ex: 390px; --ey: 210px;">
+      <circle r="14" fill="var(--c-carbon)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+
+    <!-- Sulfur (Yellow) -->
+    <g class="aa" style="--sx: 675px; --sy: 120px; --ex: 360px; --ey: 210px;">
+      <circle r="14" fill="var(--c-sulfur)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+    <g class="aa" style="--sx: 700px; --sy: 100px; --ex: 340px; --ey: 230px;">
+      <circle r="14" fill="var(--c-sulfur)" /><circle r="14" fill="url(#sphereGrad)" />
+    </g>
+
+    <!-- Active Site Jaws (Induced Fit Animation) -->
+    <!-- Top Jaw -->
+    <g class="jaw-top" style="--ex: 430px; --ey: 200px;">
+      <g class="aa" style="--sx: 725px; --sy: 80px; --ex: 0px; --ey: 0px;">
+        <circle r="14" fill="var(--c-nitrogen)" /><circle r="14" fill="url(#sphereGrad)" />
+      </g>
+    </g>
+    <g class="jaw-top" style="--ex: 450px; --ey: 210px;">
+      <g class="aa" style="--sx: 750px; --sy: 100px; --ex: 0px; --ey: 0px;">
+        <circle r="14" fill="var(--c-oxygen)" /><circle r="14" fill="url(#sphereGrad)" />
+      </g>
+    </g>
+    <g class="jaw-top" style="--ex: 440px; --ey: 230px;">
+      <g class="aa" style="--sx: 725px; --sy: 120px; --ex: 0px; --ey: 0px;">
+        <circle r="14" fill="var(--c-carbon)" /><circle r="14" fill="url(#sphereGrad)" />
+      </g>
+    </g>
+    <g class="jaw-top" style="--ex: 460px; --ey: 220px;">
+      <g class="aa" style="--sx: 700px; --sy: 140px; --ex: 0px; --ey: 0px;">
+        <circle r="14" fill="var(--c-nitrogen)" /><circle r="14" fill="url(#sphereGrad)" />
+      </g>
+    </g>
+
+    <!-- Bottom Jaw -->
+    <g class="jaw-bot" style="--ex: 430px; --ey: 300px;">
+      <g class="aa" style="--sx: 675px; --sy: 160px; --ex: 0px; --ey: 0px;">
+        <circle r="14" fill="var(--c-oxygen)" /><circle r="14" fill="url(#sphereGrad)" />
+      </g>
+    </g>
+    <g class="jaw-bot" style="--ex: 450px; --ey: 290px;">
+      <g class="aa" style="--sx: 650px; --sy: 180px; --ex: 0px; --ey: 0px;">
+        <circle r="14" fill="var(--c-nitrogen)" /><circle r="14" fill="url(#sphereGrad)" />
+      </g>
+    </g>
+    <g class="jaw-bot" style="--ex: 440px; --ey: 270px;">
+      <g class="aa" style="--sx: 625px; --sy: 200px; --ex: 0px; --ey: 0px;">
+        <circle r="14" fill="var(--c-carbon)" /><circle r="14" fill="url(#sphereGrad)" />
+      </g>
+    </g>
+    <g class="jaw-bot" style="--ex: 460px; --ey: 280px;">
+      <g class="aa" style="--sx: 600px; --sy: 220px; --ex: 0px; --ey: 0px;">
+        <circle r="14" fill="var(--c-oxygen)" /><circle r="14" fill="url(#sphereGrad)" />
+      </g>
+    </g>
+  </g>
+
+  <!-- Substrate & Products -->
+  <g class="substrate-group">
+    
+    <!-- Intact Substrate (Fades out at catalysis) -->
+    <g class="sub-intact">
+      <!-- Bond to be broken -->
+      <line x1="0" y1="-14" x2="0" y2="14" stroke="var(--c-arrow-flow)" stroke-width="5" />
+      
+      <!-- Top Lobe -->
+      <circle cx="0" cy="-15" r="13" fill="var(--c-substrate)" />
+      <circle cx="0" cy="-15" r="13" fill="url(#sphereGrad)" />
+      
+      <!-- Bottom Lobe -->
+      <circle cx="0" cy="15" r="13" fill="var(--c-substrate)" />
+      <circle cx="0" cy="15" r="13" fill="url(#sphereGrad)" />
+      
+      <text x="18" y="4" class="sub-label">S</text>
+    </g>
+
+    <!-- Product 1 (Top) -->
+    <g class="p1">
+      <circle cx="0" cy="-15" r="13" fill="var(--c-substrate)" />
+      <circle cx="0" cy="-15" r="13" fill="url(#sphereGrad)" />
+      <text x="18" y="-10" class="sub-label">P₁</text>
+    </g>
+
+    <!-- Product 2 (Bottom) -->
+    <g class="p2">
+      <circle cx="0" cy="15" r="13" fill="var(--c-substrate)" />
+      <circle cx="0" cy="15" r="13" fill="url(#sphereGrad)" />
+      <text x="18" y="20" class="sub-label">P₂</text>
+    </g>
+
+  </g>
+
+  <!-- Catalysis Flash -->
+  <circle cx="465" cy="250" r="30" fill="url(#flashGrad)" class="flash" />
+
+</svg>
+
+</body>
+</html>

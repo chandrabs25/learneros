@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Equation of Continuity Visualization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 75vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 25px;
+            border-radius: 12px;
+            border-left: 6px solid #4361EE;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(5px);
+            pointer-events: none;
+        }
+
+        #formula-card h2 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 18px;
+            color: #111;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .math-row {
+            display: flex;
+            align-items: center;
+        }
+
+        .highlight-blue { color: #4361EE; font-weight: bold; }
+        .highlight-red { color: #FF3366; font-weight: bold; }
+        .highlight-green { color: #06D6A0; font-weight: bold; }
+
+        #ui-panel {
+            width: 25vw;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-left: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 40px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        .panel-header {
+            font-size: 22px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #444;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 14px;
+            background: #fff;
+            padding: 4px 8px;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            color: #4361EE;
+            font-weight: 600;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -7px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        /* Accent colors for specific sliders */
+        #r1-slider::-webkit-slider-thumb { background: #FF3366; box-shadow: 0 2px 6px rgba(255, 51, 102, 0.4); }
+        #r2-slider::-webkit-slider-thumb { background: #FF3366; box-shadow: 0 2px 6px rgba(255, 51, 102, 0.4); }
+        #v1-slider::-webkit-slider-thumb { background: #06D6A0; box-shadow: 0 2px 6px rgba(6, 214, 160, 0.4); }
+
+        .instructions {
+            margin-top: auto;
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+            background: rgba(255,255,255,0.8);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100vw; height: 60vh; }
+            #ui-panel { width: 100vw; height: 40vh; padding: 20px; gap: 15px; }
+            #formula-card { top: 10px; left: 10px; padding: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <h2>Equation of Continuity</h2>
+            <div class="math-text">
+                <div class="math-row">
+                    A₁ · v₁ = A₂ · v₂ = Q
+                </div>
+                <div class="math-row" style="margin-top: 10px; font-size: 15px;">
+                    (<span class="highlight-red" id="val-a1">0.00</span> m²) · 
+                    (<span class="highlight-green" id="val-v1">0.00</span> m/s) = 
+                    <span class="highlight-blue" id="val-q1">0.00</span> m³/s
+                </div>
+                <div class="math-row" style="font-size: 15px;">
+                    (<span class="highlight-red" id="val-a2">0.00</span> m²) · 
+                    (<span class="highlight-green" id="val-v2">0.00</span> m/s) = 
+                    <span class="highlight-blue" id="val-q2">0.00</span> m³/s
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <div class="panel-header">Controls</div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Inlet Radius (r₁)</span>
+                <span class="control-value" id="r1-val">1.5 m</span>
+            </div>
+            <input type="range" id="r1-slider" min="0.5" max="2.0" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Outlet Radius (r₂)</span>
+                <span class="control-value" id="r2-val">0.8 m</span>
+            </div>
+            <input type="range" id="r2-slider" min="0.5" max="2.0" step="0.1" value="0.8">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Inlet Velocity (v₁)</span>
+                <span class="control-value" id="v1-val">2.0 m/s</span>
+            </div>
+            <input type="range" id="v1-slider" min="0.1" max="5.0" step="0.1" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Particle Density</span>
+                <span class="control-value" id="p-val">500</span>
+            </div>
+            <input type="range" id="p-slider" min="100" max="1000" step="50" value="500">
+        </div>
+
+        <div class="instructions">
+            <strong>Physics Note:</strong> As the cross-sectional area decreases, the fluid velocity must increase to maintain a constant volume flow rate (Q). Notice how particles accelerate and spread out longitudinally in the narrow section.
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State Variables ---
+        let params = {
+            r1: 1.5,
+            r2: 0.8,
+            v1: 2.0,
+            pCount: 500,
+            L: 10 // Length of the pipe
+        };
+
+        let calculated = {
+            A1: 0, A2: 0, v2: 0, Q: 0
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(params.L / 2, 6, 18);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.target.set(params.L / 2, 0, 0);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xfff5e6, 0.8); // Warm light
+        dirLight.position.set(10, 15, 10);
+        scene.add(dirLight);
+
+        const backLight = new THREE.DirectionalLight(0xe6f2ff, 0.5); // Cool rim light
+        backLight.position.set(-10, -10, -10);
+        scene.add(backLight);
+
+        // --- Scene Objects ---
+        let pipeMesh, disk1Mesh, disk2Mesh;
+        let arrow1, arrow2;
+        let streamlinesGroup = new THREE.Group();
+        scene.add(streamlinesGroup);
+        
+        let particleMesh;
+        let particleData = [];
+        const dummy = new THREE.Object3D();
+        const clock = new THREE.Clock();
+
+        // Materials
+        const pipeMaterial = new THREE.MeshPhongMaterial({
+            color: 0xE0F2F1,
+            transparent: true,
+            opacity: 0.3,
+            shininess: 120,
+            specular: 0xffffff,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        const diskMaterial = new THREE.MeshBasicMaterial({
+            color: 0xFF3366,
+            transparent: true,
+            opacity: 0.4,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        const particleMaterial = new THREE.MeshPhongMaterial({
+            color: 0x4361EE,
+            shininess: 80
+        });
+
+        const streamlineMaterial = new THREE.LineBasicMaterial({
+            color: 0xBDC3C7,
+            transparent: true,
+            opacity: 0.5
+        });
+
+        // --- Core Functions ---
+
+        function updateMath() {
+            calculated.A1 = Math.PI * params.r1 * params.r1;
+            calculated.A2 = Math.PI * params.r2 * params.r2;
+            calculated.Q = calculated.A1 * params.v1;
+            calculated.v2 = calculated.Q / calculated.A2;
+
+            // Update UI
+            document.getElementById('val-a1').innerText = calculated.A1.toFixed(2);
+            document.getElementById('val-v1').innerText = params.v1.toFixed(2);
+            document.getElementById('val-q1').innerText = calculated.Q.toFixed(2);
+            
+            document.getElementById('val-a2').innerText = calculated.A2.toFixed(2);
+            document.getElementById('val-v2').innerText = calculated.v2.toFixed(2);
+            document.getElementById('val-q2').innerText = calculated.Q.toFixed(2);
+        }
+
+        function buildGeometry() {
+            // 1. Pipe
+            if (pipeMesh) {
+                pipeMesh.geometry.dispose();
+                scene.remove(pipeMesh);
+            }
+            // LatheGeometry creates along Y axis. We want a straight taper.
+            const points = [
+                new THREE.Vector2(params.r1, 0),
+                new THREE.Vector2(params.r2, params.L)
+            ];
+            const pipeGeo = new THREE.LatheGeometry(points, 64);
+            pipeMesh = new THREE.Mesh(pipeGeo, pipeMaterial);
+            // Rotate to align with X axis
+            pipeMesh.rotation.z = -Math.PI / 2;
+            scene.add(pipeMesh);
+
+            // 2. Disks
+            if (disk1Mesh) {
+                disk1Mesh.geometry.dispose();
+                disk2Mesh.geometry.dispose();
+                scene.remove(disk1Mesh);
+                scene.remove(disk2Mesh);
+            }
+            disk1Mesh = new THREE.Mesh(new THREE.CircleGeometry(params.r1, 32), diskMaterial);
+            disk1Mesh.rotation.y = Math.PI / 2;
+            
+            disk2Mesh = new THREE.Mesh(new THREE.CircleGeometry(params.r2, 32), diskMaterial);
+            disk2Mesh.rotation.y = Math.PI / 2;
+            disk2Mesh.position.set(params.L, 0, 0);
+            
+            scene.add(disk1Mesh);
+            scene.add(disk2Mesh);
+
+            // 3. Arrows
+            if (arrow1) {
+                scene.remove(arrow1);
+                scene.remove(arrow2);
+            }
+            const dir = new THREE.Vector3(1, 0, 0);
+            // Scale arrow length visually, cap max length
+            const len1 = Math.min(params.v1 * 0.8, params.L * 0.4);
+            const len2 = Math.min(calculated.v2 * 0.8, params.L * 0.4);
+            
+            arrow1 = new THREE.ArrowHelper(dir, new THREE.Vector3(0,0,0), len1, 0x06D6A0, len1*0.2, len1*0.1);
+            arrow2 = new THREE.ArrowHelper(dir, new THREE.Vector3(params.L - len2,0,0), len2, 0x06D6A0, len2*0.2, len2*0.1);
+            
+            // Make arrows thicker
+            arrow1.line.material.linewidth = 3;
+            arrow2.line.material.linewidth = 3;
+            
+            scene.add(arrow1);
+            scene.add(arrow2);
+
+            // 4. Streamlines
+            while(streamlinesGroup.children.length > 0){ 
+                let child = streamlinesGroup.children[0];
+                child.geometry.dispose();
+                streamlinesGroup.remove(child); 
+            }
+            const numLines = 12;
+            for(let i=0; i<numLines; i++) {
+                const angle = (i / numLines) * Math.PI * 2;
+                const linePoints = [];
+                for(let x=0; x<=params.L; x+=0.5) {
+                    const r = params.r1 + (params.r2 - params.r1) * (x / params.L);
+                    linePoints.push(new THREE.Vector3(x, r * Math.cos(angle), r * Math.sin(angle)));
+                }
+                const lineGeo = new THREE.BufferGeometry().setFromPoints(linePoints);
+                streamlinesGroup.add(new THREE.Line(lineGeo, streamlineMaterial));
+            }
+        }
+
+        function initParticles() {
+            if (particleMesh) {
+                particleMesh.geometry.dispose();
+                scene.remove(particleMesh);
+            }
+
+            const sphereGeo = new THREE.SphereGeometry(0.06, 16, 16);
+            particleMesh = new THREE.InstancedMesh(sphereGeo, particleMaterial, params.pCount);
+            particleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+            scene.add(particleMesh);
+
+            particleData = [];
+            for (let i = 0; i < params.pCount; i++) {
+                particleData.push({
+                    x: Math.random() * params.L,
+                    f: Math.sqrt(Math.random()), // uniform distribution in circle
+                    theta: Math.random() * Math.PI * 2
+                });
+            }
+            updateParticlePositions(0);
+        }
+
+        function updateParticlePositions(dt) {
+            for (let i = 0; i < params.pCount; i++) {
+                let p = particleData[i];
+                
+                // Calculate local radius and velocity at current x
+                let currentR = params.r1 + (params.r2 - params.r1) * (p.x / params.L);
+                let currentV = calculated.Q / (Math.PI * currentR * currentR);
+                
+                // Move particle
+                p.x += currentV * dt;
+                
+                // Reset if it passes the end
+                if (p.x > params.L) {
+                    p.x = p.x % params.L; // wrap around smoothly
+                    p.f = Math.sqrt(Math.random());
+                    p.theta = Math.random() * Math.PI * 2;
+                }
+
+                // Recalculate R for exact Y, Z positioning after X update
+                currentR = params.r1 + (params.r2 - params.r1) * (p.x / params.L);
+                
+                // Calculate actual 3D coordinates
+                // Scale slightly down (0.95) so particles don't clip exactly on the glass edge
+                const py = p.f * currentR * 0.95 * Math.cos(p.theta);
+                const pz = p.f * currentR * 0.95 * Math.sin(p.theta);
+
+                dummy.position.set(p.x, py, pz);
+                
+                // Optional: stretch particles based on velocity for motion blur effect
+                // const stretch = 1 + currentV * 0.1;
+                // dummy.scale.set(stretch, 1, 1);
+                
+                dummy.updateMatrix();
+                particleMesh.setMatrixAt(i, dummy.matrix);
+            }
+            particleMesh.instanceMatrix.needsUpdate = true;
+        }
+
+        // --- Initialization ---
+        function init() {
+            updateMath();
+            buildGeometry();
+            initParticles();
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Cap dt to prevent huge jumps if tab is inactive
+            let dt = Math.min(clock.getDelta(), 0.1); 
+            
+            updateParticlePositions(dt);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Event Listeners ---
+        
+        function handleParamChange() {
+            params.r1 = parseFloat(document.getElementById('r1-slider').value);
+            params.r2 = parseFloat(document.getElementById('r2-slider').value);
+            params.v1 = parseFloat(document.getElementById('v1-slider').value);
+            
+            document.getElementById('r1-val').innerText = params.r1.toFixed(1) + ' m';
+            document.getElementById('r2-val').innerText = params.r2.toFixed(1) + ' m';
+            document.getElementById('v1-val').innerText = params.v1.toFixed(1) + ' m/s';
+
+            updateMath();
+            buildGeometry();
+            // Don't re-init particles here to keep flow continuous, just let them adapt to new bounds
+        }
+
+        document.getElementById('r1-slider').addEventListener('input', handleParamChange);
+        document.getElementById('r2-slider').addEventListener('input', handleParamChange);
+        document.getElementById('v1-slider').addEventListener('input', handleParamChange);
+
+        document.getElementById('p-slider').addEventListener('input', (e) => {
+            params.pCount = parseInt(e.target.value);
+            document.getElementById('p-val').innerText = params.pCount;
+            initParticles(); // Must re-init to change instance count
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Start
+        init();
+        animate();
+
+    </script>
+</body>
+</html>

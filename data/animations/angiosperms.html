@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Double Fertilization in Angiosperms</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+        
+        /* Animations */
+        .pollen-grain {
+            transform-origin: 250px 45px;
+            animation: pulsePollen 15s infinite;
+        }
+        @keyframes pulsePollen {
+            0%, 5% { transform: scale(1); }
+            8% { transform: scale(1.4); fill: #F39C12; }
+            12%, 100% { transform: scale(1); fill: #F1C40F; }
+        }
+
+        .small-tube {
+            stroke-dasharray: 500;
+            stroke-dashoffset: 500;
+            animation: growSmallTube 15s linear infinite;
+        }
+        @keyframes growSmallTube {
+            0%, 13.3% { stroke-dashoffset: 500; }
+            46.6%, 100% { stroke-dashoffset: 0; }
+        }
+
+        .mag-tube {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: growMagTube 15s linear infinite;
+        }
+        @keyframes growMagTube {
+            0%, 40% { stroke-dashoffset: 100; }
+            46.6%, 100% { stroke-dashoffset: 0; }
+        }
+
+        .gamete-group {
+            animation: gameteVisibility 15s linear infinite;
+        }
+        @keyframes gameteVisibility {
+            0%, 46.5% { opacity: 0; }
+            46.6%, 59.9% { opacity: 1; }
+            60%, 100% { opacity: 0; }
+        }
+
+        .egg-cell {
+            transform-origin: 600px 400px;
+            animation: syngamyEgg 15s ease-in-out infinite;
+        }
+        @keyframes syngamyEgg {
+            0%, 59.9% { fill: #F39C12; transform: scale(1); }
+            62%, 90% { fill: #FFD700; transform: scale(1.15); }
+            95%, 100% { fill: #F39C12; transform: scale(1); }
+        }
+
+        .polar-nucleus-left {
+            transform-origin: 575px 280px;
+            animation: moveLeftPN 15s ease-in-out infinite;
+        }
+        @keyframes moveLeftPN {
+            0%, 59.9% { transform: translate(0,0) scale(1); }
+            62%, 90% { transform: translate(25px, 0) scale(1.3); }
+            95%, 100% { transform: translate(0,0) scale(1); }
+        }
+
+        .polar-nucleus-right {
+            transform-origin: 625px 280px;
+            animation: moveRightPN 15s ease-in-out infinite;
+        }
+        @keyframes moveRightPN {
+            0%, 59.9% { transform: translate(0,0) scale(1); }
+            62%, 90% { transform: translate(-25px, 0) scale(1.3); }
+            95%, 100% { transform: translate(0,0) scale(1); }
+        }
+
+        .central-cell {
+            animation: flashPEN 15s ease-in-out infinite;
+        }
+        @keyframes flashPEN {
+            0%, 59.9% { fill: #E8F4FD; }
+            60%, 64% { fill: #FFFACD; }
+            66%, 100% { fill: #E8F4FD; }
+        }
+
+        .degenerating {
+            animation: degenerate 15s ease-in-out infinite;
+        }
+        @keyframes degenerate {
+            0%, 79.9% { opacity: 1; }
+            86.6%, 95% { opacity: 0.2; }
+            100% { opacity: 1; }
+        }
+
+        /* Dynamic Labels */
+        .label-tube { animation: showLabelTube 15s infinite; }
+        @keyframes showLabelTube {
+            0%, 19.9% { opacity: 0; }
+            20%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .label-gametes { animation: showLabelGametes 15s infinite; }
+        @keyframes showLabelGametes {
+            0%, 46.5% { opacity: 0; }
+            46.6%, 59.9% { opacity: 1; }
+            60%, 100% { opacity: 0; }
+        }
+
+        .label-syngamy { animation: showLabelSyngamy 15s infinite; }
+        @keyframes showLabelSyngamy {
+            0%, 61.9% { opacity: 0; transform: translateY(5px); }
+            62%, 95% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; }
+        }
+
+        .label-triple { animation: showLabelTriple 15s infinite; }
+        @keyframes showLabelTriple {
+            0%, 61.9% { opacity: 0; transform: translateY(5px); }
+            62%, 95% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; }
+        }
+
+        .scientific {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Drop Shadow for Magnified View -->
+            <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+                <feDropShadow dx="0" dy="6" stdDeviation="6" flood-opacity="0.15" flood-color="#2C3E50"/>
+            </filter>
+
+            <!-- Paths for Animation -->
+            <path id="small-tube-path" d="M 250 45 L 250 250 C 250 280, 310 280, 310 360 C 310 430, 250 450, 250 410" />
+            <path id="small-gamete1-path" d="M 250 45 L 250 250 C 250 280, 310 280, 310 360 C 310 430, 250 450, 250 410 L 250 390" />
+            <path id="small-gamete2-path" d="M 250 45 L 250 250 C 250 280, 310 280, 310 360 C 310 430, 250 450, 250 410 L 250 360" />
+            
+            <path id="mag-gamete1-path" d="M 580 480 L 580 420 L 600 400" />
+            <path id="mag-gamete2-path" d="M 580 480 L 580 420 L 600 280" />
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="35" text-anchor="middle" font-size="22" font-weight="700" fill="#2C3E50">The Double Fertilization Mechanism in Angiosperms</text>
+
+        <!-- Magnification Cone (Background) -->
+        <polygon points="270,330 480,100 480,460 270,390" fill="#4A90D9" opacity="0.05" />
+        <line x1="270" y1="330" x2="480" y2="100" stroke="#BDC3C7" stroke-width="1.5" stroke-dasharray="6,4" />
+        <line x1="270" y1="390" x2="480" y2="460" stroke="#BDC3C7" stroke-width="1.5" stroke-dasharray="6,4" />
+
+        <!-- ========================================== -->
+        <!-- LEFT SIDE: MACROSCOPIC VIEW (PISTIL & OVARY) -->
+        <!-- ========================================== -->
+        
+        <!-- Pistil Outline -->
+        <path d="M 230 100 C 230 80, 210 70, 210 50 C 230 50, 250 40, 270 50 C 290 50, 290 80, 270 100 L 270 240 C 270 260, 330 280, 330 360 C 330 440, 280 480, 250 480 C 220 480, 170 440, 170 360 C 170 280, 230 260, 230 240 Z" fill="#EAFaf1" stroke="#2ECC71" stroke-width="3" />
+        
+        <!-- Small Ovule -->
+        <g stroke="#2ECC71" stroke-width="2" fill="none">
+            <!-- Funiculus -->
+            <path d="M 265 435 Q 290 450 320 380" stroke-width="4" />
+            <!-- Integuments -->
+            <path d="M 235 435 A 25 40 0 1 1 265 435" />
+            <path d="M 240 425 A 18 30 0 1 1 260 425" />
+        </g>
+        
+        <!-- Small Embryo Sac -->
+        <ellipse cx="250" cy="360" rx="18" ry="30" fill="#E8F4FD" stroke="#4A90D9" stroke-width="1.5" />
+        
+        <!-- Small Pollen Tube (Animated) -->
+        <use href="#small-tube-path" class="small-tube" fill="none" stroke="#F1C40F" stroke-width="3" stroke-linecap="round" />
+        
+        <!-- Pollen Grain -->
+        <circle cx="250" cy="45" r="8" fill="#F1C40F" class="pollen-grain" />
+
+        <!-- Small Gametes (Animated) -->
+        <g class="gamete-group">
+            <circle r="3" fill="#FF6B6B">
+                <animateMotion dur="15s" repeatCount="indefinite" keyTimes="0; 0.466; 0.6; 1" keyPoints="0; 0; 1; 1" calcMode="linear">
+                    <mpath href="#small-gamete1-path"/>
+                </animateMotion>
+            </circle>
+            <circle r="3" fill="#FF6B6B">
+                <animateMotion dur="15s" repeatCount="indefinite" keyTimes="0; 0.466; 0.6; 1" keyPoints="0; 0; 1; 1" calcMode="linear">
+                    <mpath href="#small-gamete2-path"/>
+                </animateMotion>
+            </circle>
+        </g>
+
+
+        <!-- ========================================== -->
+        <!-- RIGHT SIDE: MAGNIFIED EMBRYO SAC VIEW      -->
+        <!-- ========================================== -->
+        
+        <g transform="translate(0, 0)">
+            <!-- Embryo Sac Outline -->
+            <ellipse cx="600" cy="280" rx="120" ry="180" class="central-cell" stroke="#4A90D9" stroke-width="3" filter="url(#shadow)" />
+            
+            <!-- Antipodals (Chalazal End) -->
+            <g class="degenerating">
+                <circle cx="540" cy="150" r="22" fill="#98D8C8" stroke="#2C3E50" stroke-width="1.5" />
+                <circle cx="600" cy="140" r="22" fill="#98D8C8" stroke="#2C3E50" stroke-width="1.5" />
+                <circle cx="660" cy="150" r="22" fill="#98D8C8" stroke="#2C3E50" stroke-width="1.5" />
+            </g>
+
+            <!-- Polar Nuclei (Central Cell) -->
+            <circle cx="575" cy="280" r="18" fill="#2C3E50" class="polar-nucleus-left" />
+            <circle cx="625" cy="280" r="18" fill="#2C3E50" class="polar-nucleus-right" />
+
+            <!-- Synergids (Micropylar End) -->
+            <g class="degenerating">
+                <circle cx="545" cy="415" r="25" fill="#98D8C8" stroke="#2C3E50" stroke-width="1.5" />
+                <circle cx="655" cy="415" r="25" fill="#98D8C8" stroke="#2C3E50" stroke-width="1.5" />
+            </g>
+
+            <!-- Egg Cell -->
+            <circle cx="600" cy="395" r="28" class="egg-cell" stroke="#2C3E50" stroke-width="1.5" />
+
+            <!-- Magnified Pollen Tube (Animated) -->
+            <path d="M 580 480 L 580 420" class="mag-tube" fill="none" stroke="#F1C40F" stroke-width="14" stroke-linecap="round" />
+
+            <!-- Magnified Gametes (Animated) -->
+            <g class="gamete-group">
+                <circle r="7" fill="#FF6B6B">
+                    <animateMotion dur="15s" repeatCount="indefinite" keyTimes="0; 0.466; 0.6; 1" keyPoints="0; 0; 1; 1" calcMode="linear">
+                        <mpath href="#mag-gamete1-path"/>
+                    </animateMotion>
+                </circle>
+                <circle r="7" fill="#FF6B6B">
+                    <animateMotion dur="15s" repeatCount="indefinite" keyTimes="0; 0.466; 0.6; 1" keyPoints="0; 0; 1; 1" calcMode="linear">
+                        <mpath href="#mag-gamete2-path"/>
+                    </animateMotion>
+                </circle>
+            </g>
+        </g>
+
+
+        <!-- ========================================== -->
+        <!-- LABELS AND ANNOTATIONS                     -->
+        <!-- ========================================== -->
+
+        <!-- Static Labels (Left) -->
+        <g font-size="12" fill="#34495E">
+            <text x="130" y="80">Stigma</text>
+            <line x1="175" y1="76" x2="230" y2="76" stroke="#BDC3C7" stroke-width="1" />
+            
+            <text x="130" y="180">Style</text>
+            <line x1="165" y1="176" x2="250" y2="176" stroke="#BDC3C7" stroke-width="1" />
+            
+            <text x="130" y="360">Ovary</text>
+            <line x1="170" y1="356" x2="200" y2="356" stroke="#BDC3C7" stroke-width="1" />
+        </g>
+
+        <!-- Static Labels (Right) -->
+        <g font-size="12" fill="#34495E">
+            <text x="740" y="145">Antipodals</text>
+            <line x1="735" y1="141" x2="685" y2="141" stroke="#BDC3C7" stroke-width="1" />
+
+            <text x="740" y="435">Synergids</text>
+            <line x1="735" y1="431" x2="680" y2="431" stroke="#BDC3C7" stroke-width="1" />
+
+            <text x="600" y="495" text-anchor="middle" font-weight="600">Micropyle</text>
+        </g>
+
+        <!-- Dynamic Labels -->
+        <g font-size="13">
+            <!-- Pollen Tube Label -->
+            <g class="label-tube">
+                <text x="130" y="250" fill="#D35400" font-weight="600">Pollen Tube</text>
+                <line x1="205" y1="246" x2="245" y2="246" stroke="#D35400" stroke-width="1" stroke-dasharray="2,2" />
+            </g>
+
+            <!-- Male Gametes Label -->
+            <g class="label-gametes">
+                <text x="740" y="340" fill="#E74C3C" font-weight="600">Male Gametes <tspan class="scientific">(n)</tspan></text>
+                <line x1="735" y1="336" x2="590" y2="336" stroke="#E74C3C" stroke-width="1" stroke-dasharray="2,2" />
+            </g>
+
+            <!-- Syngamy Label -->
+            <g class="label-syngamy">
+                <text x="740" y="400" fill="#D35400" font-weight="700">Syngamy → Zygote <tspan class="scientific">(2n)</tspan></text>
+                <line x1="735" y1="396" x2="635" y2="396" stroke="#D35400" stroke-width="1.5" />
+            </g>
+
+            <!-- Triple Fusion Label -->
+            <g class="label-triple">
+                <text x="740" y="285" fill="#2C3E50" font-weight="700">Triple Fusion → PEN <tspan class="scientific">(3n)</tspan></text>
+                <line x1="735" y1="281" x2="650" y2="281" stroke="#2C3E50" stroke-width="1.5" />
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- LEGEND                                     -->
+        <!-- ========================================== -->
+        <g transform="translate(15, 380)">
+            <rect width="140" height="105" rx="6" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" opacity="0.9" />
+            <text x="10" y="20" font-size="11" font-weight="700" fill="#2C3E50">Key</text>
+            
+            <circle cx="16" cy="35" r="5" fill="#2ECC71" />
+            <text x="28" y="39" font-size="10" fill="#34495E">Plant Tissue</text>
+            
+            <circle cx="16" cy="52" r="5" fill="#F1C40F" />
+            <text x="28" y="56" font-size="10" fill="#34495E">Pollen / Tube</text>
+            
+            <circle cx="16" cy="69" r="5" fill="#FF6B6B" />
+            <text x="28" y="73" font-size="10" fill="#34495E">Male Gametes</text>
+            
+            <circle cx="16" cy="86" r="5" fill="#F39C12" />
+            <text x="28" y="90" font-size="10" fill="#34495E">Egg / Zygote</text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

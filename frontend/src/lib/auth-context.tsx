@@ -41,7 +41,7 @@ const TO_ONBOARDING = "/onboarding/institute";
 async function getPostLoginRoute(user: User): Promise<string> {
     try {
         const tokenResult = await user.getIdTokenResult(true);
-        const role = String(tokenResult.claims?.role || "").toLowerCase();
+        const role = String(tokenResult.claims?.role || "student").toLowerCase();
         if (role === "teacher") return "/teacher/dashboard";
         if (role === "admin" || role === "superadmin") return "/admin/dashboard";
         return TO_ONBOARDING;
@@ -73,9 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             try {
                 const tokenResult = await user.getIdTokenResult(true);
-                if (!cancelled) setRole(String(tokenResult.claims?.role || "").toLowerCase());
+                if (!cancelled) setRole(String(tokenResult.claims?.role || "student").toLowerCase());
             } catch {
-                if (!cancelled) setRole("");
+                if (!cancelled) setRole("student");
             }
         })();
         return () => {

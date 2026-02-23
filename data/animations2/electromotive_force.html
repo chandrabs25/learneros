@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMF & Kirchhoff's Laws: Cubic Resistor Network</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --panel-border: rgba(255, 255, 255, 0.5);
+            --text-main: #2d3748;
+            --accent-purple: #7209B7;
+            --accent-red: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-green: #06D6A0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Glassmorphic Sidebar */
+        #controls-sidebar {
+            width: 320px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--panel-border);
+            box-shadow: -5px 0 25px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--accent-purple);
+            line-height: 1.3;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: #4a5568;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--accent-purple);
+            background: rgba(114, 9, 183, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e0;
+            border-radius: 2px;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--accent-purple);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        /* Floating Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            border-radius: 8px;
+            border-left: 5px solid var(--accent-purple);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .formula-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .math-var { font-style: italic; }
+        .math-val { font-weight: 700; color: var(--accent-purple); }
+
+        /* 3D Node Labels */
+        .node-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            font-weight: 700;
+            color: #1a202c;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 2px 6px;
+            border-radius: 4px;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+            background: rgba(255,255,255,0.5);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .color-box {
+            width: 12px; height: 12px; border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-line">
+                <span><span class="math-var">R<sub>eq</sub></span> = 5/6 <span class="math-var">R</span></span>
+                <span>= <span class="math-val" id="out-req">8.33</span> Ω</span>
+            </div>
+            <div class="formula-line">
+                <span><span class="math-var">I<sub>total</sub></span> = <span class="math-var">ε</span> / (<span class="math-var">R<sub>eq</sub></span> + <span class="math-var">r</span>)</span>
+                <span>= <span class="math-val" id="out-itot">1.36</span> A</span>
+            </div>
+            <div class="formula-line">
+                <span><span class="math-var">V<sub>terminal</sub></span> = <span class="math-var">ε</span> - <span class="math-var">I<sub>total</sub></span><span class="math-var">r</span></span>
+                <span>= <span class="math-val" id="out-vterm">11.32</span> V</span>
+            </div>
+        </div>
+        <div id="labels-container"></div>
+    </div>
+
+    <div id="controls-sidebar">
+        <div>
+            <h1>Kirchhoff's Cube</h1>
+            <p class="subtitle">Interactive EMF & Resistor Network</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>EMF Source (ε)</span>
+                <span class="value-display" id="val-emf">12.0 V</span>
+            </div>
+            <input type="range" id="input-emf" min="0" max="24" step="1" value="12">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Edge Resistance (R)</span>
+                <span class="value-display" id="val-res">10.0 Ω</span>
+            </div>
+            <input type="range" id="input-res" min="1" max="50" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Internal Resistance (r)</span>
+                <span class="value-display" id="val-intr">0.5 Ω</span>
+            </div>
+            <input type="range" id="input-intr" min="0" max="5" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header"><span>Visualizations</span></div>
+            <label class="toggle-group">
+                <input type="checkbox" id="toggle-labels" checked> Show Node Potentials (V)
+            </label>
+            <label class="toggle-group">
+                <input type="checkbox" id="toggle-current" checked> Show Current Vectors (I)
+            </label>
+            <label class="toggle-group">
+                <input type="checkbox" id="toggle-efield"> Show E-Field Vectors (E)
+            </label>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> High Potential</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Low Potential</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Current (I)</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Electric Field (E)</div>
+            <div class="legend-item"><div class="color-box" style="background: #FFE066; border-radius:50%;"></div> Charge Carriers</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(15, 12, 20);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Physics & Graph Data ---
+        // Cube size 8 units (from -4 to 4)
+        const s = 4;
+        const nodePositions = [
+            new THREE.Vector3(-s, -s, s),  // 0: Source (Bottom-Left-Front)
+            new THREE.Vector3(s, -s, s),   // 1
+            new THREE.Vector3(-s, s, s),   // 2
+            new THREE.Vector3(s, s, s),    // 3
+            new THREE.Vector3(-s, -s, -s), // 4
+            new THREE.Vector3(s, -s, -s),  // 5
+            new THREE.Vector3(-s, s, -s),  // 6
+            new THREE.Vector3(s, s, -s)    // 7: Sink (Top-Right-Back)
+        ];
+
+        // Edges defined by flow direction (from -> to) and type (1 = I/3, 2 = I/6)
+        const edgeData = [
+            { f: 0, t: 1, type: 1 }, { f: 0, t: 2, type: 1 }, { f: 0, t: 4, type: 1 }, // Tier 0 -> 1
+            { f: 1, t: 3, type: 2 }, { f: 1, t: 5, type: 2 },                          // Tier 1 -> 2
+            { f: 2, t: 3, type: 2 }, { f: 2, t: 6, type: 2 },
+            { f: 4, t: 5, type: 2 }, { f: 4, t: 6, type: 2 },
+            { f: 3, t: 7, type: 1 }, { f: 5, t: 7, type: 1 }, { f: 6, t: 7, type: 1 }  // Tier 2 -> 3
+        ];
+
+        let params = {
+            emf: 12,
+            R: 10,
+            r: 0.5,
+            Req: 0,
+            Itot: 0,
+            Vterm: 0,
+            potentials: new Array(8).fill(0)
+        };
+
+        // --- 3D Objects Arrays ---
+        const nodeMeshes = [];
+        const edgeMeshes = [];
+        const currentArrows = [];
+        const efieldArrows = [];
+        const particles = [];
+        const labels = [];
+
+        // Colors
+        const colorHigh = new THREE.Color(0xFF3366); // Red
+        const colorLow = new THREE.Color(0x4361EE);  // Blue
+        const colorResistor = new THREE.Color(0xBDC3C7);
+
+        // --- Build Scene ---
+        
+        // 1. Nodes (Junctions)
+        const nodeGeo = new THREE.SphereGeometry(0.6, 32, 32);
+        const labelsContainer = document.getElementById('labels-container');
+
+        nodePositions.forEach((pos, i) => {
+            const mat = new THREE.MeshStandardMaterial({ color: colorLow, roughness: 0.3, metalness: 0.1 });
+            const mesh = new THREE.Mesh(nodeGeo, mat);
+            mesh.position.copy(pos);
+            scene.add(mesh);
+            nodeMeshes.push(mesh);
+
+            // HTML Label
+            const label = document.createElement('div');
+            label.className = 'node-label';
+            labelsContainer.appendChild(label);
+            labels.push({ el: label, pos: pos });
+        });
+
+        // 2. Edges (Resistors) & Arrows
+        const edgeGeo = new THREE.CylinderGeometry(0.15, 0.15, 1, 16);
+        // Translate geometry so origin is at base, makes scaling/positioning easier
+        edgeGeo.translate(0, 0.5, 0); 
+        edgeGeo.rotateX(Math.PI / 2); // Point along Z axis
+
+        edgeData.forEach((edge, i) => {
+            const p1 = nodePositions[edge.f];
+            const p2 = nodePositions[edge.t];
+            const dir = new THREE.Vector3().subVectors(p2, p1);
+            const len = dir.length();
+
+            // Resistor Mesh
+            const mat = new THREE.MeshStandardMaterial({ 
+                color: colorResistor, 
+                transparent: true, 
+                opacity: 0.6,
+                emissive: 0xffffff,
+                emissiveIntensity: 0
+            });
+            const mesh = new THREE.Mesh(edgeGeo, mat);
+            mesh.position.copy(p1);
+            mesh.lookAt(p2);
+            mesh.scale.z = len;
+            scene.add(mesh);
+            edgeMeshes.push({ mesh, data: edge });
+
+            // Current Arrow (Green, offset)
+            const arrowDir = dir.clone().normalize();
+            const midPoint = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+            // Offset arrow slightly perpendicular to wire
+            const up = new THREE.Vector3(0,1,0);
+            let perp = new THREE.Vector3().crossVectors(arrowDir, up);
+            if(perp.lengthSq() < 0.01) perp = new THREE.Vector3(1,0,0);
+            perp.normalize().multiplyScalar(0.4);
+            
+            const cArrow = new THREE.ArrowHelper(arrowDir, midPoint.clone().add(perp), 2, 0x06D6A0, 0.6, 0.4);
+            scene.add(cArrow);
+            currentArrows.push({ helper: cArrow, type: edge.type });
+
+            // E-Field Arrow (Orange, inside)
+            const eArrow = new THREE.ArrowHelper(arrowDir, midPoint, 1.5, 0xF77F00, 0.4, 0.3);
+            eArrow.visible = false;
+            scene.add(eArrow);
+            efieldArrows.push({ helper: eArrow, type: edge.type });
+
+            // Particles (Charge Carriers)
+            // 4 particles per edge to maintain constant density visual
+            const numParticles = 4;
+            const particleGeo = new THREE.SphereGeometry(0.12, 8, 8);
+            const particleMat = new THREE.MeshBasicMaterial({ color: 0xFFE066 });
+            
+            for(let j=0; j<numParticles; j++) {
+                const pMesh = new THREE.Mesh(particleGeo, particleMat);
+                scene.add(pMesh);
+                particles.push({
+                    mesh: pMesh,
+                    edgeIdx: i,
+                    progress: j / numParticles, // distribute evenly
+                    p1: p1,
+                    p2: p2,
+                    type: edge.type
+                });
+            }
+        });
+
+        // 3. Battery / EMF Source
+        // Curved cable from Node 0 to Node 7
+        const curve = new THREE.QuadraticBezierCurve3(
+            nodePositions[0],
+            new THREE.Vector3(-12, -12, 12), // Control point to bow outwards
+            nodePositions[7]
+        );
+        const tubeGeo = new THREE.TubeGeometry(curve, 64, 0.3, 16, false);
+        const tubeMat = new THREE.MeshStandardMaterial({ 
+            color: 0x222222, 
+            emissive: 0x111111,
+            roughness: 0.8
+        });
+        const batteryCable = new THREE.Mesh(tubeGeo, tubeMat);
+        scene.add(batteryCable);
+
+        // Battery Terminals
+        const termGeo = new THREE.SphereGeometry(0.8, 32, 32);
+        const posTerm = new THREE.Mesh(termGeo, new THREE.MeshStandardMaterial({color: colorHigh, emissive: colorHigh, emissiveIntensity: 0.2}));
+        posTerm.position.copy(nodePositions[0]);
+        scene.add(posTerm);
+
+        const negTerm = new THREE.Mesh(termGeo, new THREE.MeshStandardMaterial({color: colorLow, emissive: colorLow, emissiveIntensity: 0.2}));
+        negTerm.position.copy(nodePositions[7]);
+        scene.add(negTerm);
+
+
+        // --- Physics Calculation ---
+        function updatePhysics() {
+            // Get UI values
+            params.emf = parseFloat(document.getElementById('input-emf').value);
+            params.R = parseFloat(document.getElementById('input-res').value);
+            params.r = parseFloat(document.getElementById('input-intr').value);
+
+            // Update UI text
+            document.getElementById('val-emf').innerText = params.emf.toFixed(1) + ' V';
+            document.getElementById('val-res').innerText = params.R.toFixed(1) + ' Ω';
+            document.getElementById('val-intr').innerText = params.r.toFixed(1) + ' Ω';
+
+            // Math
+            params.Req = (5 / 6) * params.R;
+            params.Itot = params.emf / (params.Req + params.r);
+            params.Vterm = params.emf - (params.Itot * params.r);
+
+            // Update Formula Card
+            document.getElementById('out-req').innerText = params.Req.toFixed(2);
+            document.getElementById('out-itot').innerText = params.Itot.toFixed(2);
+            document.getElementById('out-vterm').innerText = params.Vterm.toFixed(2);
+
+            // Node Potentials
+            const vDrop1 = (params.Itot / 3) * params.R;
+            const vDrop2 = (params.Itot / 6) * params.R;
+
+            params.potentials[0] = params.Vterm; // Source
+            params.potentials[1] = params.potentials[2] = params.potentials[4] = params.Vterm - vDrop1; // Tier 1
+            params.potentials[3] = params.potentials[5] = params.potentials[6] = params.Vterm - vDrop1 - vDrop2; // Tier 2
+            params.potentials[7] = 0; // Sink
+
+            updateVisuals();
+        }
+
+        function updateVisuals() {
+            // 1. Node Colors
+            nodeMeshes.forEach((mesh, i) => {
+                const v = params.potentials[i];
+                const ratio = params.Vterm > 0 ? (v / params.Vterm) : 0;
+                mesh.material.color.lerpColors(colorLow, colorHigh, ratio);
+                
+                // Update Label Text
+                labels[i].el.innerText = v.toFixed(1) + 'V';
+            });
+
+            // 2. Edge Glow & Arrows
+            edgeMeshes.forEach((item, i) => {
+                const current = item.data.type === 1 ? (params.Itot / 3) : (params.Itot / 6);
+                // Glow based on current density
+                item.mesh.material.emissiveIntensity = Math.min(current * 0.2, 0.8);
+
+                // Update Arrows
+                const cArrow = currentArrows[i].helper;
+                const eArrow = efieldArrows[i].helper;
+                
+                // Scale arrows based on magnitude. Base length is 2 for I/3, 1 for I/6 at 1A total.
+                const scaleC = Math.max(0.1, current * 1.5);
+                cArrow.setLength(scaleC, scaleC * 0.3, scaleC * 0.2);
+                
+                // E-field is proportional to V/L = I*R/L. 
+                const scaleE = Math.max(0.1, current * params.R * 0.15);
+                eArrow.setLength(scaleE, scaleE * 0.3, scaleE * 0.2);
+            });
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('input-emf').addEventListener('input', updatePhysics);
+        document.getElementById('input-res').addEventListener('input', updatePhysics);
+        document.getElementById('input-intr').addEventListener('input', updatePhysics);
+
+        document.getElementById('toggle-labels').addEventListener('change', (e) => {
+            labelsContainer.style.display = e.target.checked ? 'block' : 'none';
+        });
+        document.getElementById('toggle-current').addEventListener('change', (e) => {
+            currentArrows.forEach(a => a.helper.visible = e.target.checked);
+        });
+        document.getElementById('toggle-efield').addEventListener('change', (e) => {
+            efieldArrows.forEach(a => a.helper.visible = e.target.checked);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+
+            controls.update();
+
+            // Animate Particles
+            // Base speed proportional to total current
+            const baseSpeed = params.Itot * 0.5; 
+            
+            particles.forEach(p => {
+                // Speed depends on branch: I/3 branch is twice as fast as I/6 branch
+                // This maintains visual density while satisfying Kirchhoff's Junction Rule visually
+                const branchFactor = p.type === 1 ? 1 : 0.5; 
+                
+                p.progress += baseSpeed * branchFactor * delta;
+                if (p.progress >= 1) p.progress -= 1; // Loop on edge
+
+                p.mesh.position.lerpVectors(p.p1, p.p2, p.progress);
+                
+                // Hide particles if no current
+                p.mesh.visible = params.Itot > 0.01;
+            });
+
+            // Update HTML Label Positions
+            if (labelsContainer.style.display !== 'none') {
+                labels.forEach(lbl => {
+                    const vec = lbl.pos.clone();
+                    vec.project(camera);
+                    
+                    // Check if behind camera
+                    if (vec.z > 1) {
+                        lbl.el.style.opacity = 0;
+                        return;
+                    }
+
+                    const x = (vec.x * 0.5 + 0.5) * container.clientWidth;
+                    const y = (vec.y * -0.5 + 0.5) * container.clientHeight;
+                    
+                    lbl.el.style.left = `${x}px`;
+                    lbl.el.style.top = `${y}px`;
+                    lbl.el.style.opacity = 1;
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

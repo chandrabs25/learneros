@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Basis of Colligative Properties</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            max-height: 95vh;
+            max-width: 1200px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #212529;
+        }
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+            fill: #7209B7;
+            font-weight: 500;
+        }
+        
+        /* Phase Text Animations */
+        .phase1 { animation: p1 12s infinite; }
+        .phase2 { animation: p2 12s infinite; }
+        .phase3 { animation: p3 12s infinite; }
+        
+        @keyframes p1 {
+            0%, 25% { opacity: 1; }
+            30%, 100% { opacity: 0; }
+        }
+        @keyframes p2 {
+            0%, 25% { opacity: 0; }
+            30%, 45% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        @keyframes p3 {
+            0%, 45% { opacity: 0; }
+            50%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Solute Fade In/Out */
+        .solute { animation: fadeSolute 12s infinite ease-in-out; }
+        @keyframes fadeSolute {
+            0%, 25% { opacity: 0; }
+            35%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Gas Fade (Inverse of Solute) */
+        .extra-gas { animation: fadeGas 12s infinite ease-in-out; }
+        @keyframes fadeGas {
+            0%, 25% { opacity: 1; }
+            35%, 95% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        /* Osmosis Liquid Levels */
+        .left-level-anim { animation: leftLevel 12s infinite ease-in-out; }
+        @keyframes leftLevel {
+            0%, 45% { height: 148px; y: 350px; }
+            65%, 95% { height: 98px; y: 400px; }
+            100% { height: 148px; y: 350px; }
+        }
+
+        .right-level-anim { animation: rightLevel 12s infinite ease-in-out; }
+        @keyframes rightLevel {
+            0%, 45% { height: 148px; y: 350px; }
+            65%, 95% { height: 198px; y: 300px; }
+            100% { height: 148px; y: 350px; }
+        }
+
+        /* Flux Arrows */
+        .flux-group { animation: fadeFlux 12s infinite ease-in-out; }
+        @keyframes fadeFlux {
+            0%, 45% { opacity: 0; }
+            50%, 65% { opacity: 1; }
+            70%, 100% { opacity: 0; }
+        }
+        .flux-arrow { animation: moveArrow 1.5s infinite ease-in-out alternate; }
+        @keyframes moveArrow {
+            0% { transform: translateX(-8px); }
+            100% { transform: translateX(8px); }
+        }
+
+        /* Thermal Jitter for Liquid Molecules */
+        .jitter1 { animation: j1 3s infinite alternate ease-in-out; }
+        .jitter2 { animation: j2 2.5s infinite alternate ease-in-out; }
+        .jitter3 { animation: j3 3.5s infinite alternate ease-in-out; }
+        
+        @keyframes j1 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(3px, -2px) rotate(10deg); }
+        }
+        @keyframes j2 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(-2px, 3px) rotate(-15deg); }
+        }
+        @keyframes j3 {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(2px, 2px) rotate(8deg); }
+        }
+
+        /* Gas Bouncing Animations */
+        .bounce1 { animation: b1 4s infinite linear; }
+        .bounce2 { animation: b2 5s infinite linear; }
+        .bounce3 { animation: b3 4.5s infinite linear; }
+        
+        @keyframes b1 {
+            0% { transform: translate(0, 0); }
+            25% { transform: translate(40px, -120px); }
+            50% { transform: translate(-20px, -180px); }
+            75% { transform: translate(-50px, -90px); }
+            100% { transform: translate(0, 0); }
+        }
+        @keyframes b2 {
+            0% { transform: translate(0, 0); }
+            33% { transform: translate(-60px, -150px); }
+            66% { transform: translate(30px, -190px); }
+            100% { transform: translate(0, 0); }
+        }
+        @keyframes b3 {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(20px, -80px); }
+            40% { transform: translate(-40px, -160px); }
+            60% { transform: translate(50px, -120px); }
+            80% { transform: translate(-20px, -50px); }
+            100% { transform: translate(0, 0); }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Solvent Molecule (H2O) -->
+        <g id="h2o">
+            <!-- Bonds -->
+            <line x1="0" y1="0" x2="-5" y2="-6" stroke="#404040" stroke-width="2" stroke-linecap="round" />
+            <line x1="0" y1="0" x2="5" y2="-6" stroke="#404040" stroke-width="2" stroke-linecap="round" />
+            <!-- Oxygen -->
+            <circle cx="0" cy="0" r="5" fill="#FF4444" />
+            <!-- Hydrogens -->
+            <circle cx="-5" cy="-6" r="3" fill="#CCCCCC" />
+            <circle cx="5" cy="-6" r="3" fill="#CCCCCC" />
+        </g>
+
+        <!-- Solute Particle -->
+        <g id="solute">
+            <circle cx="0" cy="0" r="12" fill="#44CC44" />
+            <circle cx="-3" cy="-4" r="4" fill="#88EE88" opacity="0.6" />
+        </g>
+
+        <!-- Arrowhead for Flux -->
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#7209B7" />
+        </marker>
+
+        <!-- Clip Paths for Osmosis Liquid Levels -->
+        <clipPath id="left-clip">
+            <rect x="552" y="350" width="171" height="150" class="left-level-anim" />
+        </clipPath>
+        <clipPath id="right-clip">
+            <rect x="727" y="350" width="171" height="150" class="right-level-anim" />
+        </clipPath>
+    </defs>
+
+    <!-- Header / Titles -->
+    <text x="500" y="40" text-anchor="middle" font-size="26" font-weight="700">Molecular Basis of Colligative Properties</text>
+    
+    <!-- Dynamic Phase Indicators -->
+    <text x="500" y="75" text-anchor="middle" font-size="18" font-weight="600" fill="#7209B7" class="phase1">Phase 1: Pure Solvent (Dynamic Equilibrium)</text>
+    <text x="500" y="75" text-anchor="middle" font-size="18" font-weight="600" fill="#7209B7" class="phase2">Phase 2: Addition of Non-Volatile Solute</text>
+    <text x="500" y="75" text-anchor="middle" font-size="18" font-weight="600" fill="#7209B7" class="phase3">Phase 3: Vapor Pressure Lowering &amp; Osmosis</text>
+
+    <!-- ========================================== -->
+    <!-- LEFT PANE: VAPOR PRESSURE LOWERING         -->
+    <!-- ========================================== -->
+    
+    <!-- Pane Title & Formula -->
+    <text x="225" y="115" text-anchor="middle" font-size="20" font-weight="600">Vapor Pressure Lowering</text>
+    <rect x="170" y="125" width="110" height="28" rx="6" fill="#f1f3f5" />
+    <text x="225" y="145" text-anchor="middle" font-size="16" class="mono">P₁ = x₁P₁⁰</text>
+
+    <!-- Closed Container -->
+    <path d="M 50 170 L 400 170 L 400 500 L 50 500 Z" fill="none" stroke="#404040" stroke-width="4" stroke-linejoin="round" />
+    
+    <!-- Liquid Background -->
+    <rect x="52" y="350" width="346" height="148" fill="#e3f2fd" opacity="0.6" />
+
+    <!-- Liquid Phase Molecules (H2O) -->
+    <g class="jitter1">
+        <use href="#h2o" x="80" y="380" /><use href="#h2o" x="140" y="420" /><use href="#h2o" x="200" y="390" />
+        <use href="#h2o" x="260" y="440" /><use href="#h2o" x="320" y="380" /><use href="#h2o" x="370" y="410" />
+        <use href="#h2o" x="110" y="460" /><use href="#h2o" x="170" y="480" /><use href="#h2o" x="230" y="460" />
+        <use href="#h2o" x="290" y="480" /><use href="#h2o" x="350" y="460" />
+    </g>
+    <g class="jitter2">
+        <use href="#h2o" x="100" y="400" /><use href="#h2o" x="160" y="380" /><use href="#h2o" x="220" y="420" />
+        <use href="#h2o" x="280" y="390" /><use href="#h2o" x="340" y="430" /><use href="#h2o" x="380" y="470" />
+        <use href="#h2o" x="70" y="440" /><use href="#h2o" x="130" y="440" /><use href="#h2o" x="190" y="480" />
+        <use href="#h2o" x="250" y="420" /><use href="#h2o" x="310" y="450" />
+    </g>
+
+    <!-- Surface H2O Molecules -->
+    <g class="jitter3">
+        <use href="#h2o" x="65" y="355" /><use href="#h2o" x="115" y="355" /><use href="#h2o" x="165" y="355" />
+        <use href="#h2o" x="215" y="355" /><use href="#h2o" x="265" y="355" /><use href="#h2o" x="315" y="355" />
+        <use href="#h2o" x="365" y="355" />
+    </g>
+
+    <!-- Solute Molecules (Fade In) -->
+    <g class="solute">
+        <!-- Surface Solutes (Blocking escape) -->
+        <use href="#solute" x="90" y="350" /><use href="#solute" x="140" y="350" />
+        <use href="#solute" x="190" y="350" /><use href="#solute" x="240" y="350" />
+        <use href="#solute" x="290" y="350" /><use href="#solute" x="340" y="350" />
+        
+        <!-- Bulk Solutes -->
+        <use href="#solute" x="120" y="410" /><use href="#solute" x="250" y="460" />
+        <use href="#solute" x="330" y="420" /><use href="#solute" x="180" y="450" />
+        <use href="#solute" x="80" y="470" />
+
+        <!-- Annotation for Surface Blocking -->
+        <text x="70" y="325" font-size="13" font-weight="600" fill="#404040">Solute blocks surface sites</text>
+        <line x1="140" y1="330" x2="140" y2="345" stroke="#404040" stroke-width="1.5" marker-end="url(#arrowhead)" />
+    </g>
+
+    <!-- Gas Phase Molecules (Always Bouncing - Base Vapor Pressure) -->
+    <g class="bounce1"><use href="#h2o" x="100" y="330" /></g>
+    <g class="bounce2"><use href="#h2o" x="180" y="320" /></g>
+    <g class="bounce3"><use href="#h2o" x="260" y="340" /></g>
+    <g class="bounce1"><use href="#h2o" x="340" y="310" /></g>
+    <g class="bounce2"><use href="#h2o" x="140" y="280" /></g>
+    <g class="bounce3"><use href="#h2o" x="300" y="290" /></g>
+
+    <!-- Extra Gas Phase Molecules (Fade Out when Solute Added) -->
+    <g class="extra-gas">
+        <g class="bounce2"><use href="#h2o" x="80" y="340" /></g>
+        <g class="bounce3"><use href="#h2o" x="160" y="330" /></g>
+        <g class="bounce1"><use href="#h2o" x="220" y="310" /></g>
+        <g class="bounce2"><use href="#h2o" x="280" y="330" /></g>
+        <g class="bounce3"><use href="#h2o" x="360" y="320" /></g>
+        <g class="bounce1"><use href="#h2o" x="120" y="260" /></g>
+        <g class="bounce2"><use href="#h2o" x="240" y="270" /></g>
+        <g class="bounce3"><use href="#h2o" x="320" y="250" /></g>
+    </g>
+
+
+    <!-- ========================================== -->
+    <!-- RIGHT PANE: OSMOSIS                        -->
+    <!-- ========================================== -->
+
+    <!-- Pane Title & Formula -->
+    <text x="725" y="115" text-anchor="middle" font-size="20" font-weight="600">Osmosis</text>
+    <rect x="680" y="125" width="90" height="28" rx="6" fill="#f1f3f5" />
+    <text x="725" y="145" text-anchor="middle" font-size="16" class="mono">Π = CRT</text>
+
+    <!-- U-Tube / Split Container -->
+    <path d="M 550 170 L 550 500 L 900 500 L 900 170" fill="none" stroke="#404040" stroke-width="4" stroke-linejoin="round" />
+    
+    <!-- Semi-permeable Membrane -->
+    <line x1="725" y1="200" x2="725" y2="500" stroke="#404040" stroke-width="4" stroke-dasharray="8 6" />
+    <text x="735" y="220" font-size="13" font-weight="600" fill="#404040">Semi-permeable Membrane</text>
+    <line x1="730" y1="215" x2="725" y2="215" stroke="#404040" stroke-width="1.5" />
+
+    <!-- Left Liquid (Pure Solvent) -->
+    <rect x="552" y="350" width="171" height="148" fill="#e3f2fd" opacity="0.6" class="left-level-anim" />
+    
+    <!-- Right Liquid (Solution) -->
+    <rect x="727" y="350" width="171" height="148" fill="#e3f2fd" opacity="0.6" class="right-level-anim" />
+
+    <!-- Left Side Molecules (Clipped to liquid level) -->
+    <g clip-path="url(#left-clip)">
+        <g class="jitter1">
+            <use href="#h2o" x="570" y="370" /><use href="#h2o" x="610" y="410" /><use href="#h2o" x="650" y="380" />
+            <use href="#h2o" x="690" y="430" /><use href="#h2o" x="580" y="450" /><use href="#h2o" x="630" y="470" />
+            <use href="#h2o" x="670" y="450" /><use href="#h2o" x="710" y="480" /><use href="#h2o" x="590" y="390" />
+        </g>
+        <g class="jitter2">
+            <use href="#h2o" x="590" y="360" /><use href="#h2o" x="630" y="390" /><use href="#h2o" x="670" y="360" />
+            <use href="#h2o" x="710" y="400" /><use href="#h2o" x="560" y="430" /><use href="#h2o" x="600" y="480" />
+            <use href="#h2o" x="650" y="440" /><use href="#h2o" x="690" y="460" /><use href="#h2o" x="610" y="360" />
+        </g>
+        <!-- Top layer that disappears as level drops -->
+        <g class="jitter3">
+            <use href="#h2o" x="580" y="355" /><use href="#h2o" x="620" y="355" /><use href="#h2o" x="660" y="355" />
+            <use href="#h2o" x="700" y="355" />
+        </g>
+    </g>
+
+    <!-- Right Side Molecules (Clipped to liquid level) -->
+    <g clip-path="url(#right-clip)">
+        <g class="jitter1">
+            <use href="#h2o" x="750" y="380" /><use href="#h2o" x="800" y="420" /><use href="#h2o" x="850" y="390" />
+            <use href="#h2o" x="880" y="440" /><use href="#h2o" x="760" y="460" /><use href="#h2o" x="810" y="480" />
+            <use href="#h2o" x="860" y="460" />
+        </g>
+        <g class="jitter2">
+            <use href="#h2o" x="770" y="370" /><use href="#h2o" x="820" y="400" /><use href="#h2o" x="870" y="370" />
+            <use href="#h2o" x="740" y="430" /><use href="#h2o" x="790" y="450" /><use href="#h2o" x="840" y="430" />
+            <use href="#h2o" x="880" y="480" />
+        </g>
+        <!-- Extra H2O revealed as level rises -->
+        <g class="jitter3">
+            <use href="#h2o" x="750" y="330" /><use href="#h2o" x="790" y="340" /><use href="#h2o" x="830" y="320" />
+            <use href="#h2o" x="870" y="335" /><use href="#h2o" x="770" y="315" /><use href="#h2o" x="850" y="310" />
+        </g>
+
+        <!-- Solute Molecules (Fade In) -->
+        <g class="solute">
+            <use href="#solute" x="760" y="390" /><use href="#solute" x="830" y="380" />
+            <use href="#solute" x="870" y="410" /><use href="#solute" x="780" y="440" />
+            <use href="#solute" x="840" y="460" /><use href="#solute" x="750" y="480" />
+            <!-- Extra Solute revealed as level rises -->
+            <use href="#solute" x="810" y="330" /><use href="#solute" x="880" y="340" />
+        </g>
+    </g>
+
+    <!-- Net Flux Arrows (Osmosis) -->
+    <g class="flux-group">
+        <g class="flux-arrow">
+            <line x1="690" y1="390" x2="740" y2="390" stroke="#7209B7" stroke-width="3" marker-end="url(#arrowhead)" />
+        </g>
+        <g class="flux-arrow" style="animation-delay: 0.2s;">
+            <line x1="690" y1="430" x2="740" y2="430" stroke="#7209B7" stroke-width="3" marker-end="url(#arrowhead)" />
+        </g>
+        <g class="flux-arrow" style="animation-delay: 0.4s;">
+            <line x1="690" y1="470" x2="740" y2="470" stroke="#7209B7" stroke-width="3" marker-end="url(#arrowhead)" />
+        </g>
+    </g>
+
+
+    <!-- ========================================== -->
+    <!-- LEGEND                                     -->
+    <!-- ========================================== -->
+    <rect x="250" y="550" width="500" height="60" rx="8" fill="#ffffff" stroke="#e9ecef" stroke-width="2" />
+    
+    <use href="#h2o" x="290" y="580" />
+    <text x="310" y="585" font-size="14">Solvent (H₂O)</text>
+
+    <use href="#solute" x="450" y="580" />
+    <text x="475" y="585" font-size="14">Non-volatile Solute</text>
+
+    <line x1="640" y1="580" x2="670" y2="580" stroke="#7209B7" stroke-width="3" marker-end="url(#arrowhead)" />
+    <text x="690" y="585" font-size="14">Net Solvent Flux</text>
+
+</svg>
+
+</body>
+</html>

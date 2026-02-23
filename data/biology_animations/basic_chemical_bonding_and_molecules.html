@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemical Evolution: Origin of Life</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            max-width: 100%;
+            max-height: 100vh;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Typography */
+        .title { font-size: 24px; font-weight: 700; fill: #2C3E50; }
+        .subtitle { font-size: 16px; font-weight: 400; fill: #7F8C8D; }
+        .label { font-size: 14px; fill: #34495E; text-anchor: middle; }
+        .label-bold { font-size: 16px; font-weight: 600; fill: #2C3E50; text-anchor: middle; }
+        .formula { font-family: 'Roboto Mono', monospace; font-size: 14px; fill: #2C3E50; }
+        .legend-text { font-size: 12px; fill: #34495E; }
+
+        /* Atom Wobble Animation (Brownian Motion) */
+        .wobble {
+            animation: wobble 3s infinite ease-in-out alternate;
+        }
+        .wobble-delay {
+            animation: wobble 3.5s infinite ease-in-out alternate-reverse;
+        }
+
+        @keyframes wobble {
+            0% { transform: translate(0px, 0px); }
+            100% { transform: translate(4px, -4px); }
+        }
+
+        /* Atom Migration Keyframes (0-15s Loop) */
+        /* 0-20%: Precursors, 25-40%: Move, 40-80%: Glycine, 85-100%: Return */
+        .C1 { animation: move-C1 15s infinite ease-in-out; }
+        @keyframes move-C1 {
+            0%, 20% { transform: translate(200px, 200px); }
+            40%, 85% { transform: translate(380px, 280px); }
+            100% { transform: translate(200px, 200px); }
+        }
+
+        .H1 { animation: move-H1 15s infinite ease-in-out; }
+        @keyframes move-H1 {
+            0%, 20% { transform: translate(200px, 140px); }
+            40%, 85% { transform: translate(380px, 210px); }
+            100% { transform: translate(200px, 140px); }
+        }
+
+        .H2 { animation: move-H2 15s infinite ease-in-out; }
+        @keyframes move-H2 {
+            0%, 20% { transform: translate(200px, 260px); }
+            40%, 85% { transform: translate(380px, 350px); }
+            100% { transform: translate(200px, 260px); }
+        }
+
+        .Hex1 { animation: move-Hex1 15s infinite ease-in-out; }
+        @keyframes move-Hex1 {
+            0%, 20% { transform: translate(140px, 200px); }
+            40%, 85% { transform: translate(650px, 100px); }
+            100% { transform: translate(140px, 200px); }
+        }
+
+        .Hex2 { animation: move-Hex2 15s infinite ease-in-out; }
+        @keyframes move-Hex2 {
+            0%, 20% { transform: translate(260px, 200px); }
+            40%, 85% { transform: translate(690px, 100px); }
+            100% { transform: translate(260px, 200px); }
+        }
+
+        .C2 { animation: move-C2 15s infinite ease-in-out; }
+        @keyframes move-C2 {
+            0%, 20% { transform: translate(400px, 120px); }
+            40%, 85% { transform: translate(460px, 280px); }
+            100% { transform: translate(400px, 120px); }
+        }
+
+        .O1 { animation: move-O1 15s infinite ease-in-out; }
+        @keyframes move-O1 {
+            0%, 20% { transform: translate(340px, 120px); }
+            40%, 85% { transform: translate(460px, 200px); }
+            100% { transform: translate(340px, 120px); }
+        }
+
+        .O2 { animation: move-O2 15s infinite ease-in-out; }
+        @keyframes move-O2 {
+            0%, 20% { transform: translate(460px, 120px); }
+            40%, 85% { transform: translate(530px, 280px); }
+            100% { transform: translate(460px, 120px); }
+        }
+
+        .N1 { animation: move-N1 15s infinite ease-in-out; }
+        @keyframes move-N1 {
+            0%, 20% { transform: translate(600px, 200px); }
+            40%, 85% { transform: translate(300px, 280px); }
+            100% { transform: translate(600px, 200px); }
+        }
+
+        .H3 { animation: move-H3 15s infinite ease-in-out; }
+        @keyframes move-H3 {
+            0%, 20% { transform: translate(600px, 140px); }
+            40%, 85% { transform: translate(250px, 230px); }
+            100% { transform: translate(600px, 140px); }
+        }
+
+        .H4 { animation: move-H4 15s infinite ease-in-out; }
+        @keyframes move-H4 {
+            0%, 20% { transform: translate(540px, 230px); }
+            40%, 85% { transform: translate(250px, 330px); }
+            100% { transform: translate(540px, 230px); }
+        }
+
+        .H5 { animation: move-H5 15s infinite ease-in-out; }
+        @keyframes move-H5 {
+            0%, 20% { transform: translate(660px, 230px); }
+            40%, 85% { transform: translate(600px, 280px); }
+            100% { transform: translate(660px, 230px); }
+        }
+
+        /* Bond Animations */
+        .precursor-bonds {
+            stroke: #95A5A6;
+            stroke-width: 6;
+            stroke-linecap: round;
+            opacity: 1;
+            animation: fade-precursors 15s infinite;
+        }
+        @keyframes fade-precursors {
+            0%, 20% { opacity: 0.6; }
+            25%, 100% { opacity: 0; }
+        }
+
+        .glycine-bonds {
+            stroke: #95A5A6;
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            opacity: 0;
+            animation: draw-glycine 15s infinite ease-in-out;
+        }
+        @keyframes draw-glycine {
+            0%, 40% { stroke-dashoffset: 100; opacity: 0; }
+            45% { opacity: 0.6; }
+            50%, 80% { stroke-dashoffset: 0; opacity: 0.6; }
+            85%, 100% { stroke-dashoffset: 100; opacity: 0; }
+        }
+
+        /* Lightning Animation */
+        .lightning {
+            fill: none;
+            stroke: #F1C40F;
+            stroke-width: 5;
+            stroke-linejoin: miter;
+            opacity: 0;
+            animation: flash-lightning 15s infinite;
+        }
+        @keyframes flash-lightning {
+            0%, 18% { opacity: 0; }
+            19% { opacity: 1; filter: drop-shadow(0 0 12px #F1C40F); }
+            20% { opacity: 0; }
+            21% { opacity: 1; filter: drop-shadow(0 0 12px #F1C40F); }
+            22% { opacity: 0; }
+            23% { opacity: 1; filter: drop-shadow(0 0 12px #F1C40F); }
+            25%, 100% { opacity: 0; }
+        }
+
+        /* Shared Electrons Animation */
+        .electrons {
+            opacity: 0;
+            animation: pulse-electrons 15s infinite;
+        }
+        @keyframes pulse-electrons {
+            0%, 45% { opacity: 0; transform: scale(0.5); transform-origin: 340px 280px; }
+            50% { opacity: 1; transform: scale(1); transform-origin: 340px 280px; }
+            55% { transform: scale(1.3); transform-origin: 340px 280px; }
+            60% { transform: scale(1); transform-origin: 340px 280px; }
+            65% { transform: scale(1.3); transform-origin: 340px 280px; }
+            70% { transform: scale(1); transform-origin: 340px 280px; }
+            75% { transform: scale(1.3); transform-origin: 340px 280px; }
+            80% { opacity: 1; transform: scale(1); transform-origin: 340px 280px; }
+            85%, 100% { opacity: 0; transform: scale(0.5); transform-origin: 340px 280px; }
+        }
+
+        /* Label Animations */
+        .precursor-labels {
+            animation: fade-precursors-labels 15s infinite;
+        }
+        @keyframes fade-precursors-labels {
+            0%, 20% { opacity: 1; }
+            25%, 100% { opacity: 0; }
+        }
+
+        .glycine-labels {
+            opacity: 0;
+            animation: fade-glycine-labels 15s infinite;
+        }
+        @keyframes fade-glycine-labels {
+            0%, 50% { opacity: 0; }
+            55%, 80% { opacity: 1; }
+            85%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <title>Chemical Evolution: The Formation of Primordial Monomers</title>
+    <desc>An animated diagram showing the synthesis of the amino acid Glycine from primordial atmospheric gases (Methane, Ammonia, Carbon Dioxide) via energy input and covalent bonding.</desc>
+
+    <defs>
+        <!-- Atom Gradients -->
+        <radialGradient id="grad-C" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#4A5E73"/>
+            <stop offset="100%" stop-color="#2C3E50"/>
+        </radialGradient>
+        <radialGradient id="grad-N" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#5DADE2"/>
+            <stop offset="100%" stop-color="#3498DB"/>
+        </radialGradient>
+        <radialGradient id="grad-O" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#F1948A"/>
+            <stop offset="100%" stop-color="#E74C3C"/>
+        </radialGradient>
+        <radialGradient id="grad-H" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#D5D8DC"/>
+            <stop offset="100%" stop-color="#BDC3C7"/>
+        </radialGradient>
+
+        <!-- Filters -->
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.15"/>
+        </filter>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+
+        <!-- Arrowhead for Covalent Bond Label -->
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#2C3E50"/>
+        </marker>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#f8f9fa" rx="12"/>
+
+    <!-- Header -->
+    <text x="30" y="40" class="title">Chemical Evolution: Origin of Life</text>
+    <text x="30" y="65" class="subtitle">Formation of Organic Monomers via Covalent Bonding</text>
+
+    <!-- Legend -->
+    <g transform="translate(30, 350)">
+        <rect width="140" height="120" rx="8" fill="#ffffff" stroke="#BDC3C7" stroke-width="1"/>
+        <text x="70" y="20" class="label-bold" font-size="12">Key</text>
+        
+        <circle cx="25" cy="40" r="8" fill="url(#grad-C)"/>
+        <text x="45" y="44" class="legend-text">Carbon (C)</text>
+        
+        <circle cx="25" cy="65" r="7" fill="url(#grad-N)"/>
+        <text x="45" y="69" class="legend-text">Nitrogen (N)</text>
+        
+        <circle cx="25" cy="90" r="7" fill="url(#grad-O)"/>
+        <text x="45" y="94" class="legend-text">Oxygen (O)</text>
+        
+        <circle cx="25" cy="115" r="5" fill="url(#grad-H)"/>
+        <text x="45" y="119" class="legend-text">Hydrogen (H)</text>
+    </g>
+
+    <!-- PRECURSOR BONDS (Fade out) -->
+    <g class="precursor-bonds">
+        <!-- CH4 Bonds -->
+        <line x1="200" y1="200" x2="200" y2="140"/>
+        <line x1="200" y1="200" x2="200" y2="260"/>
+        <line x1="200" y1="200" x2="140" y2="200"/>
+        <line x1="200" y1="200" x2="260" y2="200"/>
+        <!-- CO2 Bonds (Double) -->
+        <line x1="400" y1="116" x2="340" y2="116"/>
+        <line x1="400" y1="124" x2="340" y2="124"/>
+        <line x1="400" y1="116" x2="460" y2="116"/>
+        <line x1="400" y1="124" x2="460" y2="124"/>
+        <!-- NH3 Bonds -->
+        <line x1="600" y1="200" x2="600" y2="140"/>
+        <line x1="600" y1="200" x2="540" y2="230"/>
+        <line x1="600" y1="200" x2="660" y2="230"/>
+    </g>
+
+    <!-- GLYCINE BONDS (Draw in) -->
+    <g class="glycine-bonds">
+        <!-- Backbone -->
+        <line x1="300" y1="280" x2="380" y2="280"/> <!-- N1 to C1 -->
+        <line x1="380" y1="280" x2="460" y2="280"/> <!-- C1 to C2 -->
+        <!-- Alpha Carbon H's -->
+        <line x1="380" y1="280" x2="380" y2="210"/>
+        <line x1="380" y1="280" x2="380" y2="350"/>
+        <!-- Amino Group H's -->
+        <line x1="300" y1="280" x2="250" y2="230"/>
+        <line x1="300" y1="280" x2="250" y2="330"/>
+        <!-- Carboxyl Group -->
+        <line x1="456" y1="280" x2="456" y2="200"/> <!-- C=O Double -->
+        <line x1="464" y1="280" x2="464" y2="200"/> <!-- C=O Double -->
+        <line x1="460" y1="280" x2="530" y2="280"/> <!-- C-O Single -->
+        <line x1="530" y1="280" x2="600" y2="280"/> <!-- O-H Single -->
+        <!-- H2 Byproduct -->
+        <line x1="650" y1="100" x2="690" y2="100"/>
+    </g>
+
+    <!-- LIGHTNING BOLT -->
+    <g class="lightning">
+        <path d="M 400,0 L 380,80 L 410,100 L 390,160 L 420,180 L 400,240"/>
+    </g>
+
+    <!-- ATOMS -->
+    <g id="atoms">
+        <!-- Carbon 1 (Alpha) -->
+        <g class="C1"><g class="wobble"><circle cx="0" cy="0" r="18" fill="url(#grad-C)" filter="url(#shadow)"/></g></g>
+        <!-- Carbon 2 (Carboxyl) -->
+        <g class="C2"><g class="wobble-delay"><circle cx="0" cy="0" r="18" fill="url(#grad-C)" filter="url(#shadow)"/></g></g>
+        
+        <!-- Nitrogen 1 (Amino) -->
+        <g class="N1"><g class="wobble"><circle cx="0" cy="0" r="15" fill="url(#grad-N)" filter="url(#shadow)"/></g></g>
+        
+        <!-- Oxygen 1 (=O) -->
+        <g class="O1"><g class="wobble-delay"><circle cx="0" cy="0" r="15" fill="url(#grad-O)" filter="url(#shadow)"/></g></g>
+        <!-- Oxygen 2 (-O) -->
+        <g class="O2"><g class="wobble"><circle cx="0" cy="0" r="15" fill="url(#grad-O)" filter="url(#shadow)"/></g></g>
+        
+        <!-- Hydrogens -->
+        <g class="H1"><g class="wobble-delay"><circle cx="0" cy="0" r="10" fill="url(#grad-H)" filter="url(#shadow)"/></g></g>
+        <g class="H2"><g class="wobble"><circle cx="0" cy="0" r="10" fill="url(#grad-H)" filter="url(#shadow)"/></g></g>
+        <g class="H3"><g class="wobble-delay"><circle cx="0" cy="0" r="10" fill="url(#grad-H)" filter="url(#shadow)"/></g></g>
+        <g class="H4"><g class="wobble"><circle cx="0" cy="0" r="10" fill="url(#grad-H)" filter="url(#shadow)"/></g></g>
+        <g class="H5"><g class="wobble-delay"><circle cx="0" cy="0" r="10" fill="url(#grad-H)" filter="url(#shadow)"/></g></g>
+        
+        <!-- Extra Hydrogens (Form H2) -->
+        <g class="Hex1"><g class="wobble"><circle cx="0" cy="0" r="10" fill="url(#grad-H)" filter="url(#shadow)"/></g></g>
+        <g class="Hex2"><g class="wobble-delay"><circle cx="0" cy="0" r="10" fill="url(#grad-H)" filter="url(#shadow)"/></g></g>
+    </g>
+
+    <!-- SHARED ELECTRON PAIR (Covalent Bond Highlight) -->
+    <g class="electrons">
+        <circle cx="340" cy="274" r="4" fill="#F1C40F" filter="url(#glow)"/>
+        <circle cx="340" cy="286" r="4" fill="#F1C40F" filter="url(#glow)"/>
+    </g>
+
+    <!-- LABELS -->
+    <g id="labels">
+        <!-- Precursor Labels -->
+        <g class="precursor-labels">
+            <text x="200" y="300" class="label-bold">CH₄ <tspan class="label">(Methane)</tspan></text>
+            <text x="400" y="70" class="label-bold">CO₂ <tspan class="label">(Carbon Dioxide)</tspan></text>
+            <text x="600" y="300" class="label-bold">NH₃ <tspan class="label">(Ammonia)</tspan></text>
+            <text x="400" y="260" class="label" fill="#E74C3C" font-weight="bold">Energy Input (UV/Lightning)</text>
+        </g>
+
+        <!-- Glycine Labels -->
+        <g class="glycine-labels">
+            <text x="400" y="420" class="label-bold" font-size="18">Glycine (Simple Amino Acid)</text>
+            <text x="400" y="445" class="formula">NH₂-CH₂-COOH</text>
+            
+            <text x="670" y="140" class="label-bold">H₂ <tspan class="label">(Hydrogen Gas)</tspan></text>
+
+            <!-- Covalent Bond Annotation -->
+            <text x="340" y="385" class="label-bold" font-size="12">Covalent Bond:</text>
+            <text x="340" y="405" class="label" font-size="12">Shared Electron Pair</text>
+            <path d="M 340,370 L 340,305" stroke="#2C3E50" stroke-width="2" marker-end="url(#arrowhead)"/>
+        </g>
+    </g>
+
+</svg>
+
+</body>
+</html>

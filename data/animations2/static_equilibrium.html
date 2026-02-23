@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Static Equilibrium: Stress & Strain</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --primary: #4361EE;
+            --secondary: #7209B7;
+            --accent-red: #FF3366;
+            --accent-green: #06D6A0;
+            --text-main: #2b2d42;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.4);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            display: flex;
+            height: 100vh;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            flex: 3;
+            position: relative;
+            height: 100%;
+        }
+
+        #ui-panel {
+            flex: 1;
+            min-width: 300px;
+            max-width: 400px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid var(--glass-border);
+            box-shadow: -5px 0 25px rgba(0,0,0,0.05);
+            padding: 30px 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 800;
+            margin: 0;
+            line-height: 1.2;
+            color: var(--primary);
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            margin: 5px 0 0 0;
+            color: #6c757d;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--secondary);
+            font-weight: 700;
+            background: rgba(114, 9, 183, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+
+        #slider-force::-webkit-slider-thumb { background: var(--accent-red); }
+        
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .formula-row {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .formula-math {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 12px;
+            background: rgba(6, 214, 160, 0.15);
+            color: #049b73;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(6, 214, 160, 0.3);
+        }
+
+        .vector-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 0.9rem;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 0px 0px 4px rgba(255,255,255,0.9), 0px 0px 8px rgba(255,255,255,0.9);
+            z-index: 2;
+        }
+
+        #label-fext { color: var(--accent-red); }
+        #label-fres { color: #049b73; }
+
+        .note {
+            font-size: 0.75rem;
+            color: #888;
+            font-style: italic;
+            margin-top: -5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-row">
+                Stress (&sigma;) = F / A<br>
+                <span class="formula-math" id="calc-stress">0 Pa</span>
+            </div>
+            <div class="formula-row">
+                Strain (&epsilon;) = &Delta;L / L&sub0;<br>
+                <span class="formula-math" id="calc-strain">0</span>
+            </div>
+            <div class="formula-row">
+                Real &Delta;L = <span class="formula-math" id="calc-dl">0 m</span>
+            </div>
+            <div class="status-indicator">STATIC EQUILIBRIUM REACHED</div>
+        </div>
+        
+        <div id="label-fext" class="vector-label">F_ext</div>
+        <div id="label-fres" class="vector-label">F_res</div>
+    </div>
+
+    <div id="ui-panel">
+        <div>
+            <h1>Static Equilibrium</h1>
+            <p class="subtitle">Stress, Strain & Restoring Forces</p>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Applied Force (F)</span>
+                <span class="value-display" id="val-force">200 N</span>
+            </div>
+            <input type="range" id="slider-force" min="-500" max="500" step="10" value="200">
+            <div class="note">Positive = Tensile, Negative = Compressive</div>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Cross-Sectional Area (A)</span>
+                <span class="value-display" id="val-area">0.005 m²</span>
+            </div>
+            <input type="range" id="slider-area" min="0.001" max="0.01" step="0.001" value="0.005">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Young's Modulus (Y)</span>
+                <span class="value-display" id="val-young">70 GPa</span>
+            </div>
+            <input type="range" id="slider-young" min="1" max="200" step="1" value="70">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Original Length (L&sub0;)</span>
+                <span class="value-display" id="val-length">3.0 m</span>
+            </div>
+            <input type="range" id="slider-length" min="1.0" max="5.0" step="0.1" value="3.0">
+        </div>
+        
+        <div class="note" style="margin-top: auto;">
+            *Deformation is visually scaled up by 50,000x to make atomic displacement and strain observable.
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(3, 4, 6);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(0, 1.5, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+
+        // --- Materials ---
+        const matCylinder = new THREE.MeshPhysicalMaterial({
+            color: 0x4361EE,
+            transparent: true,
+            opacity: 0.6,
+            roughness: 0.2,
+            metalness: 0.1,
+            side: THREE.DoubleSide
+        });
+
+        const matAtom = new THREE.MeshStandardMaterial({
+            color: 0x7209B7,
+            roughness: 0.4,
+            metalness: 0.2
+        });
+
+        const matBase = new THREE.MeshStandardMaterial({
+            color: 0xBDC3C7,
+            roughness: 0.7
+        });
+
+        // --- Geometries & Objects ---
+        // Base
+        const baseGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.2, 32);
+        const base = new THREE.Mesh(baseGeo, matBase);
+        base.position.y = -0.1;
+        scene.add(base);
+
+        // Main Cylinder (Deformable)
+        // Base geometry is 1 unit high, centered at origin. We translate it so bottom is at y=0.
+        const cylGeo = new THREE.CylinderGeometry(1, 1, 1, 32);
+        cylGeo.translate(0, 0.5, 0); 
+        const cylinder = new THREE.Mesh(cylGeo, matCylinder);
+        scene.add(cylinder);
+
+        // Atoms (Internal Lattice)
+        const atoms = [];
+        const atomGeo = new THREE.SphereGeometry(0.025, 16, 16);
+        
+        // Create a cylindrical grid
+        for(let j=0; j<=10; j++) { // Vertical layers
+            for(let i=-2; i<=2; i++) {
+                for(let k=-2; k<=2; k++) {
+                    const xn = i / 2.5; 
+                    const zn = k / 2.5;
+                    if (xn*xn + zn*zn > 0.8) continue; // Keep roughly inside cylinder
+                    
+                    const yn = j / 10; // 0 to 1
+                    
+                    const atom = new THREE.Mesh(atomGeo, matAtom);
+                    atom.userData = { xn, yn, zn };
+                    scene.add(atom);
+                    atoms.push(atom);
+                }
+            }
+        }
+
+        // Arrows (Vectors)
+        const colorExt = 0xFF3366;
+        const colorRes = 0x06D6A0;
+        
+        const fExtArrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,0), 1, colorExt, 0.2, 0.1);
+        scene.add(fExtArrow);
+
+        const fResArrows = [];
+        const numResArrows = 8;
+        for(let i=0; i<numResArrows; i++) {
+            const angle = (i / numResArrows) * Math.PI * 2;
+            const arrow = new THREE.ArrowHelper(new THREE.Vector3(0,-1,0), new THREE.Vector3(0,0,0), 1, colorRes, 0.15, 0.08);
+            arrow.userData = { angle };
+            scene.add(arrow);
+            fResArrows.push(arrow);
+        }
+
+        // --- Physics & UI Logic ---
+        const UI = {
+            force: document.getElementById('slider-force'),
+            area: document.getElementById('slider-area'),
+            young: document.getElementById('slider-young'),
+            length: document.getElementById('slider-length'),
+            
+            valForce: document.getElementById('val-force'),
+            valArea: document.getElementById('val-area'),
+            valYoung: document.getElementById('val-young'),
+            valLength: document.getElementById('val-length'),
+            
+            calcStress: document.getElementById('calc-stress'),
+            calcStrain: document.getElementById('calc-strain'),
+            calcDl: document.getElementById('calc-dl'),
+
+            lblExt: document.getElementById('label-fext'),
+            lblRes: document.getElementById('label-fres')
+        };
+
+        const VISUAL_SCALE = 50000; // Exaggerate deformation for visibility
+        const POISSON_RATIO = 0.33;
+
+        function updatePhysics() {
+            // Get values
+            const F = parseFloat(UI.force.value);
+            const A = parseFloat(UI.area.value);
+            const Y = parseFloat(UI.young.value) * 1e9; // Convert GPa to Pa
+            const L0 = parseFloat(UI.length.value);
+
+            // Update UI Labels
+            UI.valForce.innerText = `${F} N`;
+            UI.valArea.innerText = `${A.toFixed(3)} m²`;
+            UI.valYoung.innerText = `${(Y/1e9).toFixed(0)} GPa`;
+            UI.valLength.innerText = `${L0.toFixed(1)} m`;
+
+            // Physics Calculations
+            const r0 = Math.sqrt(A / Math.PI);
+            const stress = F / A;
+            const strain = stress / Y;
+            const dL = strain * L0;
+            
+            // Visual Scaling
+            const dL_vis = dL * VISUAL_SCALE;
+            const L_vis = L0 + dL_vis;
+            
+            // Poisson's effect (lateral strain)
+            const strain_lat = -POISSON_RATIO * strain;
+            const dr = strain_lat * r0;
+            const dr_vis = dr * VISUAL_SCALE;
+            const r_vis = Math.max(0.05, r0 + dr_vis); // Prevent inversion
+
+            // Update Formula Card
+            UI.calcStress.innerText = `${stress.toExponential(2)} Pa`;
+            UI.calcStrain.innerText = `${strain.toExponential(2)}`;
+            UI.calcDl.innerText = `${(dL * 1000).toFixed(4)} mm`;
+
+            // 1. Update Cylinder
+            cylinder.scale.set(r_vis, L_vis, r_vis);
+
+            // 2. Update Atoms
+            atoms.forEach(atom => {
+                // Map normalized coordinates to current visual dimensions
+                // Multiply by 0.9 to keep atoms slightly inside the boundary
+                atom.position.set(
+                    atom.userData.xn * r_vis * 0.9,
+                    atom.userData.yn * L_vis,
+                    atom.userData.zn * r_vis * 0.9
+                );
+            });
+
+            // 3. Update Vectors (Arrows)
+            const arrowBaseLen = Math.max(0.3, Math.abs(F) / 250); // Scale arrow length visually
+            
+            if (F >= 0) {
+                // Tensile: F_ext pulls UP from top face
+                fExtArrow.setDirection(new THREE.Vector3(0, 1, 0));
+                fExtArrow.position.set(0, L_vis, 0);
+                fExtArrow.setLength(arrowBaseLen, arrowBaseLen*0.2, arrowBaseLen*0.1);
+                
+                // F_res pulls DOWN from top face
+                fResArrows.forEach(arr => {
+                    const ax = Math.cos(arr.userData.angle) * r_vis * 0.7;
+                    const az = Math.sin(arr.userData.angle) * r_vis * 0.7;
+                    arr.setDirection(new THREE.Vector3(0, -1, 0));
+                    arr.position.set(ax, L_vis, az);
+                    arr.setLength(arrowBaseLen, arrowBaseLen*0.2, arrowBaseLen*0.1);
+                });
+            } else {
+                // Compressive: F_ext pushes DOWN onto top face
+                fExtArrow.setDirection(new THREE.Vector3(0, -1, 0));
+                fExtArrow.position.set(0, L_vis + arrowBaseLen, 0);
+                fExtArrow.setLength(arrowBaseLen, arrowBaseLen*0.2, arrowBaseLen*0.1);
+                
+                // F_res pushes UP against top face
+                fResArrows.forEach(arr => {
+                    const ax = Math.cos(arr.userData.angle) * r_vis * 0.7;
+                    const az = Math.sin(arr.userData.angle) * r_vis * 0.7;
+                    arr.setDirection(new THREE.Vector3(0, 1, 0));
+                    arr.position.set(ax, L_vis - arrowBaseLen, az);
+                    arr.setLength(arrowBaseLen, arrowBaseLen*0.2, arrowBaseLen*0.1);
+                });
+            }
+
+            // Hide arrows if force is 0
+            const visible = Math.abs(F) > 0;
+            fExtArrow.visible = visible;
+            fResArrows.forEach(arr => arr.visible = visible);
+            UI.lblExt.style.display = visible ? 'block' : 'none';
+            UI.lblRes.style.display = visible ? 'block' : 'none';
+
+            // Store positions for 2D label projection
+            if (F >= 0) {
+                fExtArrow.userData.labelPos = new THREE.Vector3(0, L_vis + arrowBaseLen + 0.2, 0);
+                fResArrows[0].userData.labelPos = new THREE.Vector3(r_vis + 0.3, L_vis - arrowBaseLen/2, 0);
+            } else {
+                fExtArrow.userData.labelPos = new THREE.Vector3(0, L_vis + arrowBaseLen + 0.2, 0);
+                fResArrows[0].userData.labelPos = new THREE.Vector3(r_vis + 0.3, L_vis - arrowBaseLen/2, 0);
+            }
+        }
+
+        // Event Listeners for UI
+        ['force', 'area', 'young', 'length'].forEach(id => {
+            UI[id].addEventListener('input', updatePhysics);
+        });
+
+        // --- Render Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            
+            // Project 3D positions to 2D screen space for labels
+            if (fExtArrow.visible && fExtArrow.userData.labelPos) {
+                const posExt = fExtArrow.userData.labelPos.clone();
+                posExt.project(camera);
+                const xExt = (posExt.x * 0.5 + 0.5) * container.clientWidth;
+                const yExt = (posExt.y * -0.5 + 0.5) * container.clientHeight;
+                UI.lblExt.style.left = `${xExt}px`;
+                UI.lblExt.style.top = `${yExt}px`;
+
+                const posRes = fResArrows[0].userData.labelPos.clone();
+                posRes.project(camera);
+                const xRes = (posRes.x * 0.5 + 0.5) * container.clientWidth;
+                const yRes = (posRes.y * -0.5 + 0.5) * container.clientHeight;
+                UI.lblRes.style.left = `${xRes}px`;
+                UI.lblRes.style.top = `${yRes}px`;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Initialize
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

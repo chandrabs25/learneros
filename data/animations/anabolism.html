@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anabolism within the Amphibolic Pathway</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* Typography */
+        .title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 20px; fill: #2C3E50; }
+        .subtitle { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 13px; fill: #7F8C8D; }
+        .organelle { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 16px; fill: #BDC3C7; letter-spacing: 1px; text-transform: uppercase; }
+        .mol-label { font-family: 'Roboto Mono', monospace; font-size: 11px; fill: #34495E; font-weight: bold; }
+        .legend-title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 11px; fill: #2C3E50; }
+        .legend-text { font-family: 'Roboto Mono', monospace; font-size: 9px; fill: #34495E; }
+
+        /* Animation Variables */
+        :root {
+            --dur: 12s;
+        }
+
+        /* Keyframes */
+        @keyframes glucose-anim {
+            0% { opacity: 0; transform: translateY(-30px); }
+            5%, 15% { opacity: 1; transform: translateY(0); }
+            20%, 100% { opacity: 0; transform: translateY(30px); }
+        }
+
+        @keyframes move-glyc {
+            0%, 15% { opacity: 0; transform: translate(0, 0); }
+            15% { opacity: 1; transform: translate(0, 0); }
+            30% { opacity: 1; transform: translate(-160px, 0); }
+            35%, 100% { opacity: 0; transform: translate(-160px, 0); }
+        }
+
+        @keyframes pyruvate-anim {
+            0%, 15% { opacity: 0; transform: translateY(-30px); }
+            20%, 25% { opacity: 1; transform: translateY(0); }
+            30%, 100% { opacity: 0; transform: translateY(30px); }
+        }
+
+        @keyframes acetyl-anim {
+            0%, 25% { opacity: 0; transform: translateY(-30px); }
+            30%, 85% { opacity: 1; transform: translateY(0); }
+            90%, 100% { opacity: 0; transform: translateY(0); }
+        }
+
+        @keyframes akg-anim {
+            0%, 35% { opacity: 0; transform: scale(0.5); transform-origin: 440px 370px; }
+            40%, 85% { opacity: 1; transform: scale(1); transform-origin: 440px 370px; }
+            90%, 100% { opacity: 0; transform: scale(1); transform-origin: 440px 370px; }
+        }
+
+        @keyframes move-fa {
+            0%, 30% { opacity: 0; transform: translate(0, 0); }
+            30% { opacity: 1; transform: translate(0, 0); }
+            45% { opacity: 1; transform: translate(-290px, 0); }
+            50%, 100% { opacity: 0; transform: translate(-290px, 0); }
+        }
+
+        @keyframes move-prot {
+            0%, 40% { opacity: 0; transform: translate(0, 0); }
+            40% { opacity: 1; transform: translate(0, 0); }
+            55% { opacity: 1; transform: translate(245px, 0); }
+            60%, 100% { opacity: 0; transform: translate(245px, 0); }
+        }
+
+        @keyframes glyc-glow {
+            0%, 30% { opacity: 0; filter: drop-shadow(0 0 0px #D2B4DE); }
+            35% { opacity: 1; filter: drop-shadow(0 0 0px #D2B4DE); }
+            50%, 85% { opacity: 1; filter: drop-shadow(0 0 8px #D2B4DE); }
+            95%, 100% { opacity: 0; filter: drop-shadow(0 0 0px #D2B4DE); }
+        }
+
+        @keyframes fa-glow {
+            0%, 45% { opacity: 0; filter: drop-shadow(0 0 0px #FFA07A); }
+            50% { opacity: 1; filter: drop-shadow(0 0 0px #FFA07A); }
+            65%, 85% { opacity: 1; filter: drop-shadow(0 0 8px #FFA07A); }
+            95%, 100% { opacity: 0; filter: drop-shadow(0 0 0px #FFA07A); }
+        }
+
+        @keyframes prot-glow {
+            0%, 55% { opacity: 0; filter: drop-shadow(0 0 0px #98D8C8); }
+            60% { opacity: 1; filter: drop-shadow(0 0 0px #98D8C8); }
+            75%, 85% { opacity: 1; filter: drop-shadow(0 0 8px #98D8C8); }
+            95%, 100% { opacity: 0; filter: drop-shadow(0 0 0px #98D8C8); }
+        }
+
+        @keyframes pulse-acetyl {
+            0%, 28% { opacity: 0; transform: scale(1); }
+            30% { opacity: 0.8; transform: scale(1); }
+            35%, 100% { opacity: 0; transform: scale(3); }
+        }
+
+        @keyframes pulse-akg {
+            0%, 38% { opacity: 0; transform: scale(1); }
+            40% { opacity: 0.8; transform: scale(1); }
+            45%, 100% { opacity: 0; transform: scale(3); }
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Applied Classes */
+        .anim-glucose { animation: glucose-anim var(--dur) cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .anim-move-glyc { animation: move-glyc var(--dur) cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .anim-pyruvate { animation: pyruvate-anim var(--dur) cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .anim-acetyl { animation: acetyl-anim var(--dur) cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .anim-akg { animation: akg-anim var(--dur) cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .anim-move-fa { animation: move-fa var(--dur) cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .anim-move-prot { animation: move-prot var(--dur) cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        
+        .anim-glyc-glow { animation: glyc-glow var(--dur) ease-in-out infinite; }
+        .anim-fa-glow { animation: fa-glow var(--dur) ease-in-out infinite; }
+        .anim-prot-glow { animation: prot-glow var(--dur) ease-in-out infinite; }
+        
+        .anim-pulse-acetyl { animation: pulse-acetyl var(--dur) ease-out infinite; transform-origin: 400px 250px; }
+        .anim-pulse-akg { animation: pulse-akg var(--dur) ease-out infinite; transform-origin: 440px 370px; }
+        .krebs-rotate { animation: rotate 20s linear infinite; transform-origin: 400px 370px; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of anabolism within the amphibolic pathway" role="img">
+        <title>Anabolism within the Amphibolic Pathway</title>
+        <desc>An animated diagram showing how respiratory intermediates like Acetyl CoA and alpha-Ketoglutaric Acid are withdrawn from the catabolic pathway to synthesize fatty acids and proteins.</desc>
+
+        <!-- Definitions for Markers and Filters -->
+        <defs>
+            <marker id="arrow-cat" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#95A5A6" />
+            </marker>
+            <marker id="arrow-glyc" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#D2B4DE" />
+            </marker>
+            <marker id="arrow-fa" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#FFA07A" />
+            </marker>
+            <marker id="arrow-prot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#98D8C8" />
+            </marker>
+        </defs>
+
+        <!-- Background / Environment -->
+        <rect width="100%" height="100%" fill="#f8f9fa"/>
+        
+        <!-- Cell Membrane (Stylized arc) -->
+        <path d="M -50,550 Q 50,-50 850,550" fill="none" stroke="#4A90D9" stroke-width="8" opacity="0.15"/>
+        <text x="760" y="80" class="organelle" fill="#4A90D9" opacity="0.4" text-anchor="end">Cell Membrane</text>
+        <text x="30" y="80" class="organelle">Cytoplasm</text>
+
+        <!-- Mitochondrion -->
+        <g id="mitochondrion">
+            <!-- Outer Membrane -->
+            <path d="M 220 340 C 220 200, 580 200, 580 340 C 580 480, 220 480, 220 340 Z" fill="#E74C3C" fill-opacity="0.05" stroke="#E74C3C" stroke-width="3"/>
+            <!-- Inner Membrane (Cristae) -->
+            <path d="M 240 340 C 240 250, 260 220, 300 220 C 310 240, 320 260, 330 260 C 340 260, 350 240, 360 220 C 400 220, 420 220, 440 220 C 450 240, 460 260, 470 260 C 480 260, 490 240, 500 220 C 540 220, 560 250, 560 340 C 560 430, 540 460, 500 460 C 490 440, 480 420, 470 420 C 460 420, 450 440, 440 460 C 400 460, 380 460, 360 460 C 350 440, 340 420, 330 420 C 320 420, 310 440, 300 460 C 260 460, 240 430, 240 340 Z" fill="#E74C3C" fill-opacity="0.08" stroke="#E74C3C" stroke-width="2"/>
+            <text x="400" y="475" class="organelle" text-anchor="middle" fill="#E74C3C" opacity="0.6">Mitochondrial Matrix</text>
+        </g>
+
+        <!-- Static Pathways (Background Lines) -->
+        <g id="pathways">
+            <!-- Catabolic (Downward) -->
+            <line x1="400" y1="70" x2="400" y2="130" stroke="#95A5A6" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arrow-cat)"/>
+            <line x1="400" y1="170" x2="400" y2="230" stroke="#95A5A6" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arrow-cat)"/>
+            <line x1="400" y1="270" x2="400" y2="310" stroke="#95A5A6" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arrow-cat)"/>
+            
+            <!-- Krebs Cycle -->
+            <g class="krebs-rotate">
+                <circle cx="400" cy="370" r="40" fill="none" stroke="#95A5A6" stroke-width="2" stroke-dasharray="6 4"/>
+                <path d="M 440 370 A 40 40 0 0 1 400 410" fill="none" stroke="#95A5A6" stroke-width="2" marker-end="url(#arrow-cat)"/>
+                <path d="M 360 370 A 40 40 0 0 1 400 330" fill="none" stroke="#95A5A6" stroke-width="2" marker-end="url(#arrow-cat)"/>
+            </g>
+
+            <!-- Anabolic (Outward) -->
+            <line x1="400" y1="100" x2="260" y2="100" stroke="#D2B4DE" stroke-width="2" stroke-dasharray="4 4" marker-end="url(#arrow-glyc)"/>
+            <line x1="380" y1="250" x2="130" y2="250" stroke="#FFA07A" stroke-width="3" marker-end="url(#arrow-fa)"/>
+            <line x1="460" y1="370" x2="665" y2="370" stroke="#98D8C8" stroke-width="3" marker-end="url(#arrow-prot)"/>
+        </g>
+
+        <!-- Text Labels -->
+        <g id="labels">
+            <text x="30" y="40" class="title">Anabolism: Synthesis from Respiratory Intermediates</text>
+            
+            <text x="415" y="120" class="subtitle">Catabolism (Breakdown)</text>
+            <text x="310" y="90" class="subtitle" fill="#D2B4DE">Anabolism</text>
+            <text x="250" y="240" class="subtitle" fill="#FFA07A">Anabolism (Lipogenesis)</text>
+            <text x="520" y="360" class="subtitle" fill="#98D8C8">Anabolism (Protein Synthesis)</text>
+
+            <text x="425" y="54" class="mol-label">Glucose</text>
+            <text x="415" y="95" class="mol-label" font-size="10" fill="#7F8C8D">DHAP</text>
+            <text x="240" y="104" class="mol-label" text-anchor="end">Glycerol</text>
+            <text x="425" y="154" class="mol-label">Pyruvate</text>
+            <text x="425" y="254" class="mol-label">Acetyl CoA</text>
+            <text x="455" y="390" class="mol-label">α-Ketoglutaric Acid</text>
+            
+            <text x="100" y="280" class="mol-label" text-anchor="middle">Fatty Acids</text>
+            <text x="700" y="410" class="mol-label" text-anchor="middle">Proteins / Amino Acids</text>
+        </g>
+
+        <!-- Static Molecule Placeholders (Faint) -->
+        <g id="placeholders" opacity="0.2">
+            <polygon points="400,35 413,42.5 413,57.5 400,65 387,57.5 387,42.5" fill="#4A90D9"/>
+            <circle cx="400" cy="100" r="4" fill="#7F8C8D"/>
+            <rect x="235" y="95" width="10" height="10" fill="#D2B4DE" rx="2"/>
+            <circle cx="400" cy="150" r="10" fill="#98D8C8"/>
+            <polygon points="400,238 412,250 400,262 388,250" fill="#F39C12"/>
+            <circle cx="440" cy="370" r="8" fill="#9B59B6"/>
+            <polyline points="60,250 70,240 80,260 90,240 100,260 110,240 120,250" fill="none" stroke="#FFA07A" stroke-width="4" stroke-linejoin="round"/>
+            <path d="M 660,370 C 670,340 680,400 690,370 C 700,340 710,400 720,370 C 730,340 740,400 750,370" fill="none" stroke="#98D8C8" stroke-width="5" stroke-linecap="round"/>
+        </g>
+
+        <!-- Animated Synthesis Results (Glows) -->
+        <g class="anim-glyc-glow">
+            <rect x="235" y="95" width="10" height="10" fill="#D2B4DE" rx="2"/>
+        </g>
+        <g class="anim-fa-glow">
+            <polyline points="60,250 70,240 80,260 90,240 100,260 110,240 120,250" fill="none" stroke="#FFA07A" stroke-width="4" stroke-linejoin="round"/>
+        </g>
+        <g class="anim-prot-glow">
+            <path d="M 660,370 C 670,340 680,400 690,370 C 700,340 710,400 720,370 C 730,340 740,400 750,370" fill="none" stroke="#98D8C8" stroke-width="5" stroke-linecap="round"/>
+        </g>
+
+        <!-- Animated Molecules -->
+        <g id="animated-molecules">
+            <!-- Catabolic Flow -->
+            <g class="anim-glucose">
+                <polygon points="400,35 413,42.5 413,57.5 400,65 387,57.5 387,42.5" fill="#4A90D9"/>
+            </g>
+            <g class="anim-pyruvate">
+                <circle cx="400" cy="150" r="10" fill="#98D8C8"/>
+            </g>
+            <g class="anim-acetyl">
+                <polygon points="400,238 412,250 400,262 388,250" fill="#F39C12"/>
+            </g>
+            <g class="anim-akg">
+                <circle cx="440" cy="370" r="8" fill="#9B59B6"/>
+            </g>
+
+            <!-- Pulses at Withdrawal Points -->
+            <polygon points="400,238 412,250 400,262 388,250" fill="none" stroke="#F39C12" stroke-width="2" class="anim-pulse-acetyl"/>
+            <circle cx="440" cy="370" r="8" fill="none" stroke="#9B59B6" stroke-width="2" class="anim-pulse-akg"/>
+
+            <!-- Anabolic Withdrawals (Moving Copies) -->
+            <g class="anim-move-glyc">
+                <rect x="395" y="95" width="10" height="10" fill="#D2B4DE" rx="2"/>
+            </g>
+            <g class="anim-move-fa">
+                <polygon points="400,238 412,250 400,262 388,250" fill="#F39C12"/>
+            </g>
+            <g class="anim-move-prot">
+                <circle cx="440" cy="370" r="8" fill="#9B59B6"/>
+            </g>
+        </g>
+
+        <!-- Legend -->
+        <g id="legend" transform="translate(20, 390)">
+            <rect x="0" y="0" width="160" height="90" fill="#ffffff" stroke="#E8F4FD" stroke-width="2" rx="6" opacity="0.9"/>
+            <text x="10" y="20" class="legend-title">Molecule Key</text>
+            
+            <circle cx="15" cy="35" r="4" fill="#4A90D9"/>
+            <text x="25" y="38" class="legend-text">Carbohydrates</text>
+            
+            <polygon points="15,46 19,50 15,54 11,50" fill="#F39C12"/>
+            <text x="25" y="53" class="legend-text">Intermediates</text>
+            
+            <circle cx="15" cy="65" r="4" fill="#FFA07A"/>
+            <text x="25" y="68" class="legend-text">Lipids (Fatty Acids)</text>
+            
+            <circle cx="15" cy="80" r="4" fill="#98D8C8"/>
+            <text x="25" y="83" class="legend-text">Proteins / Amino Acids</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

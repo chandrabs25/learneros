@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartesian Sign Convention - Lens Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #1d3557;
+            user-select: none;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Panel */
+        #controls-panel {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1d3557;
+            text-align: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: #7209B7;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #7209B7;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(114, 9, 183, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #ced4da;
+            border-radius: 3px;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            left: 20px;
+            top: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        .formula-title {
+            font-weight: 700;
+            font-size: 1rem;
+            margin-bottom: 12px;
+            text-align: center;
+            color: #1d3557;
+        }
+
+        .math-equation {
+            font-size: 1.3rem;
+            text-align: center;
+            margin-bottom: 15px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+
+        .math-fraction {
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            margin: 0 2px;
+        }
+
+        .math-fraction > span {
+            display: block;
+            padding: 0.1em;
+        }
+
+        .math-fraction span.fdn {
+            border-top: 2px solid #1d3557;
+        }
+
+        .calc-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            font-family: monospace;
+        }
+
+        .result-highlight {
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-align: center;
+            margin-top: 15px;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(0,0,0,0.03);
+        }
+
+        /* 3D Labels */
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .label-3d {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            white-space: nowrap;
+            transition: opacity 0.2s;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .label-red { color: #FF3366; }
+        .label-blue { color: #4361EE; }
+        .label-neutral { color: #1d3557; }
+
+        /* Legend */
+        #legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            z-index: 10;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+        }
+        .legend-item { display: flex; align-items: center; margin-bottom: 6px; }
+        .legend-item:last-child { margin-bottom: 0; }
+        .color-box { width: 14px; height: 14px; border-radius: 4px; margin-right: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-title">Thin Lens Formula</div>
+        <div class="math-equation">
+            <div class="math-fraction"><span>1</span><span class="fdn">v</span></div> - 
+            <div class="math-fraction"><span>1</span><span class="fdn">u</span></div> = 
+            <div class="math-fraction"><span>1</span><span class="fdn">f</span></div>
+        </div>
+        <div id="calc-details">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <div id="controls-panel">
+        <h2>Lens Parameters</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Focal Length (f)</span>
+                <span class="value-display" id="val-f">20 cm</span>
+            </div>
+            <input type="range" id="slider-f" min="-50" max="50" step="1" value="20">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Object Distance (u)</span>
+                <span class="value-display" id="val-u">-40 cm</span>
+            </div>
+            <input type="range" id="slider-u" min="-100" max="-5" step="1" value="-40">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Object Height (h₀)</span>
+                <span class="value-display" id="val-ho">10 cm</span>
+            </div>
+            <input type="range" id="slider-ho" min="-20" max="20" step="1" value="10">
+        </div>
+
+        <div class="toggle-container">
+            <label for="toggle-signs">Show Sign Indicators</label>
+            <input type="checkbox" id="toggle-signs" checked style="width: 18px; height: 18px; accent-color: #7209B7; cursor: pointer;">
+        </div>
+    </div>
+
+    <div id="legend">
+        <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Object</div>
+        <div class="legend-item"><div class="color-box" style="background: #7209B7;"></div> Image</div>
+        <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Light Rays</div>
+        <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Positive (+) Vector</div>
+        <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Negative (-) Vector</div>
+    </div>
+
+    <div id="labels-container">
+        <div id="label-u" class="label-3d">u</div>
+        <div id="label-v" class="label-3d">v</div>
+        <div id="label-f" class="label-3d">f</div>
+        <div id="label-ho" class="label-3d">h₀</div>
+        <div id="label-hi" class="label-3d">hᵢ</div>
+        <div id="label-pole" class="label-3d label-neutral">Pole (0,0)</div>
+        <div id="label-F1" class="label-3d label-neutral">F</div>
+        <div id="label-F2" class="label-3d label-neutral">F</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Constants & Colors ---
+        const COLOR_OBJ = 0xF77F00;
+        const COLOR_IMG = 0x7209B7;
+        const COLOR_RAY = 0x06D6A0;
+        const COLOR_POS = 0xFF3366;
+        const COLOR_NEG = 0x4361EE;
+        const COLOR_AXIS = 0xced4da;
+
+        // --- State ---
+        const params = {
+            f: 20,
+            u: -40,
+            ho: 10,
+            showSigns: true
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 30, 120);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Allow slightly below axis
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(20, 50, 30);
+        dirLight.castShadow = true;
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 0.5, 50);
+        pointLight.position.set(0, 0, 0);
+        scene.add(pointLight);
+
+        // --- Environment ---
+        // Principal Axis
+        const axisGeo = new THREE.CylinderGeometry(0.2, 0.2, 300, 16);
+        axisGeo.rotateZ(Math.PI / 2);
+        const axisMat = new THREE.MeshBasicMaterial({ color: COLOR_AXIS });
+        const principalAxis = new THREE.Mesh(axisGeo, axisMat);
+        scene.add(principalAxis);
+
+        // Optical Center (Pole)
+        const poleGeo = new THREE.SphereGeometry(0.8, 16, 16);
+        const poleMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        const pole = new THREE.Mesh(poleGeo, poleMat);
+        scene.add(pole);
+
+        // Focal Points
+        const fPointGeo = new THREE.SphereGeometry(0.6, 16, 16);
+        const fPointMat = new THREE.MeshBasicMaterial({ color: 0x333333 });
+        const f1Mesh = new THREE.Mesh(fPointGeo, fPointMat);
+        const f2Mesh = new THREE.Mesh(fPointGeo, fPointMat);
+        scene.add(f1Mesh);
+        scene.add(f2Mesh);
+
+        // Grid Floor
+        const gridHelper = new THREE.GridHelper(200, 40, 0xe0e0e0, 0xe0e0e0);
+        gridHelper.position.y = -25;
+        scene.add(gridHelper);
+
+        // --- Objects ---
+        let lensMesh;
+        const lensMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.9,
+            thickness: 1.0,
+            transparent: true,
+            opacity: 0.7,
+            side: THREE.DoubleSide
+        });
+
+        function create3DArrow(color, opacity = 1.0) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshPhongMaterial({ color: color, transparent: true, opacity: opacity });
+            
+            // Base cylinder (height 0.8, centered at 0.4)
+            const cylGeo = new THREE.CylinderGeometry(0.4, 0.4, 0.8, 16);
+            cylGeo.translate(0, 0.4, 0);
+            const cyl = new THREE.Mesh(cylGeo, mat);
+            
+            // Head cone (height 0.2, base at 0.8)
+            const coneGeo = new THREE.ConeGeometry(1.2, 0.2, 16);
+            coneGeo.translate(0, 0.9, 0);
+            const cone = new THREE.Mesh(coneGeo, mat);
+            
+            group.add(cyl);
+            group.add(cone);
+            return group;
+        }
+
+        const objectArrow = create3DArrow(COLOR_OBJ);
+        scene.add(objectArrow);
+
+        const imageArrow = create3DArrow(COLOR_IMG, 0.7);
+        scene.add(imageArrow);
+
+        // Rays Group
+        const rayGroup = new THREE.Group();
+        scene.add(rayGroup);
+
+        const rayMatSolid = new THREE.LineBasicMaterial({ color: COLOR_RAY, linewidth: 2 });
+        const rayMatDashed = new THREE.LineDashedMaterial({ color: COLOR_RAY, linewidth: 2, dashSize: 1.5, gapSize: 1.5 });
+
+        // Measurement Arrows
+        const signGroup = new THREE.Group();
+        scene.add(signGroup);
+
+        function createMeasurementArrow() {
+            return new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 10, 0xffffff, 1.5, 1);
+        }
+
+        const arrowU = createMeasurementArrow();
+        const arrowV = createMeasurementArrow();
+        const arrowF = createMeasurementArrow();
+        const arrowHo = createMeasurementArrow();
+        const arrowHi = createMeasurementArrow();
+        
+        signGroup.add(arrowU);
+        signGroup.add(arrowV);
+        signGroup.add(arrowF);
+        signGroup.add(arrowHo);
+        signGroup.add(arrowHi);
+
+        // --- Physics & Geometry Logic ---
+
+        function updateLensGeometry(f) {
+            if (lensMesh) scene.remove(lensMesh);
+            
+            const radius = 15;
+            const thickness = 2.5;
+            const points = [];
+            
+            if (f > 0) {
+                // Convex
+                for (let i = 0; i <= 20; i++) {
+                    const angle = -Math.PI/2 + (i/20) * Math.PI;
+                    points.push(new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * thickness));
+                }
+            } else {
+                // Concave
+                const tc = 0.5; // center thickness
+                const te = 3.5; // edge thickness
+                points.push(new THREE.Vector2(0, -tc));
+                for(let i=1; i<=10; i++) {
+                    const x = (i/10) * radius;
+                    const y = -tc - Math.pow(i/10, 2) * (te - tc);
+                    points.push(new THREE.Vector2(x, y));
+                }
+                points.push(new THREE.Vector2(radius, te));
+                for(let i=9; i>=0; i--) {
+                    const x = (i/10) * radius;
+                    const y = tc + Math.pow(i/10, 2) * (te - tc);
+                    points.push(new THREE.Vector2(x, y));
+                }
+            }
+
+            const geo = new THREE.LatheGeometry(points, 32);
+            lensMesh = new THREE.Mesh(geo, lensMaterial);
+            lensMesh.rotation.z = -Math.PI / 2; // Orient along X axis
+            scene.add(lensMesh);
+        }
+
+        function addRaySegment(p1, p2, isDashed) {
+            const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+            const line = new THREE.Line(geo, isDashed ? rayMatDashed : rayMatSolid);
+            if (isDashed) line.computeLineDistances();
+            rayGroup.add(line);
+        }
+
+        function updatePhysics() {
+            const { f, u, ho } = params;
+            
+            // 1. Calculate Image Properties
+            let v, hi, m;
+            const isInfinity = Math.abs(u + f) < 0.01;
+
+            if (isInfinity) {
+                v = 10000 * Math.sign(f);
+                m = v / u;
+                hi = m * ho;
+            } else {
+                v = (f * u) / (u + f);
+                m = v / u;
+                hi = m * ho;
+            }
+
+            // 2. Update Lens & Foci
+            updateLensGeometry(f);
+            f1Mesh.position.set(-f, 0, 0);
+            f2Mesh.position.set(f, 0, 0);
+
+            // 3. Update Object Arrow
+            objectArrow.position.set(u, 0, 0);
+            if (Math.abs(ho) < 0.1) {
+                objectArrow.visible = false;
+            } else {
+                objectArrow.visible = true;
+                objectArrow.scale.set(2, Math.abs(ho), 2);
+                objectArrow.rotation.x = ho < 0 ? Math.PI : 0;
+            }
+
+            // 4. Update Image Arrow
+            if (isInfinity || Math.abs(v) > 200 || Math.abs(hi) < 0.1) {
+                imageArrow.visible = false;
+            } else {
+                imageArrow.visible = true;
+                imageArrow.position.set(v, 0, 0);
+                imageArrow.scale.set(2, Math.abs(hi), 2);
+                imageArrow.rotation.x = hi < 0 ? Math.PI : 0;
+            }
+
+            // 5. Update Ray Tracing
+            rayGroup.clear();
+            if (Math.abs(ho) >= 0.1) {
+                const pStart = new THREE.Vector3(u, ho, 0);
+                const pLens1 = new THREE.Vector3(0, ho, 0);
+                const pLens2 = new THREE.Vector3(0, 0, 0);
+                const pF2 = new THREE.Vector3(f, 0, 0);
+
+                // Incident Rays
+                addRaySegment(pStart, pLens1, false);
+                addRaySegment(pStart, pLens2, false);
+
+                // Refracted Ray 1 (Parallel -> Focus)
+                let dir1;
+                if (f > 0) {
+                    dir1 = new THREE.Vector3().subVectors(pF2, pLens1).normalize(); // Converge through F2
+                } else {
+                    dir1 = new THREE.Vector3().subVectors(pLens1, pF2).normalize(); // Diverge from F2
+                }
+                const end1 = new THREE.Vector3().copy(pLens1).add(dir1.clone().multiplyScalar(150));
+                addRaySegment(pLens1, end1, false);
+
+                // Refracted Ray 2 (Through Center)
+                const dir2 = new THREE.Vector3().subVectors(pLens2, pStart).normalize();
+                const end2 = new THREE.Vector3().copy(pLens2).add(dir2.clone().multiplyScalar(150));
+                addRaySegment(pLens2, end2, false);
+
+                // Virtual Extensions (Dashed)
+                if (v < 0 && !isInfinity) {
+                    const vPoint = new THREE.Vector3(v, hi, 0);
+                    addRaySegment(pLens1, vPoint, true);
+                    addRaySegment(pLens2, vPoint, true);
+                }
+            }
+
+            // 6. Update Measurement Arrows
+            signGroup.visible = params.showSigns;
+            if (params.showSigns) {
+                const yOffsetU = -8;
+                const yOffsetV = -12;
+                const yOffsetF = -4;
+
+                // u
+                arrowU.position.set(0, yOffsetU, 0);
+                arrowU.setDirection(new THREE.Vector3(Math.sign(u), 0, 0));
+                arrowU.setLength(Math.abs(u), 1.5, 1);
+                arrowU.setColor(u > 0 ? COLOR_POS : COLOR_NEG);
+
+                // v
+                if (!isInfinity && Math.abs(v) < 200) {
+                    arrowV.visible = true;
+                    arrowV.position.set(0, yOffsetV, 0);
+                    arrowV.setDirection(new THREE.Vector3(Math.sign(v), 0, 0));
+                    arrowV.setLength(Math.abs(v), 1.5, 1);
+                    arrowV.setColor(v > 0 ? COLOR_POS : COLOR_NEG);
+                } else {
+                    arrowV.visible = false;
+                }
+
+                // f
+                arrowF.position.set(0, yOffsetF, 0);
+                arrowF.setDirection(new THREE.Vector3(Math.sign(f), 0, 0));
+                arrowF.setLength(Math.abs(f), 1.5, 1);
+                arrowF.setColor(f > 0 ? COLOR_POS : COLOR_NEG);
+
+                // ho
+                if (Math.abs(ho) >= 0.1) {
+                    arrowHo.visible = true;
+                    arrowHo.position.set(u - 2, 0, 0);
+                    arrowHo.setDirection(new THREE.Vector3(0, Math.sign(ho), 0));
+                    arrowHo.setLength(Math.abs(ho), 1.5, 1);
+                    arrowHo.setColor(ho > 0 ? COLOR_POS : COLOR_NEG);
+                } else {
+                    arrowHo.visible = false;
+                }
+
+                // hi
+                if (!isInfinity && Math.abs(v) < 200 && Math.abs(hi) >= 0.1) {
+                    arrowHi.visible = true;
+                    arrowHi.position.set(v + 2, 0, 0);
+                    arrowHi.setDirection(new THREE.Vector3(0, Math.sign(hi), 0));
+                    arrowHi.setLength(Math.abs(hi), 1.5, 1);
+                    arrowHi.setColor(hi > 0 ? COLOR_POS : COLOR_NEG);
+                } else {
+                    arrowHi.visible = false;
+                }
+            }
+
+            // 7. Update UI Text
+            updateUI(v, hi, m, isInfinity);
+        }
+
+        function updateUI(v, hi, m, isInfinity) {
+            document.getElementById('val-f').innerText = `${params.f} cm`;
+            document.getElementById('val-u').innerText = `${params.u} cm`;
+            document.getElementById('val-ho').innerText = `${params.ho} cm`;
+
+            const calcDiv = document.getElementById('calc-details');
+            const vStr = isInfinity ? '∞' : v.toFixed(1);
+            const vColor = v > 0 ? '#FF3366' : '#4361EE';
+            
+            calcDiv.innerHTML = `
+                <div class="calc-row"><span>1/v = 1/(${params.f}) + 1/(${params.u})</span></div>
+                <div class="result-highlight" style="color: ${vColor}">
+                    v = ${vStr} cm
+                </div>
+                <div class="calc-row" style="margin-top: 10px;">
+                    <span>Magnification (m) = v/u</span>
+                    <span>${isInfinity ? '∞' : m.toFixed(2)}</span>
+                </div>
+                <div class="calc-row">
+                    <span>Image Height (hᵢ) = m × h₀</span>
+                    <span>${isInfinity ? '∞' : hi.toFixed(1)} cm</span>
+                </div>
+                <div class="calc-row" style="margin-top: 10px; color: #666; font-size: 0.85rem; justify-content: center;">
+                    ${isInfinity ? 'Image at Infinity' : (v > 0 ? 'Real & ' : 'Virtual & ') + (hi * params.ho > 0 ? 'Upright' : 'Inverted')}
+                </div>
+            `;
+        }
+
+        // --- HTML Labels Sync ---
+        const labelElements = {
+            u: document.getElementById('label-u'),
+            v: document.getElementById('label-v'),
+            f: document.getElementById('label-f'),
+            ho: document.getElementById('label-ho'),
+            hi: document.getElementById('label-hi'),
+            pole: document.getElementById('label-pole'),
+            F1: document.getElementById('label-F1'),
+            F2: document.getElementById('label-F2')
+        };
+
+        function updateLabels() {
+            const container = document.getElementById('labels-container');
+            if (!params.showSigns) {
+                container.style.opacity = '0';
+                return;
+            }
+            container.style.opacity = '1';
+
+            const { f, u, ho } = params;
+            const isInfinity = Math.abs(u + f) < 0.01;
+            const v = isInfinity ? 10000 : (f * u) / (u + f);
+            const hi = isInfinity ? 10000 : (v / u) * ho;
+
+            const positions = {
+                u: new THREE.Vector3(u / 2, -8, 0),
+                v: new THREE.Vector3(v / 2, -12, 0),
+                f: new THREE.Vector3(f / 2, -4, 0),
+                ho: new THREE.Vector3(u - 3.5, ho / 2, 0),
+                hi: new THREE.Vector3(v + 3.5, hi / 2, 0),
+                pole: new THREE.Vector3(0, 2, 0),
+                F1: new THREE.Vector3(-f, 2, 0),
+                F2: new THREE.Vector3(f, 2, 0)
+            };
+
+            // Visibility logic
+            labelElements.v.style.display = (!isInfinity && Math.abs(v) < 200) ? 'block' : 'none';
+            labelElements.ho.style.display = Math.abs(ho) >= 0.1 ? 'block' : 'none';
+            labelElements.hi.style.display = (!isInfinity && Math.abs(v) < 200 && Math.abs(hi) >= 0.1) ? 'block' : 'none';
+
+            // Color logic
+            labelElements.u.className = `label-3d ${u > 0 ? 'label-red' : 'label-blue'}`;
+            labelElements.v.className = `label-3d ${v > 0 ? 'label-red' : 'label-blue'}`;
+            labelElements.f.className = `label-3d ${f > 0 ? 'label-red' : 'label-blue'}`;
+            labelElements.ho.className = `label-3d ${ho > 0 ? 'label-red' : 'label-blue'}`;
+            labelElements.hi.className = `label-3d ${hi > 0 ? 'label-red' : 'label-blue'}`;
+
+            for (const key in positions) {
+                if (labelElements[key].style.display !== 'none') {
+                    const vec = positions[key].clone();
+                    vec.project(camera);
+                    
+                    // Check if behind camera
+                    if (vec.z > 1) {
+                        labelElements[key].style.display = 'none';
+                        continue;
+                    }
+
+                    const x = (vec.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (-vec.y * 0.5 + 0.5) * window.innerHeight;
+                    
+                    labelElements[key].style.left = `${x}px`;
+                    labelElements[key].style.top = `${y}px`;
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('slider-f').addEventListener('input', (e) => {
+            let val = parseInt(e.target.value);
+            if (val === 0) val = 1; // Prevent f=0
+            params.f = val;
+            updatePhysics();
+        });
+
+        document.getElementById('slider-u').addEventListener('input', (e) => {
+            params.u = parseInt(e.target.value);
+            updatePhysics();
+        });
+
+        document.getElementById('slider-ho').addEventListener('input', (e) => {
+            params.ho = parseInt(e.target.value);
+            updatePhysics();
+        });
+
+        document.getElementById('toggle-signs').addEventListener('change', (e) => {
+            params.showSigns = e.target.checked;
+            updatePhysics();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

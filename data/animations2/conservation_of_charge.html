@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirchhoff's Junction Law</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #1e293b;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        
+        /* Glassmorphic UI Panels */
+        .glass-panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            border-radius: 16px;
+            z-index: 10;
+        }
+
+        /* Top Left Formula Card */
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            padding: 20px 25px;
+        }
+        #formula-card h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+        #formula-card p {
+            margin: 0 0 5px 0;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.3rem;
+            font-weight: 500;
+            background: #f8fafc;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            margin-top: 10px;
+        }
+
+        /* Right Control Panel */
+        #control-panel {
+            top: 20px;
+            right: 20px;
+            width: 300px;
+            padding: 25px;
+            max-height: calc(100vh - 90px);
+            overflow-y: auto;
+        }
+        .control-group {
+            margin-bottom: 25px;
+        }
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .control-label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            background: #e2e8f0;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
+        /* Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 2px solid #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        
+        /* Specific Slider Colors */
+        #iTotal::-webkit-slider-thumb { border-color: #FF3366; }
+        #w1::-webkit-slider-thumb { border-color: #F77F00; }
+        #w2::-webkit-slider-thumb { border-color: #06D6A0; }
+
+        /* 3D Floating Labels */
+        .floating-label {
+            position: absolute;
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 600;
+            font-size: 0.85rem;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 4px 10px;
+            border-radius: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: opacity 0.2s;
+        }
+        
+        .color-in { color: #FF3366; }
+        .color-b1 { color: #F77F00; }
+        .color-b2 { color: #06D6A0; }
+        .color-b3 { color: #8338EC; }
+
+        /* Scrollbar for control panel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body>
+
+    <!-- 3D Canvas -->
+    <div id="canvas-container"></div>
+
+    <!-- Floating Labels -->
+    <div id="label-in" class="floating-label color-in">I_in</div>
+    <div id="label-b1" class="floating-label color-b1">I_1</div>
+    <div id="label-b2" class="floating-label color-b2">I_2</div>
+    <div id="label-b3" class="floating-label color-b3">I_3</div>
+
+    <!-- Top Left Formula -->
+    <div id="formula-card" class="glass-panel">
+        <h1>Conservation of Charge</h1>
+        <p>Kirchhoff's Junction Law: &Sigma; I<sub>in</sub> = &Sigma; I<sub>out</sub></p>
+        <div class="math-text" id="live-formula">
+            <!-- Populated by JS -->
+        </div>
+    </div>
+
+    <!-- Right Controls -->
+    <div id="control-panel" class="glass-panel">
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label color-in">Total Current (I<sub>in</sub>)</span>
+                <span class="control-value color-in" id="val-iTotal">5.0 A</span>
+            </div>
+            <input type="range" id="iTotal" min="1.0" max="10.0" step="0.5" value="5.0">
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 20px 0;">
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label color-b1">Branch 1 Ratio (W<sub>1</sub>)</span>
+                <span class="control-value color-b1" id="val-w1">0.33</span>
+            </div>
+            <input type="range" id="w1" min="0" max="1" step="0.01" value="0.33">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label color-b2">Branch 2 Ratio (W<sub>2</sub>)</span>
+                <span class="control-value color-b2" id="val-w2">0.33</span>
+            </div>
+            <input type="range" id="w2" min="0" max="1" step="0.01" value="0.33">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label color-b3">Branch 3 Ratio (W<sub>3</sub>)</span>
+                <span class="control-value color-b3" id="val-w3">0.34</span>
+            </div>
+            <div style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">
+                *Auto-calculated to ensure &Sigma;W = 1
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics & State Variables ---
+        let I_total = 5.0;
+        let W1 = 0.33, W2 = 0.33, W3 = 0.34;
+        let I1 = I_total * W1;
+        let I2 = I_total * W2;
+        let I3 = I_total * W3;
+
+        const WIRE_LENGTH = 12;
+        const WIRE_RADIUS = 0.3;
+        const VELOCITY_SCALAR = 1.5; // v = C * I
+        const SPAWN_RATE_SCALAR = 4.0; // R = k * I
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        scene.fog = new THREE.Fog('#f0f4f8', 20, 60);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(-8, 12, 22);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Allow slightly below ground
+        controls.minDistance = 10;
+        controls.maxDistance = 40;
+        controls.target.set(0, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -15;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        scene.add(dirLight);
+
+        const junctionLight = new THREE.PointLight(0xffffff, 1, 10);
+        junctionLight.position.set(0, 0, 0);
+        scene.add(junctionLight);
+
+        // --- Environment ---
+        const gridHelper = new THREE.GridHelper(60, 60, 0xd1d9e6, 0xe2e8f0);
+        gridHelper.position.y = -6;
+        scene.add(gridHelper);
+
+        // --- Geometry & Materials ---
+        // Junction Node
+        const nodeGeo = new THREE.SphereGeometry(1.2, 32, 32);
+        const nodeMat = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.8,
+            ior: 1.5,
+            thickness: 1.0,
+            transparent: true,
+            opacity: 1
+        });
+        const junctionNode = new THREE.Mesh(nodeGeo, nodeMat);
+        junctionNode.castShadow = true;
+        scene.add(junctionNode);
+
+        // Wire Material
+        const wireMat = new THREE.MeshStandardMaterial({
+            color: 0xCBD5E1,
+            metalness: 0.4,
+            roughness: 0.4,
+            transparent: true,
+            opacity: 0.5
+        });
+
+        // Wire Directions
+        const dirIn = new THREE.Vector3(1, 0, 0);
+        const angle = Math.PI / 6; // 30 degrees spread
+        
+        // Output directions spread in YZ plane, angled along X
+        const dirB1 = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0).normalize();
+        const dirB2 = new THREE.Vector3(Math.cos(angle), Math.sin(angle)*Math.cos(2*Math.PI/3), Math.sin(angle)*Math.sin(2*Math.PI/3)).normalize();
+        const dirB3 = new THREE.Vector3(Math.cos(angle), Math.sin(angle)*Math.cos(4*Math.PI/3), Math.sin(angle)*Math.sin(4*Math.PI/3)).normalize();
+
+        // Helper function to create cylinder between points
+        function createWire(start, end) {
+            const dist = start.distanceTo(end);
+            const geo = new THREE.CylinderGeometry(WIRE_RADIUS, WIRE_RADIUS, dist, 16);
+            const mesh = new THREE.Mesh(geo, wireMat);
+            const pos = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+            mesh.position.copy(pos);
+            mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().subVectors(end, start).normalize());
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            scene.add(mesh);
+            return mesh;
+        }
+
+        // Create Wires
+        const startIn = new THREE.Vector3(-WIRE_LENGTH, 0, 0);
+        const center = new THREE.Vector3(0, 0, 0);
+        const endB1 = dirB1.clone().multiplyScalar(WIRE_LENGTH);
+        const endB2 = dirB2.clone().multiplyScalar(WIRE_LENGTH);
+        const endB3 = dirB3.clone().multiplyScalar(WIRE_LENGTH);
+
+        createWire(startIn, center);
+        createWire(center, endB1);
+        createWire(center, endB2);
+        createWire(center, endB3);
+
+        // --- Current Vectors (Arrows) ---
+        const arrowColor = 0x06D6A0;
+        const arrowOffset = 1.5; // Distance above the wire
+        
+        function createArrow(dir, originOffset, colorHex) {
+            const origin = new THREE.Vector3().copy(originOffset);
+            return new THREE.ArrowHelper(dir, origin, 1, colorHex, 0.8, 0.4);
+        }
+
+        const arrowIn = createArrow(dirIn, new THREE.Vector3(-WIRE_LENGTH + 2, arrowOffset, 0), 0xFF3366);
+        const arrowB1 = createArrow(dirB1, dirB1.clone().multiplyScalar(2).add(new THREE.Vector3(0, arrowOffset, 0)), 0xF77F00);
+        const arrowB2 = createArrow(dirB2, dirB2.clone().multiplyScalar(2).add(new THREE.Vector3(0, arrowOffset, 0)), 0x06D6A0);
+        const arrowB3 = createArrow(dirB3, dirB3.clone().multiplyScalar(2).add(new THREE.Vector3(0, arrowOffset, 0)), 0x8338EC);
+
+        scene.add(arrowIn);
+        scene.add(arrowB1);
+        scene.add(arrowB2);
+        scene.add(arrowB3);
+
+        // --- Particle System (Charge Carriers) ---
+        const MAX_PARTICLES = 1500;
+        const particleGeo = new THREE.SphereGeometry(0.25, 16, 16);
+        const particleMat = new THREE.MeshStandardMaterial({
+            color: 0x4361EE,
+            emissive: 0x4361EE,
+            emissiveIntensity: 0.6,
+            roughness: 0.2,
+            metalness: 0.8
+        });
+        const particleMesh = new THREE.InstancedMesh(particleGeo, particleMat, MAX_PARTICLES);
+        particleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        scene.add(particleMesh);
+
+        // Particle Data Structure
+        let particles = [];
+        let spawnAccumulator = 0;
+        const dummy = new THREE.Object3D();
+
+        function spawnParticle() {
+            if (particles.length >= MAX_PARTICLES) return;
+            particles.push({
+                pos: new THREE.Vector3(-WIRE_LENGTH, 0, 0),
+                branch: 0 // 0: Input, 1: B1, 2: B2, 3: B3
+            });
+        }
+
+        // --- UI Logic & Physics Update ---
+        const sliderTotal = document.getElementById('iTotal');
+        const sliderW1 = document.getElementById('w1');
+        const sliderW2 = document.getElementById('w2');
+
+        function updatePhysics() {
+            I_total = parseFloat(sliderTotal.value);
+            let rawW1 = parseFloat(sliderW1.value);
+            let rawW2 = parseFloat(sliderW2.value);
+
+            // Enforce W1 + W2 <= 1.0
+            if (rawW1 + rawW2 > 1.0) {
+                if (this === sliderW1) {
+                    rawW2 = 1.0 - rawW1;
+                    sliderW2.value = rawW2.toFixed(2);
+                } else {
+                    rawW1 = 1.0 - rawW2;
+                    sliderW1.value = rawW1.toFixed(2);
+                }
+            }
+
+            W1 = rawW1;
+            W2 = rawW2;
+            W3 = 1.0 - W1 - W2;
+
+            I1 = I_total * W1;
+            I2 = I_total * W2;
+            I3 = I_total * W3;
+
+            // Update UI Text
+            document.getElementById('val-iTotal').innerText = I_total.toFixed(1) + ' A';
+            document.getElementById('val-w1').innerText = W1.toFixed(2);
+            document.getElementById('val-w2').innerText = W2.toFixed(2);
+            document.getElementById('val-w3').innerText = W3.toFixed(2);
+
+            document.getElementById('live-formula').innerHTML = 
+                `<span class="color-in">${I_total.toFixed(1)}A</span> = ` +
+                `<span class="color-b1">${I1.toFixed(1)}A</span> + ` +
+                `<span class="color-b2">${I2.toFixed(1)}A</span> + ` +
+                `<span class="color-b3">${I3.toFixed(1)}A</span>`;
+
+            // Update Arrow Lengths (min length 0.01 to avoid Three.js warnings)
+            const scale = 0.6;
+            arrowIn.setLength(Math.max(0.01, I_total * scale), 0.8, 0.4);
+            arrowB1.setLength(Math.max(0.01, I1 * scale), 0.8, 0.4);
+            arrowB2.setLength(Math.max(0.01, I2 * scale), 0.8, 0.4);
+            arrowB3.setLength(Math.max(0.01, I3 * scale), 0.8, 0.4);
+        }
+
+        sliderTotal.addEventListener('input', updatePhysics);
+        sliderW1.addEventListener('input', updatePhysics);
+        sliderW2.addEventListener('input', updatePhysics);
+
+        // Initial call
+        updatePhysics();
+
+        // --- 2D Label Projection ---
+        function updateLabels() {
+            const tempV = new THREE.Vector3();
+            
+            // Input
+            tempV.set(-WIRE_LENGTH/2, arrowOffset + 0.5, 0).project(camera);
+            setLabelPos('label-in', tempV, `I_in = ${I_total.toFixed(1)}A`);
+
+            // B1
+            tempV.copy(dirB1).multiplyScalar(WIRE_LENGTH/2).add(new THREE.Vector3(0, arrowOffset + 0.5, 0)).project(camera);
+            setLabelPos('label-b1', tempV, `I_1 = ${I1.toFixed(1)}A`);
+
+            // B2
+            tempV.copy(dirB2).multiplyScalar(WIRE_LENGTH/2).add(new THREE.Vector3(0, arrowOffset + 0.5, 0)).project(camera);
+            setLabelPos('label-b2', tempV, `I_2 = ${I2.toFixed(1)}A`);
+
+            // B3
+            tempV.copy(dirB3).multiplyScalar(WIRE_LENGTH/2).add(new THREE.Vector3(0, arrowOffset + 0.5, 0)).project(camera);
+            setLabelPos('label-b3', tempV, `I_3 = ${I3.toFixed(1)}A`);
+        }
+
+        function setLabelPos(id, vec, text) {
+            const el = document.getElementById(id);
+            // Check if behind camera
+            if (vec.z > 1) {
+                el.style.opacity = 0;
+                return;
+            }
+            const x = (vec.x * .5 + .5) * window.innerWidth;
+            const y = (vec.y * -.5 + .5) * window.innerHeight;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            el.style.opacity = 1;
+            el.innerText = text;
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = Math.min(clock.getDelta(), 0.1); // Cap dt to prevent huge jumps on lag
+            controls.update();
+
+            // 1. Spawn Particles (R = k * I)
+            const spawnRate = SPAWN_RATE_SCALAR * I_total;
+            spawnAccumulator += spawnRate * dt;
+            while (spawnAccumulator >= 1.0) {
+                spawnParticle();
+                spawnAccumulator -= 1.0;
+            }
+
+            // 2. Update Particles
+            let instanceCount = 0;
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                let vel = 0;
+                let dir = null;
+
+                if (p.branch === 0) {
+                    // Input Wire
+                    vel = VELOCITY_SCALAR * I_total;
+                    dir = dirIn;
+                    p.pos.addScaledVector(dir, vel * dt);
+
+                    // Reached Junction
+                    if (p.pos.x >= 0) {
+                        p.pos.set(0, 0, 0);
+                        // Probability-based branching
+                        const rand = Math.random();
+                        if (rand < W1) {
+                            p.branch = 1;
+                        } else if (rand < W1 + W2) {
+                            p.branch = 2;
+                        } else {
+                            p.branch = 3;
+                        }
+                    }
+                } else {
+                    // Output Wires
+                    if (p.branch === 1) { vel = VELOCITY_SCALAR * I1; dir = dirB1; }
+                    else if (p.branch === 2) { vel = VELOCITY_SCALAR * I2; dir = dirB2; }
+                    else if (p.branch === 3) { vel = VELOCITY_SCALAR * I3; dir = dirB3; }
+
+                    // If current is exactly 0, velocity is 0. To prevent particles getting stuck forever,
+                    // we remove them if velocity is 0.
+                    if (vel === 0) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+
+                    p.pos.addScaledVector(dir, vel * dt);
+
+                    // Reached End of Wire
+                    if (p.pos.length() > WIRE_LENGTH) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+                }
+
+                // Update InstancedMesh Matrix
+                dummy.position.copy(p.pos);
+                dummy.updateMatrix();
+                particleMesh.setMatrixAt(instanceCount, dummy.matrix);
+                instanceCount++;
+            }
+
+            particleMesh.count = instanceCount;
+            particleMesh.instanceMatrix.needsUpdate = true;
+
+            // 3. Update Labels
+            updateLabels();
+
+            // 4. Render
+            renderer.render(scene, camera);
+        }
+
+        // --- Window Resize ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start
+        animate();
+    </script>
+</body>
+</html>

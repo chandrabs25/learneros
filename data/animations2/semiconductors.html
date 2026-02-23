@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semiconductor Physics Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #1A1A1A;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            position: absolute;
+            z-index: 10;
+        }
+        #controls {
+            right: 20px;
+            top: 20px;
+            width: 320px;
+            padding: 24px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        #stats {
+            left: 20px;
+            top: 20px;
+            padding: 20px;
+            min-width: 200px;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            color: #1A1A1A;
+        }
+        .control-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+            font-weight: 500;
+        }
+        input[type=range] {
+            width: 100%;
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #ADB5BD;
+            border-radius: 2px;
+        }
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ADB5BD;
+            background: rgba(255,255,255,0.9);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            cursor: pointer;
+        }
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            color: #1A1A1A;
+            text-align: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+        }
+        .stat-label {
+            font-weight: 700;
+        }
+        .stat-val {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+        }
+        .color-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        .legend {
+            margin-top: 24px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .note {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 12px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="stats" class="glass-panel">
+        <div class="formula">n &middot; p = n<sub>i</sub><sup>2</sup></div>
+        <div class="stat-row">
+            <span class="stat-label"><span class="color-dot" style="background:#FF3366;"></span>Electrons (n):</span>
+            <span class="stat-val" id="val-n">0</span>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label"><span class="color-dot" style="background:#F77F00;"></span>Holes (p):</span>
+            <span class="stat-val" id="val-p">0</span>
+        </div>
+    </div>
+
+    <div id="controls" class="glass-panel">
+        <h2>Lattice Controls</h2>
+        
+        <div class="control-group">
+            <label>
+                Temperature (T)
+                <span class="val-display" id="disp-temp">300 K</span>
+            </label>
+            <input type="range" id="inp-temp" min="0" max="600" step="10" value="300">
+        </div>
+
+        <div class="control-group">
+            <label>Doping Type</label>
+            <select id="inp-type">
+                <option value="intrinsic">Intrinsic (Pure Si)</option>
+                <option value="n-type">n-type (Phosphorus)</option>
+                <option value="p-type">p-type (Boron)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>
+                Doping Concentration
+                <span class="val-display" id="disp-conc">0</span>
+            </label>
+            <input type="range" id="inp-conc" min="0" max="10" step="1" value="0" disabled>
+        </div>
+
+        <div class="control-group">
+            <label>
+                Electric Field (E)
+                <span class="val-display" id="disp-efield">0.0 V/cm</span>
+            </label>
+            <input type="range" id="inp-efield" min="0" max="5" step="0.1" value="0">
+        </div>
+
+        <div class="legend">
+            <strong>Legend:</strong>
+            <div class="legend-item"><span class="color-dot" style="background:#4361EE;"></span> Silicon (Si)</div>
+            <div class="legend-item"><span class="color-dot" style="background:#06D6A0;"></span> Phosphorus (n-type)</div>
+            <div class="legend-item"><span class="color-dot" style="background:#7209B7;"></span> Boron (p-type)</div>
+            <div class="legend-item"><span class="color-dot" style="background:#00D1FF;"></span> Valence Electron</div>
+            <div class="legend-item"><span class="color-dot" style="background:#FF3366;"></span> Conduction Electron</div>
+            <div class="legend-item"><span class="color-dot" style="background:#F77F00; border: 1px solid #000;"></span> Hole</div>
+        </div>
+        
+        <div class="note" id="neutrality-note" style="display:none;">
+            Note: Lattice remains electrically neutral. Dopant ions balance the excess carriers.
+        </div>
+    </div>
+
+    <script>
+        // --- Setup Three.js Scene ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        // Bright background
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(15, 12, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight1.position.set(10, 20, 10);
+        scene.add(dirLight1);
+
+        const dirLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+        dirLight2.position.set(-10, -10, -10);
+        scene.add(dirLight2);
+
+        // --- Materials & Geometries ---
+        const atomGeo = new THREE.SphereGeometry(0.7, 32, 32);
+        const shellGeo = new THREE.SphereGeometry(1.1, 32, 32);
+        const bondGeo = new THREE.CylinderGeometry(0.12, 0.12, 1, 8);
+        bondGeo.rotateX(Math.PI / 2); // Align with Z axis for easier LookAt
+        const electronGeo = new THREE.SphereGeometry(0.25, 16, 16);
+        const holeGeo = new THREE.SphereGeometry(0.8, 16, 16);
+
+        const matSi = new THREE.MeshPhysicalMaterial({ color: 0x4361EE, roughness: 0.2, metalness: 0.1, clearcoat: 0.5 });
+        const matP = new THREE.MeshPhysicalMaterial({ color: 0x06D6A0, roughness: 0.2, metalness: 0.1, clearcoat: 0.5 });
+        const matB = new THREE.MeshPhysicalMaterial({ color: 0x7209B7, roughness: 0.2, metalness: 0.1, clearcoat: 0.5 });
+        const matShell = new THREE.MeshPhysicalMaterial({ color: 0x4361EE, transparent: true, opacity: 0.1, depthWrite: false });
+        
+        const matBondIntact = new THREE.MeshBasicMaterial({ color: 0xADB5BD, transparent: true, opacity: 0.4 });
+        const matBondBroken = new THREE.MeshBasicMaterial({ color: 0xFF3366, transparent: true, opacity: 0.3 });
+        
+        const matValenceE = new THREE.MeshBasicMaterial({ color: 0x00D1FF });
+        const matFreeE = new THREE.MeshBasicMaterial({ color: 0xFF3366 });
+        const matHole = new THREE.MeshBasicMaterial({ color: 0xF77F00, wireframe: true, transparent: true, opacity: 0.8 });
+
+        // --- Data Structures ---
+        const spacing = 4.5;
+        const nodes = []; // { pos, type, mesh, shell }
+        const bonds = []; // { n1, n2, mesh, e1, e2, isBroken }
+        const freeElectrons = []; // { mesh, velocity }
+        const holes = []; // { nodeIndex, mesh }
+
+        // --- Build Lattice ---
+        const latticeGroup = new THREE.Group();
+        scene.add(latticeGroup);
+
+        // Create Nodes
+        let index = 0;
+        for (let x = -1; x <= 1; x++) {
+            for (let y = -1; y <= 1; y++) {
+                for (let z = -1; z <= 1; z++) {
+                    const pos = new THREE.Vector3(x * spacing, y * spacing, z * spacing);
+                    
+                    const mesh = new THREE.Mesh(atomGeo, matSi);
+                    mesh.position.copy(pos);
+                    latticeGroup.add(mesh);
+
+                    const shell = new THREE.Mesh(shellGeo, matShell);
+                    shell.position.copy(pos);
+                    latticeGroup.add(shell);
+
+                    nodes.push({ pos: pos, type: 'Si', mesh: mesh, shell: shell, index: index });
+                    index++;
+                }
+            }
+        }
+
+        // Create Bonds
+        for (let i = 0; i < nodes.length; i++) {
+            for (let j = i + 1; j < nodes.length; j++) {
+                const dist = nodes[i].pos.distanceTo(nodes[j].pos);
+                if (dist <= spacing + 0.1) {
+                    const mesh = new THREE.Mesh(bondGeo, matBondIntact);
+                    const midPoint = new THREE.Vector3().addVectors(nodes[i].pos, nodes[j].pos).multiplyScalar(0.5);
+                    mesh.position.copy(midPoint);
+                    mesh.scale.z = dist;
+                    mesh.lookAt(nodes[j].pos);
+                    latticeGroup.add(mesh);
+
+                    // Valence electrons
+                    const dir = new THREE.Vector3().subVectors(nodes[j].pos, nodes[i].pos).normalize();
+                    const offset = dir.clone().multiplyScalar(dist * 0.25);
+                    
+                    const e1 = new THREE.Mesh(electronGeo, matValenceE);
+                    e1.position.copy(midPoint).sub(offset);
+                    latticeGroup.add(e1);
+
+                    const e2 = new THREE.Mesh(electronGeo, matValenceE);
+                    e2.position.copy(midPoint).add(offset);
+                    latticeGroup.add(e2);
+
+                    bonds.push({ n1: i, n2: j, mesh: mesh, e1: e1, e2: e2, isBroken: false });
+                }
+            }
+        }
+
+        // Center lattice
+        latticeGroup.position.set(0, 0, 0);
+
+        // --- Particle Spawning ---
+        function spawnFreeElectron(pos) {
+            const mesh = new THREE.Mesh(electronGeo, matFreeE);
+            // Add slight random offset so they don't spawn exactly inside each other
+            mesh.position.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5, (Math.random()-0.5)*0.5));
+            latticeGroup.add(mesh);
+            freeElectrons.push({ mesh: mesh, velocity: new THREE.Vector3() });
+        }
+
+        function spawnHole(nodeIdx) {
+            const mesh = new THREE.Mesh(holeGeo, matHole);
+            mesh.position.copy(nodes[nodeIdx].pos);
+            latticeGroup.add(mesh);
+            holes.push({ nodeIndex: nodeIdx, mesh: mesh });
+        }
+
+        // --- Doping Logic ---
+        function applyDoping() {
+            // Reset
+            nodes.forEach(n => {
+                n.type = 'Si';
+                n.mesh.material = matSi;
+            });
+            bonds.forEach(b => {
+                b.isBroken = false;
+                b.mesh.material = matBondIntact;
+                b.e1.visible = true;
+                b.e2.visible = true;
+            });
+            freeElectrons.forEach(e => latticeGroup.remove(e.mesh));
+            freeElectrons.length = 0;
+            holes.forEach(h => latticeGroup.remove(h.mesh));
+            holes.length = 0;
+
+            const type = document.getElementById('inp-type').value;
+            const conc = parseInt(document.getElementById('inp-conc').value);
+            const note = document.getElementById('neutrality-note');
+
+            if (type === 'intrinsic') {
+                document.getElementById('inp-conc').disabled = true;
+                note.style.display = 'none';
+            } else {
+                document.getElementById('inp-conc').disabled = false;
+                note.style.display = 'block';
+                
+                if (conc > 0) {
+                    let indices = [];
+                    while(indices.length < conc) {
+                        let r = Math.floor(Math.random() * nodes.length);
+                        if(!indices.includes(r)) indices.push(r);
+                    }
+
+                    indices.forEach(idx => {
+                        if (type === 'n-type') {
+                            nodes[idx].type = 'P';
+                            nodes[idx].mesh.material = matP;
+                            spawnFreeElectron(nodes[idx].pos.clone());
+                        } else if (type === 'p-type') {
+                            nodes[idx].type = 'B';
+                            nodes[idx].mesh.material = matB;
+                            spawnHole(idx);
+                        }
+                    });
+                }
+            }
+        }
+
+        // --- UI Event Listeners ---
+        const uiElements = ['temp', 'type', 'conc', 'efield'];
+        uiElements.forEach(id => {
+            const el = document.getElementById(`inp-${id}`);
+            el.addEventListener('input', (e) => {
+                if(id !== 'type') {
+                    let val = e.target.value;
+                    if(id === 'temp') val += ' K';
+                    if(id === 'efield') val += ' V/cm';
+                    document.getElementById(`disp-${id}`).innerText = val;
+                }
+                if(id === 'type' || id === 'conc') {
+                    applyDoping();
+                }
+            });
+        });
+
+        // Initialize
+        applyDoping();
+
+        // --- Physics & Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            const temp = parseFloat(document.getElementById('inp-temp').value);
+            const eField = parseFloat(document.getElementById('inp-efield').value);
+
+            // 1. Thermal Generation
+            // Scale generation probability so it's 0 at 0K and noticeable at 600K
+            const genProb = Math.pow(temp / 600, 3) * 0.05 * dt * 60; 
+            
+            if (Math.random() < genProb) {
+                const intactBonds = bonds.filter(b => !b.isBroken);
+                if (intactBonds.length > 0) {
+                    const b = intactBonds[Math.floor(Math.random() * intactBonds.length)];
+                    b.isBroken = true;
+                    b.mesh.material = matBondBroken;
+                    b.e1.visible = false; // "Remove" one valence electron
+                    
+                    spawnFreeElectron(b.mesh.position.clone());
+                    spawnHole(Math.random() > 0.5 ? b.n1 : b.n2);
+                }
+            }
+
+            // 2. Recombination
+            for (let i = freeElectrons.length - 1; i >= 0; i--) {
+                for (let j = holes.length - 1; j >= 0; j--) {
+                    const e = freeElectrons[i];
+                    const h = holes[j];
+                    // Recombination radius
+                    if (e.mesh.position.distanceTo(h.mesh.position) < 1.8) {
+                        latticeGroup.remove(e.mesh);
+                        latticeGroup.remove(h.mesh);
+                        freeElectrons.splice(i, 1);
+                        holes.splice(j, 1);
+
+                        // Fix a broken bond connected to the hole
+                        const brokenBonds = bonds.filter(b => b.isBroken && (b.n1 === h.nodeIndex || b.n2 === h.nodeIndex));
+                        if (brokenBonds.length > 0) {
+                            const b = brokenBonds[0];
+                            b.isBroken = false;
+                            b.mesh.material = matBondIntact;
+                            b.e1.visible = true;
+                        }
+                        break; // Electron recombined, move to next electron
+                    }
+                }
+            }
+
+            // 3. Electron Motion (Random Walk + Drift)
+            const v_th = Math.sqrt(temp) * 0.02; // Thermal velocity magnitude
+            const v_d = eField * 0.08; // Drift velocity magnitude
+
+            freeElectrons.forEach(e => {
+                // Thermal jitter
+                e.velocity.x += (Math.random() - 0.5) * v_th;
+                e.velocity.y += (Math.random() - 0.5) * v_th;
+                e.velocity.z += (Math.random() - 0.5) * v_th;
+                
+                // Drift: Electrons move OPPOSITE to E-field. Assume E-field is along +X axis.
+                e.velocity.x -= v_d * 0.1;
+
+                // Damping to prevent infinite acceleration
+                e.velocity.multiplyScalar(0.85);
+                
+                e.mesh.position.add(e.velocity);
+
+                // Periodic Boundary Conditions (Wrap around lattice bounds roughly -7 to 7)
+                const bound = 7;
+                if(e.mesh.position.x > bound) e.mesh.position.x = -bound;
+                if(e.mesh.position.x < -bound) e.mesh.position.x = bound;
+                if(e.mesh.position.y > bound) e.mesh.position.y = -bound;
+                if(e.mesh.position.y < -bound) e.mesh.position.y = bound;
+                if(e.mesh.position.z > bound) e.mesh.position.z = -bound;
+                if(e.mesh.position.z < -bound) e.mesh.position.z = bound;
+            });
+
+            // 4. Hole Motion (Discrete Jumps)
+            const holeJumpProb = Math.sqrt(temp) * 0.01 * dt * 60;
+            const holeNodes = holes.map(h => h.nodeIndex);
+
+            holes.forEach((h, idx) => {
+                // Visual pulsing
+                const s = 1 + 0.15 * Math.sin(time * 8 + idx);
+                h.mesh.scale.set(s, s, s);
+
+                if (Math.random() < holeJumpProb) {
+                    // Find connected nodes
+                    const connectedBonds = bonds.filter(b => b.n1 === h.nodeIndex || b.n2 === h.nodeIndex);
+                    const neighbors = connectedBonds.map(b => b.n1 === h.nodeIndex ? b.n2 : b.n1);
+                    
+                    // Filter out neighbors that already have a hole
+                    const validNeighbors = neighbors.filter(n => !holeNodes.includes(n));
+
+                    if (validNeighbors.length > 0) {
+                        let target = validNeighbors[Math.floor(Math.random() * validNeighbors.length)];
+                        
+                        // Drift bias: Holes move WITH E-field (+X axis)
+                        if (eField > 0) {
+                            const dx = nodes[target].pos.x - nodes[h.nodeIndex].pos.x;
+                            // If moving against E-field, high chance to cancel jump
+                            if (dx < 0 && Math.random() > 0.15) {
+                                return; 
+                            }
+                        }
+
+                        // Execute jump
+                        h.nodeIndex = target;
+                        h.mesh.position.copy(nodes[target].pos);
+                        // Update holeNodes array for next hole's check
+                        holeNodes[idx] = target;
+                    }
+                }
+            });
+
+            // 5. Visual Polish
+            // Flicker broken bonds
+            bonds.forEach(b => {
+                if(b.isBroken) {
+                    b.mesh.material.opacity = 0.15 + 0.25 * Math.random();
+                }
+            });
+            // Jitter valence electrons slightly based on temp
+            const vJitter = Math.sqrt(temp) * 0.001;
+            bonds.forEach(b => {
+                if(!b.isBroken) {
+                    b.e1.position.add(new THREE.Vector3((Math.random()-0.5)*vJitter, (Math.random()-0.5)*vJitter, (Math.random()-0.5)*vJitter));
+                    b.e2.position.add(new THREE.Vector3((Math.random()-0.5)*vJitter, (Math.random()-0.5)*vJitter, (Math.random()-0.5)*vJitter));
+                    // Snap back towards center to prevent wandering off
+                    const midPoint = new THREE.Vector3().addVectors(nodes[b.n1].pos, nodes[b.n2].pos).multiplyScalar(0.5);
+                    b.e1.position.lerp(midPoint, 0.1);
+                    b.e2.position.lerp(midPoint, 0.1);
+                }
+            });
+
+            // Update UI Stats
+            document.getElementById('val-n').innerText = freeElectrons.length;
+            document.getElementById('val-p').innerText = holes.length;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Start Loop
+        animate();
+    </script>
+</body>
+</html>

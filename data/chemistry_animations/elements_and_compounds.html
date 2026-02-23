@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classical Redox: Oxidation via Oxygen Addition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 800px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        text {
+            user-select: none;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            fill: #333;
+        }
+
+        .subscript {
+            font-size: 0.6em;
+            baseline-shift: sub;
+        }
+
+        /* Animations */
+        .scene { animation: scene-fade 12s infinite ease-in-out; }
+        
+        /* Panel A Elements */
+        .mg1 { animation: mg1-anim 12s infinite ease-in-out; }
+        .mg2 { animation: mg2-anim 12s infinite ease-in-out; }
+        .oa1 { animation: oa1-anim 12s infinite ease-in-out; }
+        .oa2 { animation: oa2-anim 12s infinite ease-in-out; }
+        .o2-bond-a { animation: o2-bond-a-anim 12s infinite ease-in-out; }
+        .ionic-bonds { animation: ionic-bonds-anim 12s infinite ease-in-out; }
+
+        /* Panel B Elements */
+        .ob3 { animation: ob3-anim 12s infinite ease-in-out; }
+        .ob4 { animation: ob4-anim 12s infinite ease-in-out; }
+        .o2-bond-b { animation: o2-bond-b-anim 12s infinite ease-in-out; }
+        .triple-part { animation: triple-fade 12s infinite ease-in-out; }
+        .co2-bond { animation: co2-bond-fade 12s infinite ease-in-out; }
+
+        /* Labels & Paths */
+        .ox-state { animation: ox-state-fade 12s infinite ease-in-out; }
+        .bond-break-text { animation: bond-break-fade 12s infinite ease-in-out; }
+        .bond-form-text { animation: bond-form-fade 12s infinite ease-in-out; }
+        .ox-confirm { animation: ox-confirm-anim 12s infinite ease-in-out; }
+        .traj-arrow { animation: traj-anim 12s infinite ease-in-out; }
+
+        /* Keyframes */
+        @keyframes scene-fade {
+            0%, 92% { opacity: 1; }
+            95%, 98% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes mg1-anim {
+            0%, 33.33% { transform: translate(150px, 170px); }
+            58.33%, 95% { transform: translate(180px, 140px); }
+            96%, 100% { transform: translate(150px, 170px); }
+        }
+
+        @keyframes mg2-anim {
+            0%, 33.33% { transform: translate(210px, 170px); }
+            58.33%, 95% { transform: translate(240px, 200px); }
+            96%, 100% { transform: translate(210px, 170px); }
+        }
+
+        @keyframes oa1-anim {
+            0%, 16.66% { transform: translate(450px, 170px); }
+            33.33% { transform: translate(300px, 170px); }
+            58.33%, 95% { transform: translate(240px, 140px); }
+            96%, 100% { transform: translate(450px, 170px); }
+        }
+
+        @keyframes oa2-anim {
+            0%, 16.66% { transform: translate(510px, 170px); }
+            33.33% { transform: translate(360px, 170px); }
+            58.33%, 95% { transform: translate(180px, 200px); }
+            96%, 100% { transform: translate(510px, 170px); }
+        }
+
+        @keyframes o2-bond-a-anim {
+            0%, 16.66% { transform: translate(480px, 170px); opacity: 1; }
+            33.33% { transform: translate(330px, 170px); opacity: 1; }
+            40% { transform: translate(330px, 170px); opacity: 0; }
+            95% { transform: translate(330px, 170px); opacity: 0; }
+            96%, 100% { transform: translate(480px, 170px); opacity: 1; }
+        }
+
+        @keyframes ionic-bonds-anim {
+            0%, 50% { opacity: 0; }
+            58.33%, 95% { opacity: 1; }
+            96%, 100% { opacity: 0; }
+        }
+
+        @keyframes ob3-anim {
+            0%, 16.66% { transform: translate(450px, 420px); }
+            33.33% { transform: translate(300px, 420px); }
+            58.33%, 95% { transform: translate(210px, 380px); }
+            96%, 100% { transform: translate(450px, 420px); }
+        }
+
+        @keyframes ob4-anim {
+            0%, 16.66% { transform: translate(510px, 420px); }
+            33.33% { transform: translate(360px, 420px); }
+            58.33%, 95% { transform: translate(210px, 460px); }
+            96%, 100% { transform: translate(510px, 420px); }
+        }
+
+        @keyframes o2-bond-b-anim {
+            0%, 16.66% { transform: translate(480px, 420px); opacity: 1; }
+            33.33% { transform: translate(330px, 420px); opacity: 1; }
+            40% { transform: translate(330px, 420px); opacity: 0; }
+            95% { transform: translate(330px, 420px); opacity: 0; }
+            96%, 100% { transform: translate(480px, 420px); opacity: 1; }
+        }
+
+        @keyframes triple-fade {
+            0%, 33.33% { opacity: 1; }
+            58.33%, 95% { opacity: 0; }
+            96%, 100% { opacity: 1; }
+        }
+
+        @keyframes co2-bond-fade {
+            0%, 45% { opacity: 0; }
+            58.33%, 95% { opacity: 1; }
+            96%, 100% { opacity: 0; }
+        }
+
+        @keyframes ox-state-fade {
+            0%, 58.33% { opacity: 0; }
+            65%, 92% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes bond-break-fade {
+            0%, 30% { opacity: 0; }
+            35%, 45% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        @keyframes bond-form-fade {
+            0%, 50% { opacity: 0; }
+            58.33%, 75% { opacity: 1; }
+            80%, 100% { opacity: 0; }
+        }
+
+        @keyframes ox-confirm-anim {
+            0%, 70% { opacity: 0; transform: scale(0.9); transform-origin: 400px 580px; }
+            75%, 92% { opacity: 1; transform: scale(1); transform-origin: 400px 580px; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes traj-anim {
+            0%, 33.33% { opacity: 0; }
+            38%, 55% { opacity: 1; }
+            58.33%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="svg-container">
+        <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+            <title>Animated Diagram of Classical Redox Reactions</title>
+            <desc>Shows the addition of oxygen to Magnesium to form Magnesium Oxide, and to Carbon Monoxide to form Carbon Dioxide.</desc>
+            
+            <defs>
+                <!-- Atom Gradients -->
+                <radialGradient id="grad-mg" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#E8E8E8"/>
+                    <stop offset="100%" stop-color="#909090"/>
+                </radialGradient>
+                <radialGradient id="grad-o" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#FF6B6B"/>
+                    <stop offset="100%" stop-color="#CC0000"/>
+                </radialGradient>
+                <radialGradient id="grad-c" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#606060"/>
+                    <stop offset="100%" stop-color="#202020"/>
+                </radialGradient>
+                
+                <!-- Drop Shadow for Atoms -->
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.2"/>
+                </filter>
+
+                <!-- Arrowhead Markers -->
+                <marker id="arrow-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#7209B7"/>
+                </marker>
+                <marker id="arrow-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00"/>
+                </marker>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#ffffff"/>
+
+            <!-- Main Title -->
+            <text x="400" y="40" font-size="24" font-weight="700" text-anchor="middle" fill="#111">Classical Redox: Oxidation via Oxygen Addition</text>
+            <line x1="150" y1="55" x2="650" y2="55" stroke="#E0E0E0" stroke-width="2"/>
+
+            <g class="scene">
+                <!-- ========================================== -->
+                <!-- PANEL A: Element to Compound (Mg + O2)     -->
+                <!-- ========================================== -->
+                
+                <!-- Equation A -->
+                <text class="formula" x="330" y="95" font-size="20" text-anchor="end">2Mg<tspan class="subscript">s</tspan> + O<tspan class="subscript">2(g)</tspan></text>
+                <g transform="translate(350, 88)">
+                    <line x1="0" y1="0" x2="80" y2="0" stroke="#7209B7" stroke-width="3" marker-end="url(#arrow-purple)"/>
+                </g>
+                <text class="formula" x="450" y="95" font-size="20" text-anchor="start">2MgO<tspan class="subscript">s</tspan></text>
+
+                <!-- Process Labels A -->
+                <text class="bond-break-text" x="330" y="130" font-size="14" font-weight="600" fill="#FF4444" text-anchor="middle">Bond Breaking</text>
+                <text class="bond-form-text" x="210" y="100" font-size="14" font-weight="600" fill="#44CC44" text-anchor="middle">Ionic Lattice Formation</text>
+
+                <!-- Trajectory Arrows A -->
+                <path class="traj-arrow" d="M 285 160 Q 270 130 250 140" fill="none" stroke="#F77F00" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-orange)"/>
+                <path class="traj-arrow" d="M 345 180 Q 260 230 195 205" fill="none" stroke="#F77F00" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-orange)"/>
+
+                <!-- Ionic Bonds (Products A) -->
+                <g class="ionic-bonds">
+                    <line x1="180" y1="140" x2="240" y2="140" stroke="#7209B7" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+                    <line x1="180" y1="140" x2="180" y2="200" stroke="#7209B7" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+                    <line x1="240" y1="140" x2="240" y2="200" stroke="#7209B7" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+                    <line x1="180" y1="200" x2="240" y2="200" stroke="#7209B7" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>
+                </g>
+
+                <!-- Atoms A -->
+                <g class="mg1" filter="url(#shadow)">
+                    <circle r="22" fill="url(#grad-mg)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#222" text-anchor="middle">Mg</text>
+                    <text class="ox-state" y="-28" font-size="14" font-weight="700" fill="#7209B7" text-anchor="middle">+2</text>
+                </g>
+                <g class="mg2" filter="url(#shadow)">
+                    <circle r="22" fill="url(#grad-mg)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#222" text-anchor="middle">Mg</text>
+                    <text class="ox-state" y="-28" font-size="14" font-weight="700" fill="#7209B7" text-anchor="middle">+2</text>
+                </g>
+                
+                <g class="o2-bond-a">
+                    <line x1="-18" y1="-4" x2="18" y2="-4" stroke="#555" stroke-width="4"/>
+                    <line x1="-18" y1="4" x2="18" y2="4" stroke="#555" stroke-width="4"/>
+                </g>
+
+                <g class="oa1" filter="url(#shadow)">
+                    <circle r="18" fill="url(#grad-o)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#fff" text-anchor="middle">O</text>
+                    <text class="ox-state" y="-24" font-size="14" font-weight="700" fill="#7209B7" text-anchor="middle">-2</text>
+                </g>
+                <g class="oa2" filter="url(#shadow)">
+                    <circle r="18" fill="url(#grad-o)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#fff" text-anchor="middle">O</text>
+                    <text class="ox-state" y="-24" font-size="14" font-weight="700" fill="#7209B7" text-anchor="middle">-2</text>
+                </g>
+
+                <!-- Divider -->
+                <line x1="100" y1="260" x2="700" y2="260" stroke="#E0E0E0" stroke-width="1" stroke-dasharray="8,4"/>
+
+                <!-- ========================================== -->
+                <!-- PANEL B: Compound to Compound (CO + O2)    -->
+                <!-- ========================================== -->
+                
+                <!-- Equation B -->
+                <text class="formula" x="330" y="315" font-size="20" text-anchor="end">2CO<tspan class="subscript">g</tspan> + O<tspan class="subscript">2(g)</tspan></text>
+                <g transform="translate(350, 308)">
+                    <line x1="0" y1="0" x2="80" y2="0" stroke="#7209B7" stroke-width="3" marker-end="url(#arrow-purple)"/>
+                </g>
+                <text class="formula" x="450" y="315" font-size="20" text-anchor="start">2CO<tspan class="subscript">2(g)</tspan></text>
+
+                <!-- Process Labels B -->
+                <text class="bond-break-text" x="330" y="380" font-size="14" font-weight="600" fill="#FF4444" text-anchor="middle">Bond Breaking</text>
+                <text class="bond-form-text" x="210" y="340" font-size="14" font-weight="600" fill="#44CC44" text-anchor="middle">New Double Bonds</text>
+
+                <!-- Trajectory Arrows B -->
+                <path class="traj-arrow" d="M 285 410 Q 250 370 225 380" fill="none" stroke="#F77F00" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-orange)"/>
+                <path class="traj-arrow" d="M 345 430 Q 280 490 225 460" fill="none" stroke="#F77F00" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-orange)"/>
+
+                <!-- Static CO Bonds -->
+                <g>
+                    <line x1="110" y1="380" x2="130" y2="380" stroke="#333" stroke-width="4"/>
+                    <line x1="110" y1="372" x2="130" y2="372" stroke="#333" stroke-width="4"/>
+                    <line class="triple-part" x1="110" y1="388" x2="130" y2="388" stroke="#333" stroke-width="4"/>
+                </g>
+                <g>
+                    <line x1="110" y1="460" x2="130" y2="460" stroke="#333" stroke-width="4"/>
+                    <line x1="110" y1="452" x2="130" y2="452" stroke="#333" stroke-width="4"/>
+                    <line class="triple-part" x1="110" y1="468" x2="130" y2="468" stroke="#333" stroke-width="4"/>
+                </g>
+
+                <!-- New CO2 Bonds -->
+                <g class="co2-bond">
+                    <line x1="170" y1="376" x2="190" y2="376" stroke="#333" stroke-width="4"/>
+                    <line x1="170" y1="384" x2="190" y2="384" stroke="#333" stroke-width="4"/>
+                </g>
+                <g class="co2-bond">
+                    <line x1="170" y1="456" x2="190" y2="456" stroke="#333" stroke-width="4"/>
+                    <line x1="170" y1="464" x2="190" y2="464" stroke="#333" stroke-width="4"/>
+                </g>
+
+                <!-- Atoms B (Static Reactants) -->
+                <g transform="translate(150, 380)" filter="url(#shadow)">
+                    <circle r="20" fill="url(#grad-c)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#fff" text-anchor="middle">C</text>
+                </g>
+                <g transform="translate(90, 380)" filter="url(#shadow)">
+                    <circle r="18" fill="url(#grad-o)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#fff" text-anchor="middle">O</text>
+                </g>
+                <g transform="translate(150, 460)" filter="url(#shadow)">
+                    <circle r="20" fill="url(#grad-c)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#fff" text-anchor="middle">C</text>
+                </g>
+                <g transform="translate(90, 460)" filter="url(#shadow)">
+                    <circle r="18" fill="url(#grad-o)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#fff" text-anchor="middle">O</text>
+                </g>
+
+                <!-- Atoms B (Moving O2) -->
+                <g class="o2-bond-b">
+                    <line x1="-18" y1="-4" x2="18" y2="-4" stroke="#555" stroke-width="4"/>
+                    <line x1="-18" y1="4" x2="18" y2="4" stroke="#555" stroke-width="4"/>
+                </g>
+
+                <g class="ob3" filter="url(#shadow)">
+                    <circle r="18" fill="url(#grad-o)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#fff" text-anchor="middle">O</text>
+                </g>
+                <g class="ob4" filter="url(#shadow)">
+                    <circle r="18" fill="url(#grad-o)"/>
+                    <text y="5" font-size="14" font-weight="600" fill="#fff" text-anchor="middle">O</text>
+                </g>
+
+                <!-- Final Confirmation Text -->
+                <text class="ox-confirm" x="400" y="580" font-size="20" font-weight="700" fill="#F77F00" text-anchor="middle">Oxidation Confirmed: Addition of Oxygen</text>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(180, 535)">
+                <rect x="-10" y="-15" width="440" height="30" rx="15" fill="#f8f9fa" stroke="#E0E0E0" stroke-width="1"/>
+                
+                <circle cx="15" cy="0" r="8" fill="url(#grad-mg)"/>
+                <text x="30" y="5" font-size="13" font-weight="600" fill="#444">Magnesium</text>
+                
+                <circle cx="125" cy="0" r="8" fill="url(#grad-c)"/>
+                <text x="140" y="5" font-size="13" font-weight="600" fill="#444">Carbon</text>
+                
+                <circle cx="215" cy="0" r="8" fill="url(#grad-o)"/>
+                <text x="230" y="5" font-size="13" font-weight="600" fill="#444">Oxygen</text>
+                
+                <line x1="305" y1="0" x2="335" y2="0" stroke="#F77F00" stroke-width="2" stroke-dasharray="4,2" marker-end="url(#arrow-orange)"/>
+                <text x="350" y="5" font-size="13" font-weight="600" fill="#444">O Path</text>
+            </g>
+
+        </svg>
+    </div>
+</body>
+</html>

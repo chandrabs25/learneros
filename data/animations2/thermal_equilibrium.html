@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thermal Equilibrium Interactive Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent-red: #FF3366;
+            --accent-blue: #4361EE;
+            --accent-green: #06D6A0;
+            --accent-purple: #7209B7;
+            --border-color: rgba(255, 255, 255, 0.6);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            width: 75%;
+            height: 100%;
+            position: relative;
+        }
+
+        #ui-container {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid var(--border-color);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        p.subtitle {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: 0 0 24px 0;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .control-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .val-red { color: var(--accent-red); }
+        .val-blue { color: var(--accent-blue); }
+        .val-green { color: #04a87d; }
+        .val-purple { color: var(--accent-purple); }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #ffffff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid var(--text-main);
+        }
+
+        #slider-tempA::-webkit-slider-thumb { border-color: var(--accent-red); }
+        #slider-tempB::-webkit-slider-thumb { border-color: var(--accent-blue); }
+        #slider-k::-webkit-slider-thumb { border-color: var(--accent-green); }
+        #slider-n::-webkit-slider-thumb { border-color: var(--accent-purple); }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+            padding-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        #btn-play {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        #btn-play:hover {
+            background: #05b586;
+            transform: translateY(-2px);
+        }
+
+        #btn-reset {
+            background: white;
+            color: var(--text-main);
+            border: 1px solid #cbd5e1;
+        }
+
+        #btn-reset:hover {
+            background: #f8fafc;
+            transform: translateY(-2px);
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            pointer-events: none;
+            z-index: 5;
+            min-width: 250px;
+        }
+
+        #formula-card h2 {
+            margin: 0 0 12px 0;
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .formula-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            font-style: italic;
+            border-left: 3px solid var(--accent-purple);
+            padding-left: 10px;
+        }
+
+        .live-data-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .live-data-value {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-purple);
+        }
+
+        .floating-label {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            pointer-events: none;
+            border: 1px solid var(--border-color);
+            z-index: 5;
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        #label-A { color: var(--accent-red); }
+        #label-B { color: var(--accent-blue); }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <h2>Thermodynamics</h2>
+            <div class="formula-text">
+                "If T<sub>A</sub> = T<sub>C</sub> and T<sub>B</sub> = T<sub>C</sub>,<br>then T<sub>A</sub> = T<sub>B</sub>."<br>
+                (Zeroth Law)
+            </div>
+            <div class="live-data-row">
+                <span>ΔT = |T<sub>A</sub> - T<sub>B</sub>|</span>
+                <span class="live-data-value" id="val-deltaT">600.0 K</span>
+            </div>
+            <div class="live-data-row">
+                <span>T<sub>eq</sub> (Target)</span>
+                <span class="live-data-value" id="val-teq">500.0 K</span>
+            </div>
+        </div>
+        <div id="label-A" class="floating-label">System A: 800.0 K</div>
+        <div id="label-B" class="floating-label">System B: 200.0 K</div>
+    </div>
+
+    <div id="ui-container">
+        <h1>Thermal Equilibrium</h1>
+        <p class="subtitle">Interactive Kinetic Theory Simulation</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Initial Temp A</span>
+                <span class="control-value val-red" id="disp-tempA">800 K</span>
+            </div>
+            <input type="range" id="slider-tempA" min="100" max="1000" step="10" value="800">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Initial Temp B</span>
+                <span class="control-value val-blue" id="disp-tempB">200 K</span>
+            </div>
+            <input type="range" id="slider-tempB" min="100" max="1000" step="10" value="200">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Thermal Conductivity (k)</span>
+                <span class="control-value val-green" id="disp-k">0.20</span>
+            </div>
+            <input type="range" id="slider-k" min="0" max="1" step="0.01" value="0.2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span class="control-label">Particle Count (per side)</span>
+                <span class="control-value val-purple" id="disp-n">100</span>
+            </div>
+            <input type="range" id="slider-n" min="20" max="200" step="10" value="100">
+        </div>
+
+        <div class="btn-group">
+            <button id="btn-reset">Reset State</button>
+            <button id="btn-play">Play Simulation</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const config = {
+            tempA_init: 800,
+            tempB_init: 200,
+            k_factor: 0.2,
+            particleN: 100,
+            maxParticles: 200,
+            boxSize: 10,
+            particleRadius: 0.2,
+            baseSpeed: 0.15,
+            refTemp: 300
+        };
+
+        const state = {
+            tempA: config.tempA_init,
+            tempB: config.tempB_init,
+            isRunning: false
+        };
+
+        // Colors
+        const colorHot = new THREE.Color(0xFF3366);
+        const colorCold = new THREE.Color(0x4361EE);
+        const colorMid = new THREE.Color(0x7209B7);
+
+        // --- DOM Elements ---
+        const container = document.getElementById('canvas-container');
+        const labelA = document.getElementById('label-A');
+        const labelB = document.getElementById('label-B');
+        const valDeltaT = document.getElementById('val-deltaT');
+        const valTeq = document.getElementById('val-teq');
+        
+        const sliderTempA = document.getElementById('slider-tempA');
+        const sliderTempB = document.getElementById('slider-tempB');
+        const sliderK = document.getElementById('slider-k');
+        const sliderN = document.getElementById('slider-n');
+        
+        const dispTempA = document.getElementById('disp-tempA');
+        const dispTempB = document.getElementById('disp-tempB');
+        const dispK = document.getElementById('disp-k');
+        const dispN = document.getElementById('disp-n');
+        
+        const btnPlay = document.getElementById('btn-play');
+        const btnReset = document.getElementById('btn-reset');
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 5, 28);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 50;
+        controls.minDistance = 10;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Scene Objects ---
+        
+        // Chambers (Wireframes)
+        const boxGeo = new THREE.BoxGeometry(config.boxSize, config.boxSize, config.boxSize);
+        const edgesGeo = new THREE.EdgesGeometry(boxGeo);
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x94a3b8, linewidth: 2 });
+        
+        const chamberA = new THREE.LineSegments(edgesGeo, lineMat);
+        chamberA.position.set(-config.boxSize/2, 0, 0);
+        scene.add(chamberA);
+
+        const chamberB = new THREE.LineSegments(edgesGeo, lineMat);
+        chamberB.position.set(config.boxSize/2, 0, 0);
+        scene.add(chamberB);
+
+        // Diathermic Wall
+        const wallGeo = new THREE.PlaneGeometry(config.boxSize, config.boxSize);
+        const wallMat = new THREE.MeshPhysicalMaterial({
+            color: 0x06D6A0,
+            transparent: true,
+            opacity: 0.25,
+            side: THREE.DoubleSide,
+            emissive: 0x06D6A0,
+            emissiveIntensity: 0.0,
+            roughness: 0.2,
+            metalness: 0.1
+        });
+        const wall = new THREE.Mesh(wallGeo, wallMat);
+        wall.rotation.y = Math.PI / 2;
+        scene.add(wall);
+
+        // Particles (InstancedMesh)
+        const sphereGeo = new THREE.SphereGeometry(config.particleRadius, 16, 16);
+        const sphereMat = new THREE.MeshPhongMaterial({ color: 0xffffff, shininess: 80 });
+        
+        const particlesA = new THREE.InstancedMesh(sphereGeo, sphereMat, config.maxParticles);
+        const particlesB = new THREE.InstancedMesh(sphereGeo, sphereMat, config.maxParticles);
+        
+        particlesA.count = config.particleN;
+        particlesB.count = config.particleN;
+        
+        scene.add(particlesA);
+        scene.add(particlesB);
+
+        // Particle Data Arrays
+        const posA = new Float32Array(config.maxParticles * 3);
+        const dirA = new Float32Array(config.maxParticles * 3);
+        const posB = new Float32Array(config.maxParticles * 3);
+        const dirB = new Float32Array(config.maxParticles * 3);
+
+        const dummy = new THREE.Object3D();
+        const tempColor = new THREE.Color();
+
+        function initParticles() {
+            const halfBox = config.boxSize / 2;
+            const r = config.particleRadius;
+            
+            for (let i = 0; i < config.maxParticles; i++) {
+                // System A (Left: x from -10 to 0)
+                posA[i*3]     = -config.boxSize + r + Math.random() * (config.boxSize - 2*r);
+                posA[i*3 + 1] = -halfBox + r + Math.random() * (config.boxSize - 2*r);
+                posA[i*3 + 2] = -halfBox + r + Math.random() * (config.boxSize - 2*r);
+                
+                // System B (Right: x from 0 to 10)
+                posB[i*3]     = r + Math.random() * (config.boxSize - 2*r);
+                posB[i*3 + 1] = -halfBox + r + Math.random() * (config.boxSize - 2*r);
+                posB[i*3 + 2] = -halfBox + r + Math.random() * (config.boxSize - 2*r);
+
+                // Random Directions
+                randomizeDirection(dirA, i);
+                randomizeDirection(dirB, i);
+            }
+            updateParticleMatrices();
+        }
+
+        function randomizeDirection(dirArray, index) {
+            const theta = Math.random() * 2 * Math.PI;
+            const phi = Math.acos(2 * Math.random() - 1);
+            dirArray[index*3]     = Math.sin(phi) * Math.cos(theta);
+            dirArray[index*3 + 1] = Math.sin(phi) * Math.sin(theta);
+            dirArray[index*3 + 2] = Math.cos(phi);
+        }
+
+        function updateParticleMatrices() {
+            for (let i = 0; i < config.particleN; i++) {
+                dummy.position.set(posA[i*3], posA[i*3+1], posA[i*3+2]);
+                dummy.updateMatrix();
+                particlesA.setMatrixAt(i, dummy.matrix);
+
+                dummy.position.set(posB[i*3], posB[i*3+1], posB[i*3+2]);
+                dummy.updateMatrix();
+                particlesB.setMatrixAt(i, dummy.matrix);
+            }
+            particlesA.instanceMatrix.needsUpdate = true;
+            particlesB.instanceMatrix.needsUpdate = true;
+        }
+
+        function getColorForTemp(temp) {
+            const t = Math.max(0, Math.min(1, (temp - 100) / 900));
+            return tempColor.lerpColors(colorCold, colorHot, t);
+        }
+
+        function updateParticleColors() {
+            const cA = getColorForTemp(state.tempA);
+            for (let i = 0; i < config.particleN; i++) particlesA.setColorAt(i, cA);
+            particlesA.instanceColor.needsUpdate = true;
+
+            const cB = getColorForTemp(state.tempB);
+            for (let i = 0; i < config.particleN; i++) particlesB.setColorAt(i, cB);
+            particlesB.instanceColor.needsUpdate = true;
+        }
+
+        // --- Physics & Animation ---
+        let lastTime = performance.now();
+
+        function updatePhysics(dt) {
+            // 1. Macroscopic Heat Transfer (Newton's Law of Cooling)
+            if (state.isRunning && config.k_factor > 0) {
+                const deltaT = state.tempA - state.tempB;
+                // Scale transfer rate for visual pacing
+                const transferRate = config.k_factor * 0.5; 
+                
+                state.tempA -= transferRate * deltaT * dt;
+                state.tempB += transferRate * deltaT * dt;
+
+                // Wall visual feedback
+                const pulse = Math.sin(Date.now() * 0.005) * 0.5 + 0.5;
+                wallMat.emissiveIntensity = (Math.abs(deltaT) / 900) * config.k_factor * 2.0 * pulse;
+            } else {
+                wallMat.emissiveIntensity = 0;
+            }
+
+            // 2. Microscopic Velocity Scaling (v_rms ~ sqrt(T))
+            const speedA = config.baseSpeed * Math.sqrt(state.tempA / config.refTemp) * (dt / 0.016);
+            const speedB = config.baseSpeed * Math.sqrt(state.tempB / config.refTemp) * (dt / 0.016);
+
+            const halfBox = config.boxSize / 2;
+            const r = config.particleRadius;
+
+            // Update Positions & Handle Collisions
+            for (let i = 0; i < config.particleN; i++) {
+                // System A
+                posA[i*3]   += dirA[i*3] * speedA;
+                posA[i*3+1] += dirA[i*3+1] * speedA;
+                posA[i*3+2] += dirA[i*3+2] * speedA;
+
+                if (posA[i*3] < -config.boxSize + r) { posA[i*3] = -config.boxSize + r; dirA[i*3] *= -1; }
+                if (posA[i*3] > -r)                  { posA[i*3] = -r;                  dirA[i*3] *= -1; }
+                if (posA[i*3+1] < -halfBox + r)      { posA[i*3+1] = -halfBox + r;      dirA[i*3+1] *= -1; }
+                if (posA[i*3+1] > halfBox - r)       { posA[i*3+1] = halfBox - r;       dirA[i*3+1] *= -1; }
+                if (posA[i*3+2] < -halfBox + r)      { posA[i*3+2] = -halfBox + r;      dirA[i*3+2] *= -1; }
+                if (posA[i*3+2] > halfBox - r)       { posA[i*3+2] = halfBox - r;       dirA[i*3+2] *= -1; }
+
+                // System B
+                posB[i*3]   += dirB[i*3] * speedB;
+                posB[i*3+1] += dirB[i*3+1] * speedB;
+                posB[i*3+2] += dirB[i*3+2] * speedB;
+
+                if (posB[i*3] < r)                   { posB[i*3] = r;                   dirB[i*3] *= -1; }
+                if (posB[i*3] > config.boxSize - r)  { posB[i*3] = config.boxSize - r;  dirB[i*3] *= -1; }
+                if (posB[i*3+1] < -halfBox + r)      { posB[i*3+1] = -halfBox + r;      dirB[i*3+1] *= -1; }
+                if (posB[i*3+1] > halfBox - r)       { posB[i*3+1] = halfBox - r;       dirB[i*3+1] *= -1; }
+                if (posB[i*3+2] < -halfBox + r)      { posB[i*3+2] = -halfBox + r;      dirB[i*3+2] *= -1; }
+                if (posB[i*3+2] > halfBox - r)       { posB[i*3+2] = halfBox - r;       dirB[i*3+2] *= -1; }
+            }
+
+            updateParticleMatrices();
+            updateParticleColors();
+        }
+
+        function updateUI() {
+            // Update Floating Labels
+            const vecA = new THREE.Vector3(-config.boxSize/2, config.boxSize/2 + 1, 0).project(camera);
+            const vecB = new THREE.Vector3(config.boxSize/2, config.boxSize/2 + 1, 0).project(camera);
+
+            const xA = (vecA.x * .5 + .5) * container.clientWidth;
+            const yA = (vecA.y * -.5 + .5) * container.clientHeight;
+            const xB = (vecB.x * .5 + .5) * container.clientWidth;
+            const yB = (vecB.y * -.5 + .5) * container.clientHeight;
+
+            labelA.style.left = `${xA}px`;
+            labelA.style.top = `${yA}px`;
+            labelA.innerText = `System A: ${state.tempA.toFixed(1)} K`;
+            
+            // Dynamic color for labels based on temp
+            const cA = getColorForTemp(state.tempA);
+            labelA.style.color = `rgb(${cA.r*255}, ${cA.g*255}, ${cA.b*255})`;
+
+            labelB.style.left = `${xB}px`;
+            labelB.style.top = `${yB}px`;
+            labelB.innerText = `System B: ${state.tempB.toFixed(1)} K`;
+            
+            const cB = getColorForTemp(state.tempB);
+            labelB.style.color = `rgb(${cB.r*255}, ${cB.g*255}, ${cB.b*255})`;
+
+            // Update Formula Card
+            const deltaT = Math.abs(state.tempA - state.tempB);
+            const tEq = (config.tempA_init + config.tempB_init) / 2;
+            
+            valDeltaT.innerText = `${deltaT.toFixed(1)} K`;
+            valTeq.innerText = `${tEq.toFixed(1)} K`;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const currentTime = performance.now();
+            // Cap dt at 0.05s to prevent huge jumps if tab is inactive
+            const dt = Math.min((currentTime - lastTime) / 1000, 0.05);
+            lastTime = currentTime;
+
+            controls.update();
+            updatePhysics(dt);
+            updateUI();
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Interactions ---
+        function resetSimulation() {
+            state.tempA = config.tempA_init;
+            state.tempB = config.tempB_init;
+            state.isRunning = false;
+            btnPlay.innerText = "Play Simulation";
+            btnPlay.style.background = "var(--accent-green)";
+            initParticles();
+            updateParticleColors();
+            wallMat.emissiveIntensity = 0;
+        }
+
+        sliderTempA.addEventListener('input', (e) => {
+            config.tempA_init = parseFloat(e.target.value);
+            dispTempA.innerText = `${config.tempA_init} K`;
+            resetSimulation();
+        });
+
+        sliderTempB.addEventListener('input', (e) => {
+            config.tempB_init = parseFloat(e.target.value);
+            dispTempB.innerText = `${config.tempB_init} K`;
+            resetSimulation();
+        });
+
+        sliderK.addEventListener('input', (e) => {
+            config.k_factor = parseFloat(e.target.value);
+            dispK.innerText = config.k_factor.toFixed(2);
+        });
+
+        sliderN.addEventListener('input', (e) => {
+            config.particleN = parseInt(e.target.value);
+            dispN.innerText = config.particleN;
+            particlesA.count = config.particleN;
+            particlesB.count = config.particleN;
+            // Re-randomize to ensure new particles are placed correctly if increased
+            initParticles(); 
+        });
+
+        btnPlay.addEventListener('click', () => {
+            state.isRunning = !state.isRunning;
+            if (state.isRunning) {
+                btnPlay.innerText = "Pause Simulation";
+                btnPlay.style.background = "#f59e0b"; // Warning/Pause color
+            } else {
+                btnPlay.innerText = "Play Simulation";
+                btnPlay.style.background = "var(--accent-green)";
+            }
+        });
+
+        btnReset.addEventListener('click', resetSimulation);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Initialize
+        initParticles();
+        animate();
+
+    </script>
+</body>
+</html>

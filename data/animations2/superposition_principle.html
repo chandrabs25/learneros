@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Superposition Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2d3748;
+            --text-muted: #718096;
+            --red: #FF3366;
+            --blue: #4361EE;
+            --purple: #7209B7;
+            --orange: #F77F00;
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Base */
+        .glass {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow);
+            border-radius: 16px;
+        }
+
+        /* Control Panel */
+        #control-panel {
+            position: absolute;
+            top: 20px; right: 20px;
+            width: 25%; min-width: 300px; max-width: 400px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            z-index: 10;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        h1 { font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; }
+        p.subtitle { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; }
+
+        /* Mode Toggle */
+        .toggle-container {
+            display: flex;
+            background: rgba(0,0,0,0.05);
+            border-radius: 8px;
+            padding: 4px;
+            margin-bottom: 10px;
+        }
+        .toggle-btn {
+            flex: 1;
+            padding: 8px 0;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .toggle-btn.active {
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            color: var(--purple);
+        }
+
+        /* Controls */
+        .control-group { display: none; flex-direction: column; gap: 16px; }
+        .control-group.active { display: flex; }
+        
+        .slider-container { display: flex; flex-direction: column; gap: 8px; }
+        .slider-header { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; font-weight: 600; }
+        .slider-val { font-family: 'Roboto Mono', monospace; font-size: 0.85rem; color: var(--purple); background: rgba(114, 9, 183, 0.1); padding: 2px 6px; border-radius: 4px; }
+        
+        input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
+            background: var(--purple); cursor: pointer; margin-top: -6px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; cursor: pointer; background: #cbd5e0; border-radius: 2px;
+        }
+        input[type=range]:focus { outline: none; }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px; left: 20px;
+            padding: 20px;
+            z-index: 10;
+            min-width: 250px;
+        }
+        .math-title { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 8px; font-weight: 600;}
+        .math-eq { font-family: 'Roboto Mono', monospace; font-size: 1.1rem; margin-bottom: 12px; }
+        .math-live { font-family: 'Roboto Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--purple); }
+        .math-live span { font-size: 1rem; font-weight: 400; color: var(--text-main); }
+
+        /* 3D Labels */
+        .label-3d {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 5;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .label-red { color: var(--red); border: 1px solid var(--red); }
+        .label-blue { color: var(--blue); border: 1px solid var(--blue); }
+        .label-test { color: var(--text-main); border: 1px solid var(--text-muted); font-size: 0.75rem;}
+
+        /* Legend */
+        .legend { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; }
+        .legend-item { display: flex; align-items: center; gap: 8px; }
+        .color-box { width: 12px; height: 12px; border-radius: 3px; }
+
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass">
+        <div id="math-wave" style="display: block;">
+            <div class="math-title">Superposition Equation</div>
+            <div class="math-eq">y<sub>res</sub> = y<sub>1</sub> + y<sub>2</sub></div>
+            <div class="math-title" style="margin-top: 15px;">Beat Frequency</div>
+            <div class="math-live" id="live-beat">0.5 <span>Hz</span></div>
+        </div>
+        <div id="math-field" style="display: none;">
+            <div class="math-title">Net Electric Field</div>
+            <div class="math-eq">E&#8407;<sub>net</sub> = E&#8407;<sub>1</sub> + E&#8407;<sub>2</sub></div>
+            <div class="math-title" style="margin-top: 15px;">Magnitude at Test Point</div>
+            <div class="math-live" id="live-field">0.00 <span>N/C</span></div>
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass">
+        <div>
+            <h1>Superposition Lab</h1>
+            <p class="subtitle">Interactive Physics Simulation</p>
+        </div>
+
+        <div class="toggle-container">
+            <div class="toggle-btn active" id="btn-wave" onclick="setMode('wave')">Waves & Beats</div>
+            <div class="toggle-btn" id="btn-field" onclick="setMode('field')">Electric Fields</div>
+        </div>
+
+        <!-- Wave Controls -->
+        <div id="controls-wave" class="control-group active">
+            <div class="slider-container">
+                <div class="slider-header"><span>Amplitude (A)</span> <span class="slider-val" id="val-amp">1.0 m</span></div>
+                <input type="range" id="sl-amp" min="0.1" max="2.0" step="0.1" value="1.0">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><span>Frequency 1 (f₁)</span> <span class="slider-val" id="val-f1" style="color: var(--red)">5.0 Hz</span></div>
+                <input type="range" id="sl-f1" min="0.5" max="10.0" step="0.1" value="5.0">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><span>Frequency 2 (f₂)</span> <span class="slider-val" id="val-f2" style="color: var(--blue)">5.5 Hz</span></div>
+                <input type="range" id="sl-f2" min="0.5" max="10.0" step="0.1" value="5.5">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><span>Phase Shift (φ)</span> <span class="slider-val" id="val-phi">0.0 rad</span></div>
+                <input type="range" id="sl-phi" min="0" max="6.28" step="0.1" value="0">
+            </div>
+            <div class="legend">
+                <div class="legend-item"><div class="color-box" style="background: var(--red)"></div> Wave 1 (y₁)</div>
+                <div class="legend-item"><div class="color-box" style="background: var(--blue)"></div> Wave 2 (y₂)</div>
+                <div class="legend-item"><div class="color-box" style="background: var(--purple)"></div> Resultant (y₁ + y₂)</div>
+                <div class="legend-item"><div class="color-box" style="border: 2px dashed var(--orange); background: transparent; height: 0px; width: 12px;"></div> Beat Envelope</div>
+            </div>
+        </div>
+
+        <!-- Field Controls -->
+        <div id="controls-field" class="control-group">
+            <div class="slider-container">
+                <div class="slider-header"><span>Charge 1 (q₁)</span> <span class="slider-val" id="val-q1" style="color: var(--red)">+2 µC</span></div>
+                <input type="range" id="sl-q1" min="-5" max="5" step="1" value="2">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><span>Charge 2 (q₂)</span> <span class="slider-val" id="val-q2" style="color: var(--blue)">-2 µC</span></div>
+                <input type="range" id="sl-q2" min="-5" max="5" step="1" value="-2">
+            </div>
+            <div class="slider-container">
+                <div class="slider-header"><span>Separation (d)</span> <span class="slider-val" id="val-d">4.0 m</span></div>
+                <input type="range" id="sl-d" min="1" max="10" step="0.5" value="4">
+            </div>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 10px;">* Drag the white test point to explore the vector field.</p>
+            <div class="legend">
+                <div class="legend-item"><div class="color-box" style="background: var(--red)"></div> E-Field from q₁</div>
+                <div class="legend-item"><div class="color-box" style="background: var(--blue)"></div> E-Field from q₂</div>
+                <div class="legend-item"><div class="color-box" style="background: var(--purple)"></div> Net E-Field</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D Labels Container -->
+    <div id="lbl-q1" class="label-3d label-red">+2 µC</div>
+    <div id="lbl-q2" class="label-3d label-blue">-2 µC</div>
+    <div id="lbl-test" class="label-3d label-test">Test Point</div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Colors ---
+        const C_RED = 0xFF3366;
+        const C_BLUE = 0x4361EE;
+        const C_PURPLE = 0x7209B7;
+        const C_ORANGE = 0xF77F00;
+        const C_BG = 0xf0f4f8;
+
+        // --- State ---
+        let currentMode = 'wave'; // 'wave' or 'field'
+        let time = 0;
+        
+        // Wave Params
+        let w_A = 1.0, w_f1 = 5.0, w_f2 = 5.5, w_phi = 0.0;
+        const w_k = 1.0; // Constant wave number
+        
+        // Field Params
+        let f_q1 = 2, f_q2 = -2, f_d = 4.0;
+        const k_e_visual = 10; // Visual scaling constant
+        const k_e_real = 8.99e9; // Real physics constant
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(C_BG);
+        scene.fog = new THREE.Fog(C_BG, 15, 40);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 15);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        dirLight.position.set(5, 10, 5);
+        scene.add(dirLight);
+
+        // Grid
+        const grid = new THREE.GridHelper(30, 30, 0xd1d9e6, 0xe2e8f0);
+        grid.position.y = -3;
+        scene.add(grid);
+
+        // Groups
+        const waveGroup = new THREE.Group();
+        const fieldGroup = new THREE.Group();
+        scene.add(waveGroup);
+        scene.add(fieldGroup);
+
+        // --- Mode A: Waves Setup ---
+        const numPoints = 500;
+        const xMin = -10, xMax = 10;
+        
+        function createWaveLine(color, thickness = 1) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(numPoints * 3);
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            // Using LineBasicMaterial. Note: WebGL linewidth is often 1px max, 
+            // but we use color intensity to differentiate.
+            const material = new THREE.LineBasicMaterial({ color: color, linewidth: thickness });
+            return new THREE.Line(geometry, material);
+        }
+
+        const line1 = createWaveLine(C_RED);
+        const line2 = createWaveLine(C_BLUE);
+        const lineRes = createWaveLine(C_PURPLE, 3);
+        
+        // Envelope lines (dashed)
+        const envMat = new THREE.LineDashedMaterial({ color: C_ORANGE, dashSize: 0.2, gapSize: 0.2 });
+        const envGeoTop = new THREE.BufferGeometry();
+        const envGeoBot = new THREE.BufferGeometry();
+        envGeoTop.setAttribute('position', new THREE.BufferAttribute(new Float32Array(numPoints * 3), 3));
+        envGeoBot.setAttribute('position', new THREE.BufferAttribute(new Float32Array(numPoints * 3), 3));
+        const envTop = new THREE.Line(envGeoTop, envMat);
+        const envBot = new THREE.Line(envGeoBot, envMat);
+
+        waveGroup.add(line1);
+        waveGroup.add(line2);
+        waveGroup.add(lineRes);
+        waveGroup.add(envTop);
+        waveGroup.add(envBot);
+
+        // --- Mode B: Electric Fields Setup ---
+        const sphereGeo = new THREE.SphereGeometry(0.4, 32, 32);
+        const matQ1 = new THREE.MeshStandardMaterial({ color: C_RED, roughness: 0.2, metalness: 0.1 });
+        const matQ2 = new THREE.MeshStandardMaterial({ color: C_BLUE, roughness: 0.2, metalness: 0.1 });
+        const matTest = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x444444, roughness: 0.1 });
+
+        const meshQ1 = new THREE.Mesh(sphereGeo, matQ1);
+        const meshQ2 = new THREE.Mesh(sphereGeo, matQ2);
+        const meshTest = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), matTest);
+        meshTest.position.set(0, 2, 0);
+
+        fieldGroup.add(meshQ1);
+        fieldGroup.add(meshQ2);
+        fieldGroup.add(meshTest);
+
+        // Arrows
+        const arrow1 = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), meshTest.position, 1, C_RED, 0.3, 0.2);
+        const arrow2 = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), meshTest.position, 1, C_BLUE, 0.3, 0.2);
+        const arrowNet = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), meshTest.position, 1, C_PURPLE, 0.4, 0.3);
+        
+        // Make net arrow thicker by scaling
+        arrowNet.line.scale.set(2, 2, 2);
+        arrowNet.cone.scale.set(1.5, 1.5, 1.5);
+
+        fieldGroup.add(arrow1);
+        fieldGroup.add(arrow2);
+        fieldGroup.add(arrowNet);
+
+        // --- Interaction (Dragging Test Point) ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        const dragPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0); // Z=0 plane
+        let isDragging = false;
+
+        window.addEventListener('pointerdown', (e) => {
+            if (currentMode !== 'field') return;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(meshTest);
+            if (intersects.length > 0) {
+                isDragging = true;
+                controls.enabled = false;
+                document.body.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('pointermove', (e) => {
+            if (!isDragging) {
+                if (currentMode === 'field') {
+                    mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+                    mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+                    raycaster.setFromCamera(mouse, camera);
+                    if (raycaster.intersectObject(meshTest).length > 0) {
+                        document.body.style.cursor = 'grab';
+                    } else {
+                        document.body.style.cursor = 'default';
+                    }
+                }
+                return;
+            }
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            const target = new THREE.Vector3();
+            raycaster.ray.intersectPlane(dragPlane, target);
+            if (target) {
+                meshTest.position.copy(target);
+            }
+        });
+
+        window.addEventListener('pointerup', () => {
+            isDragging = false;
+            controls.enabled = true;
+            document.body.style.cursor = 'default';
+        });
+
+        // --- UI Logic ---
+        function updateDOM() {
+            document.getElementById('val-amp').innerText = w_A.toFixed(1) + ' m';
+            document.getElementById('val-f1').innerText = w_f1.toFixed(1) + ' Hz';
+            document.getElementById('val-f2').innerText = w_f2.toFixed(1) + ' Hz';
+            document.getElementById('val-phi').innerText = w_phi.toFixed(1) + ' rad';
+            
+            document.getElementById('val-q1').innerText = (f_q1 > 0 ? '+' : '') + f_q1 + ' µC';
+            document.getElementById('val-q2').innerText = (f_q2 > 0 ? '+' : '') + f_q2 + ' µC';
+            document.getElementById('val-d').innerText = f_d.toFixed(1) + ' m';
+
+            // Update Math
+            if(currentMode === 'wave') {
+                const f_beat = Math.abs(w_f1 - w_f2);
+                document.getElementById('live-beat').innerHTML = f_beat.toFixed(2) + ' <span>Hz</span>';
+            }
+        }
+
+        // Event Listeners for Sliders
+        document.getElementById('sl-amp').oninput = (e) => { w_A = parseFloat(e.target.value); updateDOM(); };
+        document.getElementById('sl-f1').oninput = (e) => { w_f1 = parseFloat(e.target.value); updateDOM(); };
+        document.getElementById('sl-f2').oninput = (e) => { w_f2 = parseFloat(e.target.value); updateDOM(); };
+        document.getElementById('sl-phi').oninput = (e) => { w_phi = parseFloat(e.target.value); updateDOM(); };
+        
+        document.getElementById('sl-q1').oninput = (e) => { 
+            f_q1 = parseInt(e.target.value); 
+            matQ1.color.setHex(f_q1 >= 0 ? C_RED : C_BLUE);
+            document.getElementById('lbl-q1').className = `label-3d ${f_q1 >= 0 ? 'label-red' : 'label-blue'}`;
+            document.getElementById('lbl-q1').innerText = (f_q1 > 0 ? '+' : '') + f_q1 + ' µC';
+            updateDOM(); 
+        };
+        document.getElementById('sl-q2').oninput = (e) => { 
+            f_q2 = parseInt(e.target.value); 
+            matQ2.color.setHex(f_q2 >= 0 ? C_RED : C_BLUE);
+            document.getElementById('lbl-q2').className = `label-3d ${f_q2 >= 0 ? 'label-red' : 'label-blue'}`;
+            document.getElementById('lbl-q2').innerText = (f_q2 > 0 ? '+' : '') + f_q2 + ' µC';
+            updateDOM(); 
+        };
+        document.getElementById('sl-d').oninput = (e) => { f_d = parseFloat(e.target.value); updateDOM(); };
+
+        // Mode Toggling
+        window.setMode = function(mode) {
+            currentMode = mode;
+            
+            // UI Toggle
+            document.getElementById('btn-wave').classList.toggle('active', mode === 'wave');
+            document.getElementById('btn-field').classList.toggle('active', mode === 'field');
+            
+            document.getElementById('controls-wave').classList.toggle('active', mode === 'wave');
+            document.getElementById('controls-field').classList.toggle('active', mode === 'field');
+            
+            document.getElementById('math-wave').style.display = mode === 'wave' ? 'block' : 'none';
+            document.getElementById('math-field').style.display = mode === 'field' ? 'block' : 'none';
+
+            // Scene Toggle
+            waveGroup.visible = (mode === 'wave');
+            fieldGroup.visible = (mode === 'field');
+
+            // Labels Toggle
+            document.getElementById('lbl-q1').style.display = mode === 'field' ? 'block' : 'none';
+            document.getElementById('lbl-q2').style.display = mode === 'field' ? 'block' : 'none';
+            document.getElementById('lbl-test').style.display = mode === 'field' ? 'block' : 'none';
+
+            // Camera Reset
+            if(mode === 'wave') {
+                camera.position.set(0, 5, 15);
+                controls.target.set(0,0,0);
+                grid.position.y = -3;
+            } else {
+                camera.position.set(0, 0, 12);
+                controls.target.set(0,0,0);
+                grid.position.y = -5;
+            }
+        };
+
+        // --- Animation & Physics Loop ---
+        const clock = new THREE.Clock();
+
+        function updateWaves(dt) {
+            time += dt * 0.5; // Scale time for visual clarity
+            
+            const pos1 = line1.geometry.attributes.position.array;
+            const pos2 = line2.geometry.attributes.position.array;
+            const posRes = lineRes.geometry.attributes.position.array;
+            const posEnvT = envTop.geometry.attributes.position.array;
+            const posEnvB = envBot.geometry.attributes.position.array;
+
+            // Envelope amplitude (time dependent)
+            const envAmp = Math.abs(2 * w_A * Math.cos(Math.PI * (w_f1 - w_f2) * time - w_phi/2));
+
+            for (let i = 0; i < numPoints; i++) {
+                const x = xMin + (xMax - xMin) * (i / (numPoints - 1));
+                
+                // Physics: y = A sin(kx - 2πft + φ)
+                const y1 = w_A * Math.sin(w_k * x - 2 * Math.PI * w_f1 * time);
+                const y2 = w_A * Math.sin(w_k * x - 2 * Math.PI * w_f2 * time + w_phi);
+                const yRes = y1 + y2;
+
+                const idx = i * 3;
+                
+                pos1[idx] = x; pos1[idx+1] = y1; pos1[idx+2] = -1; // Offset slightly in Z
+                pos2[idx] = x; pos2[idx+1] = y2; pos2[idx+2] = 1;
+                posRes[idx] = x; posRes[idx+1] = yRes; posRes[idx+2] = 0;
+
+                posEnvT[idx] = x; posEnvT[idx+1] = envAmp; posEnvT[idx+2] = 0;
+                posEnvB[idx] = x; posEnvB[idx+1] = -envAmp; posEnvB[idx+2] = 0;
+            }
+
+            line1.geometry.attributes.position.needsUpdate = true;
+            line2.geometry.attributes.position.needsUpdate = true;
+            lineRes.geometry.attributes.position.needsUpdate = true;
+            envTop.geometry.attributes.position.needsUpdate = true;
+            envBot.geometry.attributes.position.needsUpdate = true;
+            
+            envTop.computeLineDistances();
+            envBot.computeLineDistances();
+        }
+
+        function updateFields() {
+            // Update Positions
+            meshQ1.position.set(-f_d / 2, 0, 0);
+            meshQ2.position.set(f_d / 2, 0, 0);
+
+            const pTest = meshTest.position;
+            const p1 = meshQ1.position;
+            const p2 = meshQ2.position;
+
+            // Vectors from charges to test point
+            const r1p = new THREE.Vector3().subVectors(pTest, p1);
+            const r2p = new THREE.Vector3().subVectors(pTest, p2);
+
+            const d1 = r1p.length();
+            const d2 = r2p.length();
+
+            // Prevent division by zero / extreme values when too close
+            const d1_safe = Math.max(d1, 0.4);
+            const d2_safe = Math.max(d2, 0.4);
+
+            // Calculate Fields: E = k * q / r^2 * r_hat
+            // If q is negative, vector automatically points towards charge
+            const E1 = r1p.clone().normalize().multiplyScalar((k_e_visual * f_q1) / (d1_safe * d1_safe));
+            const E2 = r2p.clone().normalize().multiplyScalar((k_e_visual * f_q2) / (d2_safe * d2_safe));
+            
+            const Enet = new THREE.Vector3().addVectors(E1, E2);
+
+            // Update Arrows
+            updateArrow(arrow1, E1, pTest);
+            updateArrow(arrow2, E2, pTest);
+            updateArrow(arrowNet, Enet, pTest);
+
+            // Calculate Real Value for UI
+            // E = k_real * (q * 10^-6) / r^2
+            const E1_real = (k_e_real * Math.abs(f_q1) * 1e-6) / (d1 * d1);
+            const E2_real = (k_e_real * Math.abs(f_q2) * 1e-6) / (d2 * d2);
+            
+            // Vector addition for real magnitude
+            const E1_vec_real = r1p.clone().normalize().multiplyScalar(f_q1 > 0 ? E1_real : -E1_real);
+            const E2_vec_real = r2p.clone().normalize().multiplyScalar(f_q2 > 0 ? E2_real : -E2_real);
+            const Enet_real_mag = new THREE.Vector3().addVectors(E1_vec_real, E2_vec_real).length();
+
+            // Format scientific notation
+            let displayVal = "0.00";
+            if(Enet_real_mag > 0) {
+                const exp = Math.floor(Math.log10(Enet_real_mag));
+                const mantissa = Enet_real_mag / Math.pow(10, exp);
+                displayVal = `${mantissa.toFixed(2)} × 10<sup>${exp}</sup>`;
+            }
+            document.getElementById('live-field').innerHTML = displayVal + ' <span>N/C</span>';
+
+            // Update HTML Labels Position
+            updateLabelPosition('lbl-q1', meshQ1.position);
+            updateLabelPosition('lbl-q2', meshQ2.position);
+            updateLabelPosition('lbl-test', meshTest.position, 30); // Offset Y
+        }
+
+        function updateArrow(arrow, vec, origin) {
+            const len = vec.length();
+            arrow.position.copy(origin);
+            if (len > 0.05) {
+                arrow.setDirection(vec.clone().normalize());
+                // Cap visual length
+                const visualLen = Math.min(len, 8);
+                arrow.setLength(visualLen, Math.min(visualLen * 0.2, 0.6), Math.min(visualLen * 0.2, 0.6) * 0.5);
+                arrow.visible = true;
+            } else {
+                arrow.visible = false;
+            }
+        }
+
+        function updateLabelPosition(id, pos3D, offsetY = -30) {
+            const el = document.getElementById(id);
+            if(el.style.display === 'none') return;
+            
+            const vector = pos3D.clone();
+            vector.project(camera);
+
+            const x = (vector.x * .5 + .5) * window.innerWidth;
+            const y = (vector.y * -.5 + .5) * window.innerHeight;
+
+            // Hide if behind camera
+            if (vector.z > 1) {
+                el.style.opacity = 0;
+            } else {
+                el.style.opacity = 1;
+                el.style.left = `${x}px`;
+                el.style.top = `${y + offsetY}px`;
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+
+            controls.update();
+
+            if (currentMode === 'wave') {
+                updateWaves(dt);
+            } else {
+                updateFields();
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Resize Handler
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Init
+        setMode('wave');
+        updateDOM();
+        animate();
+
+    </script>
+</body>
+</html>

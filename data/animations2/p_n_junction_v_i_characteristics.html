@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P-N Junction V-I Characteristics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --p-color: #FF3366;
+            --n-color: #4361EE;
+            --depletion-color: #E2E8F0;
+            --accent-color: #06D6A0;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 16px;
+        }
+
+        /* Formula Card - Top Left */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 20px;
+            z-index: 10;
+            min-width: 250px;
+        }
+
+        #formula-card h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+            color: var(--text-main);
+        }
+
+        .math-line {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .math-val {
+            font-weight: 700;
+            color: var(--n-color);
+        }
+
+        /* Controls - Right Side */
+        #controls-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            bottom: 20px;
+            padding: 20px;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-val {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-color);
+            font-weight: 700;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--n-color);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Graph - Bottom Right (Inside controls or floating) */
+        #graph-container {
+            margin-top: auto;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: white;
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        canvas#vi-graph {
+            width: 100%;
+            height: 100%;
+            cursor: crosshair;
+        }
+
+        /* 3D Labels */
+        .label-3d {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.5);
+            pointer-events: none;
+            user-select: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .label-p { color: var(--p-color); }
+        .label-n { color: var(--n-color); }
+        .label-dep { color: var(--text-muted); font-size: 0.85rem; }
+
+        /* Legend */
+        .legend {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>P-N Junction State</h2>
+        <div class="math-line">
+            <span>Applied Voltage ($V_{ext}$):</span>
+            <span class="math-val" id="val-v">0.00 V</span>
+        </div>
+        <div class="math-line">
+            <span>Depletion Width ($W$):</span>
+            <span class="math-val" id="val-w">1.00 &mu;m</span>
+        </div>
+        <div class="math-line">
+            <span>Total Current ($I$):</span>
+            <span class="math-val" id="val-i">0.00 mA</span>
+        </div>
+        <div class="math-line" style="margin-top: 15px; font-size: 0.8rem; color: var(--text-muted);">
+            <span>Built-in Potential ($V_{bi}$):</span>
+            <span id="val-vbi">0.70 V</span>
+        </div>
+    </div>
+
+    <div id="controls-container" class="glass-panel">
+        <div class="control-group">
+            <div class="control-header">
+                <span>Applied Voltage</span>
+                <span class="control-val" id="lbl-voltage">0.0 V</span>
+            </div>
+            <input type="range" id="slider-voltage" min="-5.0" max="2.0" step="0.05" value="0.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Doping ($N_a, N_d$)</span>
+                <span class="control-val" id="lbl-doping">10^16 cm⁻³</span>
+            </div>
+            <input type="range" id="slider-doping" min="15" max="18" step="0.1" value="16">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Temperature ($T$)</span>
+                <span class="control-val" id="lbl-temp">300 K</span>
+            </div>
+            <input type="range" id="slider-temp" min="200" max="450" step="5" value="300">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Material</span>
+            </div>
+            <select id="select-material">
+                <option value="Si">Silicon (Eg = 1.1 eV)</option>
+                <option value="Ge">Germanium (Eg = 0.67 eV)</option>
+            </select>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="dot" style="background: var(--p-color);"></div> Holes (Majority P)</div>
+            <div class="legend-item"><div class="dot" style="background: var(--n-color);"></div> Electrons (Majority N)</div>
+            <div class="legend-item"><div class="dot" style="border: 2px solid var(--p-color); background: transparent;"></div> Negative Acceptor Ions</div>
+            <div class="legend-item"><div class="dot" style="border: 2px solid var(--n-color); background: transparent;"></div> Positive Donor Ions</div>
+        </div>
+
+        <div id="graph-container">
+            <canvas id="vi-graph"></canvas>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics & State Variables ---
+        const state = {
+            voltage: 0.0,
+            dopingLog: 16,
+            temp: 300,
+            material: 'Si',
+            // Calculated
+            Vbi: 0.7,
+            W: 1.0,
+            I: 0.0,
+            Is: 1e-12
+        };
+
+        const constants = {
+            q: 1.6e-19,
+            k: 1.38e-23,
+            ni_Si: 1e10,
+            ni_Ge: 2e13
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+        // Add subtle fog to blend background
+        scene.fog = new THREE.FogExp2('#f0f4f8', 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 8, 25);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.2; // Don't go too far below
+        controls.minDistance = 10;
+        controls.maxDistance = 50;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe2e8f0, 0.5);
+        fillLight.position.set(-10, 0, -10);
+        scene.add(fillLight);
+
+        // --- Geometries & Materials ---
+        const blockWidth = 10;
+        const blockHeight = 4;
+        const blockDepth = 4;
+
+        // Glassy materials for blocks
+        const matP = new THREE.MeshPhysicalMaterial({
+            color: 0xFF3366,
+            transparent: true,
+            opacity: 0.15,
+            roughness: 0.2,
+            transmission: 0.5,
+            thickness: 0.5
+        });
+
+        const matN = new THREE.MeshPhysicalMaterial({
+            color: 0x4361EE,
+            transparent: true,
+            opacity: 0.15,
+            roughness: 0.2,
+            transmission: 0.5,
+            thickness: 0.5
+        });
+
+        const matDep = new THREE.MeshPhysicalMaterial({
+            color: 0xFFFFFF,
+            transparent: true,
+            opacity: 0.3,
+            roughness: 0.1,
+            transmission: 0.8,
+            thickness: 1.0
+        });
+
+        const boxGeo = new THREE.BoxGeometry(1, blockHeight, blockDepth);
+
+        // P-Region (Left)
+        const meshP = new THREE.Mesh(boxGeo, matP);
+        meshP.scale.x = blockWidth;
+        meshP.position.x = -blockWidth / 2;
+        scene.add(meshP);
+
+        // N-Region (Right)
+        const meshN = new THREE.Mesh(boxGeo, matN);
+        meshN.scale.x = blockWidth;
+        meshN.position.x = blockWidth / 2;
+        scene.add(meshN);
+
+        // Depletion Region (Center)
+        const meshDep = new THREE.Mesh(boxGeo, matDep);
+        scene.add(meshDep);
+
+        // --- Particle Systems (InstancedMesh) ---
+        const maxParticles = 1000;
+        const sphereGeo = new THREE.SphereGeometry(0.12, 16, 16);
+        const ionGeo = new THREE.SphereGeometry(0.15, 16, 16);
+
+        // Materials for particles
+        const matHole = new THREE.MeshStandardMaterial({ color: 0xFF3366, roughness: 0.4, metalness: 0.1 });
+        const matElectron = new THREE.MeshStandardMaterial({ color: 0x4361EE, roughness: 0.4, metalness: 0.1 });
+        
+        // Materials for fixed ions (darker, wireframe or distinct to differentiate from mobile carriers)
+        const matNegIon = new THREE.MeshStandardMaterial({ color: 0x990033, roughness: 0.7 });
+        const matPosIon = new THREE.MeshStandardMaterial({ color: 0x002299, roughness: 0.7 });
+
+        // Instanced Meshes
+        const instHoles = new THREE.InstancedMesh(sphereGeo, matHole, maxParticles);
+        const instElectrons = new THREE.InstancedMesh(sphereGeo, matElectron, maxParticles);
+        scene.add(instHoles);
+        scene.add(instElectrons);
+
+        // Fixed Ions (only visible in depletion region)
+        const maxIonsPerSide = 200;
+        const instNegIons = new THREE.InstancedMesh(ionGeo, matNegIon, maxIonsPerSide);
+        const instPosIons = new THREE.InstancedMesh(ionGeo, matPosIon, maxIonsPerSide);
+        scene.add(instNegIons);
+        scene.add(instPosIons);
+
+        // Dummy object for matrix calculations
+        const dummy = new THREE.Object3D();
+
+        // Particle Data Arrays
+        const holesData = [];
+        const electronsData = [];
+        const negIonsData = [];
+        const posIonsData = [];
+
+        // Initialize Fixed Ions (Grid pattern near junction)
+        let ionIndex = 0;
+        for(let x = -2.5; x < 0; x += 0.4) {
+            for(let y = -1.5; y <= 1.5; y += 0.6) {
+                for(let z = -1.5; z <= 1.5; z += 0.6) {
+                    if(ionIndex < maxIonsPerSide) {
+                        negIonsData.push({ x: x, y: y, z: z });
+                        ionIndex++;
+                    }
+                }
+            }
+        }
+        ionIndex = 0;
+        for(let x = 0.1; x <= 2.5; x += 0.4) {
+            for(let y = -1.5; y <= 1.5; y += 0.6) {
+                for(let z = -1.5; z <= 1.5; z += 0.6) {
+                    if(ionIndex < maxIonsPerSide) {
+                        posIonsData.push({ x: x, y: y, z: z });
+                        ionIndex++;
+                    }
+                }
+            }
+        }
+
+        // Initialize Mobile Carriers
+        for (let i = 0; i < maxParticles; i++) {
+            // Holes start in P region (-10 to 0)
+            holesData.push({
+                x: -Math.random() * blockWidth,
+                y: (Math.random() - 0.5) * (blockHeight - 0.5),
+                z: (Math.random() - 0.5) * (blockDepth - 0.5),
+                active: true,
+                scale: 1
+            });
+            // Electrons start in N region (0 to 10)
+            electronsData.push({
+                x: Math.random() * blockWidth,
+                y: (Math.random() - 0.5) * (blockHeight - 0.5),
+                z: (Math.random() - 0.5) * (blockDepth - 0.5),
+                active: true,
+                scale: 1
+            });
+        }
+
+        // --- HTML Labels ---
+        function createLabel(text, className) {
+            const div = document.createElement('div');
+            div.className = `label-3d ${className}`;
+            div.textContent = text;
+            div.style.position = 'absolute';
+            document.body.appendChild(div);
+            return div;
+        }
+        const labelP = createLabel('P-Type', 'label-p');
+        const labelN = createLabel('N-Type', 'label-n');
+        const labelDep = createLabel('Depletion Zone', 'label-dep');
+
+        function updateLabels() {
+            // Simple projection from 3D to 2D
+            const pPos = new THREE.Vector3(-blockWidth/2, blockHeight/2 + 0.5, 0);
+            const nPos = new THREE.Vector3(blockWidth/2, blockHeight/2 + 0.5, 0);
+            const depPos = new THREE.Vector3(0, blockHeight/2 + 0.5, blockDepth/2);
+
+            pPos.project(camera);
+            nPos.project(camera);
+            depPos.project(camera);
+
+            const hw = window.innerWidth / 2;
+            const hh = window.innerHeight / 2;
+
+            labelP.style.left = (pPos.x * hw + hw) + 'px';
+            labelP.style.top = (-pPos.y * hh + hh) + 'px';
+
+            labelN.style.left = (nPos.x * hw + hw) + 'px';
+            labelN.style.top = (-nPos.y * hh + hh) + 'px';
+
+            labelDep.style.left = (depPos.x * hw + hw) + 'px';
+            labelDep.style.top = (-depPos.y * hh + hh) + 'px';
+            
+            // Hide if behind camera
+            labelP.style.display = pPos.z > 1 ? 'none' : 'block';
+            labelN.style.display = nPos.z > 1 ? 'none' : 'block';
+            labelDep.style.display = depPos.z > 1 ? 'none' : 'block';
+        }
+
+        // --- Physics Calculations ---
+        function updatePhysics() {
+            // 1. Built-in Potential (Simplified for visualization)
+            // Vbi = kT/q * ln(NaNd/ni^2)
+            const Vt = (constants.k * state.temp) / constants.q;
+            const ni = state.material === 'Si' ? constants.ni_Si : constants.ni_Ge;
+            const N = Math.pow(10, state.dopingLog);
+            
+            // Calculate true Vbi, clamp for visual stability
+            let calcVbi = Vt * Math.log((N * N) / (ni * ni));
+            if (calcVbi < 0.1) calcVbi = 0.1;
+            if (calcVbi > 1.2) calcVbi = 1.2;
+            state.Vbi = calcVbi;
+
+            // 2. Depletion Width
+            // W prop to sqrt(Vbi - V)
+            // Visual mapping: base width 1.5 units at V=0
+            let vDiff = state.Vbi - state.voltage;
+            if (vDiff < 0.01) vDiff = 0.01; // Prevent zero width
+            
+            // Scale factor to make it look good on screen
+            const wScale = 1.5 / Math.sqrt(state.Vbi); 
+            state.W = wScale * Math.sqrt(vDiff);
+            
+            // Update Mesh
+            meshDep.scale.x = state.W;
+
+            // 3. Current (Shockley Equation)
+            // I = Is * (exp(V / (n*Vt)) - 1)
+            // We use a visual ideality factor 'n' to compress the graph so 2V doesn't overflow
+            const Eg = state.material === 'Si' ? 1.1 : 0.67;
+            
+            // Is strongly depends on T and Eg
+            // Is prop to T^3 * exp(-Eg/kT)
+            const T_ratio = state.temp / 300;
+            const exp_term = Math.exp((Eg * constants.q) / (constants.k * 300) - (Eg * constants.q) / (constants.k * state.temp));
+            
+            // Base Is to make mA scale look right
+            const baseIs = state.material === 'Si' ? 1e-9 : 1e-5; 
+            state.Is = baseIs * Math.pow(T_ratio, 3) * exp_term;
+
+            // Visual ideality factor to fit -5 to 2V nicely on screen
+            const visual_n = 6.0; 
+            
+            let calcI = state.Is * (Math.exp(state.voltage / (visual_n * Vt)) - 1);
+            
+            // Add slight linear leakage for reverse bias visual
+            if (state.voltage < 0) {
+                calcI += state.voltage * 1e-6; 
+            }
+
+            state.I = calcI;
+
+            updateUI();
+            drawGraph();
+        }
+
+        // --- UI Updates ---
+        const valV = document.getElementById('val-v');
+        const valW = document.getElementById('val-w');
+        const valI = document.getElementById('val-i');
+        const valVbi = document.getElementById('val-vbi');
+
+        function updateUI() {
+            valV.innerText = state.voltage.toFixed(2) + ' V';
+            valW.innerText = state.W.toFixed(2) + ' μm';
+            
+            // Format Current
+            let iStr = "";
+            if (Math.abs(state.I) < 1e-3) {
+                iStr = (state.I * 1000).toFixed(2) + ' μA';
+            } else {
+                iStr = state.I.toFixed(2) + ' mA';
+            }
+            valI.innerText = iStr;
+            valVbi.innerText = state.Vbi.toFixed(2) + ' V';
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('slider-voltage').addEventListener('input', (e) => {
+            state.voltage = parseFloat(e.target.value);
+            document.getElementById('lbl-voltage').innerText = state.voltage.toFixed(1) + ' V';
+            updatePhysics();
+        });
+
+        document.getElementById('slider-doping').addEventListener('input', (e) => {
+            state.dopingLog = parseFloat(e.target.value);
+            document.getElementById('lbl-doping').innerText = `10^${state.dopingLog.toFixed(1)} cm⁻³`;
+            updatePhysics();
+        });
+
+        document.getElementById('slider-temp').addEventListener('input', (e) => {
+            state.temp = parseFloat(e.target.value);
+            document.getElementById('lbl-temp').innerText = state.temp + ' K';
+            updatePhysics();
+        });
+
+        document.getElementById('select-material').addEventListener('change', (e) => {
+            state.material = e.target.value;
+            updatePhysics();
+        });
+
+        // --- V-I Graph Drawing ---
+        const canvas = document.getElementById('vi-graph');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            drawGraph();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawGraph() {
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.clearRect(0, 0, w, h);
+
+            // Graph bounds
+            const vMin = -5.0, vMax = 2.0;
+            // Dynamic I bounds based on material to always show curve
+            const iMax = state.material === 'Si' ? 50 : 150; 
+            const iMin = -iMax * 0.1;
+
+            // Mapping functions
+            const mapV = (v) => ((v - vMin) / (vMax - vMin)) * w;
+            const mapI = (i) => h - ((i - iMin) / (iMax - iMin)) * h;
+
+            // Draw Axes
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            // X-axis (I=0)
+            const y0 = mapI(0);
+            ctx.moveTo(0, y0); ctx.lineTo(w, y0);
+            // Y-axis (V=0)
+            const x0 = mapV(0);
+            ctx.moveTo(x0, 0); ctx.lineTo(x0, h);
+            ctx.stroke();
+
+            // Draw Curve
+            ctx.strokeStyle = '#4361EE';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            const Vt = (constants.k * state.temp) / constants.q;
+            const visual_n = 6.0;
+
+            for (let px = 0; px <= w; px += 2) {
+                let v = vMin + (px / w) * (vMax - vMin);
+                let i = state.Is * (Math.exp(v / (visual_n * Vt)) - 1);
+                if (v < 0) i += v * 1e-6;
+                
+                let py = mapI(i);
+                if (px === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            // Draw Current Point (Glowing Dot)
+            const curX = mapV(state.voltage);
+            const curY = mapI(state.I);
+
+            // Glow
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#06D6A0';
+            ctx.fillStyle = '#06D6A0';
+            ctx.beginPath();
+            ctx.arc(curX, curY, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0; // reset
+
+            // Labels
+            ctx.fillStyle = '#64748b';
+            ctx.font = '10px Inter';
+            ctx.fillText('V', w - 15, y0 - 5);
+            ctx.fillText('I', x0 + 5, 15);
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            controls.update();
+            updateLabels();
+
+            // 1. Update Fixed Ions Visibility
+            // Only show ions that are within the current depletion width
+            const halfW = state.W / 2;
+            
+            for(let i=0; i<negIonsData.length; i++) {
+                let ion = negIonsData[i];
+                let scale = (ion.x >= -halfW && ion.x < 0) ? 1 : 0;
+                // Animate scale slightly for pop-in effect
+                dummy.position.set(ion.x, ion.y, ion.z);
+                dummy.scale.setScalar(scale);
+                dummy.updateMatrix();
+                instNegIons.setMatrixAt(i, dummy.matrix);
+            }
+            instNegIons.instanceMatrix.needsUpdate = true;
+
+            for(let i=0; i<posIonsData.length; i++) {
+                let ion = posIonsData[i];
+                let scale = (ion.x <= halfW && ion.x > 0) ? 1 : 0;
+                dummy.position.set(ion.x, ion.y, ion.z);
+                dummy.scale.setScalar(scale);
+                dummy.updateMatrix();
+                instPosIons.setMatrixAt(i, dummy.matrix);
+            }
+            instPosIons.instanceMatrix.needsUpdate = true;
+
+            // 2. Update Mobile Carriers
+            // Number of active carriers depends on doping
+            const activeRatio = (state.dopingLog - 15) / 3; // 0 to 1
+            const numActive = Math.floor(200 + activeRatio * 800);
+
+            // Base drift speed depends on voltage (Current)
+            // Forward bias: move towards junction. Reverse: move away.
+            let driftSpeed = state.voltage * 2.0 * dt; 
+            
+            // Temperature jitter (Brownian motion)
+            let jitter = (state.temp / 300) * 0.05;
+
+            for (let i = 0; i < maxParticles; i++) {
+                if (i >= numActive) {
+                    // Hide inactive
+                    dummy.scale.setScalar(0);
+                    dummy.updateMatrix();
+                    instHoles.setMatrixAt(i, dummy.matrix);
+                    instElectrons.setMatrixAt(i, dummy.matrix);
+                    continue;
+                }
+
+                // --- HOLES (Red, P-side) ---
+                let h = holesData[i];
+                
+                // Brownian motion
+                h.y += (Math.random() - 0.5) * jitter;
+                h.z += (Math.random() - 0.5) * jitter;
+                
+                // Keep in bounds Y, Z
+                if(Math.abs(h.y) > blockHeight/2 - 0.2) h.y *= -0.9;
+                if(Math.abs(h.z) > blockDepth/2 - 0.2) h.z *= -0.9;
+
+                // Drift X
+                h.x += driftSpeed + (Math.random() - 0.5) * jitter * 0.5;
+
+                if (state.voltage >= 0) {
+                    // Forward Bias: Holes move right (+x). Recombine at junction.
+                    if (h.x > 0) {
+                        h.scale -= dt * 5; // Shrink (recombine)
+                        if (h.scale <= 0) {
+                            h.x = -blockWidth; // Respawn at left contact
+                            h.scale = 1;
+                        }
+                    } else {
+                        h.scale = 1;
+                    }
+                } else {
+                    // Reverse Bias: Holes move left (-x). Clear depletion region.
+                    if (h.x > -halfW) {
+                        h.x -= 0.1; // Push out of depletion
+                    }
+                    if (h.x < -blockWidth) {
+                        h.x = -halfW; // Wrap around within P bulk
+                    }
+                    h.scale = 1;
+                }
+
+                dummy.position.set(h.x, h.y, h.z);
+                dummy.scale.setScalar(h.scale);
+                dummy.updateMatrix();
+                instHoles.setMatrixAt(i, dummy.matrix);
+
+                // --- ELECTRONS (Blue, N-side) ---
+                let e = electronsData[i];
+                
+                e.y += (Math.random() - 0.5) * jitter;
+                e.z += (Math.random() - 0.5) * jitter;
+                
+                if(Math.abs(e.y) > blockHeight/2 - 0.2) e.y *= -0.9;
+                if(Math.abs(e.z) > blockDepth/2 - 0.2) e.z *= -0.9;
+
+                // Drift X (Electrons move opposite to holes)
+                e.x -= driftSpeed + (Math.random() - 0.5) * jitter * 0.5;
+
+                if (state.voltage >= 0) {
+                    // Forward Bias: Electrons move left (-x). Recombine at junction.
+                    if (e.x < 0) {
+                        e.scale -= dt * 5;
+                        if (e.scale <= 0) {
+                            e.x = blockWidth; // Respawn at right contact
+                            e.scale = 1;
+                        }
+                    } else {
+                        e.scale = 1;
+                    }
+                } else {
+                    // Reverse Bias: Electrons move right (+x). Clear depletion.
+                    if (e.x < halfW) {
+                        e.x += 0.1;
+                    }
+                    if (e.x > blockWidth) {
+                        e.x = halfW;
+                    }
+                    e.scale = 1;
+                }
+
+                dummy.position.set(e.x, e.y, e.z);
+                dummy.scale.setScalar(e.scale);
+                dummy.updateMatrix();
+                instElectrons.setMatrixAt(i, dummy.matrix);
+            }
+
+            instHoles.instanceMatrix.needsUpdate = true;
+            instElectrons.instanceMatrix.needsUpdate = true;
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Initialization ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Initial setup
+        setTimeout(resizeCanvas, 100); // Ensure layout is done before canvas sizing
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

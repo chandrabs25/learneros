@@ -4,7 +4,7 @@ import { Header } from "@/app/header";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AI Tutor",
+  title: "LearnerOS",
   description: "Adaptive learning platform powered by AI",
 };
 
@@ -44,5 +44,4 @@ export default function RootLayout({
     </html>
   );
 }
-
 

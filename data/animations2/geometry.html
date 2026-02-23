@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geometric Ray Optics: Spherical Aberration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-light: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #2D3436;
+            --accent-blue: #4361EE;
+            --accent-red: #FF3366;
+            --accent-purple: #7209B7;
+            --accent-green: #06D6A0;
+            --accent-orange: #F77F00;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--bg-light) 0%, #ffffff 100%);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
+
+        #sidebar {
+            width: 25%;
+            min-width: 300px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-right: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 4px 0 24px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            padding: 30px 25px;
+            box-sizing: border-box;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        #canvas-container {
+            width: 75%;
+            flex-grow: 1;
+            height: 100%;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin: 0 0 10px 0;
+            line-height: 1.3;
+        }
+
+        p.subtitle {
+            font-size: 0.9rem;
+            color: #636e72;
+            margin: 0 0 30px 0;
+            line-height: 1.5;
+        }
+
+        .control-group {
+            margin-bottom: 25px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        label {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            background: rgba(0,0,0,0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: var(--accent-blue);
+            font-weight: 500;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #dfe6e9;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        input[type=checkbox] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-blue);
+        }
+
+        .legend {
+            margin-top: auto;
+            background: rgba(255,255,255,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .color-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+
+        #formula-card {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 1);
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .formula-row {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .formula-row:last-child {
+            margin-bottom: 0;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed #b2bec3;
+            font-weight: 500;
+            color: var(--accent-red);
+        }
+
+        .math-symbol {
+            font-style: italic;
+        }
+
+        .scene-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            color: white;
+            background: var(--text-main);
+            padding: 2px 8px;
+            border-radius: 12px;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: opacity 0.2s;
+        }
+
+        #label-p { background: #e1b12c; color: #2f3640; }
+        #label-f { background: var(--accent-green); color: #2f3640; }
+        #label-c { background: var(--accent-purple); }
+
+    </style>
+</head>
+<body>
+
+    <div id="sidebar">
+        <h1>Geometric Ray Optics</h1>
+        <p class="subtitle">Interactive simulation of spherical aberration and the paraxial approximation in concave mirrors.</p>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="radius">Radius of Curvature (R)</label>
+                <span class="value-display" id="val-radius">8.0 m</span>
+            </div>
+            <input type="range" id="radius" min="4.0" max="10.0" step="0.1" value="8.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="aperture">Aperture Height (h<sub>max</sub>)</label>
+                <span class="value-display" id="val-aperture">3.0 m</span>
+            </div>
+            <input type="range" id="aperture" min="1.0" max="5.0" step="0.1" value="3.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="raycount">Ray Density</label>
+                <span class="value-display" id="val-raycount">20</span>
+            </div>
+            <input type="range" id="raycount" min="5" max="50" step="1" value="20">
+        </div>
+
+        <label class="checkbox-group">
+            <input type="checkbox" id="paraxial-toggle">
+            <span>Show Only Paraxial Rays (h < 0.1R)</span>
+        </label>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--accent-blue);"></div>
+                <span>Paraxial Rays (Ideal Focus)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--accent-red);"></div>
+                <span>Marginal Rays (Aberration)</span>
+            </div>
+            <div class="legend-item">
+                <div class="color-box" style="background: var(--accent-orange); box-shadow: 0 0 8px var(--accent-orange);"></div>
+                <span>Caustic Curve (Envelope)</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-row">
+                <span>Radius (<span class="math-symbol">R</span>):</span>
+                <span id="math-r">8.00 m</span>
+            </div>
+            <div class="formula-row" style="color: var(--accent-blue);">
+                <span>Paraxial Focus (<span class="math-symbol">f</span> = R/2):</span>
+                <span id="math-f">4.00 m</span>
+            </div>
+            <div class="formula-row" style="color: var(--accent-red);">
+                <span>Marginal Focus (<span class="math-symbol">x<sub>int</sub></span>):</span>
+                <span id="math-marg">0.00 m</span>
+            </div>
+            <div class="formula-row">
+                <span>Spherical Aberration (<span class="math-symbol">Δf</span>):</span>
+                <span id="math-aberration">0.00 m</span>
+            </div>
+        </div>
+
+        <!-- 3D Labels -->
+        <div id="label-p" class="scene-label">P</div>
+        <div id="label-f" class="scene-label">F</div>
+        <div id="label-c" class="scene-label">C</div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const state = {
+            R: 8.0,
+            aperture: 3.0,
+            rayCount: 20,
+            showParaxialOnly: false,
+            rayLength: 15.0 // Distance rays extend to the left
+        };
+
+        const colors = {
+            paraxial: 0x4361EE,
+            marginal: 0xFF3366,
+            caustic: 0xF77F00,
+            mirror: 0xBDC3C7,
+            axis: 0x2D3436,
+            pole: 0xFFD700,
+            focus: 0x06D6A0,
+            center: 0x7209B7
+        };
+
+        // --- DOM Elements ---
+        const ui = {
+            radius: document.getElementById('radius'),
+            aperture: document.getElementById('aperture'),
+            raycount: document.getElementById('raycount'),
+            paraxialToggle: document.getElementById('paraxial-toggle'),
+            valRadius: document.getElementById('val-radius'),
+            valAperture: document.getElementById('val-aperture'),
+            valRaycount: document.getElementById('val-raycount'),
+            mathR: document.getElementById('math-r'),
+            mathF: document.getElementById('math-f'),
+            mathMarg: document.getElementById('math-marg'),
+            mathAberration: document.getElementById('math-aberration'),
+            labelP: document.getElementById('label-p'),
+            labelF: document.getElementById('label-f'),
+            labelC: document.getElementById('label-c'),
+            container: document.getElementById('canvas-container')
+        };
+
+        // --- Three.js Setup ---
+        const scene = new THREE.Scene();
+        // Light background
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, ui.container.clientWidth / ui.container.clientHeight, 0.1, 1000);
+        camera.position.set(-6, 6, 14);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(ui.container.clientWidth, ui.container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        ui.container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.target.set(4, 0, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(-10, 10, 10);
+        scene.add(dirLight);
+
+        const pointLight = new THREE.PointLight(0xffffff, 0.5);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        // --- Scene Objects ---
+        let mirrorMesh, axisMesh;
+        let pointP, pointF, pointC;
+        const incidentCylinders = [];
+        const reflectedCylinders = [];
+        let causticLine;
+
+        const maxRays = 50;
+        const rayRadius = 0.025;
+
+        function initScene() {
+            // Materials
+            const mirrorMat = new THREE.MeshPhongMaterial({
+                color: colors.mirror,
+                transparent: true,
+                opacity: 0.4,
+                shininess: 100,
+                side: THREE.DoubleSide,
+                depthWrite: false
+            });
+
+            const axisMat = new THREE.MeshBasicMaterial({ color: colors.axis });
+            const pMat = new THREE.MeshPhongMaterial({ color: colors.pole });
+            const fMat = new THREE.MeshPhongMaterial({ color: colors.focus });
+            const cMat = new THREE.MeshPhongMaterial({ color: colors.center });
+
+            // Mirror (Geometry built dynamically)
+            mirrorMesh = new THREE.Mesh(new THREE.BufferGeometry(), mirrorMat);
+            scene.add(mirrorMesh);
+
+            // Principal Axis
+            const axisGeo = new THREE.CylinderGeometry(0.03, 0.03, 30, 16);
+            axisGeo.rotateZ(Math.PI / 2);
+            axisMesh = new THREE.Mesh(axisGeo, axisMat);
+            axisMesh.position.set(0, 0, 0);
+            scene.add(axisMesh);
+
+            // Points
+            const sphereGeo = new THREE.SphereGeometry(0.12, 32, 32);
+            pointP = new THREE.Mesh(sphereGeo, pMat);
+            pointF = new THREE.Mesh(sphereGeo, fMat);
+            pointC = new THREE.Mesh(sphereGeo, cMat);
+            scene.add(pointP, pointF, pointC);
+
+            // Ray Pools
+            const cylGeo = new THREE.CylinderGeometry(rayRadius, rayRadius, 1, 8);
+            cylGeo.rotateX(Math.PI / 2); // Align with Z initially for easy lookAt
+
+            for (let i = 0; i < maxRays; i++) {
+                const incMesh = new THREE.Mesh(cylGeo, new THREE.MeshBasicMaterial());
+                const refMesh = new THREE.Mesh(cylGeo, new THREE.MeshBasicMaterial());
+                scene.add(incMesh);
+                scene.add(refMesh);
+                incidentCylinders.push(incMesh);
+                reflectedCylinders.push(refMesh);
+            }
+
+            // Caustic Curve
+            const causticMat = new THREE.LineBasicMaterial({ 
+                color: colors.caustic, 
+                linewidth: 2 // Note: WebGL linewidth is often restricted to 1
+            });
+            causticLine = new THREE.Line(new THREE.BufferGeometry(), causticMat);
+            scene.add(causticLine);
+        }
+
+        // --- Update Logic ---
+        function updateGeometry() {
+            // 1. Enforce physical constraints
+            if (state.aperture >= state.R * 0.95) {
+                state.aperture = state.R * 0.95;
+                ui.aperture.value = state.aperture;
+                ui.valAperture.textContent = state.aperture.toFixed(1) + ' m';
+            }
+
+            // 2. Update Mirror
+            const thetaMax = Math.asin(state.aperture / state.R);
+            const mirrorGeo = new THREE.SphereGeometry(state.R, 64, 64, 0, Math.PI * 2, 0, thetaMax);
+            mirrorGeo.rotateZ(Math.PI / 2); // Point pole to -x
+            mirrorGeo.translate(state.R, 0, 0); // Move pole to origin
+            
+            mirrorMesh.geometry.dispose();
+            mirrorMesh.geometry = mirrorGeo;
+
+            // 3. Update Points
+            pointP.position.set(0, 0, 0);
+            pointF.position.set(state.R / 2, 0, 0);
+            pointC.position.set(state.R, 0, 0);
+
+            // 4. Update Rays
+            const startX = -state.rayLength;
+            let activeRayCount = 0;
+
+            for (let i = 0; i < maxRays; i++) {
+                const incMesh = incidentCylinders[i];
+                const refMesh = reflectedCylinders[i];
+
+                if (i >= state.rayCount) {
+                    incMesh.visible = false;
+                    refMesh.visible = false;
+                    continue;
+                }
+
+                // Calculate height h
+                let h = 0;
+                if (state.rayCount > 1) {
+                    // Distribute from -aperture to +aperture
+                    h = -state.aperture + (i / (state.rayCount - 1)) * (2 * state.aperture);
+                }
+
+                const isParaxial = Math.abs(h) <= 0.1 * state.R;
+                
+                if (state.showParaxialOnly && !isParaxial) {
+                    incMesh.visible = false;
+                    refMesh.visible = false;
+                    continue;
+                }
+
+                incMesh.visible = true;
+                refMesh.visible = true;
+                activeRayCount++;
+
+                const color = isParaxial ? colors.paraxial : colors.marginal;
+                incMesh.material.color.setHex(color);
+                refMesh.material.color.setHex(color);
+
+                // Ray Math
+                const theta = Math.asin(h / state.R);
+                const x_inc = state.R - state.R * Math.cos(theta);
+                const p_inc = new THREE.Vector3(x_inc, h, 0);
+                const p_start = new THREE.Vector3(startX, h, 0);
+
+                // Reflected Ray Direction
+                // Normal points from surface to center: (cos(theta), -sin(theta))
+                // Incident is (1, 0). Reflected angle is pi + 2*theta.
+                // Vector: (-cos(2*theta), -sin(2*theta))
+                const v_x = -Math.cos(2 * theta);
+                const v_y = -Math.sin(2 * theta);
+                const v = new THREE.Vector3(v_x, v_y, 0);
+
+                // Extend reflected ray
+                const p_end = p_inc.clone().add(v.multiplyScalar(state.rayLength + x_inc));
+
+                // Position Cylinders
+                positionCylinder(incMesh, p_start, p_inc);
+                positionCylinder(refMesh, p_inc, p_end);
+            }
+
+            // 5. Update Caustic Curve
+            const causticPoints = [];
+            const steps = 100;
+            for (let i = 0; i <= steps; i++) {
+                const t = -thetaMax + (i / steps) * (2 * thetaMax);
+                // Nephroid parametric equations for mirror at x=0, center at x=R
+                const xc = state.R - (state.R / 4) * (3 * Math.cos(t) - Math.cos(3 * t));
+                const yc = (state.R / 4) * (3 * Math.sin(t) - Math.sin(3 * t));
+                causticPoints.push(new THREE.Vector3(xc, yc, 0));
+            }
+            causticLine.geometry.setFromPoints(causticPoints);
+            causticLine.visible = !state.showParaxialOnly;
+
+            // 6. Update Math UI
+            const f_paraxial = state.R / 2;
+            const x_int_marginal = state.R - (state.R / (2 * Math.cos(thetaMax)));
+            const aberration = f_paraxial - x_int_marginal;
+
+            ui.mathR.textContent = state.R.toFixed(2) + ' m';
+            ui.mathF.textContent = f_paraxial.toFixed(2) + ' m';
+            ui.mathMarg.textContent = x_int_marginal.toFixed(2) + ' m';
+            ui.mathAberration.textContent = aberration.toFixed(3) + ' m';
+        }
+
+        function positionCylinder(mesh, start, end) {
+            const dir = new THREE.Vector3().subVectors(end, start);
+            const len = dir.length();
+            
+            mesh.position.copy(start).add(end).multiplyScalar(0.5);
+            // Cylinder default is along Y, we rotated it to Z in init
+            mesh.scale.set(1, 1, len);
+            mesh.lookAt(end);
+        }
+
+        function updateLabels() {
+            const widthHalf = ui.container.clientWidth / 2;
+            const heightHalf = ui.container.clientHeight / 2;
+
+            const updateLabelPos = (mesh, labelElement, offsetY = 20) => {
+                const pos = mesh.position.clone();
+                pos.project(camera);
+                
+                // Check if behind camera
+                if (pos.z > 1) {
+                    labelElement.style.opacity = 0;
+                    return;
+                }
+
+                const x = (pos.x * widthHalf) + widthHalf;
+                const y = -(pos.y * heightHalf) + heightHalf;
+
+                labelElement.style.left = `${x}px`;
+                labelElement.style.top = `${y - offsetY}px`;
+                labelElement.style.opacity = 1;
+            };
+
+            updateLabelPos(pointP, ui.labelP);
+            updateLabelPos(pointF, ui.labelF);
+            updateLabelPos(pointC, ui.labelC);
+        }
+
+        // --- Event Listeners ---
+        ui.radius.addEventListener('input', (e) => {
+            state.R = parseFloat(e.target.value);
+            ui.valRadius.textContent = state.R.toFixed(1) + ' m';
+            updateGeometry();
+        });
+
+        ui.aperture.addEventListener('input', (e) => {
+            state.aperture = parseFloat(e.target.value);
+            ui.valAperture.textContent = state.aperture.toFixed(1) + ' m';
+            updateGeometry();
+        });
+
+        ui.raycount.addEventListener('input', (e) => {
+            state.rayCount = parseInt(e.target.value);
+            ui.valRaycount.textContent = state.rayCount;
+            updateGeometry();
+        });
+
+        ui.paraxialToggle.addEventListener('change', (e) => {
+            state.showParaxialOnly = e.target.checked;
+            updateGeometry();
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = ui.container.clientWidth / ui.container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(ui.container.clientWidth, ui.container.clientHeight);
+        });
+
+        // --- Main Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize and start
+        initScene();
+        updateGeometry();
+        animate();
+
+    </script>
+</body>
+</html>

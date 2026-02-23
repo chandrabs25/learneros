@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shear Stress and Viscous Flow Simulation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #2B2D42;
+            --accent-blue: #4361EE;
+            --accent-red: #FF3366;
+            --accent-green: #06D6A0;
+            --accent-orange: #F77F00;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            overflow: hidden;
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            width: 350px;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-left: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.05);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            color: var(--accent-blue);
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(67, 97, 238, 0.4);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 2px;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .formula-row {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+        }
+
+        .formula-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .math.tau { color: var(--accent-red); }
+        .math.vel { color: var(--accent-green); }
+        .math.strain { color: var(--accent-orange); }
+
+        /* 3D Labels */
+        .scene-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0,0,0,0.05);
+            white-space: nowrap;
+            transition: opacity 0.1s;
+        }
+
+        #label-fixed { color: #2B2D42; }
+        #label-moving { color: #8D99AE; }
+        #label-area { color: var(--accent-blue); }
+        #label-angle { color: var(--accent-orange); }
+
+        .legend {
+            margin-top: auto;
+            font-size: 0.8rem;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            #ui-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.5); }
+            #canvas-container { height: 60%; }
+            #formula-card { top: 10px; left: 10px; padding: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <div id="formula-card">
+            <div class="formula-row">
+                Shear Stress (τ) = F / A<br>
+                <span class="math tau">τ = <span id="out-tau">2.50</span> Pa</span>
+            </div>
+            <div class="formula-row">
+                Max Velocity (v<sub>max</sub>) = (F·l) / (η·A)<br>
+                <span class="math vel">v<sub>max</sub> = <span id="out-vmax">5.00</span> m/s</span>
+            </div>
+            <div class="formula-row">
+                Strain Rate = v<sub>max</sub> / l<br>
+                <span class="math strain">γ̇ = <span id="out-strain">2.50</span> s⁻¹</span>
+            </div>
+        </div>
+
+        <!-- Floating Labels -->
+        <div id="label-fixed" class="scene-label">Fixed Plate (v=0)</div>
+        <div id="label-moving" class="scene-label">Moving Plate</div>
+        <div id="label-area" class="scene-label">Area (A)</div>
+        <div id="label-angle" class="scene-label">Shear Angle (θ)</div>
+    </div>
+
+    <div id="ui-panel">
+        <h1>Shear Stress & Viscous Flow</h1>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Viscosity (η)</span>
+                <span class="value-display"><span id="val-eta">1.0</span> Pa·s</span>
+            </div>
+            <input type="range" id="slider-eta" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Applied Force (F)</span>
+                <span class="value-display"><span id="val-F">5.0</span> N</span>
+            </div>
+            <input type="range" id="slider-F" min="0" max="10" step="0.5" value="5.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Plate Area (A)</span>
+                <span class="value-display"><span id="val-A">2.0</span> m²</span>
+            </div>
+            <input type="range" id="slider-A" min="1.0" max="5.0" step="0.5" value="2.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Plate Separation (l)</span>
+                <span class="value-display"><span id="val-l">2.0</span> m</span>
+            </div>
+            <input type="range" id="slider-l" min="1.0" max="4.0" step="0.2" value="2.0">
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Force Vector</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Velocity Profile</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Displacement</div>
+            <div class="legend-item"><div class="color-box" style="background: #4361EE; opacity: 0.5;"></div> Fluid Layers</div>
+            <p style="margin-top: 8px; font-size: 0.75rem;">Animation loops every 2 seconds to illustrate the rate of continuous shear deformation.</p>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Physics Parameters ---
+        let eta = 1.0; // Viscosity
+        let F = 5.0;   // Force
+        let A = 2.0;   // Area
+        let l = 2.0;   // Separation (Height)
+
+        // --- Visual Scaling Constants ---
+        const VISUAL_DISPLACEMENT_SCALE = 0.1; 
+        const VISUAL_VELOCITY_SCALE = 0.3;
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#f0f4f8');
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(6, 4, 8);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 - 0.05; // Don't go below ground
+        controls.target.set(0, 1.5, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(5, 10, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 5;
+        dirLight.shadow.camera.bottom = -5;
+        dirLight.shadow.camera.left = -5;
+        dirLight.shadow.camera.right = 5;
+        scene.add(dirLight);
+
+        // Environment Grid
+        const gridHelper = new THREE.GridHelper(20, 20, 0xcccccc, 0xe2e8f0);
+        gridHelper.position.y = -0.06;
+        scene.add(gridHelper);
+
+        // --- Scene Objects ---
+        const objectsGroup = new THREE.Group();
+        scene.add(objectsGroup);
+
+        let bottomPlate, topPlate, fluidLayers = [], fluidWireframe;
+        let forceArrow, velocityArrows = [], dashedLine;
+        
+        // Materials
+        const matBottom = new THREE.MeshStandardMaterial({ color: 0x2B2D42, roughness: 0.7 });
+        const matTop = new THREE.MeshStandardMaterial({ color: 0x8D99AE, roughness: 0.4, metalness: 0.3 });
+        const matFluid = new THREE.MeshBasicMaterial({ 
+            color: 0x4361EE, 
+            transparent: true, 
+            opacity: 0.15, 
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+        const matWireframe = new THREE.LineBasicMaterial({ color: 0x4361EE, transparent: true, opacity: 0.6 });
+        const matDashed = new THREE.LineDashedMaterial({ color: 0xF77F00, dashSize: 0.2, gapSize: 0.1, linewidth: 2 });
+
+        function initGeometry() {
+            // Plates
+            const plateGeo = new THREE.BoxGeometry(1, 0.1, 1);
+            bottomPlate = new THREE.Mesh(plateGeo, matBottom);
+            bottomPlate.receiveShadow = true;
+            bottomPlate.position.y = -0.05;
+            objectsGroup.add(bottomPlate);
+
+            topPlate = new THREE.Mesh(plateGeo, matTop);
+            topPlate.castShadow = true;
+            objectsGroup.add(topPlate);
+
+            // Fluid Layers
+            const planeGeo = new THREE.PlaneGeometry(1, 1);
+            planeGeo.rotateX(-Math.PI / 2);
+            for (let i = 0; i < 15; i++) {
+                const layer = new THREE.Mesh(planeGeo, matFluid);
+                fluidLayers.push(layer);
+                objectsGroup.add(layer);
+            }
+
+            // Wireframe
+            fluidWireframe = new THREE.Mesh(new THREE.BufferGeometry(), matWireframe);
+            objectsGroup.add(fluidWireframe);
+
+            // Force Arrow
+            forceArrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 1, 0xFF3366, 0.4, 0.2);
+            objectsGroup.add(forceArrow);
+
+            // Velocity Arrows
+            for (let i = 0; i < 8; i++) {
+                const arrow = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(), 1, 0x06D6A0, 0.2, 0.1);
+                velocityArrows.push(arrow);
+                objectsGroup.add(arrow);
+            }
+
+            // Dashed Line
+            const dashGeo = new THREE.BufferGeometry();
+            dashGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+            dashedLine = new THREE.Line(dashGeo, matDashed);
+            objectsGroup.add(dashedLine);
+
+            updateGeometrySizes();
+        }
+
+        function updateGeometrySizes() {
+            // Visual dimensions based on Area
+            const w = Math.sqrt(A) * 2;
+            const d = Math.sqrt(A) * 2;
+
+            bottomPlate.scale.set(w, 1, d);
+            topPlate.scale.set(w, 1, d);
+            topPlate.position.y = l;
+
+            fluidLayers.forEach((layer, i) => {
+                layer.scale.set(w, d, 1);
+                layer.position.y = (i / 14) * l;
+            });
+
+            // Rebuild wireframe geometry to match new dimensions
+            if (fluidWireframe.geometry) fluidWireframe.geometry.dispose();
+            const boxGeo = new THREE.BoxGeometry(w, l, d, 4, 14, 4);
+            boxGeo.translate(0, l/2, 0);
+            
+            // Convert to wireframe using EdgesGeometry for cleaner look without diagonals
+            const edgesGeo = new THREE.EdgesGeometry(boxGeo);
+            fluidWireframe.geometry = edgesGeo;
+            
+            // Store original positions for deformation
+            fluidWireframe.geometry.userData.origPos = edgesGeo.attributes.position.clone();
+        }
+
+        initGeometry();
+
+        // --- UI Event Listeners ---
+        function updatePhysics() {
+            eta = parseFloat(document.getElementById('slider-eta').value);
+            F = parseFloat(document.getElementById('slider-F').value);
+            A = parseFloat(document.getElementById('slider-A').value);
+            l = parseFloat(document.getElementById('slider-l').value);
+
+            document.getElementById('val-eta').innerText = eta.toFixed(1);
+            document.getElementById('val-F').innerText = F.toFixed(1);
+            document.getElementById('val-A').innerText = A.toFixed(1);
+            document.getElementById('val-l').innerText = l.toFixed(1);
+
+            updateGeometrySizes();
+        }
+
+        ['eta', 'F', 'A', 'l'].forEach(id => {
+            document.getElementById(`slider-${id}`).addEventListener('input', updatePhysics);
+        });
+
+        // Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // --- Label Positioning ---
+        function updateLabels(topDisplacement) {
+            const w = Math.sqrt(A) * 2;
+            const d = Math.sqrt(A) * 2;
+            const tempV = new THREE.Vector3();
+
+            const setPos = (id, vec) => {
+                const el = document.getElementById(id);
+                vec.project(camera);
+                const x = (vec.x * 0.5 + 0.5) * container.clientWidth;
+                const y = (vec.y * -0.5 + 0.5) * container.clientHeight;
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                el.style.opacity = vec.z > 1 ? 0 : 1;
+            };
+
+            setPos('label-fixed', tempV.set(0, 0, d/2 + 0.3));
+            setPos('label-moving', tempV.set(topDisplacement, l, d/2 + 0.3));
+            setPos('label-area', tempV.set(topDisplacement, l + 0.3, 0));
+            setPos('label-angle', tempV.set(w/2 + topDisplacement*0.2 + 0.2, l*0.2, d/2));
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        let animTime = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = clock.getDelta();
+            animTime += dt;
+            if (animTime > 2.0) animTime = 0; // 2 second repeating loop
+
+            // Physics Calculations
+            const tau = F / A;
+            const v_max = (F * l) / (eta * A);
+            const strainRate = v_max / l;
+
+            // Update Formula Card
+            document.getElementById('out-tau').innerText = tau.toFixed(2);
+            document.getElementById('out-vmax').innerText = v_max.toFixed(2);
+            document.getElementById('out-strain').innerText = strainRate.toFixed(2);
+
+            // Visual Dimensions
+            const w = Math.sqrt(A) * 2;
+            const d = Math.sqrt(A) * 2;
+            
+            // Apply Visual Scaling
+            const visual_v_max = v_max * VISUAL_DISPLACEMENT_SCALE;
+            const topDisplacement = visual_v_max * animTime;
+
+            // Deform Top Plate
+            topPlate.position.x = topDisplacement;
+
+            // Deform Fluid Layers
+            fluidLayers.forEach((layer, i) => {
+                const y = (i / 14) * l;
+                layer.position.x = (y / l) * topDisplacement;
+            });
+
+            // Deform Wireframe
+            const pos = fluidWireframe.geometry.attributes.position;
+            const orig = fluidWireframe.geometry.userData.origPos;
+            for(let i = 0; i < pos.count; i++) {
+                const y = orig.getY(i);
+                pos.setX(i, orig.getX(i) + (y / l) * topDisplacement);
+            }
+            pos.needsUpdate = true;
+
+            // Update Force Arrow
+            forceArrow.position.set(topDisplacement, l, 0);
+            if (F > 0) {
+                forceArrow.setLength(F * 0.2 + 0.5, 0.4, 0.2);
+                forceArrow.visible = true;
+            } else {
+                forceArrow.visible = false;
+            }
+
+            // Update Velocity Arrows
+            velocityArrows.forEach((arrow, i) => {
+                const y = (i / (velocityArrows.length - 1)) * l;
+                const v = (y / l) * v_max;
+                arrow.position.set(-w/2, y, d/2 + 0.1);
+                
+                if (v > 0.05) {
+                    arrow.setLength(v * VISUAL_VELOCITY_SCALE, 0.2, 0.1);
+                    arrow.visible = true;
+                } else {
+                    arrow.visible = false;
+                }
+            });
+
+            // Update Dashed Line (Strain Angle Marker)
+            const dashPos = dashedLine.geometry.attributes.position;
+            dashPos.setXYZ(0, w/2, 0, d/2 + 0.01);
+            dashPos.setXYZ(1, w/2 + topDisplacement, l, d/2 + 0.01);
+            dashPos.needsUpdate = true;
+            dashedLine.computeLineDistances();
+
+            // Update HTML Labels
+            updateLabels(topDisplacement);
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>

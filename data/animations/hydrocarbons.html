@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Evolution of Hydrocarbons</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 900px;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* Typography */
+        .title { font-size: 22px; font-weight: 700; fill: #222; text-anchor: middle; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #666; text-anchor: middle; }
+        .formula { font-family: 'Roboto Mono', monospace; font-weight: 500; }
+        .label { font-size: 16px; font-weight: 600; fill: #333; text-anchor: middle; }
+        .annotation { font-size: 14px; font-weight: 600; fill: #7209B7; text-anchor: middle; }
+        .legend-text { font-size: 12px; fill: #444; }
+
+        /* Molecule Styles */
+        .atom { stroke: #222; stroke-width: 1.5px; }
+        .c-atom { fill: #333333; }
+        .h-atom { fill: #CCCCCC; }
+        .cl-atom { fill: #44CC44; }
+        
+        .bond { stroke: #333333; stroke-width: 3px; stroke-linecap: round; fill: none; }
+        .pi-bond { stroke: #7209B7; stroke-width: 3px; stroke-linecap: round; fill: none; }
+        .resonance { stroke: #7209B7; stroke-width: 3px; stroke-dasharray: 8, 6; fill: none; }
+        
+        .curly-arrow { stroke: #F77F00; stroke-width: 2.5px; fill: none; stroke-linecap: round; }
+        .block-arrow { fill: #7209B7; opacity: 0.15; }
+
+        /* --- ANIMATIONS (16s Loop) --- */
+        /* 
+           0-12%: n-Hexane
+           12-22%: Cyclization
+           22-34%: Cyclohexane
+           34-44%: Aromatization
+           44-59%: Benzene
+           59-69%: Substitution
+           69-87%: Chlorobenzene
+           87-95%: Reset
+        */
+
+        .anim-element { animation-duration: 16s; animation-iteration-count: infinite; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Carbon Positions */
+        @keyframes moveC1 { 0%, 12% { transform: translate(250px, 270px); } 22%, 87% { transform: translate(348px, 220px); } 95%, 100% { transform: translate(250px, 270px); } }
+        @keyframes moveC2 { 0%, 12% { transform: translate(310px, 230px); } 22%, 87% { transform: translate(400px, 190px); } 95%, 100% { transform: translate(310px, 230px); } }
+        @keyframes moveC3 { 0%, 12% { transform: translate(370px, 270px); } 22%, 87% { transform: translate(452px, 220px); } 95%, 100% { transform: translate(370px, 270px); } }
+        @keyframes moveC4 { 0%, 12% { transform: translate(430px, 230px); } 22%, 87% { transform: translate(452px, 280px); } 95%, 100% { transform: translate(430px, 230px); } }
+        @keyframes moveC5 { 0%, 12% { transform: translate(490px, 270px); } 22%, 87% { transform: translate(400px, 310px); } 95%, 100% { transform: translate(490px, 270px); } }
+        @keyframes moveC6 { 0%, 12% { transform: translate(550px, 230px); } 22%, 87% { transform: translate(348px, 280px); } 95%, 100% { transform: translate(550px, 230px); } }
+
+        /* C-C Bonds */
+        @keyframes bond1 { 0%, 12% { d: path("M 250 270 L 310 230"); } 22%, 87% { d: path("M 348 220 L 400 190"); } 95%, 100% { d: path("M 250 270 L 310 230"); } }
+        @keyframes bond2 { 0%, 12% { d: path("M 310 230 L 370 270"); } 22%, 87% { d: path("M 400 190 L 452 220"); } 95%, 100% { d: path("M 310 230 L 370 270"); } }
+        @keyframes bond3 { 0%, 12% { d: path("M 370 270 L 430 230"); } 22%, 87% { d: path("M 452 220 L 452 280"); } 95%, 100% { d: path("M 370 270 L 430 230"); } }
+        @keyframes bond4 { 0%, 12% { d: path("M 430 230 L 490 270"); } 22%, 87% { d: path("M 452 280 L 400 310"); } 95%, 100% { d: path("M 430 230 L 490 270"); } }
+        @keyframes bond5 { 0%, 12% { d: path("M 490 270 L 550 230"); } 22%, 87% { d: path("M 400 310 L 348 280"); } 95%, 100% { d: path("M 490 270 L 550 230"); } }
+        @keyframes bond6 { 0%, 12% { d: path("M 550 230 L 250 270"); opacity: 0; } 22%, 87% { d: path("M 348 280 L 348 220"); opacity: 1; } 95%, 100% { d: path("M 550 230 L 250 270"); opacity: 0; } }
+
+        /* Hydrogen Positions & Bonds */
+        /* H1 & H14 (Leave in Cyclization) */
+        @keyframes moveH1 { 0%, 12% { transform: translate(210px, 270px); opacity: 1; } 22% { transform: translate(400px, 80px); opacity: 1; } 25%, 87% { transform: translate(400px, 60px); opacity: 0; } 95%, 100% { transform: translate(210px, 270px); opacity: 1; } }
+        @keyframes hb1 { 0%, 12% { d: path("M 250 270 L 210 270"); opacity: 1; } 22% { d: path("M 348 220 L 400 80"); opacity: 1; } 25%, 87% { d: path("M 348 220 L 400 60"); opacity: 0; } 95%, 100% { d: path("M 250 270 L 210 270"); opacity: 1; } }
+        
+        @keyframes moveH14 { 0%, 12% { transform: translate(590px, 230px); opacity: 1; } 22% { transform: translate(420px, 80px); opacity: 1; } 25%, 87% { transform: translate(420px, 60px); opacity: 0; } 95%, 100% { transform: translate(590px, 230px); opacity: 1; } }
+        @keyframes hb14 { 0%, 12% { d: path("M 550 230 L 590 230"); opacity: 1; } 22% { d: path("M 348 280 L 420 80"); opacity: 1; } 25%, 87% { d: path("M 348 280 L 420 60"); opacity: 0; } 95%, 100% { d: path("M 550 230 L 590 230"); opacity: 1; } }
+
+        /* H2, H4, H6, H8, H10, H12 (Leave in Aromatization) */
+        @keyframes moveH2 { 0%, 12% { transform: translate(250px, 310px); opacity: 1; } 22%, 34% { transform: translate(328px, 180px); opacity: 1; } 44% { transform: translate(250px, 100px); opacity: 1; } 47%, 87% { transform: translate(250px, 80px); opacity: 0; } 95%, 100% { transform: translate(250px, 310px); opacity: 1; } }
+        @keyframes hb2 { 0%, 12% { d: path("M 250 270 L 250 310"); opacity: 1; } 22%, 34% { d: path("M 348 220 L 328 180"); opacity: 1; } 44% { d: path("M 348 220 L 250 100"); opacity: 1; } 47%, 87% { d: path("M 348 220 L 250 80"); opacity: 0; } 95%, 100% { d: path("M 250 270 L 250 310"); opacity: 1; } }
+
+        @keyframes moveH4 { 0%, 12% { transform: translate(310px, 190px); opacity: 1; } 22%, 34% { transform: translate(400px, 150px); opacity: 1; } 44% { transform: translate(400px, 50px); opacity: 1; } 47%, 87% { transform: translate(400px, 30px); opacity: 0; } 95%, 100% { transform: translate(310px, 190px); opacity: 1; } }
+        @keyframes hb4 { 0%, 12% { d: path("M 310 230 L 310 190"); opacity: 1; } 22%, 34% { d: path("M 400 190 L 400 150"); opacity: 1; } 44% { d: path("M 400 190 L 400 50"); opacity: 1; } 47%, 87% { d: path("M 400 190 L 400 30"); opacity: 0; } 95%, 100% { d: path("M 310 230 L 310 190"); opacity: 1; } }
+
+        @keyframes moveH6 { 0%, 12% { transform: translate(370px, 310px); opacity: 1; } 22%, 34% { transform: translate(472px, 180px); opacity: 1; } 44% { transform: translate(550px, 100px); opacity: 1; } 47%, 87% { transform: translate(550px, 80px); opacity: 0; } 95%, 100% { transform: translate(370px, 310px); opacity: 1; } }
+        @keyframes hb6 { 0%, 12% { d: path("M 370 270 L 370 310"); opacity: 1; } 22%, 34% { d: path("M 452 220 L 472 180"); opacity: 1; } 44% { d: path("M 452 220 L 550 100"); opacity: 1; } 47%, 87% { d: path("M 452 220 L 550 80"); opacity: 0; } 95%, 100% { d: path("M 370 270 L 370 310"); opacity: 1; } }
+
+        @keyframes moveH8 { 0%, 12% { transform: translate(430px, 190px); opacity: 1; } 22%, 34% { transform: translate(472px, 320px); opacity: 1; } 44% { transform: translate(550px, 400px); opacity: 1; } 47%, 87% { transform: translate(550px, 420px); opacity: 0; } 95%, 100% { transform: translate(430px, 190px); opacity: 1; } }
+        @keyframes hb8 { 0%, 12% { d: path("M 430 230 L 430 190"); opacity: 1; } 22%, 34% { d: path("M 452 280 L 472 320"); opacity: 1; } 44% { d: path("M 452 280 L 550 400"); opacity: 1; } 47%, 87% { d: path("M 452 280 L 550 420"); opacity: 0; } 95%, 100% { d: path("M 430 230 L 430 190"); opacity: 1; } }
+
+        @keyframes moveH10 { 0%, 12% { transform: translate(490px, 310px); opacity: 1; } 22%, 34% { transform: translate(400px, 350px); opacity: 1; } 44% { transform: translate(400px, 450px); opacity: 1; } 47%, 87% { transform: translate(400px, 470px); opacity: 0; } 95%, 100% { transform: translate(490px, 310px); opacity: 1; } }
+        @keyframes hb10 { 0%, 12% { d: path("M 490 270 L 490 310"); opacity: 1; } 22%, 34% { d: path("M 400 310 L 400 350"); opacity: 1; } 44% { d: path("M 400 310 L 400 450"); opacity: 1; } 47%, 87% { d: path("M 400 310 L 400 470"); opacity: 0; } 95%, 100% { d: path("M 490 270 L 490 310"); opacity: 1; } }
+
+        @keyframes moveH12 { 0%, 12% { transform: translate(550px, 190px); opacity: 1; } 22%, 34% { transform: translate(328px, 320px); opacity: 1; } 44% { transform: translate(250px, 400px); opacity: 1; } 47%, 87% { transform: translate(250px, 420px); opacity: 0; } 95%, 100% { transform: translate(550px, 190px); opacity: 1; } }
+        @keyframes hb12 { 0%, 12% { d: path("M 550 230 L 550 190"); opacity: 1; } 22%, 34% { d: path("M 348 280 L 328 320"); opacity: 1; } 44% { d: path("M 348 280 L 250 400"); opacity: 1; } 47%, 87% { d: path("M 348 280 L 250 420"); opacity: 0; } 95%, 100% { d: path("M 550 230 L 550 190"); opacity: 1; } }
+
+        /* H3 (Leaves in Substitution) */
+        @keyframes moveH3 { 0%, 12% { transform: translate(250px, 230px); opacity: 1; } 22%, 59% { transform: translate(296px, 190px); opacity: 1; } 69% { transform: translate(200px, 280px); opacity: 1; } 72%, 87% { transform: translate(180px, 300px); opacity: 0; } 95%, 100% { transform: translate(250px, 230px); opacity: 1; } }
+        @keyframes hb3 { 0%, 12% { d: path("M 250 270 L 250 230"); opacity: 1; } 22%, 59% { d: path("M 348 220 L 296 190"); opacity: 1; } 69% { d: path("M 348 220 L 200 280"); opacity: 1; } 72%, 87% { d: path("M 348 220 L 180 300"); opacity: 0; } 95%, 100% { d: path("M 250 270 L 250 230"); opacity: 1; } }
+
+        /* H5, H7, H9, H11, H13 (Stay until end) */
+        @keyframes moveH5 { 0%, 12% { transform: translate(310px, 270px); } 22%, 87% { transform: translate(400px, 130px); } 95%, 100% { transform: translate(310px, 270px); } }
+        @keyframes hb5 { 0%, 12% { d: path("M 310 230 L 310 270"); } 22%, 87% { d: path("M 400 190 L 400 130"); } 95%, 100% { d: path("M 310 230 L 310 270"); } }
+
+        @keyframes moveH7 { 0%, 12% { transform: translate(370px, 230px); } 22%, 87% { transform: translate(504px, 190px); } 95%, 100% { transform: translate(370px, 230px); } }
+        @keyframes hb7 { 0%, 12% { d: path("M 370 270 L 370 230"); } 22%, 87% { d: path("M 452 220 L 504 190"); } 95%, 100% { d: path("M 370 270 L 370 230"); } }
+
+        @keyframes moveH9 { 0%, 12% { transform: translate(430px, 270px); } 22%, 87% { transform: translate(504px, 310px); } 95%, 100% { transform: translate(430px, 270px); } }
+        @keyframes hb9 { 0%, 12% { d: path("M 430 230 L 430 270"); } 22%, 87% { d: path("M 452 280 L 504 310"); } 95%, 100% { d: path("M 430 230 L 430 270"); } }
+
+        @keyframes moveH11 { 0%, 12% { transform: translate(490px, 230px); } 22%, 87% { transform: translate(400px, 370px); } 95%, 100% { transform: translate(490px, 230px); } }
+        @keyframes hb11 { 0%, 12% { d: path("M 490 270 L 490 230"); } 22%, 87% { d: path("M 400 310 L 400 370"); } 95%, 100% { d: path("M 490 270 L 490 230"); } }
+
+        @keyframes moveH13 { 0%, 12% { transform: translate(550px, 270px); } 22%, 87% { transform: translate(296px, 310px); } 95%, 100% { transform: translate(550px, 270px); } }
+        @keyframes hb13 { 0%, 12% { d: path("M 550 230 L 550 270"); } 22%, 87% { d: path("M 348 280 L 296 310"); } 95%, 100% { d: path("M 550 230 L 550 270"); } }
+
+        /* Chlorine (Substitution) */
+        @keyframes moveCl { 0%, 59% { transform: translate(150px, 100px); opacity: 0; } 69%, 87% { transform: translate(296px, 190px); opacity: 1; } 95%, 100% { transform: translate(150px, 100px); opacity: 0; } }
+        @keyframes hbCl { 0%, 59% { d: path("M 348 220 L 150 100"); opacity: 0; } 69%, 87% { d: path("M 348 220 L 296 190"); opacity: 1; } 95%, 100% { d: path("M 348 220 L 150 100"); opacity: 0; } }
+
+        /* Pi Bonds & Resonance */
+        @keyframes fadePi { 0%, 34% { opacity: 0; } 44%, 50% { opacity: 1; } 52%, 100% { opacity: 0; } }
+        @keyframes fadeResonance { 0%, 46% { opacity: 0; transform: scale(0.8); } 52%, 87% { opacity: 1; transform: scale(1); } 95%, 100% { opacity: 0; transform: scale(0.8); } }
+
+        /* Labels & Annotations */
+        @keyframes fadeL1 { 0%, 12% { opacity: 1; } 15%, 87% { opacity: 0; } 95%, 100% { opacity: 1; } }
+        @keyframes fadeL2 { 0%, 19% { opacity: 0; } 22%, 34% { opacity: 1; } 37%, 100% { opacity: 0; } }
+        @keyframes fadeL3 { 0%, 41% { opacity: 0; } 44%, 59% { opacity: 1; } 62%, 100% { opacity: 0; } }
+        @keyframes fadeL4 { 0%, 66% { opacity: 0; } 69%, 87% { opacity: 1; } 90%, 100% { opacity: 0; } }
+
+        @keyframes fadeA1 { 0%, 11% { opacity: 0; } 12%, 22% { opacity: 1; } 23%, 100% { opacity: 0; } }
+        @keyframes fadeA2 { 0%, 33% { opacity: 0; } 34%, 44% { opacity: 1; } 45%, 100% { opacity: 0; } }
+        @keyframes fadeA3 { 0%, 58% { opacity: 0; } 59%, 69% { opacity: 1; } 70%, 100% { opacity: 0; } }
+
+        /* Block Arrow Pulse */
+        @keyframes pulseArrow { 
+            0%, 11% { opacity: 0; } 
+            12%, 22% { opacity: 0.15; transform: translateX(10px); } 
+            23%, 33% { opacity: 0; transform: translateX(0); } 
+            34%, 44% { opacity: 0.15; transform: translateX(10px); } 
+            45%, 58% { opacity: 0; transform: translateX(0); } 
+            59%, 69% { opacity: 0.15; transform: translateX(10px); } 
+            70%, 100% { opacity: 0; transform: translateX(0); } 
+        }
+
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" aria-label="Animated diagram showing the evolution of hydrocarbons from n-hexane to chlorobenzene">
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#F77F00" />
+            </marker>
+        </defs>
+
+        <!-- Static Background Elements -->
+        <text x="400" y="40" class="title">Classification and Transformation of Hydrocarbons</text>
+        <text x="400" y="65" class="subtitle">From Aliphatic Chains to Substituted Aromatics</text>
+
+        <!-- Legend -->
+        <g transform="translate(630, 20)">
+            <rect width="150" height="110" fill="#ffffff" stroke="#e0e0e0" rx="6" />
+            <text x="10" y="20" class="legend-text" font-weight="bold">Legend</text>
+            
+            <circle cx="20" cy="35" r="6" class="atom c-atom" />
+            <text x="35" y="39" class="legend-text">Carbon (C)</text>
+            
+            <circle cx="20" cy="55" r="4" class="atom h-atom" />
+            <text x="35" y="59" class="legend-text">Hydrogen (H)</text>
+            
+            <circle cx="20" cy="75" r="7" class="atom cl-atom" />
+            <text x="35" y="79" class="legend-text">Chlorine (Cl)</text>
+            
+            <line x1="12" y1="95" x2="28" y2="95" class="pi-bond" stroke-width="2" />
+            <text x="35" y="99" class="legend-text">π-Bond / Resonance</text>
+        </g>
+
+        <!-- Block Arrow (Reaction Direction) -->
+        <g class="anim-element" style="animation-name: pulseArrow; transform-origin: 400px 120px;">
+            <path d="M 330 110 L 430 110 L 430 90 L 480 125 L 430 160 L 430 140 L 330 140 Z" class="block-arrow" />
+        </g>
+
+        <!-- Process Annotations -->
+        <text x="400" y="130" class="annotation anim-element" style="animation-name: fadeA1;">Cyclization (-2H)</text>
+        <text x="400" y="130" class="annotation anim-element" style="animation-name: fadeA2;">Aromatization (-6H)</text>
+        <text x="400" y="130" class="annotation anim-element" style="animation-name: fadeA3;">Electrophilic Substitution</text>
+
+        <!-- Curly Arrows (Electron Flow) -->
+        <path d="M 550 250 Q 400 380 270 290" class="curly-arrow anim-element" marker-end="url(#arrowhead)" style="animation-name: fadeA1;" />
+        <path d="M 370 200 Q 300 130 180 110" class="curly-arrow anim-element" marker-end="url(#arrowhead)" style="animation-name: fadeA3;" />
+
+        <!-- Molecule Group -->
+        <g id="molecule">
+            <!-- C-H Bonds -->
+            <path class="bond anim-element" style="animation-name: hb1;" />
+            <path class="bond anim-element" style="animation-name: hb2;" />
+            <path class="bond anim-element" style="animation-name: hb3;" />
+            <path class="bond anim-element" style="animation-name: hb4;" />
+            <path class="bond anim-element" style="animation-name: hb5;" />
+            <path class="bond anim-element" style="animation-name: hb6;" />
+            <path class="bond anim-element" style="animation-name: hb7;" />
+            <path class="bond anim-element" style="animation-name: hb8;" />
+            <path class="bond anim-element" style="animation-name: hb9;" />
+            <path class="bond anim-element" style="animation-name: hb10;" />
+            <path class="bond anim-element" style="animation-name: hb11;" />
+            <path class="bond anim-element" style="animation-name: hb12;" />
+            <path class="bond anim-element" style="animation-name: hb13;" />
+            <path class="bond anim-element" style="animation-name: hb14;" />
+            <path class="bond anim-element" style="animation-name: hbCl;" />
+
+            <!-- C-C Bonds -->
+            <path class="bond anim-element" style="animation-name: bond1;" />
+            <path class="bond anim-element" style="animation-name: bond2;" />
+            <path class="bond anim-element" style="animation-name: bond3;" />
+            <path class="bond anim-element" style="animation-name: bond4;" />
+            <path class="bond anim-element" style="animation-name: bond5;" />
+            <path class="bond anim-element" style="animation-name: bond6;" />
+
+            <!-- Pi Bonds (Benzene) -->
+            <g class="anim-element" style="animation-name: fadePi;">
+                <path class="pi-bond" d="M 358 235 L 394 214" />
+                <path class="pi-bond" d="M 440 235 L 440 265" />
+                <path class="pi-bond" d="M 394 286 L 358 265" />
+            </g>
+
+            <!-- Resonance Ring -->
+            <circle cx="400" cy="250" r="38" class="resonance anim-element" style="animation-name: fadeResonance; transform-origin: 400px 250px;" />
+
+            <!-- Hydrogen Atoms -->
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH1;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH2;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH3;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH4;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH5;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH6;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH7;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH8;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH9;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH10;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH11;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH12;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH13;" />
+            <circle r="8" class="atom h-atom anim-element" style="animation-name: moveH14;" />
+
+            <!-- Chlorine Atom -->
+            <circle r="14" class="atom cl-atom anim-element" style="animation-name: moveCl;" />
+
+            <!-- Carbon Atoms -->
+            <circle r="12" class="atom c-atom anim-element" style="animation-name: moveC1;" />
+            <circle r="12" class="atom c-atom anim-element" style="animation-name: moveC2;" />
+            <circle r="12" class="atom c-atom anim-element" style="animation-name: moveC3;" />
+            <circle r="12" class="atom c-atom anim-element" style="animation-name: moveC4;" />
+            <circle r="12" class="atom c-atom anim-element" style="animation-name: moveC5;" />
+            <circle r="12" class="atom c-atom anim-element" style="animation-name: moveC6;" />
+        </g>
+
+        <!-- Dynamic State Labels -->
+        <g transform="translate(400, 440)">
+            <text class="label anim-element" style="animation-name: fadeL1;">Open Chain (Aliphatic) Alkane: <tspan class="formula">n-Hexane (C₆H₁₄)</tspan></text>
+            <text class="label anim-element" style="animation-name: fadeL2;">Alicyclic Hydrocarbon: <tspan class="formula">Cyclohexane (C₆H₁₂)</tspan></text>
+            <text class="label anim-element" style="animation-name: fadeL3;">Aromatic Hydrocarbon: <tspan class="formula">Benzene (C₆H₆)</tspan></text>
+            <text class="label anim-element" style="animation-name: fadeL4;">Haloarene: <tspan class="formula">Chlorobenzene (C₆H₅Cl)</tspan></text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

@@ -4,7 +4,7 @@ Auth router — endpoints for user authentication and profile.
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from app.auth import CurrentUser, get_current_user
+from app.auth import CurrentIdentity, get_authenticated_user
 from app.database import write_query
 from app.firebase import get_firebase_app
 from firebase_admin import auth as firebase_auth
@@ -13,7 +13,7 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.get("/me")
-async def get_me(current_user: CurrentUser = Depends(get_current_user)):
+async def get_me(current_user: CurrentIdentity = Depends(get_authenticated_user)):
     """
     Returns the currently authenticated user's info.
     Used by the frontend to verify auth state and get user details.
@@ -28,7 +28,7 @@ async def get_me(current_user: CurrentUser = Depends(get_current_user)):
 
 
 @router.delete("/me")
-async def delete_me(current_user: CurrentUser = Depends(get_current_user)):
+async def delete_me(current_user: CurrentIdentity = Depends(get_authenticated_user)):
     """
     Permanently delete current user account and linked graph data.
     Deletes:

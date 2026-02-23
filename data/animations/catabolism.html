@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catabolism: Respiratory Substrate Convergence</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        header {
+            text-align: center;
+            padding: 20px 10px;
+            color: #2C3E50;
+        }
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        p.subtitle {
+            margin: 5px 0 0 0;
+            font-size: 16px;
+            color: #5a6c7d;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto 20px auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        
+        /* Static Animations */
+        .flow-line {
+            stroke-dasharray: 6, 6;
+            animation: flow 1.5s linear infinite;
+        }
+        @keyframes flow {
+            to { stroke-dashoffset: -12; }
+        }
+        .pulse-complex {
+            animation: pulse 2s ease-in-out infinite;
+            transform-origin: center;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .spin-krebs {
+            animation: spin 6s linear infinite;
+            transform-origin: 400px 460px;
+        }
+        @keyframes spin {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Particle Animations (10s Loop) */
+        .particle {
+            opacity: 0;
+            animation-duration: 10s;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
+        }
+        
+        /* Carbohydrate Flow */
+        .anim-glucose { animation-name: move-glucose; }
+        @keyframes move-glucose {
+            0%, 5% { transform: translate(400px, 60px); opacity: 0; }
+            10% { transform: translate(400px, 60px); opacity: 1; }
+            30% { transform: translate(400px, 140px); opacity: 1; }
+            45% { transform: translate(400px, 220px); opacity: 1; }
+            60% { transform: translate(400px, 280px); opacity: 1; }
+            80% { transform: translate(400px, 360px); opacity: 1; }
+            90% { transform: translate(400px, 460px); opacity: 1; }
+            95%, 100% { transform: translate(400px, 460px); opacity: 0; }
+        }
+
+        /* Fat Flow */
+        .anim-glycerol { animation-name: move-glycerol; }
+        @keyframes move-glycerol {
+            0%, 5% { transform: translate(600px, 60px); opacity: 0; }
+            10% { transform: translate(600px, 60px); opacity: 1; }
+            30% { transform: translate(550px, 140px); opacity: 1; }
+            45% { transform: translate(400px, 220px); opacity: 1; }
+            50%, 100% { transform: translate(400px, 220px); opacity: 0; }
+        }
+        .anim-fa { animation-name: move-fa; }
+        @keyframes move-fa {
+            0%, 5% { transform: translate(600px, 60px); opacity: 0; }
+            10% { transform: translate(600px, 60px); opacity: 1; }
+            30% { transform: translate(650px, 140px); opacity: 1; }
+            60% { transform: translate(650px, 280px); opacity: 1; }
+            80% { transform: translate(400px, 360px); opacity: 1; }
+            85%, 100% { transform: translate(400px, 360px); opacity: 0; }
+        }
+
+        /* Protein Flow */
+        .anim-aa1 { animation-name: move-aa1; }
+        @keyframes move-aa1 {
+            0%, 5% { transform: translate(200px, 60px); opacity: 0; }
+            10% { transform: translate(200px, 60px); opacity: 1; }
+            30% { transform: translate(200px, 140px); opacity: 1; }
+            60% { transform: translate(400px, 280px); opacity: 1; }
+            65%, 100% { transform: translate(400px, 280px); opacity: 0; }
+        }
+        .anim-aa2 { animation-name: move-aa2; }
+        @keyframes move-aa2 {
+            0%, 5% { transform: translate(200px, 60px); opacity: 0; }
+            10% { transform: translate(200px, 60px); opacity: 1; }
+            30% { transform: translate(150px, 140px); opacity: 1; }
+            60% { transform: translate(150px, 280px); opacity: 1; }
+            80% { transform: translate(400px, 360px); opacity: 1; }
+            85%, 100% { transform: translate(400px, 360px); opacity: 0; }
+        }
+        .anim-aa3 { animation-name: move-aa3; }
+        @keyframes move-aa3 {
+            0%, 5% { transform: translate(200px, 60px); opacity: 0; }
+            10% { transform: translate(200px, 60px); opacity: 1; }
+            30% { transform: translate(100px, 140px); opacity: 1; }
+            60% { transform: translate(100px, 280px); opacity: 1; }
+            80% { transform: translate(360px, 460px); opacity: 1; }
+            85%, 100% { transform: translate(360px, 460px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Catabolism: Respiratory Substrate Convergence</h1>
+    <p class="subtitle">The Amphibolic Pathway: Funneling Proteins, Carbohydrates, and Fats into the Krebs Cycle</p>
+</header>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of catabolic pathways converging into the Krebs cycle">
+        <title>Catabolic Pathways Convergence</title>
+        <desc>Animation showing proteins, carbohydrates, and fats breaking down into simpler molecules and entering the respiratory pathway at different stages (Glycolysis and Krebs Cycle).</desc>
+        
+        <defs>
+            <!-- Arrowhead Marker -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#95a5a6"/>
+            </marker>
+            <marker id="arrow-krebs" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50"/>
+            </marker>
+            
+            <!-- Drop Shadow -->
+            <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+                <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.08"/>
+            </filter>
+        </defs>
+
+        <!-- ================= BACKGROUND / COMPARTMENTS ================= -->
+        
+        <!-- Cytoplasm -->
+        <rect x="15" y="15" width="770" height="570" rx="20" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" filter="url(#shadow)" aria-label="Cytoplasm"/>
+        <text x="40" y="50" font-family="Inter" font-size="20" font-weight="700" fill="#4A90D9">Cytoplasm</text>
+        <text x="40" y="70" font-family="Inter" font-size="14" font-weight="600" fill="#4A90D9">(Glycolysis)</text>
+
+        <!-- Mitochondrion -->
+        <g filter="url(#shadow)" aria-label="Mitochondrion">
+            <!-- Outer Membrane -->
+            <path d="M 100 440 C 100 320, 200 300, 400 300 C 600 300, 700 320, 700 440 C 700 560, 600 580, 400 580 C 200 580, 100 560, 100 440 Z" fill="#fdeaea" stroke="#E74C3C" stroke-width="5"/>
+            <!-- Inner Membrane & Cristae -->
+            <path d="M 120 440 C 120 335, 210 320, 400 320 C 590 320, 680 335, 680 440 C 680 545, 590 560, 400 560 C 210 560, 120 545, 120 440 Z" fill="#fadbd8" stroke="#C0392B" stroke-width="3"/>
+            <!-- Cristae Folds -->
+            <path d="M 150 400 L 220 410 M 150 480 L 220 470 M 650 400 L 580 410 M 650 480 L 580 470 M 280 330 L 290 380 M 520 330 L 510 380 M 280 550 L 290 500 M 520 550 L 510 500 M 380 320 L 380 360 M 420 560 L 420 520" stroke="#C0392B" stroke-width="4" stroke-linecap="round"/>
+        </g>
+        <text x="140" y="540" font-family="Inter" font-size="18" font-weight="700" fill="#C0392B">Mitochondrion</text>
+        <text x="140" y="560" font-family="Inter" font-size="13" font-weight="600" fill="#C0392B">(Matrix / Krebs Cycle)</text>
+
+        <!-- ================= PATHWAYS (DASHED LINES) ================= -->
+        
+        <g fill="none" stroke="#95a5a6" stroke-width="2" class="flow-line" marker-end="url(#arrow)">
+            <!-- Carbohydrate Path -->
+            <path d="M 400 80 L 400 440"/>
+            
+            <!-- Fat Paths -->
+            <path d="M 600 80 L 550 140 L 400 220"/> <!-- Glycerol to PGAL -->
+            <path d="M 600 80 L 650 140 L 650 280 L 415 360"/> <!-- FA to Acetyl CoA -->
+            
+            <!-- Protein Paths -->
+            <path d="M 200 80 L 200 140 L 385 280"/> <!-- AA to Pyruvate -->
+            <path d="M 200 80 L 150 140 L 150 280 L 385 360"/> <!-- AA to Acetyl CoA -->
+            <path d="M 200 80 L 100 140 L 100 280 L 345 460"/> <!-- AA to Krebs -->
+        </g>
+
+        <!-- ================= STATIC LABELS & INTERMEDIATES ================= -->
+        
+        <!-- Top Row Labels -->
+        <text x="200" y="35" font-family="Inter" font-size="16" font-weight="700" text-anchor="middle" fill="#2C3E50">Proteins</text>
+        <text x="400" y="35" font-family="Inter" font-size="16" font-weight="700" text-anchor="middle" fill="#2C3E50">Carbohydrates</text>
+        <text x="600" y="35" font-family="Inter" font-size="16" font-weight="700" text-anchor="middle" fill="#2C3E50">Fats</text>
+
+        <!-- Second Row Labels (Simple Units) -->
+        <text x="200" y="170" font-family="Inter" font-size="13" font-weight="600" text-anchor="middle" fill="#5a6c7d">Amino Acids</text>
+        <text x="400" y="170" font-family="Inter" font-size="13" font-weight="600" text-anchor="middle" fill="#5a6c7d">Glucose</text>
+        <text x="550" y="170" font-family="Inter" font-size="13" font-weight="600" text-anchor="middle" fill="#5a6c7d">Glycerol</text>
+        <text x="650" y="170" font-family="Inter" font-size="13" font-weight="600" text-anchor="middle" fill="#5a6c7d">Fatty Acids</text>
+
+        <!-- Central Pathway Labels -->
+        <rect x="415" y="208" width="105" height="24" rx="4" fill="#ffffff" opacity="0.8"/>
+        <text x="420" y="225" font-family="Roboto Mono" font-size="14" font-weight="600" fill="#2C3E50">PGAL / DHAP</text>
+        
+        <rect x="415" y="268" width="115" height="24" rx="4" fill="#ffffff" opacity="0.8"/>
+        <text x="420" y="285" font-family="Roboto Mono" font-size="14" font-weight="600" fill="#2C3E50">Pyruvic Acid</text>
+        
+        <rect x="415" y="348" width="95" height="24" rx="4" fill="#ffffff" opacity="0.8"/>
+        <text x="420" y="365" font-family="Roboto Mono" font-size="14" font-weight="600" fill="#2C3E50">Acetyl CoA</text>
+
+        <!-- ================= KREBS CYCLE ================= -->
+        <g class="spin-krebs">
+            <path d="M 400 420 A 40 40 0 0 1 434.6 480" fill="none" stroke="#2C3E50" stroke-width="4" marker-end="url(#arrow-krebs)"/>
+            <path d="M 434.6 480 A 40 40 0 0 1 365.4 480" fill="none" stroke="#2C3E50" stroke-width="4" marker-end="url(#arrow-krebs)"/>
+            <path d="M 365.4 480 A 40 40 0 0 1 400 420" fill="none" stroke="#2C3E50" stroke-width="4" marker-end="url(#arrow-krebs)"/>
+        </g>
+        <text x="400" y="465" font-family="Inter" font-size="14" font-weight="700" text-anchor="middle" fill="#2C3E50">TCA</text>
+        <text x="400" y="480" font-family="Inter" font-size="11" font-weight="600" text-anchor="middle" fill="#2C3E50">CYCLE</text>
+
+        <!-- ================= STATIC COMPLEX MOLECULES (TOP) ================= -->
+        <g class="pulse-complex">
+            <!-- Proteins -->
+            <g transform="translate(200, 60)">
+                <circle cx="-22" cy="0" r="12" fill="#98D8C8" stroke="#2C3E50" stroke-width="2"/>
+                <circle cx="0" cy="0" r="12" fill="#98D8C8" stroke="#2C3E50" stroke-width="2"/>
+                <circle cx="22" cy="0" r="12" fill="#98D8C8" stroke="#2C3E50" stroke-width="2"/>
+                <circle cx="-11" cy="-15" r="12" fill="#98D8C8" stroke="#2C3E50" stroke-width="2"/>
+                <circle cx="11" cy="-15" r="12" fill="#98D8C8" stroke="#2C3E50" stroke-width="2"/>
+            </g>
+            
+            <!-- Carbohydrates -->
+            <g transform="translate(400, 60)">
+                <polygon points="-20,-12 -10,-6 -10,6 -20,12 -30,6 -30,-6" fill="#F39C12" stroke="#2C3E50" stroke-width="2"/>
+                <polygon points="0,-12 10,-6 10,6 0,12 -10,6 -10,-6" fill="#F39C12" stroke="#2C3E50" stroke-width="2"/>
+                <polygon points="20,-12 30,-6 30,6 20,12 10,6 10,-6" fill="#F39C12" stroke="#2C3E50" stroke-width="2"/>
+            </g>
+            
+            <!-- Fats -->
+            <g transform="translate(600, 60)">
+                <!-- Glycerol backbone -->
+                <rect x="-15" y="-18" width="10" height="36" rx="2" fill="#FFD700" stroke="#2C3E50" stroke-width="2"/>
+                <!-- Fatty acid tails -->
+                <path d="M -5 -12 L 5 -17 L 15 -12 L 25 -17 L 35 -12" fill="none" stroke="#FFD700" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M -5 0 L 5 -5 L 15 0 L 25 -5 L 35 0" fill="none" stroke="#FFD700" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M -5 12 L 5 7 L 15 12 L 25 7 L 35 12" fill="none" stroke="#FFD700" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+        </g>
+
+        <!-- ================= ANIMATED PARTICLES ================= -->
+        
+        <!-- Carbohydrate Particle (Glucose -> PGAL -> Pyruvate -> Acetyl CoA -> Krebs) -->
+        <g class="particle anim-glucose">
+            <polygon points="0,-12 10,-6 10,6 0,12 -10,6 -10,-6" fill="#F39C12" stroke="#2C3E50" stroke-width="2"/>
+        </g>
+
+        <!-- Fat Particle 1 (Glycerol -> PGAL) -->
+        <g class="particle anim-glycerol">
+            <rect x="-5" y="-10" width="10" height="20" rx="2" fill="#FFD700" stroke="#2C3E50" stroke-width="2"/>
+        </g>
+
+        <!-- Fat Particle 2 (Fatty Acid -> Acetyl CoA) -->
+        <g class="particle anim-fa">
+            <path d="M -15 0 L -7 -5 L 0 0 L 7 -5 L 15 0" fill="none" stroke="#FFD700" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+
+        <!-- Protein Particle 1 (Amino Acid -> Pyruvate) -->
+        <g class="particle anim-aa1">
+            <circle cx="0" cy="0" r="8" fill="#98D8C8" stroke="#2C3E50" stroke-width="2"/>
+        </g>
+
+        <!-- Protein Particle 2 (Amino Acid -> Acetyl CoA) -->
+        <g class="particle anim-aa2">
+            <circle cx="0" cy="0" r="8" fill="#98D8C8" stroke="#2C3E50" stroke-width="2"/>
+        </g>
+
+        <!-- Protein Particle 3 (Amino Acid -> Krebs) -->
+        <g class="particle anim-aa3">
+            <circle cx="0" cy="0" r="8" fill="#98D8C8" stroke="#2C3E50" stroke-width="2"/>
+        </g>
+
+        <!-- ================= LEGEND ================= -->
+        <g transform="translate(630, 20)">
+            <rect x="0" y="0" width="140" height="100" rx="6" fill="#ffffff" stroke="#bdc3c7" stroke-width="1" filter="url(#shadow)"/>
+            <text x="70" y="20" font-family="Inter" font-size="12" font-weight="700" text-anchor="middle" fill="#2C3E50">Legend</text>
+            
+            <circle cx="15" cy="35" r="6" fill="#98D8C8" stroke="#2C3E50" stroke-width="1"/>
+            <text x="30" y="40" font-family="Inter" font-size="12" fill="#2C3E50">Proteins / AA</text>
+            
+            <polygon points="15,45 21,49 21,55 15,59 9,55 9,49" fill="#F39C12" stroke="#2C3E50" stroke-width="1"/>
+            <text x="30" y="56" font-family="Inter" font-size="12" fill="#2C3E50">Carbs / Sugars</text>
+            
+            <rect x="10" y="66" width="10" height="10" rx="1" fill="#FFD700" stroke="#2C3E50" stroke-width="1"/>
+            <text x="30" y="75" font-family="Inter" font-size="12" fill="#2C3E50">Fats / Lipids</text>
+
+            <path d="M 10 90 L 25 90" stroke="#95a5a6" stroke-width="2" stroke-dasharray="3,3"/>
+            <text x="30" y="94" font-family="Inter" font-size="12" fill="#2C3E50">Metabolic Flux</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

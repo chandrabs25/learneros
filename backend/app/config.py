@@ -1,5 +1,5 @@
 """
-AI Tutor — Configuration (loaded from environment variables)
+LearnerOS — Configuration (loaded from environment variables)
 """
 
 from pydantic import AliasChoices, Field

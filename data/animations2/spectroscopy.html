@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Spectroscopy Interactive (Bohr Model)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f0f4f8;
+            --panel-bg: rgba(255, 255, 255, 0.75);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --accent: #7209B7;
+            --nucleus: #FF3366;
+            --electron: #4361EE;
+            --font-ui: 'Inter', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 75%;
+            height: 100%;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 3D Orbit Labels */
+        .orbit-label {
+            position: absolute;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 700;
+            color: rgba(0, 0, 0, 0.4);
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff;
+        }
+
+        /* Top Left Info Card */
+        #info-card {
+            position: absolute;
+            top: 24px;
+            left: 24px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 1);
+            min-width: 250px;
+            pointer-events: none;
+        }
+
+        #info-card h2 {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-family: var(--font-mono);
+        }
+
+        .info-label {
+            font-family: var(--font-ui);
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .series-badge {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 4px 10px;
+            background: rgba(114, 9, 183, 0.1);
+            color: var(--accent);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* Bottom Spectral Bar */
+        #spectral-container {
+            position: absolute;
+            bottom: 30px;
+            left: 24px;
+            width: calc(100% - 48px);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .spectral-labels {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        #spectral-bar {
+            position: relative;
+            height: 24px;
+            width: 100%;
+            border-radius: 6px;
+            background: linear-gradient(to right, 
+                #7209B7 0%, /* UV */
+                #4361EE 15%, /* Blue */
+                #06D6A0 40%, /* Green */
+                #FFD166 60%, /* Yellow */
+                #EF476F 80%, /* Red */
+                #F77F00 100% /* IR */
+            );
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #spectral-needle {
+            position: absolute;
+            top: -4px;
+            bottom: -4px;
+            width: 4px;
+            background: #fff;
+            border: 1px solid #000;
+            border-radius: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: left 0.3s ease-out;
+            box-shadow: 0 0 10px rgba(255,255,255,0.8);
+            display: none;
+        }
+
+        /* Right Control Panel */
+        #ui-panel {
+            width: 25%;
+            height: 100%;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            border-left: 1px solid rgba(255, 255, 255, 0.6);
+            padding: 30px 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.03);
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            margin-bottom: 30px;
+        }
+
+        .panel-header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .panel-header p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .val-display {
+            font-family: var(--font-mono);
+            color: var(--accent);
+            background: rgba(114, 9, 183, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: var(--accent);
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 2px 6px rgba(114, 9, 183, 0.4);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .mode-indicator {
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .mode-emission {
+            background: rgba(239, 71, 111, 0.15);
+            color: #EF476F;
+            border: 1px solid rgba(239, 71, 111, 0.3);
+        }
+
+        .mode-absorption {
+            background: rgba(6, 214, 160, 0.15);
+            color: #00A878;
+            border: 1px solid rgba(6, 214, 160, 0.3);
+        }
+
+        .mode-invalid {
+            background: rgba(100, 116, 139, 0.1);
+            color: var(--text-muted);
+            border: 1px solid rgba(100, 116, 139, 0.2);
+        }
+
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-family: var(--font-ui);
+            font-weight: 700;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s, background 0.2s;
+            box-shadow: 0 4px 15px rgba(114, 9, 183, 0.3);
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(114, 9, 183, 0.4);
+            background: #5a0794;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        button:disabled {
+            background: #cbd5e1;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            #canvas-container { width: 100%; height: 60%; }
+            #ui-panel { width: 100%; height: 40%; border-left: none; border-top: 1px solid rgba(255,255,255,0.6); }
+            #info-card { transform: scale(0.8); transform-origin: top left; }
+            #spectral-container { bottom: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <!-- 3D Canvas injected here -->
+        <div id="labels-container"></div>
+        
+        <div id="info-card">
+            <h2>Transition Data</h2>
+            <div class="info-row">
+                <span class="info-label">Energy (ΔE)</span>
+                <span class="info-value" id="val-energy">0.00 eV</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Wavelength (λ)</span>
+                <span class="info-value" id="val-wavelength">-- nm</span>
+            </div>
+            <div class="series-badge" id="val-series">No Transition</div>
+        </div>
+
+        <div id="spectral-container">
+            <div class="spectral-labels">
+                <span>UV (380nm)</span>
+                <span>Visible Spectrum</span>
+                <span>IR (750nm)</span>
+            </div>
+            <div id="spectral-bar">
+                <div id="spectral-needle"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <div class="panel-header">
+            <h1>Bohr Model</h1>
+            <p>Quantum Spectroscopy Interactive</p>
+        </div>
+
+        <div id="mode-display" class="mode-indicator mode-invalid">
+            Select States to Begin
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Initial State (n<sub>i</sub>)</span>
+                <span class="val-display" id="disp-ni">3</span>
+            </div>
+            <input type="range" id="slider-ni" min="1" max="6" step="1" value="3">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Final State (n<sub>f</sub>)</span>
+                <span class="val-display" id="disp-nf">2</span>
+            </div>
+            <input type="range" id="slider-nf" min="1" max="6" step="1" value="2">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Simulation Speed</span>
+                <span class="val-display" id="disp-speed">1.0x</span>
+            </div>
+            <input type="range" id="slider-speed" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <button id="btn-jump">Trigger Transition</button>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- PHYSICS CONSTANTS & FORMULAS ---
+        const A0 = 2; // Visual scaling factor for Bohr radius
+        const RYDBERG_EV = 13.6;
+        const HC_EV_NM = 1240; // hc in eV*nm
+
+        function getRadius(n) {
+            return A0 * n * n;
+        }
+
+        function getEnergy(n) {
+            return -RYDBERG_EV / (n * n);
+        }
+
+        function getAngularVelocity(n) {
+            // omega proportional to 1/n^3. Scaled for visual appeal.
+            return 2.0 / (n * n * n);
+        }
+
+        function wavelengthToColor(wl) {
+            if (wl < 380) return 0x7209B7; // UV - Purple
+            if (wl > 750) return 0xF77F00; // IR - Orange/Red
+
+            let r = 0, g = 0, b = 0;
+            if (wl >= 380 && wl < 440) { r = -(wl - 440) / (440 - 380); g = 0; b = 1; }
+            else if (wl >= 440 && wl < 490) { r = 0; g = (wl - 440) / (490 - 440); b = 1; }
+            else if (wl >= 490 && wl < 510) { r = 0; g = 1; b = -(wl - 510) / (510 - 490); }
+            else if (wl >= 510 && wl < 580) { r = (wl - 510) / (580 - 510); g = 1; b = 0; }
+            else if (wl >= 580 && wl < 645) { r = 1; g = -(wl - 645) / (645 - 580); b = 0; }
+            else if (wl >= 645 && wl <= 750) { r = 1; g = 0; b = 0; }
+
+            // Intensity falloff near vision limits
+            let factor = 1.0;
+            if (wl >= 380 && wl < 420) factor = 0.3 + 0.7 * (wl - 380) / (420 - 380);
+            else if (wl >= 700 && wl <= 750) factor = 0.3 + 0.7 * (750 - wl) / (750 - 700);
+
+            r = Math.round(r * factor * 255);
+            g = Math.round(g * factor * 255);
+            b = Math.round(b * factor * 255);
+
+            return (r << 16) | (g << 8) | b;
+        }
+
+        function getSeriesName(n_lower) {
+            switch(n_lower) {
+                case 1: return "Lyman Series (UV)";
+                case 2: return "Balmer Series (Visible)";
+                case 3: return "Paschen Series (IR)";
+                case 4: return "Brackett Series (IR)";
+                case 5: return "Pfund Series (IR)";
+                case 6: return "Humphreys Series (IR)";
+                default: return "Unknown Series";
+            }
+        }
+
+        // --- THREE.JS SETUP ---
+        const container = document.getElementById('canvas-container');
+        const labelsContainer = document.getElementById('labels-container');
+        
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 60, 120);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 300;
+        controls.minDistance = 10;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const nucleusLight = new THREE.PointLight(0xFF3366, 1.5, 100);
+        nucleusLight.position.set(0, 0, 0);
+        scene.add(nucleusLight);
+
+        // --- SCENE OBJECTS ---
+        
+        // Nucleus
+        const nucleusGeo = new THREE.SphereGeometry(1.5, 32, 32);
+        const nucleusMat = new THREE.MeshStandardMaterial({ 
+            color: 0xFF3366, 
+            emissive: 0xFF3366,
+            emissiveIntensity: 0.4,
+            roughness: 0.2
+        });
+        const nucleus = new THREE.Mesh(nucleusGeo, nucleusMat);
+        scene.add(nucleus);
+
+        // Orbits & Labels
+        const orbitLabels = [];
+        for (let n = 1; n <= 6; n++) {
+            const r = getRadius(n);
+            
+            // Orbit Ring
+            const ringGeo = new THREE.BufferGeometry();
+            const pts = [];
+            const segments = 128;
+            for (let i = 0; i <= segments; i++) {
+                const theta = (i / segments) * Math.PI * 2;
+                pts.push(new THREE.Vector3(Math.cos(theta) * r, 0, Math.sin(theta) * r));
+            }
+            ringGeo.setFromPoints(pts);
+            const ringMat = new THREE.LineDashedMaterial({ 
+                color: 0x94a3b8, 
+                dashSize: 1, 
+                gapSize: 1,
+                transparent: true,
+                opacity: 0.6
+            });
+            const ring = new THREE.Line(ringGeo, ringMat);
+            ring.computeLineDistances();
+            scene.add(ring);
+
+            // HTML Label
+            const label = document.createElement('div');
+            label.className = 'orbit-label';
+            label.textContent = `n=${n}`;
+            labelsContainer.appendChild(label);
+            orbitLabels.push({ element: label, pos: new THREE.Vector3(r + 1, 0, 0) });
+        }
+
+        // Electron
+        const electronGeo = new THREE.SphereGeometry(0.8, 32, 32);
+        const electronMat = new THREE.MeshStandardMaterial({ 
+            color: 0x4361EE,
+            emissive: 0x4361EE,
+            emissiveIntensity: 0.2,
+            roughness: 0.1
+        });
+        const electron = new THREE.Mesh(electronGeo, electronMat);
+        scene.add(electron);
+
+        // --- STATE VARIABLES ---
+        let currentN = 3;
+        let targetN = 2;
+        let electronAngle = 0;
+        let simSpeed = 1.0;
+        
+        // Transition State
+        let isTransitioning = false;
+        let transitionTime = 0;
+        const TRANSITION_DURATION = 0.5; // seconds
+        let startRadius = getRadius(currentN);
+        let endRadius = getRadius(currentN);
+        
+        // Photons Array
+        let photons = [];
+
+        // Initialize Electron Position
+        electron.position.set(startRadius, 0, 0);
+
+        // --- UI ELEMENTS & LOGIC ---
+        const sliderNi = document.getElementById('slider-ni');
+        const sliderNf = document.getElementById('slider-nf');
+        const sliderSpeed = document.getElementById('slider-speed');
+        const dispNi = document.getElementById('disp-ni');
+        const dispNf = document.getElementById('disp-nf');
+        const dispSpeed = document.getElementById('disp-speed');
+        const btnJump = document.getElementById('btn-jump');
+        const modeDisplay = document.getElementById('mode-display');
+        
+        const valEnergy = document.getElementById('val-energy');
+        const valWavelength = document.getElementById('val-wavelength');
+        const valSeries = document.getElementById('val-series');
+        const spectralNeedle = document.getElementById('spectral-needle');
+
+        function updateUIState() {
+            const ni = parseInt(sliderNi.value);
+            const nf = parseInt(sliderNf.value);
+            
+            dispNi.textContent = ni;
+            dispNf.textContent = nf;
+            
+            // Calculate Physics
+            const Ei = getEnergy(ni);
+            const Ef = getEnergy(nf);
+            const deltaE = Math.abs(Ei - Ef);
+            
+            if (ni === nf) {
+                modeDisplay.className = 'mode-indicator mode-invalid';
+                modeDisplay.textContent = 'Invalid: Same State';
+                btnJump.disabled = true;
+                valEnergy.textContent = '0.00 eV';
+                valWavelength.textContent = '-- nm';
+                valSeries.textContent = 'No Transition';
+                spectralNeedle.style.display = 'none';
+            } else {
+                btnJump.disabled = isTransitioning;
+                
+                const wl = HC_EV_NM / deltaE;
+                valEnergy.textContent = deltaE.toFixed(2) + ' eV';
+                valWavelength.textContent = wl.toFixed(0) + ' nm';
+                
+                const lowerN = Math.min(ni, nf);
+                valSeries.textContent = getSeriesName(lowerN);
+
+                // Update Spectral Bar Needle
+                spectralNeedle.style.display = 'block';
+                let percent = ((wl - 380) / (750 - 380)) * 100;
+                if (percent < 0) percent = 0;
+                if (percent > 100) percent = 100;
+                spectralNeedle.style.left = `${percent}%`;
+                
+                // Colorize needle based on wavelength
+                const colorHex = wavelengthToColor(wl);
+                const colorStr = '#' + colorHex.toString(16).padStart(6, '0');
+                spectralNeedle.style.background = colorStr;
+
+                if (ni > nf) {
+                    modeDisplay.className = 'mode-indicator mode-emission';
+                    modeDisplay.textContent = 'Mode: Emission (Photon Out)';
+                } else {
+                    modeDisplay.className = 'mode-indicator mode-absorption';
+                    modeDisplay.textContent = 'Mode: Absorption (Photon In)';
+                }
+            }
+        }
+
+        sliderNi.addEventListener('input', updateUIState);
+        sliderNf.addEventListener('input', updateUIState);
+        sliderSpeed.addEventListener('input', (e) => {
+            simSpeed = parseFloat(e.target.value);
+            dispSpeed.textContent = simSpeed.toFixed(1) + 'x';
+        });
+
+        // --- PHOTON GENERATOR ---
+        function createPhoton(startPos, direction, wavelength, isAbsorption) {
+            const color = wavelengthToColor(wavelength);
+            
+            // Create wave packet geometry
+            const points = 50;
+            const geo = new THREE.BufferGeometry();
+            const posArray = new Float32Array(points * 3);
+            geo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            
+            const mat = new THREE.LineBasicMaterial({ 
+                color: color, 
+                linewidth: 2,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            const mesh = new THREE.Line(geo, mat);
+            scene.add(mesh);
+
+            photons.push({
+                mesh: mesh,
+                centerPos: startPos.clone(),
+                direction: direction.normalize(),
+                up: new THREE.Vector3(0, 1, 0), // Transverse oscillation in Y
+                wavelength: wavelength,
+                phase: 0,
+                speed: 60, // Visual speed of light
+                packetLength: 15,
+                isAbsorption: isAbsorption,
+                targetPos: isAbsorption ? electron.position.clone() : null,
+                active: true
+            });
+        }
+
+        // --- TRANSITION LOGIC ---
+        btnJump.addEventListener('click', () => {
+            if (isTransitioning) return;
+            
+            const ni = parseInt(sliderNi.value);
+            const nf = parseInt(sliderNf.value);
+            if (ni === nf) return;
+
+            // Force electron to current n_i visually if it drifted (though it shouldn't)
+            currentN = ni;
+            targetN = nf;
+            startRadius = getRadius(currentN);
+            endRadius = getRadius(targetN);
+            
+            const deltaE = Math.abs(getEnergy(ni) - getEnergy(nf));
+            const wl = HC_EV_NM / deltaE;
+
+            isTransitioning = true;
+            btnJump.disabled = true;
+            sliderNi.disabled = true;
+            sliderNf.disabled = true;
+
+            if (ni > nf) {
+                // EMISSION: Jump immediately, emit photon
+                transitionTime = 0;
+                
+                // Direction outward from nucleus through electron
+                const dir = electron.position.clone().normalize();
+                createPhoton(electron.position, dir, wl, false);
+            } else {
+                // ABSORPTION: Create photon outside, wait for it to hit
+                const dir = electron.position.clone().normalize().negate(); // Inward
+                const startPos = electron.position.clone().add(dir.clone().negate().multiplyScalar(60));
+                createPhoton(startPos, dir, wl, true);
+                // Transition will start when photon hits (handled in render loop)
+            }
+        });
+
+        // --- RENDER LOOP ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const dt = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // 1. Update Electron Position
+            if (isTransitioning) {
+                const ni = parseInt(sliderNi.value);
+                const nf = parseInt(sliderNf.value);
+                
+                // If emission, or if absorption and photon has hit (transitionTime > 0)
+                if (ni > nf || (ni < nf && transitionTime > 0)) {
+                    transitionTime += dt * simSpeed;
+                    let t = transitionTime / TRANSITION_DURATION;
+                    
+                    if (t >= 1.0) {
+                        t = 1.0;
+                        isTransitioning = false;
+                        currentN = targetN;
+                        sliderNi.value = currentN; // Update UI to reflect new state
+                        updateUIState();
+                        sliderNi.disabled = false;
+                        sliderNf.disabled = false;
+                        btnJump.disabled = false;
+                    }
+
+                    // Smoothstep interpolation for radius
+                    const smoothT = t * t * (3 - 2 * t);
+                    const currentR = startRadius + (endRadius - startRadius) * smoothT;
+                    
+                    // Interpolate angular velocity
+                    const w_start = getAngularVelocity(ni);
+                    const w_end = getAngularVelocity(nf);
+                    const currentW = w_start + (w_end - w_start) * smoothT;
+                    
+                    electronAngle += currentW * dt * simSpeed;
+                    
+                    electron.position.x = Math.cos(electronAngle) * currentR;
+                    electron.position.z = Math.sin(electronAngle) * currentR;
+                } else {
+                    // Waiting for absorption photon
+                    const w = getAngularVelocity(currentN);
+                    electronAngle += w * dt * simSpeed;
+                    electron.position.x = Math.cos(electronAngle) * startRadius;
+                    electron.position.z = Math.sin(electronAngle) * startRadius;
+                }
+            } else {
+                // Normal Orbit
+                const w = getAngularVelocity(currentN);
+                electronAngle += w * dt * simSpeed;
+                const r = getRadius(currentN);
+                electron.position.x = Math.cos(electronAngle) * r;
+                electron.position.z = Math.sin(electronAngle) * r;
+            }
+
+            // 2. Update Photons
+            for (let i = photons.length - 1; i >= 0; i--) {
+                const p = photons[i];
+                if (!p.active) continue;
+
+                // Move packet center
+                const moveDist = p.speed * dt * simSpeed;
+                p.centerPos.add(p.direction.clone().multiplyScalar(moveDist));
+                p.phase += 15 * dt * simSpeed; // Wiggle speed
+
+                // Check collisions/bounds
+                if (p.isAbsorption) {
+                    // Update target to current electron pos
+                    p.targetPos.copy(electron.position);
+                    // Recalculate direction slightly to home in
+                    p.direction.subVectors(p.targetPos, p.centerPos).normalize();
+                    
+                    const dist = p.centerPos.distanceTo(p.targetPos);
+                    if (dist < 2.0) {
+                        // Hit! Start electron transition
+                        p.active = false;
+                        scene.remove(p.mesh);
+                        transitionTime = 0.001; // Trigger jump logic
+                        continue;
+                    }
+                } else {
+                    // Emission: remove if far away
+                    if (p.centerPos.length() > 200) {
+                        p.active = false;
+                        scene.remove(p.mesh);
+                        continue;
+                    }
+                }
+
+                // Rebuild wave geometry
+                const posAttr = p.mesh.geometry.attributes.position;
+                const pts = posAttr.count;
+                const halfLen = p.packetLength / 2;
+                
+                // Wavelength determines spatial frequency
+                const k = (Math.PI * 2) / (p.wavelength / 100); // Scaled for visual
+                
+                for (let j = 0; j < pts; j++) {
+                    // Map j to distance along packet (-halfLen to +halfLen)
+                    const x = (j / (pts - 1)) * p.packetLength - halfLen;
+                    
+                    // Gaussian envelope
+                    const envelope = Math.exp(-(x * x) / (2 * 4)); 
+                    
+                    // Sine wave displacement
+                    const displacement = Math.sin(k * x - p.phase) * 2.0 * envelope;
+                    
+                    // Calculate 3D point
+                    const ptPos = p.centerPos.clone()
+                        .add(p.direction.clone().multiplyScalar(x))
+                        .add(p.up.clone().multiplyScalar(displacement));
+                    
+                    posAttr.setXYZ(j, ptPos.x, ptPos.y, ptPos.z);
+                }
+                posAttr.needsUpdate = true;
+            }
+
+            // Clean up inactive photons
+            photons = photons.filter(p => p.active);
+
+            // 3. Update 2D Labels
+            orbitLabels.forEach((item) => {
+                const vector = item.pos.clone();
+                vector.project(camera);
+                
+                const x = (vector.x * .5 + .5) * container.clientWidth;
+                const y = (vector.y * -.5 + .5) * container.clientHeight;
+                
+                item.element.style.left = `${x}px`;
+                item.element.style.top = `${y}px`;
+            });
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // Init
+        updateUIState();
+        animate();
+
+    </script>
+</body>
+</html>

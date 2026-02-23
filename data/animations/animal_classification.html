@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Levels of Biological Organization in Animals</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* --- Animations --- */
+        
+        /* Stage 1: Cell */
+        .stage1-cell {
+            transform-origin: 400px 220px;
+            animation: stage1Anim 12s infinite ease-in-out;
+        }
+        @keyframes stage1Anim {
+            0% { opacity: 1; transform: scale(1); }
+            8% { opacity: 1; transform: scale(1.08); }
+            14% { opacity: 1; transform: scale(1); }
+            16.6%, 83.3% { opacity: 0; transform: scale(1); }
+            85% { opacity: 0; transform: scale(1); }
+            92% { opacity: 1; transform: scale(1.08); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Stage 2: Tissue */
+        .t-center {
+            animation: tCenterAnim 12s infinite ease-in-out;
+        }
+        @keyframes tCenterAnim {
+            0%, 14% { opacity: 0; }
+            16.6%, 31% { opacity: 1; }
+            33.3%, 100% { opacity: 0; }
+        }
+
+        .clone {
+            transform-origin: 400px 220px;
+            animation: cloneSnap 12s infinite ease-out;
+        }
+        @keyframes cloneSnap {
+            0%, 14% { transform: translate(0, 0) scale(0.2); opacity: 0; }
+            16.6%, 31% { transform: translate(var(--tx), var(--ty)) scale(1); opacity: 1; }
+            33.3%, 100% { transform: translate(var(--tx), var(--ty)) scale(1.1); opacity: 0; }
+        }
+
+        /* Stage 3: Organ (Heart) */
+        .stage3-organ {
+            transform-origin: 400px 220px;
+            animation: stage3Anim 12s infinite ease-in-out;
+        }
+        @keyframes stage3Anim {
+            0%, 31% { opacity: 0; }
+            33.3%, 83.3% { opacity: 1; }
+            85%, 100% { opacity: 0; }
+        }
+
+        .heart-beat {
+            transform-origin: 400px 220px;
+            animation: heartBeat 1s infinite ease-in-out;
+        }
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            15% { transform: scale(1.1); }
+            30% { transform: scale(1); }
+            45% { transform: scale(1.15); }
+            60%, 100% { transform: scale(1); }
+        }
+
+        /* Stage 4: Organ System (Vessels) */
+        .stage4-system {
+            animation: stage4Anim 12s infinite ease-in-out;
+        }
+        @keyframes stage4Anim {
+            0%, 48% { opacity: 0; }
+            50%, 83.3% { opacity: 1; }
+            85%, 100% { opacity: 0; }
+        }
+
+        .vessel-path path {
+            stroke-dasharray: 1200;
+            stroke-dashoffset: 1200;
+            animation: vesselGrow 12s infinite ease-in-out;
+        }
+        @keyframes vesselGrow {
+            0%, 50% { stroke-dashoffset: 1200; }
+            66.6%, 83.3% { stroke-dashoffset: 0; }
+            85%, 100% { stroke-dashoffset: 1200; }
+        }
+
+        /* Stage 5: Organism */
+        .stage5-organism {
+            animation: stage5Anim 12s infinite ease-in-out;
+        }
+        @keyframes stage5Anim {
+            0%, 64% { opacity: 0; }
+            66.6%, 83.3% { opacity: 1; }
+            85%, 100% { opacity: 0; }
+        }
+
+        /* Labels */
+        .l1 { animation: label1 12s infinite; }
+        .l2 { animation: label2 12s infinite; }
+        .l3 { animation: label3 12s infinite; }
+        .l4 { animation: label4 12s infinite; }
+        .l5 { animation: label5 12s infinite; }
+
+        @keyframes label1 { 0%, 14% { opacity: 1; transform: translateY(0); } 16.6%, 83.3% { opacity: 0; transform: translateY(-10px); } 85%, 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes label2 { 0%, 14% { opacity: 0; transform: translateY(10px); } 16.6%, 31% { opacity: 1; transform: translateY(0); } 33.3%, 100% { opacity: 0; transform: translateY(-10px); } }
+        @keyframes label3 { 0%, 31% { opacity: 0; transform: translateY(10px); } 33.3%, 48% { opacity: 1; transform: translateY(0); } 50%, 100% { opacity: 0; transform: translateY(-10px); } }
+        @keyframes label4 { 0%, 48% { opacity: 0; transform: translateY(10px); } 50%, 64% { opacity: 1; transform: translateY(0); } 66.6%, 100% { opacity: 0; transform: translateY(-10px); } }
+        @keyframes label5 { 0%, 64% { opacity: 0; transform: translateY(10px); } 66.6%, 83.3% { opacity: 1; transform: translateY(0); } 85%, 100% { opacity: 0; transform: translateY(-10px); } }
+
+        /* Progress Bar */
+        .progress-bar {
+            transform-origin: left;
+            animation: progress 12s linear infinite;
+        }
+        @keyframes progress {
+            0% { transform: scaleX(0); }
+            100% { transform: scaleX(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram showing the levels of biological organization from cell to organism">
+        
+        <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.15"/>
+            </filter>
+            
+            <!-- Reusable Cell Path -->
+            <g id="base-cell">
+                <path d="M 385 205 Q 400 195 415 205 Q 425 220 415 235 Q 400 245 385 235 Q 375 220 385 205 Z" stroke-width="2"/>
+                <circle cx="400" cy="220" r="6"/>
+            </g>
+
+            <!-- Reusable Tissue Cell with Striations -->
+            <g id="tissue-cell">
+                <path d="M 385 205 Q 400 195 415 205 Q 425 220 415 235 Q 400 245 385 235 Q 375 220 385 205 Z" fill="#F39C12" stroke="#D68910" stroke-width="2"/>
+                <circle cx="400" cy="220" r="6" fill="#A04000" opacity="0.7"/>
+                <line x1="388" y1="212" x2="412" y2="216" stroke="#E67E22" stroke-width="1.5" opacity="0.5"/>
+                <line x1="388" y1="226" x2="412" y2="230" stroke="#E67E22" stroke-width="1.5" opacity="0.5"/>
+            </g>
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="45" text-anchor="middle" font-weight="700" font-size="22" fill="#2C3E50">Structural Organisation in Animals: Hierarchy of Life</text>
+
+        <!-- Legend -->
+        <g id="legend" transform="translate(620, 30)" font-size="12" fill="#5D6D7E">
+            <rect x="0" y="0" width="150" height="110" fill="#ffffff" rx="6" stroke="#e5e7eb" stroke-width="1"/>
+            <circle cx="15" cy="20" r="5" fill="#4A90D9"/> <text x="30" y="24">Cellular Structure</text>
+            <circle cx="15" cy="42" r="5" fill="#F39C12"/> <text x="30" y="46">Animal Tissue</text>
+            <circle cx="15" cy="64" r="5" fill="#E74C3C"/> <text x="30" y="68">Arterial / Muscle</text>
+            <circle cx="15" cy="86" r="5" fill="#3498DB"/> <text x="30" y="90">Venous Blood</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 5: ORGANISM (Background Silhouette)  -->
+        <!-- ========================================== -->
+        <g class="stage5-organism">
+            <path d="M 400 60 C 385 60, 375 75, 375 95 C 375 115, 385 125, 390 130 C 350 135, 320 150, 310 180 C 300 210, 270 340, 270 340 L 295 345 C 305 290, 315 240, 325 240 L 340 370 C 340 370, 320 480, 320 480 L 360 480 C 370 400, 390 380, 400 380 C 410 380, 430 400, 440 480 L 480 480 C 480 480, 460 370, 460 370 L 475 240 C 485 240, 495 290, 505 345 L 530 340 C 530 340, 500 210, 490 180 C 480 150, 450 135, 410 130 C 415 125, 425 115, 425 95 C 425 75, 415 60, 400 60 Z" fill="#e5e7eb" opacity="0.6" stroke="#d1d5db" stroke-width="2"/>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 4: ORGAN SYSTEM (Blood Vessels)      -->
+        <!-- ========================================== -->
+        <g class="stage4-system">
+            <!-- Arteries (Red) -->
+            <g stroke="#E74C3C" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="vessel-path">
+                <!-- Aorta Arch & Descending -->
+                <path d="M 405 200 C 405 170, 425 170, 430 200 L 425 360 L 390 470"/>
+                <path d="M 425 360 L 460 470"/>
+                <!-- Carotids -->
+                <path d="M 415 180 L 410 110"/>
+                <path d="M 420 180 L 425 110"/>
+                <!-- Subclavians -->
+                <path d="M 415 185 L 320 210 L 290 330"/>
+                <path d="M 425 185 L 480 210 L 510 330"/>
+                <!-- Renal branches -->
+                <path d="M 425 270 L 400 280"/>
+                <path d="M 425 290 L 450 300"/>
+            </g>
+            <!-- Veins (Blue) -->
+            <g stroke="#3498DB" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" class="vessel-path">
+                <!-- Vena Cava Inferior -->
+                <path d="M 385 250 L 385 360 L 360 470"/>
+                <path d="M 385 360 L 410 470"/>
+                <!-- Vena Cava Superior -->
+                <path d="M 385 200 L 385 140"/>
+                <!-- Jugulars -->
+                <path d="M 385 140 L 370 110"/>
+                <path d="M 385 140 L 395 110"/>
+                <!-- Subclavian Veins -->
+                <path d="M 385 160 L 310 200 L 280 330"/>
+                <path d="M 385 160 L 490 200 L 520 330"/>
+                <!-- Renal veins -->
+                <path d="M 385 275 L 360 285"/>
+                <path d="M 385 295 L 410 305"/>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 3: ORGAN (Heart)                     -->
+        <!-- ========================================== -->
+        <g class="stage3-organ" filter="url(#shadow)">
+            <g class="heart-beat">
+                <!-- Base Heart Shape -->
+                <path d="M 400 195 C 415 195, 425 205, 425 225 C 425 250, 405 270, 395 280 C 385 270, 370 250, 375 225 C 380 205, 390 195, 400 195 Z" fill="#E74C3C" stroke="#C0392B" stroke-width="2"/>
+                
+                <!-- Anatomical Details (Chamber lines) -->
+                <path d="M 395 205 C 390 225, 380 245, 375 255 M 405 205 C 410 230, 420 250, 425 260 M 375 225 C 385 220, 395 225, 400 235 M 425 225 C 415 220, 405 225, 400 235" stroke="#C0392B" stroke-width="1.5" fill="none" opacity="0.6"/>
+                
+                <!-- Aorta Base -->
+                <path d="M 395 198 C 395 180, 410 180, 410 198" fill="none" stroke="#E74C3C" stroke-width="6" stroke-linecap="round"/>
+                
+                <!-- Pulmonary Trunk Base -->
+                <path d="M 405 203 C 405 188, 385 188, 385 203" fill="none" stroke="#3498DB" stroke-width="5" stroke-linecap="round"/>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 2: TISSUE (Multiplying Cells)        -->
+        <!-- ========================================== -->
+        <g filter="url(#shadow)">
+            <!-- Center Cell (Fades in to replace Stage 1) -->
+            <g class="t-center">
+                <use href="#tissue-cell"/>
+            </g>
+            
+            <!-- Clone Cells snapping into position -->
+            <g class="clone" style="--tx: -32px; --ty: -18px;"><use href="#tissue-cell"/></g>
+            <g class="clone" style="--tx: 32px; --ty: -18px;"><use href="#tissue-cell"/></g>
+            <g class="clone" style="--tx: 32px; --ty: 22px;"><use href="#tissue-cell"/></g>
+            <g class="clone" style="--tx: 0px; --ty: 38px;"><use href="#tissue-cell"/></g>
+            <g class="clone" style="--tx: -32px; --ty: 22px;"><use href="#tissue-cell"/></g>
+            <g class="clone" style="--tx: 0px; --ty: -38px;"><use href="#tissue-cell"/></g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 1: CELL (Single Functional Unit)     -->
+        <!-- ========================================== -->
+        <g class="stage1-cell" filter="url(#shadow)">
+            <use href="#base-cell" fill="#E8F4FD" stroke="#4A90D9"/>
+            <!-- Nucleus -->
+            <circle cx="400" cy="220" r="6" fill="#2C3E50"/>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- DYNAMIC LABELS                             -->
+        <!-- ========================================== -->
+        <g text-anchor="middle">
+            <g class="l1">
+                <text x="400" y="435" font-family="Roboto Mono" font-weight="700" font-size="22" fill="#4A90D9">01</text>
+                <text x="400" y="460" font-weight="700" font-size="18" fill="#2C3E50">CELL <tspan font-weight="400" fill="#5D6D7E">(Functional Unit)</tspan></text>
+            </g>
+            <g class="l2">
+                <text x="400" y="435" font-family="Roboto Mono" font-weight="700" font-size="22" fill="#F39C12">02</text>
+                <text x="400" y="460" font-weight="700" font-size="18" fill="#2C3E50">TISSUE <tspan font-weight="400" fill="#5D6D7E">(Group of similar cells)</tspan></text>
+            </g>
+            <g class="l3">
+                <text x="400" y="435" font-family="Roboto Mono" font-weight="700" font-size="22" fill="#E74C3C">03</text>
+                <text x="400" y="460" font-weight="700" font-size="18" fill="#2C3E50">ORGAN <tspan font-weight="400" fill="#5D6D7E">(Tissues acting as a unit)</tspan></text>
+            </g>
+            <g class="l4">
+                <text x="400" y="435" font-family="Roboto Mono" font-weight="700" font-size="22" fill="#9B59B6">04</text>
+                <text x="400" y="460" font-weight="700" font-size="18" fill="#2C3E50">ORGAN SYSTEM <tspan font-weight="400" fill="#5D6D7E">(Coordinated activities)</tspan></text>
+            </g>
+            <g class="l5">
+                <text x="400" y="435" font-family="Roboto Mono" font-weight="700" font-size="22" fill="#27AE60">05</text>
+                <text x="400" y="460" font-weight="700" font-size="18" fill="#2C3E50">ORGANISM <tspan font-weight="400" fill="#5D6D7E">(The complete individual)</tspan></text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- PROGRESS BAR                               -->
+        <!-- ========================================== -->
+        <g transform="translate(150, 485)">
+            <rect x="0" y="0" width="500" height="4" fill="#e5e7eb" rx="2"/>
+            <rect x="0" y="0" width="500" height="4" fill="#4A90D9" rx="2" class="progress-bar"/>
+        </g>
+
+    </svg>
+
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IUPAC Nomenclature Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Pause on hover */
+        svg:hover * {
+            animation-play-state: paused !important;
+        }
+
+        /* Base Molecule Fade */
+        .mol { animation: fadeMol 15s infinite; }
+        @keyframes fadeMol {
+            0%, 5% { opacity: 0; }
+            10%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Parent Chain Highlight */
+        .hl-parent { 
+            animation: hlParent 15s infinite ease-in-out; 
+            stroke-dasharray: 300; 
+            stroke-dashoffset: 300; 
+        }
+        @keyframes hlParent {
+            0%, 13% { opacity: 0; stroke-dashoffset: 300; }
+            16%, 95% { opacity: 1; stroke-dashoffset: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* Functional Group Highlight */
+        .hl-fg { 
+            animation: hlFg 15s infinite ease-in-out; 
+            stroke-dasharray: 100; 
+            stroke-dashoffset: 100; 
+        }
+        @keyframes hlFg {
+            0%, 26% { opacity: 0; stroke-dashoffset: 100; }
+            29%, 95% { opacity: 1; stroke-dashoffset: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* Numbering Badges */
+        .num1 { animation: n1 15s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes n1 { 0%, 40% { opacity: 0; transform: translateY(15px); } 42%, 95% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+        
+        .num2 { animation: n2 15s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes n2 { 0%, 42% { opacity: 0; transform: translateY(15px); } 44%, 95% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+        
+        .num3 { animation: n3 15s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes n3 { 0%, 44% { opacity: 0; transform: translateY(15px); } 46%, 95% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+        
+        .num4 { animation: n4 15s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes n4 { 0%, 46% { opacity: 0; transform: translateY(15px); } 48%, 95% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+        
+        .num5 { animation: n5 15s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes n5 { 0%, 48% { opacity: 0; transform: translateY(15px); } 50%, 95% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; } }
+
+        /* Substituent Highlights */
+        .hl-sub { 
+            animation: hlSub 15s infinite ease-in-out; 
+            stroke-dasharray: 100; 
+            stroke-dashoffset: 100; 
+        }
+        @keyframes hlSub {
+            0%, 53% { opacity: 0; stroke-dashoffset: 100; }
+            56%, 95% { opacity: 1; stroke-dashoffset: 0; }
+            100% { opacity: 0; }
+        }
+
+        /* Text: Pentane */
+        .txt-pentane { animation: txtPentane 15s infinite; }
+        @keyframes txtPentane {
+            0%, 13% { opacity: 0; }
+            16%, 26% { opacity: 1; }
+            28%, 100% { opacity: 0; }
+        }
+
+        /* Text: Pentan-1-ol */
+        .txt-pentanol { animation: txtPentanol 15s infinite ease-in-out; }
+        @keyframes txtPentanol {
+            0%, 26% { opacity: 0; transform: translate(-123px, 0); }
+            29%, 66% { opacity: 1; transform: translate(-123px, 0); }
+            70%, 95% { opacity: 1; transform: translate(0, 0); }
+            100% { opacity: 0; }
+        }
+
+        /* Text: 3-chloro- */
+        .txt-chloro { animation: txtChloro 15s infinite ease-in-out; }
+        @keyframes txtChloro {
+            0%, 53% { opacity: 0; transform: translate(185px, -145px); }
+            56%, 66% { opacity: 1; transform: translate(185px, -145px); }
+            70%, 95% { opacity: 1; transform: translate(0, 0); }
+            100% { opacity: 0; }
+        }
+
+        /* Text: 2-methyl */
+        .txt-methyl { animation: txtMethyl 15s infinite ease-in-out; }
+        @keyframes txtMethyl {
+            0%, 53% { opacity: 0; transform: translate(107px, -355px); }
+            56%, 66% { opacity: 1; transform: translate(107px, -355px); }
+            70%, 95% { opacity: 1; transform: translate(0, 0); }
+            100% { opacity: 0; }
+        }
+
+        /* Rule Callouts */
+        .rule1 { animation: r1 15s infinite; }
+        @keyframes r1 { 0%, 13% { opacity: 0; } 15%, 25% { opacity: 1; } 27%, 100% { opacity: 0; } }
+        
+        .rule2 { animation: r2 15s infinite; }
+        @keyframes r2 { 0%, 26% { opacity: 0; } 28%, 38% { opacity: 1; } 40%, 100% { opacity: 0; } }
+        
+        .rule3 { animation: r3 15s infinite; }
+        @keyframes r3 { 0%, 40% { opacity: 0; } 42%, 51% { opacity: 1; } 53%, 100% { opacity: 0; } }
+        
+        .rule4 { animation: r4 15s infinite; }
+        @keyframes r4 { 0%, 53% { opacity: 0; } 55%, 64% { opacity: 1; } 66%, 100% { opacity: 0; } }
+        
+        .rule5 { animation: r5 15s infinite; }
+        @keyframes r5 { 0%, 66% { opacity: 0; } 68%, 95% { opacity: 1; } 100% { opacity: 0; } }
+
+        /* Final Name Highlight Box */
+        .final-box { animation: fBox 15s infinite ease-in-out; }
+        @keyframes fBox {
+            0%, 84% { opacity: 0; transform: scale(0.98); }
+            87%, 95% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.08"/>
+        </filter>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+    </defs>
+
+    <!-- Title -->
+    <text x="400" y="30" text-anchor="middle" font-family="Inter" font-size="20" font-weight="700" fill="#212529">IUPAC Nomenclature: Step-by-Step</text>
+    <text x="780" y="480" text-anchor="end" font-family="Inter" font-size="12" fill="#adb5bd" font-style="italic">Hover to pause animation</text>
+
+    <!-- Legend -->
+    <g transform="translate(20, 20)">
+        <rect x="0" y="0" width="160" height="95" rx="6" fill="#ffffff" stroke="#e9ecef" stroke-width="1.5" filter="url(#shadow)"/>
+        <rect x="15" y="15" width="14" height="14" rx="3" fill="#FFD166" opacity="0.6"/>
+        <text x="40" y="27" font-family="Inter" font-size="12" font-weight="600" fill="#404040">Parent Chain</text>
+        
+        <rect x="15" y="40" width="14" height="14" rx="3" fill="#06D6A0" opacity="0.6"/>
+        <text x="40" y="52" font-family="Inter" font-size="12" font-weight="600" fill="#404040">Functional Group</text>
+        
+        <rect x="15" y="65" width="14" height="14" rx="3" fill="#118AB2" opacity="0.6"/>
+        <text x="40" y="77" font-family="Inter" font-size="12" font-weight="600" fill="#404040">Substituents</text>
+    </g>
+
+    <!-- Dynamic Rule Callout Box -->
+    <g transform="translate(200, 55)">
+        <rect x="0" y="0" width="400" height="40" rx="8" fill="#ffffff" stroke="#e9ecef" stroke-width="1.5" filter="url(#shadow)"/>
+        <text class="rule1" x="200" y="25" text-anchor="middle" font-family="Inter" font-size="15" font-weight="600" fill="#212529">Step 1: Identify longest chain containing -OH</text>
+        <text class="rule2" x="200" y="25" text-anchor="middle" font-family="Inter" font-size="15" font-weight="600" fill="#212529">Step 2: Identify principal functional group (-OH)</text>
+        <text class="rule3" x="200" y="25" text-anchor="middle" font-family="Inter" font-size="15" font-weight="600" fill="#212529">Step 3: Number chain to give -OH lowest locant</text>
+        <text class="rule4" x="200" y="25" text-anchor="middle" font-family="Inter" font-size="15" font-weight="600" fill="#212529">Step 4: Identify substituents (chloro, methyl)</text>
+        <text class="rule5" x="200" y="25" text-anchor="middle" font-family="Inter" font-size="15" font-weight="600" fill="#212529">Step 5: Assemble alphabetically (C before M)</text>
+    </g>
+
+    <!-- Highlights (Rendered behind molecule) -->
+    <g>
+        <!-- Parent Chain Highlight -->
+        <polyline class="hl-parent" points="280,200 332,170 384,200 436,170 488,200" stroke="#FFD166" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.5"/>
+        
+        <!-- Functional Group Highlight -->
+        <line class="hl-fg" x1="488" y1="200" x2="540" y2="170" stroke="#06D6A0" stroke-width="24" stroke-linecap="round" fill="none" opacity="0.5"/>
+        
+        <!-- Substituent Highlights -->
+        <line class="hl-sub" x1="384" y1="200" x2="384" y2="260" stroke="#118AB2" stroke-width="24" stroke-linecap="round" fill="none" opacity="0.5"/>
+        <line class="hl-sub" x1="436" y1="170" x2="436" y2="110" stroke="#118AB2" stroke-width="24" stroke-linecap="round" fill="none" opacity="0.5"/>
+    </g>
+
+    <!-- Base Molecule (Skeletal Structure) -->
+    <g class="mol">
+        <!-- Carbon Backbone -->
+        <polyline points="280,200 332,170 384,200 436,170 488,200" stroke="#333333" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        
+        <!-- Bond to OH -->
+        <line x1="488" y1="200" x2="535" y2="173" stroke="#333333" stroke-width="4" stroke-linecap="round"/>
+        
+        <!-- Bond to Cl -->
+        <line x1="384" y1="200" x2="384" y2="255" stroke="#333333" stroke-width="4" stroke-linecap="round"/>
+        
+        <!-- Bond to Methyl -->
+        <line x1="436" y1="170" x2="436" y2="110" stroke="#333333" stroke-width="4" stroke-linecap="round"/>
+
+        <!-- Atom Labels -->
+        <text x="542" y="178" font-family="Inter" font-size="20" font-weight="700" fill="#FF4444">OH</text>
+        <text x="384" y="282" font-family="Inter" font-size="20" font-weight="700" fill="#28A745" text-anchor="middle">Cl</text>
+    </g>
+
+    <!-- Numbering Badges -->
+    <g class="num1">
+        <circle cx="488" cy="225" r="11" fill="#212529"/>
+        <text x="488" y="229" font-family="Inter" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">1</text>
+    </g>
+    <g class="num2">
+        <circle cx="456" cy="155" r="11" fill="#212529"/>
+        <text x="456" y="159" font-family="Inter" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">2</text>
+    </g>
+    <g class="num3">
+        <circle cx="404" cy="215" r="11" fill="#212529"/>
+        <text x="404" y="219" font-family="Inter" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">3</text>
+    </g>
+    <g class="num4">
+        <circle cx="352" cy="155" r="11" fill="#212529"/>
+        <text x="352" y="159" font-family="Inter" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">4</text>
+    </g>
+    <g class="num5">
+        <circle cx="260" cy="215" r="11" fill="#212529"/>
+        <text x="260" y="219" font-family="Inter" font-size="12" font-weight="700" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">5</text>
+    </g>
+
+    <!-- Bottom Assembly Area -->
+    <g transform="translate(150, 400)">
+        <rect x="0" y="0" width="500" height="70" rx="12" fill="#ffffff" stroke="#e9ecef" stroke-width="1.5" filter="url(#shadow)"/>
+    </g>
+
+    <!-- Final Name Highlight Box (Appears at the end) -->
+    <rect class="final-box" x="185" y="415" width="430" height="40" rx="6" fill="#FFF3CD" stroke="#FFEEBA" stroke-width="2" transform-origin="400 435"/>
+
+    <!-- Dynamic Text Assembly -->
+    <!-- Step 2: Pentane -->
+    <text class="txt-pentane" x="400" y="445" text-anchor="middle" font-family="Roboto Mono" font-size="24" font-weight="700" fill="#B8860B">pentane</text>
+
+    <!-- Step 3 & Assembly: Pentan-1-ol -->
+    <g class="txt-pentanol">
+        <text x="444" y="445" font-family="Roboto Mono" font-size="24" font-weight="700">
+            <tspan fill="#B8860B">pentan</tspan><tspan fill="#038C65">-1-ol</tspan>
+        </text>
+    </g>
+
+    <!-- Step 5 & Assembly: 3-chloro- -->
+    <g class="txt-chloro">
+        <text x="199" y="445" font-family="Roboto Mono" font-size="24" font-weight="700" fill="#0C6B8A">3-chloro-</text>
+    </g>
+
+    <!-- Step 5 & Assembly: 2-methyl -->
+    <g class="txt-methyl">
+        <text x="329" y="445" font-family="Roboto Mono" font-size="24" font-weight="700" fill="#0C6B8A">2-methyl</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

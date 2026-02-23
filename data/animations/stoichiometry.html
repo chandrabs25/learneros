@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stoichiometry: Conservation of Mass</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        text {
+            user-select: none;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* --- Global Fades & Highlights --- */
+        .atom {
+            animation: fadeAtom 12s infinite;
+            filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.2));
+        }
+
+        @keyframes fadeAtom {
+            0%, 85% { opacity: 1; }
+            90%, 94% { opacity: 0; }
+            98%, 100% { opacity: 1; }
+        }
+
+        .eq-reactants { animation: highlightReactants 12s infinite; }
+        .eq-products { animation: highlightProducts 12s infinite; }
+
+        @keyframes highlightReactants {
+            0%, 35% { fill: #7209B7; font-weight: 700; }
+            40%, 100% { fill: #888888; font-weight: 400; }
+        }
+
+        @keyframes highlightProducts {
+            0%, 55% { fill: #888888; font-weight: 400; }
+            66%, 85% { fill: #7209B7; font-weight: 700; }
+            90%, 100% { fill: #888888; font-weight: 400; }
+        }
+
+        .coef-reactant { animation: fadeCoefReactants 12s infinite; }
+        .coef-product { animation: fadeCoefProducts 12s infinite; }
+
+        @keyframes fadeCoefReactants {
+            0%, 25% { opacity: 1; }
+            30%, 90% { opacity: 0; }
+            95%, 100% { opacity: 1; }
+        }
+
+        @keyframes fadeCoefProducts {
+            0%, 60% { opacity: 0; }
+            66%, 85% { opacity: 1; }
+            90%, 100% { opacity: 0; }
+        }
+
+        /* --- Bond Animations --- */
+        .bonds-ch4 { animation: fadeBondsCH4 12s infinite; }
+        .bonds-o2-top { animation: fadeBondsO2Top 12s infinite; }
+        .bonds-o2-bot { animation: fadeBondsO2Bot 12s infinite; }
+        .bonds-product { animation: fadeProductBonds 12s infinite; }
+
+        @keyframes fadeBondsCH4 {
+            0%, 25% { opacity: 1; transform: translate(0, 0); }
+            30% { opacity: 0; transform: translate(100px, 0); }
+            35%, 90% { opacity: 0; transform: translate(200px, 0); }
+            95%, 100% { opacity: 1; transform: translate(0, 0); }
+        }
+
+        @keyframes fadeBondsO2Top {
+            0%, 25% { opacity: 1; transform: translate(0, 0); }
+            30% { opacity: 0; transform: translate(40px, 20px); }
+            35%, 90% { opacity: 0; transform: translate(80px, 40px); }
+            95%, 100% { opacity: 1; transform: translate(0, 0); }
+        }
+
+        @keyframes fadeBondsO2Bot {
+            0%, 25% { opacity: 1; transform: translate(0, 0); }
+            30% { opacity: 0; transform: translate(40px, -20px); }
+            35%, 90% { opacity: 0; transform: translate(80px, -40px); }
+            95%, 100% { opacity: 1; transform: translate(0, 0); }
+        }
+
+        @keyframes fadeProductBonds {
+            0%, 55% { opacity: 0; }
+            66%, 85% { opacity: 1; }
+            90%, 100% { opacity: 0; }
+        }
+
+        /* --- Atom Movement Keyframes --- */
+        /* C1: CH4 -> CO2 */
+        .c1 { animation-name: moveC1, fadeAtom; }
+        @keyframes moveC1 {
+            0%, 25% { transform: translate(150px, 250px); }
+            35% { transform: translate(350px, 250px); }
+            36% { transform: translate(348px, 252px); }
+            38% { transform: translate(352px, 248px); }
+            40% { transform: translate(349px, 251px); }
+            42% { transform: translate(350px, 250px); animation-timing-function: ease-in; }
+            54% { transform: translate(500px, 200px); animation-timing-function: ease-out; }
+            66%, 90% { transform: translate(650px, 250px); }
+            95%, 100% { transform: translate(150px, 250px); }
+        }
+
+        /* H1: CH4(top) -> H2O_Top(left) */
+        .h1 { animation-name: moveH1, fadeAtom; }
+        @keyframes moveH1 {
+            0%, 25% { transform: translate(150px, 210px); }
+            35% { transform: translate(350px, 210px); }
+            36% { transform: translate(348px, 212px); }
+            38% { transform: translate(352px, 208px); }
+            40% { transform: translate(349px, 211px); }
+            42% { transform: translate(350px, 210px); animation-timing-function: ease-in; }
+            54% { transform: translate(415px, 150px); animation-timing-function: ease-out; }
+            66%, 90% { transform: translate(480px, 205px); }
+            95%, 100% { transform: translate(150px, 210px); }
+        }
+
+        /* H2: CH4(bot-left) -> H2O_Top(right) */
+        .h2 { animation-name: moveH2, fadeAtom; }
+        @keyframes moveH2 {
+            0%, 25% { transform: translate(112px, 265px); }
+            35% { transform: translate(312px, 265px); }
+            36% { transform: translate(310px, 267px); }
+            38% { transform: translate(314px, 263px); }
+            40% { transform: translate(311px, 266px); }
+            42% { transform: translate(312px, 265px); animation-timing-function: ease-in; }
+            54% { transform: translate(416px, 180px); animation-timing-function: ease-out; }
+            66%, 90% { transform: translate(520px, 205px); }
+            95%, 100% { transform: translate(112px, 265px); }
+        }
+
+        /* H3: CH4(bot-right) -> H2O_Bot(left) */
+        .h3 { animation-name: moveH3, fadeAtom; }
+        @keyframes moveH3 {
+            0%, 25% { transform: translate(188px, 265px); }
+            35% { transform: translate(388px, 265px); }
+            36% { transform: translate(386px, 267px); }
+            38% { transform: translate(390px, 263px); }
+            40% { transform: translate(387px, 266px); }
+            42% { transform: translate(388px, 265px); animation-timing-function: ease-in; }
+            54% { transform: translate(434px, 350px); animation-timing-function: ease-out; }
+            66%, 90% { transform: translate(480px, 345px); }
+            95%, 100% { transform: translate(188px, 265px); }
+        }
+
+        /* H4: CH4(front) -> H2O_Bot(right) */
+        .h4 { animation-name: moveH4, fadeAtom; }
+        @keyframes moveH4 {
+            0%, 25% { transform: translate(150px, 275px); }
+            35% { transform: translate(350px, 275px); }
+            36% { transform: translate(348px, 277px); }
+            38% { transform: translate(352px, 273px); }
+            40% { transform: translate(349px, 276px); }
+            42% { transform: translate(350px, 275px); animation-timing-function: ease-in; }
+            54% { transform: translate(435px, 360px); animation-timing-function: ease-out; }
+            66%, 90% { transform: translate(520px, 345px); }
+            95%, 100% { transform: translate(150px, 275px); }
+        }
+
+        /* O1: O2_Top(left) -> CO2(left) */
+        .o1 { animation-name: moveO1, fadeAtom; }
+        @keyframes moveO1 {
+            0%, 25% { transform: translate(280px, 180px); }
+            35% { transform: translate(360px, 220px); }
+            36% { transform: translate(358px, 222px); }
+            38% { transform: translate(362px, 218px); }
+            40% { transform: translate(359px, 221px); }
+            42% { transform: translate(360px, 220px); animation-timing-function: ease-in; }
+            54% { transform: translate(485px, 180px); animation-timing-function: ease-out; }
+            66%, 90% { transform: translate(610px, 250px); }
+            95%, 100% { transform: translate(280px, 180px); }
+        }
+
+        /* O2: O2_Top(right) -> CO2(right) */
+        .o2 { animation-name: moveO2, fadeAtom; }
+        @keyframes moveO2 {
+            0%, 25% { transform: translate(320px, 180px); }
+            35% { transform: translate(400px, 220px); }
+            36% { transform: translate(398px, 222px); }
+            38% { transform: translate(402px, 218px); }
+            40% { transform: translate(399px, 221px); }
+            42% { transform: translate(400px, 220px); animation-timing-function: ease-in; }
+            54% { transform: translate(545px, 180px); animation-timing-function: ease-out; }
+            66%, 90% { transform: translate(690px, 250px); }
+            95%, 100% { transform: translate(320px, 180px); }
+        }
+
+        /* O3: O2_Bot(left) -> H2O_Top(center) */
+        .o3 { animation-name: moveO3, fadeAtom; }
+        @keyframes moveO3 {
+            0%, 25% { transform: translate(280px, 320px); }
+            35% { transform: translate(360px, 280px); }
+            36% { transform: translate(358px, 282px); }
+            38% { transform: translate(362px, 278px); }
+            40% { transform: translate(359px, 281px); }
+            42% { transform: translate(360px, 280px); animation-timing-function: ease-in; }
+            54% { transform: translate(430px, 200px); animation-timing-function: ease-out; }
+            66%, 90% { transform: translate(500px, 180px); }
+            95%, 100% { transform: translate(280px, 320px); }
+        }
+
+        /* O4: O2_Bot(right) -> H2O_Bot(center) */
+        .o4 { animation-name: moveO4, fadeAtom; }
+        @keyframes moveO4 {
+            0%, 25% { transform: translate(320px, 320px); }
+            35% { transform: translate(400px, 280px); }
+            36% { transform: translate(398px, 282px); }
+            38% { transform: translate(402px, 278px); }
+            40% { transform: translate(399px, 281px); }
+            42% { transform: translate(400px, 280px); animation-timing-function: ease-in; }
+            54% { transform: translate(450px, 350px); animation-timing-function: ease-out; }
+            66%, 90% { transform: translate(500px, 320px); }
+            95%, 100% { transform: translate(320px, 320px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Stoichiometry: Conservation of Mass</title>
+        <desc>Animation showing the combustion of methane. 1 CH4 and 2 O2 molecules break apart and rearrange to form 1 CO2 and 2 H2O molecules, demonstrating that the number of atoms is conserved.</desc>
+
+        <!-- Gradients -->
+        <defs>
+            <radialGradient id="gradC" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#777777"/>
+                <stop offset="100%" stop-color="#404040"/>
+            </radialGradient>
+            <radialGradient id="gradO" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FF8888"/>
+                <stop offset="100%" stop-color="#FF4444"/>
+            </radialGradient>
+            <radialGradient id="gradH" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#FFFFFF"/>
+                <stop offset="100%" stop-color="#CCCCCC"/>
+            </radialGradient>
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="45" text-anchor="middle" font-size="24" font-weight="bold" fill="#222">Stoichiometry: Conservation of Mass</text>
+
+        <!-- Atom Counter Table -->
+        <g transform="translate(590, 20)">
+            <rect x="0" y="0" width="180" height="115" rx="8" fill="#ffffff" stroke="#e0e0e0" stroke-width="2" />
+            <text x="90" y="22" text-anchor="middle" font-size="13" font-weight="bold" fill="#555">Atom Count</text>
+            <line x1="0" y1="30" x2="180" y2="30" stroke="#e0e0e0" stroke-width="1"/>
+            <line x1="90" y1="30" x2="90" y2="115" stroke="#e0e0e0" stroke-width="1"/>
+            
+            <!-- Table Headers -->
+            <text x="45" y="48" text-anchor="middle" font-size="12" font-weight="bold" class="eq-reactants">Reactants</text>
+            <text x="135" y="48" text-anchor="middle" font-size="12" font-weight="bold" class="eq-products">Products</text>
+            
+            <!-- Table Data -->
+            <text x="45" y="70" text-anchor="middle" font-size="14" class="formula eq-reactants">C: 1</text>
+            <text x="135" y="70" text-anchor="middle" font-size="14" class="formula eq-products">C: 1</text>
+            
+            <text x="45" y="90" text-anchor="middle" font-size="14" class="formula eq-reactants">H: 4</text>
+            <text x="135" y="90" text-anchor="middle" font-size="14" class="formula eq-products">H: 4</text>
+            
+            <text x="45" y="110" text-anchor="middle" font-size="14" class="formula eq-reactants">O: 4</text>
+            <text x="135" y="110" text-anchor="middle" font-size="14" class="formula eq-products">O: 4</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(30, 460)">
+            <rect x="-10" y="-15" width="240" height="30" rx="4" fill="#ffffff" stroke="#e0e0e0" stroke-width="1"/>
+            <circle cx="10" cy="0" r="6" fill="url(#gradC)"/>
+            <text x="22" y="4" font-size="12" fill="#444">Carbon</text>
+            
+            <circle cx="80" cy="0" r="6" fill="url(#gradO)"/>
+            <text x="92" y="4" font-size="12" fill="#444">Oxygen</text>
+            
+            <circle cx="155" cy="0" r="6" fill="url(#gradH)"/>
+            <text x="167" y="4" font-size="12" fill="#444">Hydrogen</text>
+        </g>
+
+        <!-- Reaction Arrow -->
+        <path d="M 360 245 L 410 245 L 410 235 L 440 250 L 410 265 L 410 255 L 360 255 Z" fill="#7209B7" opacity="0.8"/>
+
+        <!-- Equation at Bottom -->
+        <text x="400" y="465" text-anchor="middle" font-size="24" class="formula">
+            <tspan class="eq-reactants">CH₄ + 2O₂</tspan>
+            <tspan fill="#7209B7" font-weight="bold"> → </tspan>
+            <tspan class="eq-products">CO₂ + 2H₂O</tspan>
+        </text>
+
+        <!-- Stoichiometric Coefficients -->
+        <g font-size="36" font-weight="bold" fill="#888" class="formula">
+            <text x="230" y="260" class="coef-reactant">2</text>
+            <text x="450" y="260" class="coef-product">2</text>
+        </g>
+
+        <!-- ================= BONDS ================= -->
+        <g stroke="#888888" stroke-width="4" stroke-linecap="round">
+            
+            <!-- Reactant Bonds: CH4 -->
+            <g class="bonds-ch4">
+                <line x1="150" y1="250" x2="150" y2="210"/>
+                <line x1="150" y1="250" x2="112" y2="265"/>
+                <line x1="150" y1="250" x2="188" y2="265"/>
+                <line x1="150" y1="250" x2="150" y2="275"/>
+            </g>
+
+            <!-- Reactant Bonds: O2 (Top) -->
+            <g class="bonds-o2-top">
+                <line x1="280" y1="177" x2="320" y2="177"/>
+                <line x1="280" y1="183" x2="320" y2="183"/>
+            </g>
+
+            <!-- Reactant Bonds: O2 (Bottom) -->
+            <g class="bonds-o2-bot">
+                <line x1="280" y1="317" x2="320" y2="317"/>
+                <line x1="280" y1="323" x2="320" y2="323"/>
+            </g>
+
+            <!-- Product Bonds -->
+            <g class="bonds-product">
+                <!-- CO2 -->
+                <line x1="610" y1="247" x2="650" y2="247"/>
+                <line x1="610" y1="253" x2="650" y2="253"/>
+                <line x1="650" y1="247" x2="690" y2="247"/>
+                <line x1="650" y1="253" x2="690" y2="253"/>
+                
+                <!-- H2O (Top) -->
+                <line x1="500" y1="180" x2="480" y2="205"/>
+                <line x1="500" y1="180" x2="520" y2="205"/>
+                
+                <!-- H2O (Bottom) -->
+                <line x1="500" y1="320" x2="480" y2="345"/>
+                <line x1="500" y1="320" x2="520" y2="345"/>
+            </g>
+        </g>
+
+        <!-- ================= ATOMS ================= -->
+        <!-- Drawn at 0,0 and positioned entirely by CSS keyframes -->
+        <g>
+            <!-- Hydrogens (r=10) -->
+            <circle class="atom h1" cx="0" cy="0" r="10" fill="url(#gradH)" />
+            <circle class="atom h2" cx="0" cy="0" r="10" fill="url(#gradH)" />
+            <circle class="atom h3" cx="0" cy="0" r="10" fill="url(#gradH)" />
+            
+            <!-- Carbon (r=18) -->
+            <circle class="atom c1" cx="0" cy="0" r="18" fill="url(#gradC)" />
+            
+            <!-- Hydrogen 4 (Front of CH4) -->
+            <circle class="atom h4" cx="0" cy="0" r="10" fill="url(#gradH)" />
+
+            <!-- Oxygens (r=15) -->
+            <circle class="atom o1" cx="0" cy="0" r="15" fill="url(#gradO)" />
+            <circle class="atom o2" cx="0" cy="0" r="15" fill="url(#gradO)" />
+            <circle class="atom o3" cx="0" cy="0" r="15" fill="url(#gradO)" />
+            <circle class="atom o4" cx="0" cy="0" r="15" fill="url(#gradO)" />
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

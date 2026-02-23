@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LCAO Animation: H2 Formation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Animation Easing and Duration */
+        .animated {
+            animation-duration: 12s;
+            animation-iteration-count: infinite;
+            animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            animation-fill-mode: both;
+        }
+
+        /* Orbital Morphing Keyframes */
+        @keyframes morphA {
+            0%, 16%, 100% { d: path("M 430 190 C 463.137 190, 490 216.863, 490 250 C 490 283.137, 463.137 310, 430 310 C 396.863 310, 370 283.137, 370 250 C 370 216.863, 396.863 190, 430 190 Z"); }
+            33%, 58% { d: path("M 550 170 C 632.843 170, 700 205.817, 700 250 C 700 294.183, 632.843 330, 550 330 C 467.157 330, 400 294.183, 400 250 C 400 205.817, 467.157 170, 550 170 Z"); }
+            75%, 88% { d: path("M 470 170 C 510 170, 530 200, 530 250 C 530 300, 510 330, 470 330 C 431.34 330, 400 294.183, 400 250 C 400 205.817, 431.34 170, 470 170 Z"); }
+        }
+
+        @keyframes morphBBlue {
+            0%, 16%, 100% {
+                d: path("M 670 190 C 703.137 190, 730 216.863, 730 250 C 730 283.137, 703.137 310, 670 310 C 636.863 310, 610 283.137, 610 250 C 610 216.863, 636.863 190, 670 190 Z");
+                opacity: 0.8;
+            }
+            33%, 58% {
+                d: path("M 550 170 C 632.843 170, 700 205.817, 700 250 C 700 294.183, 632.843 330, 550 330 C 467.157 330, 400 294.183, 400 250 C 400 205.817, 467.157 170, 550 170 Z");
+                opacity: 0;
+            }
+            75%, 88% {
+                d: path("M 630 170 C 668.66 170, 700 205.817, 700 250 C 700 294.183, 668.66 330, 630 330 C 590 330, 570 300, 570 250 C 570 200, 590 170, 630 170 Z");
+                opacity: 0;
+            }
+        }
+
+        @keyframes morphBRed {
+            0%, 16%, 100% {
+                d: path("M 670 190 C 703.137 190, 730 216.863, 730 250 C 730 283.137, 703.137 310, 670 310 C 636.863 310, 610 283.137, 610 250 C 610 216.863, 636.863 190, 670 190 Z");
+                opacity: 0;
+            }
+            33%, 58% {
+                d: path("M 550 170 C 632.843 170, 700 205.817, 700 250 C 700 294.183, 632.843 330, 550 330 C 467.157 330, 400 294.183, 400 250 C 400 205.817, 467.157 170, 550 170 Z");
+                opacity: 0;
+            }
+            75%, 88% {
+                d: path("M 630 170 C 668.66 170, 700 205.817, 700 250 C 700 294.183, 668.66 330, 630 330 C 590 330, 570 300, 570 250 C 570 200, 590 170, 630 170 Z");
+                opacity: 0.8;
+            }
+        }
+
+        /* Nuclei Movement */
+        @keyframes nucA {
+            0%, 16%, 100% { cx: 430px; }
+            33%, 58% { cx: 500px; }
+            75%, 88% { cx: 480px; }
+        }
+        @keyframes nucB {
+            0%, 16%, 100% { cx: 670px; }
+            33%, 58% { cx: 600px; }
+            75%, 88% { cx: 620px; }
+        }
+
+        /* Electron Movement */
+        @keyframes elec1 {
+            0%, 16%, 100% { transform: translate(120px, 250px); }
+            33%, 58% { transform: translate(160px, 350px); }
+            75%, 88% { transform: translate(160px, 120px); }
+        }
+        @keyframes elec2 {
+            0%, 16%, 100% { transform: translate(220px, 250px); }
+            33%, 58% { transform: translate(180px, 350px); }
+            75%, 88% { transform: translate(180px, 120px); }
+        }
+
+        /* Opacity Fades for Labels and Elements */
+        @keyframes fadeInitial {
+            0%, 16%, 100% { opacity: 1; }
+            33%, 88% { opacity: 0; }
+        }
+        @keyframes fadeBonding {
+            0%, 16%, 75%, 100% { opacity: 0; }
+            33%, 58% { opacity: 1; }
+        }
+        @keyframes fadeAntibonding {
+            0%, 58%, 100% { opacity: 0; }
+            75%, 88% { opacity: 1; }
+        }
+
+        /* Apply Animations */
+        .orb-A { animation-name: morphA; }
+        .orb-B-blue { animation-name: morphBBlue; }
+        .orb-B-red { animation-name: morphBRed; }
+        .nuc-A { animation-name: nucA; }
+        .nuc-B { animation-name: nucB; }
+        .e1 { animation-name: elec1; }
+        .e2 { animation-name: elec2; }
+        .initial-only { animation-name: fadeInitial; }
+        .bonding-only { animation-name: fadeBonding; }
+        .antibonding-only { animation-name: fadeAntibonding; }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 16px;
+            fill: #7209B7;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">Linear Combination of Atomic Orbitals (LCAO): H2 Formation</title>
+        <desc id="svg-desc">Animated diagram showing two hydrogen 1s orbitals combining to form bonding and antibonding molecular orbitals, complete with an energy level diagram.</desc>
+
+        <defs>
+            <!-- Gradients for Orbitals -->
+            <radialGradient id="blue-grad" cx="50%" cy="50%" r="50%">
+                <stop offset="30%" stop-color="#A0C4FF" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#A0C4FF" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="red-grad" cx="50%" cy="50%" r="50%">
+                <stop offset="30%" stop-color="#FFADAD" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#FFADAD" stop-opacity="0"/>
+            </radialGradient>
+
+            <!-- Glow Filter for Bonding MO -->
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+
+            <!-- Arrowhead for Energy Axis -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#404040" />
+            </marker>
+        </defs>
+
+        <!-- TITLE -->
+        <text x="400" y="45" text-anchor="middle" font-size="22" font-weight="600" fill="#404040">
+            Linear Combination of Atomic Orbitals (LCAO): H<tspan dy="5" font-size="14">2</tspan><tspan dy="-5"> Formation</tspan>
+        </text>
+
+        <!-- ========================================== -->
+        <!-- ENERGY DIAGRAM (Left Side)                 -->
+        <!-- ========================================== -->
+        <g id="energy-diagram">
+            <!-- Y-Axis -->
+            <line x1="60" y1="420" x2="60" y2="90" stroke="#404040" stroke-width="2" marker-end="url(#arrow)" />
+            <text x="-255" y="40" transform="rotate(-90)" text-anchor="middle" font-size="16" font-weight="600" fill="#404040">Energy</text>
+
+            <!-- Connecting Dashed Lines -->
+            <path d="M 130 250 L 150 350 L 190 350 L 210 250" fill="none" stroke="#CCCCCC" stroke-width="2" stroke-dasharray="6 4" />
+            <path d="M 130 250 L 150 120 L 190 120 L 210 250" fill="none" stroke="#CCCCCC" stroke-width="2" stroke-dasharray="6 4" />
+
+            <!-- Energy Levels -->
+            <!-- AO Left -->
+            <line x1="90" y1="250" x2="130" y2="250" stroke="#404040" stroke-width="3" />
+            <text x="110" y="275" text-anchor="middle" font-size="14" fill="#404040" font-weight="600">1s</text>
+            
+            <!-- AO Right -->
+            <line x1="210" y1="250" x2="250" y2="250" stroke="#404040" stroke-width="3" />
+            <text x="230" y="275" text-anchor="middle" font-size="14" fill="#404040" font-weight="600">1s</text>
+
+            <!-- Bonding MO -->
+            <line x1="150" y1="350" x2="190" y2="350" stroke="#4444FF" stroke-width="3" />
+            <text x="170" y="375" text-anchor="middle" font-size="14" fill="#4444FF" font-weight="600" class="animated bonding-only">
+                σ<tspan dy="3" font-size="10">1s</tspan><tspan dy="-3"> (Bonding)</tspan>
+            </text>
+
+            <!-- Antibonding MO -->
+            <line x1="150" y1="120" x2="190" y2="120" stroke="#FF4444" stroke-width="3" />
+            <text x="170" y="105" text-anchor="middle" font-size="14" fill="#FF4444" font-weight="600" class="animated antibonding-only">
+                σ*<tspan dy="3" font-size="10">1s</tspan><tspan dy="-3"> (Antibonding)</tspan>
+            </text>
+
+            <!-- Electrons -->
+            <g class="animated e1">
+                <circle cx="0" cy="0" r="8" fill="#FFD700" stroke="#F77F00" stroke-width="1.5" />
+                <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="bold" fill="#F77F00">↑</text>
+            </g>
+            <g class="animated e2">
+                <circle cx="0" cy="0" r="8" fill="#FFD700" stroke="#F77F00" stroke-width="1.5" />
+                <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-size="12" font-weight="bold" fill="#F77F00">↓</text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- ORBITAL VISUALIZATION (Right Side)         -->
+        <!-- ========================================== -->
+        <g id="orbital-visualization">
+            
+            <!-- Nuclei (Rendered behind orbitals due to opacity) -->
+            <circle class="animated nuc-A" cy="250" r="4" fill="#404040" />
+            <circle class="animated nuc-B" cy="250" r="4" fill="#404040" />
+
+            <!-- Orbital Paths -->
+            <path class="animated orb-A" fill="url(#blue-grad)" filter="url(#glow)" fill-opacity="0.8" />
+            <path class="animated orb-B-blue" fill="url(#blue-grad)" filter="url(#glow)" />
+            <path class="animated orb-B-red" fill="url(#red-grad)" filter="url(#glow)" />
+
+            <!-- Nodal Plane (Only visible in Antibonding) -->
+            <g class="animated antibonding-only">
+                <line x1="550" y1="130" x2="550" y2="370" stroke="#FF4444" stroke-width="2" stroke-dasharray="8 6" />
+                <text x="550" y="115" text-anchor="middle" font-size="13" fill="#FF4444" font-weight="600">Nodal Plane</text>
+            </g>
+
+            <!-- Mathematical Annotations -->
+            <g class="animated bonding-only">
+                <text x="550" y="390" text-anchor="middle" class="math-text">
+                    Ψ<tspan dy="4" font-size="12">MO</tspan><tspan dy="-4"> = c</tspan><tspan dy="4" font-size="12">A</tspan><tspan dy="-4">ψ</tspan><tspan dy="4" font-size="12">A</tspan><tspan dy="-4"> + c</tspan><tspan dy="4" font-size="12">B</tspan><tspan dy="-4">ψ</tspan><tspan dy="4" font-size="12">B</tspan>
+                </text>
+                <text x="550" y="415" text-anchor="middle" font-size="14" fill="#4444FF" font-weight="600">Constructive Interference</text>
+            </g>
+
+            <g class="animated antibonding-only">
+                <text x="550" y="390" text-anchor="middle" class="math-text">
+                    Ψ<tspan dy="4" font-size="12">MO</tspan><tspan dy="-4"> = c</tspan><tspan dy="4" font-size="12">A</tspan><tspan dy="-4">ψ</tspan><tspan dy="4" font-size="12">A</tspan><tspan dy="-4"> - c</tspan><tspan dy="4" font-size="12">B</tspan><tspan dy="-4">ψ</tspan><tspan dy="4" font-size="12">B</tspan>
+                </text>
+                <text x="550" y="415" text-anchor="middle" font-size="14" fill="#FF4444" font-weight="600">Destructive Interference</text>
+            </g>
+
+            <g class="animated initial-only">
+                <text x="430" y="340" text-anchor="middle" class="math-text">ψ<tspan dy="4" font-size="12">A</tspan></text>
+                <text x="670" y="340" text-anchor="middle" class="math-text">ψ<tspan dy="4" font-size="12">B</tspan></text>
+                <text x="550" y="415" text-anchor="middle" font-size="14" fill="#404040" font-weight="600">Isolated Hydrogen Atoms</text>
+            </g>
+
+        </g>
+
+        <!-- ========================================== -->
+        <!-- LEGEND                                     -->
+        <!-- ========================================== -->
+        <g id="legend" transform="translate(620, 420)">
+            <rect x="0" y="0" width="160" height="65" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" />
+            
+            <rect x="10" y="10" width="12" height="12" rx="2" fill="#A0C4FF" />
+            <text x="30" y="21" font-size="11" fill="#404040">Positive Phase (+)</text>
+            
+            <rect x="10" y="28" width="12" height="12" rx="2" fill="#FFADAD" />
+            <text x="30" y="39" font-size="11" fill="#404040">Negative Phase (-)</text>
+
+            <circle cx="16" cy="52" r="5" fill="#FFD700" stroke="#F77F00" stroke-width="1" />
+            <text x="30" y="56" font-size="11" fill="#404040">Electron</text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

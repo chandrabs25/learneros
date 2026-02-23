@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coulomb's Law 3D Visualization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-color: #f0f4f8;
+            --pos-color: #FF3366;
+            --neg-color: #4361EE;
+            --neu-color: #ADB5BD;
+            --force-color: #F77F00;
+            --text-main: #2D3436;
+            --text-muted: #636E72;
+            --glass-bg: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            user-select: none;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        /* Glassmorphic UI Panel */
+        #ui-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+
+        h2 {
+            margin: 0 0 20px 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-main);
+            border-bottom: 2px solid rgba(0,0,0,0.05);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .value-display {
+            font-family: 'Roboto Mono', monospace;
+            background: rgba(255,255,255,0.9);
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1px solid rgba(0,0,0,0.1);
+            font-size: 0.85rem;
+        }
+
+        /* Custom Range Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.1);
+            border-radius: 3px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            border: 2px solid var(--text-main);
+        }
+        #q1-slider::-webkit-slider-thumb { border-color: var(--pos-color); }
+        #q2-slider::-webkit-slider-thumb { border-color: var(--neg-color); }
+        #r-slider::-webkit-slider-thumb { border-color: var(--text-main); }
+
+        /* Toggles */
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .toggle-group input {
+            margin-right: 10px;
+            width: 16px;
+            height: 16px;
+            accent-color: var(--force-color);
+            cursor: pointer;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+        }
+
+        .math-line {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        .math-line:last-child { margin-bottom: 0; }
+
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            vertical-align: middle;
+            margin: 0 4px;
+        }
+        .fraction .num {
+            border-bottom: 1px solid var(--text-main);
+            padding: 0 4px 2px 4px;
+        }
+        .fraction .den {
+            padding: 2px 4px 0 4px;
+        }
+
+        .highlight-f { color: var(--force-color); font-weight: 600; }
+        .highlight-q1 { font-weight: 600; }
+        .highlight-q2 { font-weight: 600; }
+
+        /* 3D Labels */
+        #labels-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .label3d {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.85rem;
+            background: rgba(255,255,255,0.85);
+            padding: 4px 8px;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+        #label-q1 { color: var(--pos-color); }
+        #label-q2 { color: var(--neg-color); }
+        #label-r { color: var(--text-main); font-family: 'Roboto Mono', monospace; }
+
+        @media (max-width: 768px) {
+            #ui-panel {
+                width: calc(100% - 40px);
+                bottom: 20px;
+                top: auto;
+                max-height: 40vh;
+            }
+            #formula-card {
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="labels-container">
+        <div id="label-q1" class="label3d">q₁</div>
+        <div id="label-q2" class="label3d">q₂</div>
+        <div id="label-r" class="label3d">r = 4.0 m</div>
+    </div>
+
+    <div id="formula-card">
+        <div class="math-line">
+            <span class="highlight-f">F</span> = k<sub>e</sub>
+            <div class="fraction">
+                <span class="num">|q<sub>1</sub> · q<sub>2</sub>|</span>
+                <span class="den">r<sup>2</sup></span>
+            </div>
+        </div>
+        <div class="math-line" style="margin-top: 12px; font-size: 0.85rem; color: var(--text-muted);">
+            <span>F = (8.99×10<sup>9</sup>)</span>
+            <div class="fraction">
+                <span class="num">|<span id="form-q1" class="highlight-q1">10</span>µC · <span id="form-q2" class="highlight-q2">-10</span>µC|</span>
+                <span class="den">(<span id="form-r">4.0</span>m)<sup>2</sup></span>
+            </div>
+        </div>
+        <div class="math-line" style="margin-top: 8px; font-weight: 500;">
+            <span><span class="highlight-f">F</span> = <span id="form-result">0.056</span> N</span>
+        </div>
+    </div>
+
+    <div id="ui-panel">
+        <h2>Coulomb's Law</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: var(--pos-color);">Charge 1 (q₁)</span>
+                <span class="value-display" id="q1-val">+10 µC</span>
+            </div>
+            <input type="range" id="q1-slider" min="-20" max="20" step="1" value="10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: var(--neg-color);">Charge 2 (q₂)</span>
+                <span class="value-display" id="q2-val">-10 µC</span>
+            </div>
+            <input type="range" id="q2-slider" min="-20" max="20" step="1" value="-10">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Distance (r)</span>
+                <span class="value-display" id="r-val">4.0 m</span>
+            </div>
+            <input type="range" id="r-slider" min="1.0" max="10.0" step="0.1" value="4.0">
+        </div>
+
+        <div style="margin-top: 24px; border-top: 1px solid rgba(0,0,0,0.1); padding-top: 16px;">
+            <label class="toggle-group">
+                <input type="checkbox" id="toggle-vectors" checked>
+                Show Force Vectors
+            </label>
+            <label class="toggle-group">
+                <input type="checkbox" id="toggle-distance" checked>
+                Show Distance Label
+            </label>
+            <label class="toggle-group">
+                <input type="checkbox" id="toggle-field">
+                Show Electric Field (XZ Plane)
+            </label>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Constants & Variables ---
+        const ke = 8.987e9; // Coulomb constant N m^2 / C^2
+        const micro = 1e-6;
+        
+        // Visual scaling factor to make arrows fit on screen.
+        // Base force at 10uC, 10uC, 4m is ~0.056 N. We want this to be length ~3.
+        const forceVisualScale = 3 / 0.056; 
+
+        let q1 = 10;
+        let q2 = -10;
+        let r = 4.0;
+
+        // Colors
+        const colorPos = new THREE.Color(0xFF3366);
+        const colorNeg = new THREE.Color(0x4361EE);
+        const colorNeu = new THREE.Color(0xADB5BD);
+        const colorForce = 0xF77F00;
+
+        // --- DOM Elements ---
+        const q1Slider = document.getElementById('q1-slider');
+        const q2Slider = document.getElementById('q2-slider');
+        const rSlider = document.getElementById('r-slider');
+        const q1Val = document.getElementById('q1-val');
+        const q2Val = document.getElementById('q2-val');
+        const rVal = document.getElementById('r-val');
+        
+        const formQ1 = document.getElementById('form-q1');
+        const formQ2 = document.getElementById('form-q2');
+        const formR = document.getElementById('form-r');
+        const formResult = document.getElementById('form-result');
+
+        const labelQ1 = document.getElementById('label-q1');
+        const labelQ2 = document.getElementById('label-q2');
+        const labelR = document.getElementById('label-r');
+
+        const toggleVectors = document.getElementById('toggle-vectors');
+        const toggleDistance = document.getElementById('toggle-distance');
+        const toggleField = document.getElementById('toggle-field');
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 12);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxDistance = 30;
+        controls.minDistance = 2;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+        dirLight.position.set(5, 10, 7);
+        scene.add(dirLight);
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        backLight.position.set(-5, -10, -7);
+        scene.add(backLight);
+
+        // Grid Plane
+        const gridHelper = new THREE.GridHelper(20, 20, 0xDEE2E6, 0xDEE2E6);
+        gridHelper.position.y = -2; // Slightly below to not intersect
+        scene.add(gridHelper);
+
+        // --- 3D Objects ---
+        const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
+        
+        const mat1 = new THREE.MeshPhongMaterial({ color: colorPos, shininess: 80 });
+        const sphere1 = new THREE.Mesh(sphereGeo, mat1);
+        scene.add(sphere1);
+
+        const mat2 = new THREE.MeshPhongMaterial({ color: colorNeg, shininess: 80 });
+        const sphere2 = new THREE.Mesh(sphereGeo, mat2);
+        scene.add(sphere2);
+
+        // Force Arrows
+        const arrow1 = new THREE.ArrowHelper(new THREE.Vector3(-1,0,0), new THREE.Vector3(0,0,0), 1, colorForce, 0.5, 0.3);
+        const arrow2 = new THREE.ArrowHelper(new THREE.Vector3(1,0,0), new THREE.Vector3(0,0,0), 1, colorForce, 0.5, 0.3);
+        // Make arrows thicker visually by using slightly custom setup if needed, but ArrowHelper is standard.
+        scene.add(arrow1);
+        scene.add(arrow2);
+
+        // Distance Line
+        const lineMat = new THREE.LineDashedMaterial({ color: 0x636E72, dashSize: 0.2, gapSize: 0.1 });
+        const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-2,0,0), new THREE.Vector3(2,0,0)]);
+        const distanceLine = new THREE.Line(lineGeo, lineMat);
+        distanceLine.computeLineDistances();
+        scene.add(distanceLine);
+
+        // Electric Field Grid
+        const eFieldArrows = [];
+        const fieldExtent = 8;
+        const fieldStep = 1.5;
+        for(let x = -fieldExtent; x <= fieldExtent; x += fieldStep) {
+            for(let z = -fieldExtent; z <= fieldExtent; z += fieldStep) {
+                const arrow = new THREE.ArrowHelper(new THREE.Vector3(0,1,0), new THREE.Vector3(x, 0, z), 0.6, 0xADB5BD, 0.2, 0.1);
+                arrow.visible = false;
+                scene.add(arrow);
+                eFieldArrows.push({ arrow: arrow, pos: new THREE.Vector3(x, 0, z) });
+            }
+        }
+
+        // --- Logic & Updates ---
+
+        function formatCharge(val) {
+            return (val > 0 ? '+' : '') + val;
+        }
+
+        function updateColor(material, charge, labelElem) {
+            if (charge > 0) {
+                material.color.copy(colorPos);
+                labelElem.style.color = 'var(--pos-color)';
+            } else if (charge < 0) {
+                material.color.copy(colorNeg);
+                labelElem.style.color = 'var(--neg-color)';
+            } else {
+                material.color.copy(colorNeu);
+                labelElem.style.color = 'var(--neu-color)';
+            }
+        }
+
+        function getRadius(charge) {
+            // Base radius + scale by cube root of magnitude to represent volume
+            if (charge === 0) return 0.2;
+            return 0.2 + 0.15 * Math.cbrt(Math.abs(charge));
+        }
+
+        function updatePhysics() {
+            // Read UI
+            q1 = parseFloat(q1Slider.value);
+            q2 = parseFloat(q2Slider.value);
+            r = parseFloat(rSlider.value);
+
+            // Update UI Text
+            q1Val.innerText = `${formatCharge(q1)} µC`;
+            q2Val.innerText = `${formatCharge(q2)} µC`;
+            rVal.innerText = `${r.toFixed(1)} m`;
+            labelR.innerText = `r = ${r.toFixed(1)} m`;
+
+            formQ1.innerText = q1;
+            formQ2.innerText = q2;
+            formR.innerText = r.toFixed(1);
+            
+            formQ1.style.color = q1 > 0 ? 'var(--pos-color)' : (q1 < 0 ? 'var(--neg-color)' : 'var(--neu-color)');
+            formQ2.style.color = q2 > 0 ? 'var(--pos-color)' : (q2 < 0 ? 'var(--neg-color)' : 'var(--neu-color)');
+
+            // Calculate Force
+            const fMag = ke * (Math.abs(q1 * micro * q2 * micro)) / (r * r);
+            
+            // Format result
+            if (fMag === 0) {
+                formResult.innerText = "0.000";
+            } else if (fMag < 0.001 || fMag > 1000) {
+                formResult.innerText = fMag.toExponential(2);
+            } else {
+                formResult.innerText = fMag.toFixed(3);
+            }
+
+            // Update 3D Positions
+            const x1 = -r / 2;
+            const x2 = r / 2;
+            sphere1.position.set(x1, 0, 0);
+            sphere2.position.set(x2, 0, 0);
+
+            // Update Scales & Colors
+            sphere1.scale.setScalar(getRadius(q1));
+            sphere2.scale.setScalar(getRadius(q2));
+            updateColor(mat1, q1, labelQ1);
+            updateColor(mat2, q2, labelQ2);
+
+            // Update Distance Line
+            const pts = [sphere1.position.clone(), sphere2.position.clone()];
+            distanceLine.geometry.setFromPoints(pts);
+            distanceLine.computeLineDistances();
+            distanceLine.visible = toggleDistance.checked;
+            labelR.style.display = toggleDistance.checked ? 'block' : 'none';
+
+            // Update Force Vectors (Newton's Third Law & Inverse Square)
+            const showVec = toggleVectors.checked && q1 !== 0 && q2 !== 0;
+            arrow1.visible = showVec;
+            arrow2.visible = showVec;
+
+            if (showVec) {
+                // Visual length proportional to calculated force
+                let vLen = fMag * forceVisualScale;
+                // Cap visual length so it doesn't break the camera view completely, 
+                // but allow it to grow significantly to show inverse square.
+                if(vLen > 15) vLen = 15; 
+                if(vLen < 0.5 && fMag > 0) vLen = 0.5; // Minimum visible arrow if force exists
+
+                const headLen = Math.min(vLen * 0.3, 0.8);
+                const headWid = Math.min(vLen * 0.2, 0.5);
+
+                arrow1.position.copy(sphere1.position);
+                arrow2.position.copy(sphere2.position);
+
+                // Direction logic
+                if (q1 * q2 > 0) {
+                    // Repulsion
+                    arrow1.setDirection(new THREE.Vector3(-1, 0, 0));
+                    arrow2.setDirection(new THREE.Vector3(1, 0, 0));
+                } else {
+                    // Attraction
+                    arrow1.setDirection(new THREE.Vector3(1, 0, 0));
+                    arrow2.setDirection(new THREE.Vector3(-1, 0, 0));
+                }
+
+                arrow1.setLength(vLen, headLen, headWid);
+                arrow2.setLength(vLen, headLen, headWid);
+            }
+
+            // Update Electric Field
+            const showE = toggleField.checked;
+            eFieldArrows.forEach(item => {
+                if (!showE || (q1 === 0 && q2 === 0)) {
+                    item.arrow.visible = false;
+                    return;
+                }
+
+                const p = item.pos;
+                const r1vec = new THREE.Vector3().subVectors(p, sphere1.position);
+                const r2vec = new THREE.Vector3().subVectors(p, sphere2.position);
+                const d1 = r1vec.length();
+                const d2 = r2vec.length();
+
+                // Hide arrows inside or very close to charges
+                if (d1 < getRadius(q1) + 0.2 || d2 < getRadius(q2) + 0.2) {
+                    item.arrow.visible = false;
+                    return;
+                }
+
+                // E = k * q / r^2. We drop k and micro for relative visual direction
+                const e1mag = q1 / (d1 * d1); 
+                const e2mag = q2 / (d2 * d2);
+
+                const e1 = r1vec.normalize().multiplyScalar(e1mag);
+                const e2 = r2vec.normalize().multiplyScalar(e2mag);
+
+                const eTot = new THREE.Vector3().addVectors(e1, e2);
+                const eTotMag = eTot.length();
+
+                if (eTotMag > 0.01) {
+                    item.arrow.setDirection(eTot.normalize());
+                    // Fixed length for field lines, vary opacity/color if needed, but keeping it simple
+                    item.arrow.visible = true;
+                } else {
+                    item.arrow.visible = false;
+                }
+            });
+        }
+
+        // --- 2D Label Projection ---
+        function updateLabels() {
+            const widthHalf = window.innerWidth / 2;
+            const heightHalf = window.innerHeight / 2;
+
+            function project(pos, elem, yOffset = 0) {
+                const vec = pos.clone();
+                vec.y += yOffset;
+                vec.project(camera);
+                
+                // Check if behind camera
+                if (vec.z > 1) {
+                    elem.style.opacity = 0;
+                    return;
+                }
+
+                const x = (vec.x * widthHalf) + widthHalf;
+                const y = -(vec.y * heightHalf) + heightHalf;
+                
+                elem.style.left = `${x}px`;
+                elem.style.top = `${y}px`;
+                elem.style.opacity = 1;
+            }
+
+            project(sphere1.position, labelQ1, getRadius(q1) + 0.5);
+            project(sphere2.position, labelQ2, getRadius(q2) + 0.5);
+            
+            if(toggleDistance.checked) {
+                const midPoint = new THREE.Vector3().addVectors(sphere1.position, sphere2.position).multiplyScalar(0.5);
+                project(midPoint, labelR, 0.5);
+            }
+        }
+
+        // --- Event Listeners ---
+        q1Slider.addEventListener('input', updatePhysics);
+        q2Slider.addEventListener('input', updatePhysics);
+        rSlider.addEventListener('input', updatePhysics);
+        toggleVectors.addEventListener('change', updatePhysics);
+        toggleDistance.addEventListener('change', updatePhysics);
+        toggleField.addEventListener('change', updatePhysics);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Init
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traveling Wave: Phase & Velocity</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            z-index: 10;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #formula-card {
+            top: 20px;
+            left: 20px;
+            width: 320px;
+        }
+
+        #control-panel {
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin: 0 0 15px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .math-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.95rem;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            color: #4361EE;
+            font-weight: 500;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .stat-value {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            color: #FF3366;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .control-value {
+            font-family: 'Roboto Mono', monospace;
+            color: #666;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Specific slider colors */
+        #amp-slider::-webkit-slider-thumb { background: #4361EE; }
+        #wave-slider::-webkit-slider-thumb { background: #F77F00; }
+        #freq-slider::-webkit-slider-thumb { background: #06D6A0; }
+        #phase-slider::-webkit-slider-thumb { background: #FF3366; }
+        #time-slider::-webkit-slider-thumb { background: #7209B7; }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        .toggle-checkbox {
+            display: none;
+        }
+
+        .toggle-label {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background-color: #d1d8e0;
+            border-radius: 12px;
+            margin-right: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-label::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #06D6A0;
+        }
+
+        .toggle-checkbox:checked + .toggle-label::after {
+            transform: translateX(20px);
+        }
+
+        .legend {
+            margin-top: 20px;
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        @media (max-width: 768px) {
+            #formula-card {
+                top: 10px;
+                left: 10px;
+                width: calc(100% - 20px);
+            }
+            #control-panel {
+                top: auto;
+                bottom: 10px;
+                left: 10px;
+                width: calc(100% - 20px);
+                max-height: 40vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>Wave Physics</h2>
+        <div class="math-text">y(x,t) = A sin(kx - &omega;t + &phi;<sub>0</sub>)</div>
+        <div class="stat-row">
+            <span>Phase Velocity (v<sub>p</sub>):</span>
+            <span class="stat-value" id="val-vp">0.00 m/s</span>
+        </div>
+        <div class="stat-row">
+            <span>Phase &phi; at x=0:</span>
+            <span class="stat-value" id="val-phi">0.00 rad</span>
+        </div>
+        <div class="stat-row">
+            <span>Wave Number (k):</span>
+            <span class="stat-value" id="val-k">0.00 rad/m</span>
+        </div>
+        <div class="stat-row">
+            <span>Angular Freq (&omega;):</span>
+            <span class="stat-value" id="val-omega">0.00 rad/s</span>
+        </div>
+    </div>
+
+    <div id="control-panel" class="glass-panel">
+        <h2>Parameters</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span>Amplitude (A)</span>
+                <span class="control-value" id="lbl-amp">1.0 m</span>
+            </div>
+            <input type="range" id="amp-slider" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Wavelength (&lambda;)</span>
+                <span class="control-value" id="lbl-wave">4.0 m</span>
+            </div>
+            <input type="range" id="wave-slider" min="1.0" max="10.0" step="0.5" value="4.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Frequency (f)</span>
+                <span class="control-value" id="lbl-freq">0.5 Hz</span>
+            </div>
+            <input type="range" id="freq-slider" min="0.1" max="2.0" step="0.1" value="0.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Initial Phase (&phi;<sub>0</sub>)</span>
+                <span class="control-value" id="lbl-phase">0.0 rad</span>
+            </div>
+            <input type="range" id="phase-slider" min="0" max="6.283" step="0.1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span>Time Scale</span>
+                <span class="control-value" id="lbl-time">1.0x</span>
+            </div>
+            <input type="range" id="time-slider" min="0" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <label class="toggle-container">
+            <input type="checkbox" id="trace-toggle" class="toggle-checkbox">
+            <div class="toggle-label"></div>
+            <span>Show x-t Trace (Floor)</span>
+        </label>
+
+        <div class="legend">
+            <div class="legend-item"><div class="color-box" style="background: #4361EE;"></div> Wave Medium</div>
+            <div class="legend-item"><div class="color-box" style="background: #FF3366;"></div> Phase Point (Tracks Crest)</div>
+            <div class="legend-item"><div class="color-box" style="background: #F77F00;"></div> Particles (Transverse Motion)</div>
+            <div class="legend-item"><div class="color-box" style="background: #06D6A0;"></div> Phase Velocity Vector</div>
+        </div>
+    </div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- State & Parameters ---
+        const params = {
+            A: 1.0,
+            lambda: 4.0,
+            f: 0.5,
+            phi0: 0.0,
+            timeScale: 1.0,
+            trace: false
+        };
+
+        let time = 0;
+        const clock = new THREE.Clock();
+
+        // --- DOM Elements ---
+        const ui = {
+            amp: document.getElementById('amp-slider'),
+            wave: document.getElementById('wave-slider'),
+            freq: document.getElementById('freq-slider'),
+            phase: document.getElementById('phase-slider'),
+            time: document.getElementById('time-slider'),
+            trace: document.getElementById('trace-toggle'),
+            
+            lblAmp: document.getElementById('lbl-amp'),
+            lblWave: document.getElementById('lbl-wave'),
+            lblFreq: document.getElementById('lbl-freq'),
+            lblPhase: document.getElementById('lbl-phase'),
+            lblTime: document.getElementById('lbl-time'),
+            
+            valVp: document.getElementById('val-vp'),
+            valPhi: document.getElementById('val-phi'),
+            valK: document.getElementById('val-k'),
+            valOmega: document.getElementById('val-omega')
+        };
+
+        // --- Event Listeners ---
+        function updateParams() {
+            params.A = parseFloat(ui.amp.value);
+            params.lambda = parseFloat(ui.wave.value);
+            params.f = parseFloat(ui.freq.value);
+            params.phi0 = parseFloat(ui.phase.value);
+            params.timeScale = parseFloat(ui.time.value);
+            params.trace = ui.trace.checked;
+
+            ui.lblAmp.innerText = params.A.toFixed(1) + ' m';
+            ui.lblWave.innerText = params.lambda.toFixed(1) + ' m';
+            ui.lblFreq.innerText = params.f.toFixed(1) + ' Hz';
+            ui.lblPhase.innerText = params.phi0.toFixed(1) + ' rad';
+            ui.lblTime.innerText = params.timeScale.toFixed(1) + 'x';
+
+            if (!params.trace) trailPoints = [];
+        }
+
+        Object.values(ui).forEach(el => {
+            if (el.tagName === 'INPUT') {
+                el.addEventListener('input', updateParams);
+            }
+        });
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 4, 16);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below ground
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(5, 10, 5);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 10;
+        dirLight.shadow.camera.bottom = -10;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        scene.add(dirLight);
+
+        // --- Objects ---
+        
+        // 1. Coordinate Grid
+        const gridHelper = new THREE.GridHelper(30, 30, 0xcccccc, 0xe0e0e0);
+        gridHelper.position.y = -2.5;
+        scene.add(gridHelper);
+
+        const axesHelper = new THREE.AxesHelper(2);
+        axesHelper.position.set(-10, 0, 0);
+        scene.add(axesHelper);
+
+        // 2. The Wave (InstancedMesh for performance)
+        const waveCount = 250;
+        const xMin = -12;
+        const xMax = 12;
+        const dx = (xMax - xMin) / (waveCount - 1);
+        
+        const sphereGeo = new THREE.SphereGeometry(0.06, 16, 16);
+        const waveMat = new THREE.MeshPhysicalMaterial({ 
+            color: 0x4361EE,
+            roughness: 0.2,
+            metalness: 0.1,
+            clearcoat: 1.0
+        });
+        
+        const waveMesh = new THREE.InstancedMesh(sphereGeo, waveMat, waveCount);
+        waveMesh.castShadow = true;
+        scene.add(waveMesh);
+        const dummy = new THREE.Object3D();
+
+        // Continuous line through the wave
+        const lineGeo = new THREE.BufferGeometry();
+        const linePositions = new Float32Array(waveCount * 3);
+        lineGeo.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+        const lineMat = new THREE.LineBasicMaterial({ color: 0x4361EE, linewidth: 2 });
+        const waveLine = new THREE.Line(lineGeo, lineMat);
+        scene.add(waveLine);
+
+        // 3. Phase Point (Crest Tracker)
+        const phaseGeo = new THREE.SphereGeometry(0.18, 32, 32);
+        const phaseMat = new THREE.MeshPhysicalMaterial({
+            color: 0xFF3366,
+            emissive: 0xFF3366,
+            emissiveIntensity: 0.4,
+            roughness: 0.1
+        });
+        const phasePoint = new THREE.Mesh(phaseGeo, phaseMat);
+        phasePoint.castShadow = true;
+        scene.add(phasePoint);
+
+        // Connector line from Phase Point to Wave
+        const connectorGeo = new THREE.BufferGeometry();
+        connectorGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+        const connectorMat = new THREE.LineDashedMaterial({ color: 0xFF3366, dashSize: 0.2, gapSize: 0.1 });
+        const connectorLine = new THREE.Line(connectorGeo, connectorMat);
+        connectorLine.computeLineDistances();
+        scene.add(connectorLine);
+
+        // 4. Particle Indicators
+        const particleGeo = new THREE.SphereGeometry(0.12, 32, 32);
+        const particleMat = new THREE.MeshPhysicalMaterial({
+            color: 0xF77F00,
+            roughness: 0.2,
+            metalness: 0.1
+        });
+        const particleXPositions = [-8, -4, 0, 4, 8];
+        const particles = [];
+        
+        particleXPositions.forEach(x => {
+            const p = new THREE.Mesh(particleGeo, particleMat);
+            p.castShadow = true;
+            p.userData.x = x;
+            scene.add(p);
+            particles.push(p);
+
+            // Add vertical guide line for particle
+            const gGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(x, -2.5, 0),
+                new THREE.Vector3(x, 2.5, 0)
+            ]);
+            const gMat = new THREE.LineBasicMaterial({ color: 0xcccccc, transparent: true, opacity: 0.5 });
+            scene.add(new THREE.Line(gGeo, gMat));
+        });
+
+        // 5. Velocity Vector
+        const arrowDir = new THREE.Vector3(1, 0, 0);
+        const arrowOrigin = new THREE.Vector3(0, 0, 0);
+        const arrowColor = 0x06D6A0;
+        const velocityArrow = new THREE.ArrowHelper(arrowDir, arrowOrigin, 1, arrowColor, 0.4, 0.2);
+        scene.add(velocityArrow);
+
+        // 6. Trace Trail (x-t plane)
+        let trailPoints = [];
+        const trailGeo = new THREE.BufferGeometry();
+        const trailMat = new THREE.LineBasicMaterial({ color: 0x06D6A0, linewidth: 2 });
+        const trailLine = new THREE.Line(trailGeo, trailMat);
+        scene.add(trailLine);
+
+        // --- Resize Handler ---
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const delta = clock.getDelta();
+            time += delta * params.timeScale;
+
+            // Physics Calculations
+            const omega = 2 * Math.PI * params.f;
+            const k = 2 * Math.PI / params.lambda;
+            const vp = params.lambda * params.f;
+
+            // 1. Update Wave Geometry
+            for (let i = 0; i < waveCount; i++) {
+                const x = xMin + i * dx;
+                const y = params.A * Math.sin(k * x - omega * time + params.phi0);
+                
+                dummy.position.set(x, y, 0);
+                dummy.updateMatrix();
+                waveMesh.setMatrixAt(i, dummy.matrix);
+
+                linePositions[i * 3] = x;
+                linePositions[i * 3 + 1] = y;
+                linePositions[i * 3 + 2] = 0;
+            }
+            waveMesh.instanceMatrix.needsUpdate = true;
+            waveLine.geometry.attributes.position.needsUpdate = true;
+
+            // 2. Update Phase Point (Tracking Crest where phase = pi/2)
+            // Phase = k*x - omega*t + phi0 = pi/2
+            // x = (pi/2 + omega*t - phi0) / k
+            let xp_raw = (Math.PI / 2 + omega * time - params.phi0) / k;
+            
+            // Keep the tracked point within the visible range [-10, 10]
+            // Find the crest closest to the center, or just track one across and wrap
+            let n = Math.floor((10 - xp_raw) / params.lambda);
+            let xp = xp_raw + n * params.lambda;
+            
+            const yp = params.A; // Crest is always at amplitude A
+            phasePoint.position.set(xp, yp, 0);
+
+            // Update Connector
+            const connPos = connectorLine.geometry.attributes.position.array;
+            connPos[0] = xp; connPos[1] = yp; connPos[2] = 0;
+            connPos[3] = xp; connPos[4] = 0;  connPos[5] = 0;
+            connectorLine.geometry.attributes.position.needsUpdate = true;
+            connectorLine.computeLineDistances();
+
+            // 3. Update Velocity Arrow
+            velocityArrow.position.set(xp, yp + 0.3, 0);
+            // Scale arrow length visually, but keep it proportional to vp
+            const arrowLen = Math.max(0.5, vp * 0.4); 
+            velocityArrow.setLength(arrowLen, 0.3, 0.15);
+
+            // 4. Update Particles
+            particles.forEach(p => {
+                const x = p.userData.x;
+                const y = params.A * Math.sin(k * x - omega * time + params.phi0);
+                p.position.set(x, y, 0);
+            });
+
+            // 5. Update Trace Trail (x-t plane visualization)
+            if (params.trace && params.timeScale > 0) {
+                // Add new point at current x, projected on floor. Z represents time history.
+                trailPoints.push(new THREE.Vector3(xp, -2.5, 0));
+                
+                // Move older points back in Z to simulate time passing
+                const zSpeed = 2.0 * params.timeScale; // Visual speed of time axis
+                for (let i = 0; i < trailPoints.length - 1; i++) {
+                    trailPoints[i].z -= delta * zSpeed;
+                }
+
+                // Remove points that go too far back or if x wrapped around
+                trailPoints = trailPoints.filter((pt, index) => {
+                    if (pt.z < -15) return false;
+                    // Detect wrap-around: if distance between consecutive points is huge
+                    if (index > 0 && Math.abs(pt.x - trailPoints[index-1].x) > params.lambda / 2) {
+                        return false; // Break the line visually by removing old segment
+                    }
+                    return true;
+                });
+
+                trailLine.geometry.setFromPoints(trailPoints);
+                trailLine.visible = true;
+            } else {
+                trailLine.visible = false;
+            }
+
+            // 6. Update UI Stats
+            ui.valVp.innerText = vp.toFixed(2) + ' m/s';
+            ui.valK.innerText = k.toFixed(2) + ' rad/m';
+            ui.valOmega.innerText = omega.toFixed(2) + ' rad/s';
+            
+            let currentPhi0 = (-omega * time + params.phi0) % (2 * Math.PI);
+            if (currentPhi0 < 0) currentPhi0 += 2 * Math.PI;
+            ui.valPhi.innerText = currentPhi0.toFixed(2) + ' rad';
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize and start
+        updateParams();
+        animate();
+
+    </script>
+</body>
+</html>

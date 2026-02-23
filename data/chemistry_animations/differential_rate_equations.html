@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Differential Rate Equations</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* --- Graph Animations --- */
+        .curve-path {
+            stroke-dasharray: 450;
+            stroke-dashoffset: 450;
+            animation: drawCurve 10s linear infinite;
+        }
+
+        @keyframes drawCurve {
+            0%, 10% { stroke-dashoffset: 450; opacity: 1; }
+            20% { stroke-dashoffset: 330; }
+            30% { stroke-dashoffset: 260; }
+            40%, 60% { stroke-dashoffset: 220; }
+            70% { stroke-dashoffset: 100; }
+            80%, 85% { stroke-dashoffset: 0; opacity: 1; }
+            90%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        .tangent-group {
+            animation: moveTangent 10s linear infinite;
+        }
+
+        @keyframes moveTangent {
+            0%, 10% { transform: translate(80px, 100px) rotate(77deg); opacity: 0; }
+            11% { opacity: 1; }
+            20% { transform: translate(104.7px, 179.6px) rotate(67.9deg); }
+            30% { transform: translate(139.9px, 247.6px) rotate(56.8deg); }
+            40%, 60% { transform: translate(185px, 302.5px) rotate(44deg); }
+            70% { transform: translate(271.2px, 360.6px) rotate(24.2deg); }
+            80% { transform: translate(380px, 390px) rotate(7.1deg); opacity: 1; }
+            85%, 100% { transform: translate(380px, 390px) rotate(7.1deg); opacity: 0; }
+        }
+
+        .point-group {
+            animation: movePointOnly 10s linear infinite;
+        }
+
+        @keyframes movePointOnly {
+            0%, 10% { transform: translate(80px, 100px); opacity: 0; }
+            11% { opacity: 1; }
+            20% { transform: translate(104.7px, 179.6px); }
+            30% { transform: translate(139.9px, 247.6px); }
+            40%, 60% { transform: translate(185px, 302.5px); }
+            70% { transform: translate(271.2px, 360.6px); }
+            80% { transform: translate(380px, 390px); opacity: 1; }
+            85%, 100% { transform: translate(380px, 390px); opacity: 0; }
+        }
+
+        .calc-triangle {
+            animation: showTriangle 10s linear infinite;
+        }
+
+        @keyframes showTriangle {
+            0%, 39% { opacity: 0; }
+            40%, 60% { opacity: 1; }
+            61%, 100% { opacity: 0; }
+        }
+
+        .pulse-text {
+            animation: pulseText 10s linear infinite;
+        }
+
+        @keyframes pulseText {
+            0%, 39% { fill: #2D3436; font-weight: 600; }
+            42%, 48% { fill: #F77F00; font-weight: 700; }
+            52%, 58% { fill: #F77F00; font-weight: 700; }
+            60%, 100% { fill: #2D3436; font-weight: 600; }
+        }
+
+        /* --- Molecule Animations --- */
+        .float1 { animation: floatA 4s ease-in-out infinite; }
+        .float2 { animation: floatB 5s ease-in-out infinite; }
+        .float3 { animation: floatC 6s ease-in-out infinite; }
+
+        @keyframes floatA { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(0, -8px); } }
+        @keyframes floatB { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(-6px, 5px); } }
+        @keyframes floatC { 0%, 100% { transform: translate(0,0); } 50% { transform: translate(5px, 6px); } }
+
+        /* Batch 1: Reacts 10% - 20% */
+        .red.b1 { animation: fadeOut1 10s linear infinite; }
+        @keyframes fadeOut1 { 0%, 10% { opacity: 1; } 20%, 85% { opacity: 0; } 90%, 100% { opacity: 1; } }
+
+        /* Batch 2: Reacts 20% - 30% */
+        .red.b2 { animation: fadeOut2 10s linear infinite; }
+        @keyframes fadeOut2 { 0%, 20% { opacity: 1; } 30%, 85% { opacity: 0; } 90%, 100% { opacity: 1; } }
+
+        /* Batch 3: Reacts 30% - 40% */
+        .red.b3 { animation: fadeOut3 10s linear infinite; }
+        @keyframes fadeOut3 { 0%, 30% { opacity: 1; } 40%, 85% { opacity: 0; } 90%, 100% { opacity: 1; } }
+
+        /* Batch 4: Reacts 60% - 70% (Paused 40-60) */
+        .red.b4 { animation: fadeOut4 10s linear infinite; }
+        @keyframes fadeOut4 { 0%, 60% { opacity: 1; } 70%, 85% { opacity: 0; } 90%, 100% { opacity: 1; } }
+
+        /* Batch 5: Reacts 70% - 80% */
+        .red.b5 { animation: fadeOut5 10s linear infinite; }
+        @keyframes fadeOut5 { 0%, 70% { opacity: 1; } 80%, 85% { opacity: 0; } 90%, 100% { opacity: 1; } }
+
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Gradients for 3D Spheres -->
+        <radialGradient id="redGrad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#FF8888"/>
+            <stop offset="100%" stop-color="#CC0000"/>
+        </radialGradient>
+        <radialGradient id="blueGrad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#8888FF"/>
+            <stop offset="100%" stop-color="#0000CC"/>
+        </radialGradient>
+        
+        <!-- Drop Shadow for Beaker -->
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="8" stdDeviation="6" flood-color="#000000" flood-opacity="0.1"/>
+        </filter>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#f8f9fa" />
+
+    <!-- Title -->
+    <text x="400" y="40" text-anchor="middle" font-family="Inter" font-size="22" font-weight="700" fill="#2D3436">
+        Differential Rate: Instantaneous Change
+    </text>
+
+    <!-- ========================================== -->
+    <!-- LEFT: KINETIC GRAPH AREA                   -->
+    <!-- ========================================== -->
+    <g id="graph-area">
+        <!-- Gridlines -->
+        <g stroke="#E0E0E0" stroke-width="1" stroke-dasharray="4,4">
+            <line x1="80" y1="160" x2="380" y2="160" />
+            <line x1="80" y1="220" x2="380" y2="220" />
+            <line x1="80" y1="280" x2="380" y2="280" />
+            <line x1="80" y1="340" x2="380" y2="340" />
+            
+            <line x1="140" y1="100" x2="140" y2="400" />
+            <line x1="200" y1="100" x2="200" y2="400" />
+            <line x1="260" y1="100" x2="260" y2="400" />
+            <line x1="320" y1="100" x2="320" y2="400" />
+            <line x1="380" y1="100" x2="380" y2="400" />
+        </g>
+
+        <!-- Axes -->
+        <line x1="80" y1="400" x2="390" y2="400" stroke="#2D3436" stroke-width="2" />
+        <line x1="80" y1="400" x2="80" y2="90" stroke="#2D3436" stroke-width="2" />
+        
+        <!-- Axis Labels -->
+        <text x="70" y="80" font-family="Inter" font-size="16" font-weight="600" fill="#2D3436" text-anchor="middle">[R]</text>
+        <text x="400" y="405" font-family="Inter" font-size="16" font-weight="600" fill="#2D3436" text-anchor="start">t</text>
+
+        <!-- The Exponential Decay Curve -->
+        <!-- Path: M 80 100 Q 140 360 380 390 -->
+        <path class="curve-path" d="M 80 100 Q 140 360 380 390" fill="none" stroke="#FF4444" stroke-width="4" stroke-linecap="round" />
+
+        <!-- Calculus Triangle (Appears during pause) -->
+        <g class="calc-triangle">
+            <!-- dt line (horizontal) -->
+            <line x1="185" y1="302.5" x2="245" y2="302.5" stroke="#2D3436" stroke-width="2" />
+            <!-- d[R] line (vertical) -->
+            <line x1="245" y1="302.5" x2="245" y2="360.5" stroke="#FF4444" stroke-width="2" />
+            
+            <!-- Labels -->
+            <text x="215" y="295" font-family="Roboto Mono" font-size="14" text-anchor="middle" class="pulse-text">dt</text>
+            <text x="255" y="335" font-family="Roboto Mono" font-size="14" text-anchor="start" class="pulse-text">d[R]</text>
+        </g>
+
+        <!-- Tangent Line Group (Rotates and Translates) -->
+        <g class="tangent-group">
+            <line x1="-60" y1="0" x2="60" y2="0" stroke="#F77F00" stroke-width="3" stroke-dasharray="6,4" />
+        </g>
+
+        <!-- Point P and Dynamic Text Group (Translates only, no rotation) -->
+        <g class="point-group">
+            <circle cx="0" cy="0" r="6" fill="#404040" />
+            <rect x="10" y="-30" width="180" height="24" rx="4" fill="#ffffff" fill-opacity="0.8" />
+            <text x="15" y="-13" font-family="Inter" font-size="12" font-weight="700" fill="#F77F00">Slope = Instantaneous Rate</text>
+        </g>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- RIGHT: MOLECULAR REACTION CHAMBER          -->
+    <!-- ========================================== -->
+    <g id="reaction-chamber">
+        <!-- Beaker Liquid Background -->
+        <path d="M 450 160 Q 600 170 750 160 L 750 330 Q 750 350 730 350 L 470 350 Q 450 350 450 330 Z" fill="#eef2f7" opacity="0.6" />
+        
+        <!-- Beaker Outline -->
+        <path d="M 440 120 L 460 120 M 740 120 L 760 120 M 450 120 L 450 330 Q 450 350 470 350 L 730 350 Q 750 350 750 330 L 750 120" fill="none" stroke="#2D3436" stroke-width="4" stroke-linecap="round" filter="url(#shadow)" />
+        
+        <!-- Molecules -->
+        <!-- Batch 1 -->
+        <g transform="translate(480, 150)"><g class="float1"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b1" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(540, 190)"><g class="float2"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b1" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(610, 260)"><g class="float3"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b1" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(680, 150)"><g class="float1"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b1" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(710, 270)"><g class="float2"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b1" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(530, 310)"><g class="float3"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b1" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+
+        <!-- Batch 2 -->
+        <g transform="translate(520, 130)"><g class="float2"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b2" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(590, 210)"><g class="float3"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b2" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(660, 280)"><g class="float1"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b2" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(730, 210)"><g class="float2"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b2" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(470, 260)"><g class="float3"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b2" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+
+        <!-- Batch 3 -->
+        <g transform="translate(570, 160)"><g class="float3"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b3" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(640, 190)"><g class="float1"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b3" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(510, 250)"><g class="float2"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b3" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(630, 320)"><g class="float3"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b3" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+
+        <!-- Batch 4 -->
+        <g transform="translate(620, 140)"><g class="float1"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b4" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(690, 220)"><g class="float2"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b4" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(560, 270)"><g class="float3"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b4" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+
+        <!-- Batch 5 -->
+        <g transform="translate(490, 200)"><g class="float2"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b5" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+        <g transform="translate(720, 170)"><g class="float1"><circle cx="0" cy="0" r="12" fill="url(#blueGrad)"/><circle class="red b5" cx="0" cy="0" r="12" fill="url(#redGrad)"/></g></g>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- BOTTOM: EQUATION & LEGEND                  -->
+    <!-- ========================================== -->
+    
+    <!-- Legend -->
+    <g transform="translate(480, 390)">
+        <circle cx="0" cy="0" r="8" fill="url(#redGrad)" />
+        <text x="15" y="5" font-family="Inter" font-size="14" font-weight="600" fill="#2D3436">Reactant [R]</text>
+        
+        <circle cx="130" cy="0" r="8" fill="url(#blueGrad)" />
+        <text x="145" y="5" font-family="Inter" font-size="14" font-weight="600" fill="#2D3436">Product [P]</text>
+    </g>
+
+    <!-- Main Equation -->
+    <rect x="200" y="440" width="400" height="40" rx="8" fill="#ffffff" stroke="#E0E0E0" stroke-width="1" />
+    <text x="400" y="466" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="20" font-weight="700" fill="#2D3436">
+        <tspan fill="#F77F00">Rate</tspan> = -<tspan fill="#FF4444">d[R]</tspan>/dt = k<tspan fill="#FF4444">[R]</tspan>ⁿ
+    </text>
+
+</svg>
+
+</body>
+</html>

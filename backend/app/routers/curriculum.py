@@ -254,6 +254,7 @@ async def list_section_concepts(section_id: str):
             "name": (row["name"] or concept_key).replace("_", " ").title(),
             "concept_key": concept_key,
             "has_animation": True,
+            "animation_type": "svg",
             "animation_url": f"/api/animations/{concept_key}.html",
         })
 

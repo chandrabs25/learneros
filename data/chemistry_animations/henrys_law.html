@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Henry's Law Animation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
+
+  body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    font-family: 'Inter', sans-serif;
+  }
+
+  svg {
+    width: 100%;
+    max-width: 1000px;
+    height: auto;
+    background-color: #ffffff;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    border-radius: 12px;
+  }
+
+  /* Animations */
+  @keyframes pistonMove {
+    0%, 25% { transform: translateY(0px); }
+    41.6%, 83.3% { transform: translateY(80px); }
+    100% { transform: translateY(0px); }
+  }
+
+  @keyframes graphPointMove {
+    0%, 25% { transform: translate(560px, 320px); }
+    41.6%, 83.3% { transform: translate(680px, 200px); }
+    100% { transform: translate(560px, 320px); }
+  }
+
+  @keyframes formulaGlow {
+    0%, 25% { fill: #7209B7; filter: none; }
+    41.6%, 83.3% { fill: #FF007F; filter: drop-shadow(0 0 6px rgba(255,0,127,0.4)); }
+    100% { fill: #7209B7; filter: none; }
+  }
+
+  @keyframes arrowPulse {
+    0%, 100% { opacity: 0.5; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+
+  /* Molecule Paths */
+  /* M1, M2: Always Liquid */
+  @keyframes m1 {
+    0% { transform: translate(150px, 300px) rotate(0deg); opacity: 0.7; }
+    25% { transform: translate(250px, 350px) rotate(90deg); opacity: 0.7; }
+    50% { transform: translate(180px, 380px) rotate(180deg); opacity: 0.7; }
+    75% { transform: translate(280px, 280px) rotate(270deg); opacity: 0.7; }
+    100% { transform: translate(150px, 300px) rotate(360deg); opacity: 0.7; }
+  }
+  @keyframes m2 {
+    0% { transform: translate(250px, 320px) rotate(0deg); opacity: 0.7; }
+    25% { transform: translate(150px, 280px) rotate(-90deg); opacity: 0.7; }
+    50% { transform: translate(220px, 360px) rotate(-180deg); opacity: 0.7; }
+    75% { transform: translate(120px, 340px) rotate(-270deg); opacity: 0.7; }
+    100% { transform: translate(250px, 320px) rotate(-360deg); opacity: 0.7; }
+  }
+
+  /* M3, M4: Always Gas */
+  @keyframes m3 {
+    0% { transform: translate(150px, 150px) rotate(0deg); opacity: 1; }
+    12.5% { transform: translate(250px, 180px) rotate(120deg); opacity: 1; }
+    25% { transform: translate(200px, 210px) rotate(240deg); opacity: 1; }
+    33% { transform: translate(260px, 220px) rotate(360deg); opacity: 1; }
+    41.6% { transform: translate(160px, 230px) rotate(480deg); opacity: 1; }
+    50% { transform: translate(240px, 210px) rotate(600deg); opacity: 1; }
+    66.6% { transform: translate(140px, 220px) rotate(720deg); opacity: 1; }
+    83.3% { transform: translate(280px, 210px) rotate(840deg); opacity: 1; }
+    91.6% { transform: translate(200px, 160px) rotate(960deg); opacity: 1; }
+    100% { transform: translate(150px, 150px) rotate(1080deg); opacity: 1; }
+  }
+  @keyframes m4 {
+    0% { transform: translate(250px, 130px) rotate(0deg); opacity: 1; }
+    12.5% { transform: translate(120px, 160px) rotate(-120deg); opacity: 1; }
+    25% { transform: translate(280px, 200px) rotate(-240deg); opacity: 1; }
+    33% { transform: translate(150px, 230px) rotate(-360deg); opacity: 1; }
+    41.6% { transform: translate(250px, 210px) rotate(-480deg); opacity: 1; }
+    50% { transform: translate(130px, 220px) rotate(-600deg); opacity: 1; }
+    66.6% { transform: translate(270px, 230px) rotate(-720deg); opacity: 1; }
+    83.3% { transform: translate(160px, 210px) rotate(-840deg); opacity: 1; }
+    91.6% { transform: translate(260px, 150px) rotate(-960deg); opacity: 1; }
+    100% { transform: translate(250px, 130px) rotate(-1080deg); opacity: 1; }
+  }
+
+  /* M5-M8: Migrators (Gas -> Liquid -> Gas) */
+  @keyframes m5 {
+    0% { transform: translate(180px, 180px) rotate(0deg); opacity: 1; }
+    25% { transform: translate(220px, 200px) rotate(120deg); opacity: 1; }
+    33% { transform: translate(160px, 230px) rotate(180deg); opacity: 1; }
+    41.6% { transform: translate(200px, 250px) rotate(240deg); opacity: 0.85; }
+    50% { transform: translate(250px, 280px) rotate(300deg); opacity: 0.7; }
+    66.6% { transform: translate(150px, 350px) rotate(420deg); opacity: 0.7; }
+    83.3% { transform: translate(200px, 320px) rotate(540deg); opacity: 0.7; }
+    91.6% { transform: translate(180px, 240px) rotate(660deg); opacity: 0.85; }
+    100% { transform: translate(180px, 180px) rotate(720deg); opacity: 1; }
+  }
+  @keyframes m6 {
+    0% { transform: translate(220px, 140px) rotate(0deg); opacity: 1; }
+    25% { transform: translate(150px, 220px) rotate(-120deg); opacity: 1; }
+    33% { transform: translate(240px, 240px) rotate(-180deg); opacity: 1; }
+    41.6% { transform: translate(180px, 260px) rotate(-240deg); opacity: 0.85; }
+    50% { transform: translate(140px, 300px) rotate(-300deg); opacity: 0.7; }
+    66.6% { transform: translate(280px, 360px) rotate(-420deg); opacity: 0.7; }
+    83.3% { transform: translate(250px, 300px) rotate(-540deg); opacity: 0.7; }
+    91.6% { transform: translate(200px, 220px) rotate(-660deg); opacity: 0.85; }
+    100% { transform: translate(220px, 140px) rotate(-720deg); opacity: 1; }
+  }
+  @keyframes m7 {
+    0% { transform: translate(120px, 170px) rotate(0deg); opacity: 1; }
+    25% { transform: translate(280px, 210px) rotate(90deg); opacity: 1; }
+    33% { transform: translate(200px, 230px) rotate(150deg); opacity: 1; }
+    41.6% { transform: translate(250px, 260px) rotate(210deg); opacity: 0.85; }
+    50% { transform: translate(200px, 340px) rotate(270deg); opacity: 0.7; }
+    66.6% { transform: translate(120px, 380px) rotate(390deg); opacity: 0.7; }
+    83.3% { transform: translate(180px, 280px) rotate(510deg); opacity: 0.7; }
+    91.6% { transform: translate(140px, 230px) rotate(600deg); opacity: 0.85; }
+    100% { transform: translate(120px, 170px) rotate(720deg); opacity: 1; }
+  }
+  @keyframes m8 {
+    0% { transform: translate(280px, 160px) rotate(0deg); opacity: 1; }
+    25% { transform: translate(180px, 230px) rotate(-90deg); opacity: 1; }
+    33% { transform: translate(140px, 240px) rotate(-150deg); opacity: 1; }
+    41.6% { transform: translate(220px, 270px) rotate(-210deg); opacity: 0.85; }
+    50% { transform: translate(120px, 320px) rotate(-270deg); opacity: 0.7; }
+    66.6% { transform: translate(250px, 380px) rotate(-390deg); opacity: 0.7; }
+    83.3% { transform: translate(280px, 270px) rotate(-510deg); opacity: 0.7; }
+    91.6% { transform: translate(260px, 210px) rotate(-600deg); opacity: 0.85; }
+    100% { transform: translate(280px, 160px) rotate(-720deg); opacity: 1; }
+  }
+
+  /* M9, M10: Dynamic Exchange during steady states */
+  @keyframes m9 {
+    0% { transform: translate(200px, 200px) rotate(0deg); opacity: 1; }
+    12.5% { transform: translate(250px, 280px) rotate(90deg); opacity: 0.7; } /* Crosses down early */
+    25% { transform: translate(200px, 350px) rotate(180deg); opacity: 0.7; }
+    41.6% { transform: translate(150px, 320px) rotate(270deg); opacity: 0.7; }
+    66.6% { transform: translate(220px, 380px) rotate(450deg); opacity: 0.7; }
+    83.3% { transform: translate(280px, 300px) rotate(600deg); opacity: 0.7; }
+    91.6% { transform: translate(220px, 220px) rotate(720deg); opacity: 1; } /* Crosses up late */
+    100% { transform: translate(200px, 200px) rotate(810deg); opacity: 1; }
+  }
+  @keyframes m10 {
+    0% { transform: translate(220px, 320px) rotate(0deg); opacity: 0.7; }
+    12.5% { transform: translate(180px, 220px) rotate(-90deg); opacity: 1; } /* Crosses up early */
+    25% { transform: translate(250px, 150px) rotate(-180deg); opacity: 1; }
+    41.6% { transform: translate(280px, 230px) rotate(-270deg); opacity: 1; } 
+    50% { transform: translate(220px, 280px) rotate(-360deg); opacity: 0.7; } /* Crosses down mid */
+    66.6% { transform: translate(150px, 350px) rotate(-540deg); opacity: 0.7; }
+    83.3% { transform: translate(200px, 380px) rotate(-720deg); opacity: 0.7; }
+    100% { transform: translate(220px, 320px) rotate(-900deg); opacity: 0.7; }
+  }
+
+  .molecule { animation-duration: 12s; animation-iteration-count: infinite; animation-timing-function: linear; }
+  .piston-group { animation: pistonMove 12s infinite ease-in-out; }
+  .graph-point { animation: graphPointMove 12s infinite ease-in-out; }
+  .formula { animation: formulaGlow 12s infinite ease-in-out; }
+  .eq-arrows { animation: arrowPulse 3s infinite ease-in-out; transform-origin: 200px 250px; }
+</style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
+  <title id="svg-title">Henry's Law Animation</title>
+  <desc id="svg-desc">An animated diagram showing a piston compressing a gas, increasing its partial pressure and forcing more gas molecules to dissolve into the liquid phase, demonstrating Henry's Law.</desc>
+
+  <defs>
+    <!-- CO2 Molecule Template -->
+    <g id="co2">
+      <!-- Double Bonds -->
+      <line x1="-12" y1="-2.5" x2="-4" y2="-2.5" stroke="#555" stroke-width="2"/>
+      <line x1="-12" y1="2.5" x2="-4" y2="2.5" stroke="#555" stroke-width="2"/>
+      <line x1="4" y1="-2.5" x2="12" y2="-2.5" stroke="#555" stroke-width="2"/>
+      <line x1="4" y1="2.5" x2="12" y2="2.5" stroke="#555" stroke-width="2"/>
+      <!-- Atoms -->
+      <circle cx="0" cy="0" r="5" fill="#404040"/> <!-- Carbon -->
+      <circle cx="-14" cy="0" r="4" fill="#FF4444"/> <!-- Oxygen -->
+      <circle cx="14" cy="0" r="4" fill="#FF4444"/> <!-- Oxygen -->
+    </g>
+
+    <!-- Graph Clipping Path -->
+    <clipPath id="graphClip">
+      <rect x="500" y="150" width="250" height="230" />
+    </clipPath>
+  </defs>
+
+  <!-- Title -->
+  <text x="400" y="50" font-family="Inter" font-weight="700" font-size="26" fill="#2D3748" text-anchor="middle">
+    Henry's Law: <tspan class="formula" font-family="Roboto Mono" font-weight="700">P = K<tspan baseline-shift="sub" font-size="16">H</tspan> · χ</tspan>
+  </text>
+
+  <!-- CYLINDER APPARATUS -->
+  <g id="apparatus">
+    <!-- Liquid Phase Background -->
+    <rect x="102" y="250" width="196" height="148" fill="#E0F2FE" />
+    
+    <!-- Cylinder Walls -->
+    <polyline points="100,100 100,400 300,400 300,100" fill="none" stroke="#2D3748" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Gas-Liquid Interface -->
+    <line x1="102" y1="250" x2="298" y2="250" stroke="#4299E1" stroke-width="2" stroke-dasharray="6,4" />
+    <text x="310" y="254" font-family="Inter" font-size="12" fill="#4299E1" font-weight="600">Gas-Liquid Interface</text>
+
+    <!-- Phase Labels -->
+    <text x="200" y="235" font-family="Inter" font-size="14" fill="#4A5568" text-anchor="middle" font-weight="600" opacity="0.6">Gas Phase</text>
+    <text x="200" y="385" font-family="Inter" font-size="14" fill="#2B6CB0" text-anchor="middle" font-weight="600" opacity="0.7">Liquid Phase</text>
+
+    <!-- Equilibrium Arrows -->
+    <g class="eq-arrows">
+      <path d="M 185 246 L 215 246 M 210 241 L 215 246 L 210 251" stroke="#7209B7" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M 185 254 L 215 254 M 190 249 L 185 254 L 190 259" stroke="#7209B7" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+
+    <!-- Piston (Animated) -->
+    <g class="piston-group">
+      <!-- Handle -->
+      <rect x="196" y="0" width="8" height="100" fill="#A0AEC0" />
+      <rect x="170" y="-10" width="60" height="10" fill="#4A5568" rx="2" />
+      <!-- Piston Head -->
+      <rect x="102" y="100" width="196" height="20" fill="#718096" rx="4" />
+    </g>
+  </g>
+
+  <!-- MOLECULES -->
+  <g id="molecules">
+    <use href="#co2" class="molecule" style="animation-name: m1;" />
+    <use href="#co2" class="molecule" style="animation-name: m2;" />
+    <use href="#co2" class="molecule" style="animation-name: m3;" />
+    <use href="#co2" class="molecule" style="animation-name: m4;" />
+    <use href="#co2" class="molecule" style="animation-name: m5;" />
+    <use href="#co2" class="molecule" style="animation-name: m6;" />
+    <use href="#co2" class="molecule" style="animation-name: m7;" />
+    <use href="#co2" class="molecule" style="animation-name: m8;" />
+    <use href="#co2" class="molecule" style="animation-name: m9;" />
+    <use href="#co2" class="molecule" style="animation-name: m10;" />
+  </g>
+
+  <!-- GRAPH -->
+  <g id="graph">
+    <!-- Axes -->
+    <polyline points="500,150 500,380 750,380" fill="none" stroke="#2D3748" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Axis Labels -->
+    <text x="625" y="420" font-family="Inter" font-size="14" fill="#4A5568" text-anchor="middle" font-weight="600">
+      Concentration (χ<tspan baseline-shift="sub" font-size="10">solute</tspan>)
+    </text>
+    <text x="450" y="265" font-family="Inter" font-size="14" fill="#4A5568" text-anchor="middle" font-weight="600" transform="rotate(-90, 450, 265)">
+      Partial Pressure (P<tspan baseline-shift="sub" font-size="10">gas</tspan>)
+    </text>
+
+    <!-- Linear Relationship Line -->
+    <line x1="500" y1="380" x2="730" y2="150" stroke="#7209B7" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Moving Data Point & Dashed Lines -->
+    <g clip-path="url(#graphClip)">
+      <g class="graph-point">
+        <line x1="-300" y1="0" x2="0" y2="0" stroke="#7209B7" stroke-width="1.5" stroke-dasharray="5,5" opacity="0.6"/>
+        <line x1="0" y1="0" x2="0" y2="300" stroke="#7209B7" stroke-width="1.5" stroke-dasharray="5,5" opacity="0.6"/>
+        <circle cx="0" cy="0" r="6" fill="#FF007F" />
+        <circle cx="0" cy="0" r="10" fill="#FF007F" opacity="0.3" />
+      </g>
+    </g>
+  </g>
+
+  <!-- LEGEND -->
+  <g id="legend" transform="translate(500, 450)">
+    <rect x="0" y="0" width="250" height="40" fill="#ffffff" stroke="#E2E8F0" stroke-width="1" rx="4" />
+    <use href="#co2" x="25" y="20" />
+    <text x="50" y="24" font-family="Inter" font-size="12" fill="#4A5568">CO₂ (Gas)</text>
+    <use href="#co2" x="135" y="20" opacity="0.5" />
+    <text x="160" y="24" font-family="Inter" font-size="12" fill="#4A5568">CO₂ (Dissolved)</text>
+  </g>
+
+</svg>
+
+</body>
+</html>

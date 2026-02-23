@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Refraction & Huygens' Principle</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:wght@500&display=swap');
+
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        /* Glassmorphic Control Panel */
+        #controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        #controls h2 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            color: #111;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .val-display {
+            font-family: 'Roboto Mono', monospace;
+            color: #4361EE;
+        }
+
+        /* Custom Sliders */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #d1d8e0;
+            border-radius: 3px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #4361EE;
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* Specific slider colors */
+        #n1::-webkit-slider-thumb {
+            background: #a0aab5;
+        }
+
+        #angleI::-webkit-slider-thumb {
+            background: #FF3366;
+        }
+
+        #freq::-webkit-slider-thumb {
+            background: #06D6A0;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            background: rgba(255, 255, 255, 0.9);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            outline: none;
+        }
+
+        /* Formula Card */
+        #formula-card {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .formula-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .math {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1.1rem;
+            color: #111;
+        }
+
+        .math-live {
+            margin-top: 8px;
+            font-family: 'Roboto Mono', monospace;
+            font-size: 1rem;
+            color: #4361EE;
+            background: rgba(67, 97, 238, 0.1);
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+
+        .tir-warning {
+            color: #FF3366;
+            font-weight: bold;
+            display: none;
+            margin-top: 5px;
+            font-size: 0.9rem;
+        }
+
+        /* Labels */
+        .scene-label {
+            position: absolute;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: #333;
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        /* Scrollbar for controls */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card">
+        <div class="formula-title">Snell's Law</div>
+        <div class="math">n₁ sin(θ₁) = n₂ sin(θ₂)</div>
+        <div class="math-live" id="live-formula">1.00 sin(45°) = 1.50 sin(28.1°)</div>
+        <div class="tir-warning" id="tir-warning">Total Internal Reflection!</div>
+    </div>
+
+    <div id="controls">
+        <h2>Simulation Controls</h2>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="viewMode">Visualization Mode</label>
+            </div>
+            <select id="viewMode">
+                <option value="rays">Rays</option>
+                <option value="wavefronts">Wavefronts</option>
+                <option value="huygens">Huygens Wavelets</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label for="shapeMode">Interface Shape</label>
+            </div>
+            <select id="shapeMode">
+                <option value="flat">Flat Plane</option>
+                <option value="lens">Spherical Lens</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Medium 1 Index (n₁)</label>
+                <span class="val-display" id="val-n1">1.00</span>
+            </div>
+            <input type="range" id="n1" min="1.0" max="2.5" step="0.01" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <label>Medium 2 Index (n₂)</label>
+                <span class="val-display" id="val-n2">1.50</span>
+            </div>
+            <input type="range" id="n2" min="1.0" max="2.5" step="0.01" value="1.5">
+        </div>
+
+        <div class="control-group" id="group-angle">
+            <div class="control-header">
+                <label>Angle of Incidence (θ₁)</label>
+                <span class="val-display" id="val-angleI">45°</span>
+            </div>
+            <input type="range" id="angleI" min="0" max="85" step="1" value="45">
+        </div>
+
+        <div class="control-group" id="group-freq">
+            <div class="control-header">
+                <label>Wave Frequency (f)</label>
+                <span class="val-display" id="val-freq">1.0 Hz</span>
+            </div>
+            <input type="range" id="freq" min="0.5" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group" id="group-radius" style="display: none;">
+            <div class="control-header">
+                <label>Lens Curvature (R)</label>
+                <span class="val-display" id="val-radius">5.0 m</span>
+            </div>
+            <input type="range" id="radius" min="2.0" max="10.0" step="0.1" value="5.0">
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Configuration & State ---
+        const state = {
+            n1: 1.0,
+            n2: 1.5,
+            angleI: 45, // degrees
+            freq: 1.0,
+            viewMode: 'rays',
+            shapeMode: 'flat',
+            radius: 5.0,
+            cScale: 5.0, // Base velocity scale
+            isTIR: false,
+            angleR: 0, // radians
+            v1: 5.0,
+            v2: 3.33,
+            lambda1: 5.0,
+            lambda2: 3.33,
+            time: 0
+        };
+
+        const colors = {
+            bg: 0xf0f4f8,
+            med1: 0xffffff,
+            med2: 0x4361EE,
+            rayInc: 0xFF3366,
+            rayRef: 0x4361EE,
+            wavelet: 0x06D6A0,
+            normal: 0x7209B7
+        };
+
+        // --- Three.js Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(colors.bg);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 30);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.localClippingEnabled = true; // Crucial for wavefronts
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(10, 20, 10);
+        scene.add(dirLight);
+
+        // --- Scene Groups ---
+        const mediaGroup = new THREE.Group();
+        const raysGroup = new THREE.Group();
+        const wavefrontsGroup = new THREE.Group();
+        const huygensGroup = new THREE.Group();
+        const lensGroup = new THREE.Group();
+
+        scene.add(mediaGroup);
+        scene.add(raysGroup);
+        scene.add(wavefrontsGroup);
+        scene.add(huygensGroup);
+        scene.add(lensGroup);
+
+        // --- Materials ---
+        const matMed1 = new THREE.MeshPhysicalMaterial({
+            color: colors.med1, transparent: true, opacity: 0.1, roughness: 0.1, transmission: 0.9
+        });
+        const matMed2 = new THREE.MeshPhysicalMaterial({
+            color: colors.med2, transparent: true, opacity: 0.2, roughness: 0.1, transmission: 0.9
+        });
+        const matRayInc = new THREE.MeshPhongMaterial({ color: colors.rayInc, shininess: 100 });
+        const matRayRef = new THREE.MeshPhongMaterial({ color: colors.rayRef, shininess: 100 });
+        const matNormal = new THREE.LineDashedMaterial({ color: colors.normal, dashSize: 0.5, gapSize: 0.5 });
+
+        // Clipping planes for wavefronts
+        const clipPlaneTop = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+        const clipPlaneBottom = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
+
+        const matWavefrontInc = new THREE.MeshBasicMaterial({
+            color: colors.rayInc, side: THREE.DoubleSide, transparent: true, opacity: 0.5,
+            clippingPlanes: [clipPlaneBottom]
+        });
+        const matWavefrontRef = new THREE.MeshBasicMaterial({
+            color: colors.rayRef, side: THREE.DoubleSide, transparent: true, opacity: 0.5,
+            clippingPlanes: [clipPlaneTop]
+        });
+        const matWavelet = new THREE.MeshPhongMaterial({
+            color: colors.wavelet, transparent: true, opacity: 0.6, side: THREE.DoubleSide, wireframe: false
+        });
+
+        // --- Geometry Builders ---
+
+        // 1. Media Blocks
+        const boxGeo = new THREE.BoxGeometry(30, 15, 15);
+        const med1Mesh = new THREE.Mesh(boxGeo, matMed1);
+        med1Mesh.position.y = 7.5;
+        const med2Mesh = new THREE.Mesh(boxGeo, matMed2);
+        med2Mesh.position.y = -7.5;
+        mediaGroup.add(med1Mesh);
+        mediaGroup.add(med2Mesh);
+
+        // Normal Line
+        const normalGeo = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 12, 0), new THREE.Vector3(0, -12, 0)
+        ]);
+        const normalLine = new THREE.Line(normalGeo, matNormal);
+        normalLine.computeLineDistances();
+        mediaGroup.add(normalLine);
+
+        // Helper to create arrows
+        function createArrow(material) {
+            const group = new THREE.Group();
+            const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 1, 16), material);
+            cylinder.position.y = 0.5;
+            const cone = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.8, 16), material);
+            cone.position.y = 1.4;
+            group.add(cylinder);
+            group.add(cone);
+            return group;
+        }
+
+        const rayIncMesh = createArrow(matRayInc);
+        const rayRefMesh = createArrow(matRayRef);
+        raysGroup.add(rayIncMesh);
+        raysGroup.add(rayRefMesh);
+
+        // Wavefront Planes
+        const numPlanes = 15;
+        const planesInc = [];
+        const planesRef = [];
+        const planeGeo = new THREE.PlaneGeometry(15, 15);
+
+        for (let i = 0; i < numPlanes; i++) {
+            const pInc = new THREE.Mesh(planeGeo, matWavefrontInc);
+            const pRef = new THREE.Mesh(planeGeo, matWavefrontRef);
+            wavefrontsGroup.add(pInc);
+            wavefrontsGroup.add(pRef);
+            planesInc.push(pInc);
+            planesRef.push(pRef);
+        }
+
+        // Huygens Wavelets
+        const numWavelets = 21;
+        const wavelets = [];
+        const waveletPoints = [];
+        const interfaceWidth = 20;
+        const sphereGeo = new THREE.SphereGeometry(1, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2); // Hemisphere
+
+        const huygensIncPlane = new THREE.Mesh(new THREE.PlaneGeometry(25, 15), matWavefrontInc);
+        huygensGroup.add(huygensIncPlane);
+
+        for (let i = 0; i < numWavelets; i++) {
+            const x = -interfaceWidth / 2 + (interfaceWidth / (numWavelets - 1)) * i;
+            waveletPoints.push(x);
+            const w = new THREE.Mesh(sphereGeo, matWavelet);
+            w.position.set(x, 0, 0);
+            w.rotation.x = Math.PI; // Point downwards
+            huygensGroup.add(w);
+            wavelets.push(w);
+        }
+
+        // Lens Mode Objects
+        const lensMat = new THREE.MeshPhysicalMaterial({
+            color: 0x88ccff, transparent: true, opacity: 0.4, roughness: 0.1, transmission: 0.9, ior: 1.5
+        });
+        let lensMesh = null;
+        const lensRaysInc = [];
+        const lensRaysRef = [];
+        const numLensRays = 7;
+
+        for (let i = 0; i < numLensRays; i++) {
+            const rInc = createArrow(matRayInc);
+            const rRef = createArrow(matRayRef);
+            lensGroup.add(rInc);
+            lensGroup.add(rRef);
+            lensRaysInc.push(rInc);
+            lensRaysRef.push(rRef);
+        }
+
+        // --- Physics & Update Logic ---
+
+        function updatePhysics() {
+            // Read State
+            state.n1 = parseFloat(document.getElementById('n1').value);
+            state.n2 = parseFloat(document.getElementById('n2').value);
+            state.angleI = parseFloat(document.getElementById('angleI').value);
+            state.freq = parseFloat(document.getElementById('freq').value);
+            state.viewMode = document.getElementById('viewMode').value;
+            state.shapeMode = document.getElementById('shapeMode').value;
+            state.radius = parseFloat(document.getElementById('radius').value);
+
+            // Update UI text
+            document.getElementById('val-n1').innerText = state.n1.toFixed(2);
+            document.getElementById('val-n2').innerText = state.n2.toFixed(2);
+            document.getElementById('val-angleI').innerText = state.angleI + '°';
+            document.getElementById('val-freq').innerText = state.freq.toFixed(1) + ' Hz';
+            document.getElementById('val-radius').innerText = state.radius.toFixed(1) + ' m';
+
+            // Math
+            const thetaI = state.angleI * Math.PI / 180;
+            const sinR = (state.n1 * Math.sin(thetaI)) / state.n2;
+
+            state.isTIR = sinR > 1.0;
+            state.angleR = state.isTIR ? thetaI : Math.asin(sinR);
+
+            state.v1 = state.cScale / state.n1;
+            state.v2 = state.cScale / state.n2;
+            state.lambda1 = state.v1 / state.freq;
+            state.lambda2 = state.v2 / state.freq;
+
+            // Update Formula Card
+            const liveFormula = document.getElementById('live-formula');
+            const tirWarning = document.getElementById('tir-warning');
+
+            if (state.isTIR) {
+                liveFormula.innerText = `${state.n1.toFixed(2)} sin(${state.angleI}°) > ${state.n2.toFixed(2)}`;
+                tirWarning.style.display = 'block';
+            } else {
+                const angleRDeg = (state.angleR * 180 / Math.PI).toFixed(1);
+                liveFormula.innerText = `${state.n1.toFixed(2)} sin(${state.angleI}°) = ${state.n2.toFixed(2)} sin(${angleRDeg}°)`;
+                tirWarning.style.display = 'none';
+            }
+
+            // Update Visuals
+            matMed2.color.setHSL(0.6, 0.8, 1.0 - (state.n2 / 3.0)); // Darker blue for higher index
+            matMed2.opacity = 0.1 + (state.n2 * 0.05);
+
+            // Visibility Toggles
+            const isFlat = state.shapeMode === 'flat';
+            mediaGroup.visible = isFlat;
+            lensGroup.visible = !isFlat;
+
+            document.getElementById('group-radius').style.display = isFlat ? 'none' : 'flex';
+            document.getElementById('group-angle').style.display = isFlat ? 'flex' : 'none';
+            document.getElementById('group-freq').style.display = state.viewMode === 'rays' ? 'none' : 'flex';
+
+            if (isFlat) {
+                raysGroup.visible = state.viewMode === 'rays';
+                wavefrontsGroup.visible = state.viewMode === 'wavefronts';
+                huygensGroup.visible = state.viewMode === 'huygens';
+
+                // Update Single Rays
+                const rayLen = 12;
+                // Incident Ray points towards origin
+                rayIncMesh.position.set(-rayLen * Math.sin(thetaI), rayLen * Math.cos(thetaI), 0);
+                rayIncMesh.rotation.z = Math.PI + thetaI; // Point towards origin
+                rayIncMesh.scale.set(1, rayLen, 1);
+
+                // Refracted/Reflected Ray points away from origin
+                if (state.isTIR) {
+                    rayRefMesh.position.set(0, 0, 0);
+                    rayRefMesh.rotation.z = -thetaI;
+                    matRayRef.color.setHex(colors.rayInc); // Reflected is same color
+                } else {
+                    rayRefMesh.position.set(0, 0, 0);
+                    rayRefMesh.rotation.z = Math.PI + state.angleR;
+                    matRayRef.color.setHex(colors.rayRef);
+                }
+                rayRefMesh.scale.set(1, rayLen, 1);
+
+                // Update Wavefront Rotations
+                if (state.viewMode === 'wavefronts') {
+                    planesInc.forEach(p => {
+                        p.rotation.x = Math.PI / 2;
+                        p.rotation.z = thetaI;
+                    });
+                    planesRef.forEach(p => {
+                        p.rotation.x = Math.PI / 2;
+                        p.rotation.z = state.isTIR ? Math.PI - thetaI : state.angleR;
+                        p.material.color.setHex(state.isTIR ? colors.rayInc : colors.rayRef);
+                        // Adjust clipping plane for TIR
+                        p.material.clippingPlanes = state.isTIR ? [clipPlaneBottom] : [clipPlaneTop];
+                    });
+                }
+
+                if (state.viewMode === 'huygens') {
+                    huygensIncPlane.rotation.x = Math.PI / 2;
+                    huygensIncPlane.rotation.z = thetaI;
+                }
+
+            } else {
+                // Lens Mode
+                raysGroup.visible = false;
+                wavefrontsGroup.visible = false;
+                huygensGroup.visible = false;
+
+                // Rebuild Lens Geometry
+                if (lensMesh) lensGroup.remove(lensMesh);
+                // Simple biconvex approximation using scaled sphere
+                const lensThickness = 2.0;
+                const geo = new THREE.SphereGeometry(state.radius, 32, 32);
+                geo.scale(1, lensThickness / state.radius, 0.5); // Flatten Y and Z
+                lensMesh = new THREE.Mesh(geo, lensMat);
+                lensGroup.add(lensMesh);
+
+                // Lens Maker's Equation (approximate focal length)
+                // 1/f = (n2/n1 - 1) * (1/R1 - 1/R2). Assuming symmetric R1=R, R2=-R
+                const power = (state.n2 / state.n1 - 1) * (2 / state.radius);
+                const f = power !== 0 ? 1 / power : 1000;
+
+                const rayLen = 10;
+                const spread = Math.min(state.radius * 0.8, 8);
+
+                for (let i = 0; i < numLensRays; i++) {
+                    const x = -spread / 2 + (spread / (numLensRays - 1)) * i;
+
+                    // Incident
+                    lensRaysInc[i].position.set(x, rayLen, 0);
+                    lensRaysInc[i].rotation.z = Math.PI; // Point straight down
+                    lensRaysInc[i].scale.set(0.5, rayLen, 0.5);
+
+                    // Refracted
+                    lensRaysRef[i].position.set(x, 0, 0);
+
+                    if (Math.abs(f) > 500) {
+                        // Flat glass, no convergence
+                        lensRaysRef[i].rotation.z = Math.PI;
+                        lensRaysRef[i].scale.set(0.5, rayLen, 0.5);
+                    } else {
+                        // Converge/Diverge
+                        const targetY = -f;
+                        const angle = Math.atan2(x, targetY);
+                        lensRaysRef[i].rotation.z = f > 0 ? angle : Math.PI + angle;
+                        const dist = Math.sqrt(x * x + f * f);
+                        // If diverging (f < 0), draw rays backwards visually or just extend
+                        lensRaysRef[i].scale.set(0.5, dist > 20 ? 20 : dist, 0.5);
+                    }
+                }
+            }
+        }
+
+        // --- Event Listeners ---
+        const inputs = ['n1', 'n2', 'angleI', 'freq', 'viewMode', 'shapeMode', 'radius'];
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', () => {
+                if (id === 'viewMode' && document.getElementById('viewMode').value === 'huygens') {
+                    state.time = -5; // Reset Huygens animation
+                }
+                updatePhysics();
+            });
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            controls.update();
+
+            if (state.shapeMode === 'flat') {
+                if (state.viewMode === 'wavefronts') {
+                    state.time += delta;
+                    const dirInc = new THREE.Vector3(Math.sin(state.angleI * Math.PI / 180), -Math.cos(state.angleI * Math.PI / 180), 0);
+                    const angleR_eff = state.isTIR ? (Math.PI - state.angleI * Math.PI / 180) : state.angleR;
+                    const dirRef = new THREE.Vector3(Math.sin(angleR_eff), -Math.cos(angleR_eff), 0);
+                    if (state.isTIR) dirRef.y *= -1; // Reflect up
+
+                    const v2_eff = state.isTIR ? state.v1 : state.v2;
+                    const lambda2_eff = state.isTIR ? state.lambda1 : state.lambda2;
+
+                    for (let i = 0; i < numPlanes; i++) {
+                        // Incident planes moving towards origin
+                        const offsetInc = (i * state.lambda1) - ((state.v1 * state.time) % state.lambda1);
+                        planesInc[i].position.copy(dirInc).multiplyScalar(-offsetInc - 2); // -2 to push them back
+
+                        // Refracted planes moving away from origin
+                        const offsetRef = (i * lambda2_eff) + ((v2_eff * state.time) % lambda2_eff);
+                        planesRef[i].position.copy(dirRef).multiplyScalar(offsetRef);
+                    }
+                }
+                else if (state.viewMode === 'huygens') {
+                    // Custom time loop for Huygens
+                    state.time += delta * 2.0;
+                    if (state.time > 8) state.time = -6; // Loop
+
+                    const thetaI = state.angleI * Math.PI / 180;
+
+                    // Move incident plane
+                    // Equation of line: x*sin(th) - y*cos(th) = -v1*t
+                    // Center of plane on the ray:
+                    const pX = state.v1 * state.time * Math.sin(thetaI);
+                    const pY = -state.v1 * state.time * Math.cos(thetaI);
+                    huygensIncPlane.position.set(pX, pY, 0);
+
+                    // Hide plane if it passes origin significantly
+                    huygensIncPlane.visible = state.time < 5;
+
+                    // Update wavelets
+                    for (let i = 0; i < numWavelets; i++) {
+                        const x = waveletPoints[i];
+                        // Time when wavefront hits this x coordinate
+                        const tHit = (x * Math.sin(thetaI)) / state.v1;
+
+                        if (state.time > tHit && !state.isTIR) {
+                            wavelets[i].visible = true;
+                            const radius = state.v2 * (state.time - tHit);
+                            if (radius > 0.01) {
+                                wavelets[i].scale.set(radius, radius, radius);
+                            }
+                        } else {
+                            wavelets[i].visible = false;
+                        }
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pascal's Law & Hydraulic Lift Simulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #f0f4f8;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            position: absolute;
+            z-index: 10;
+            padding: 24px;
+        }
+
+        #formula-card {
+            top: 24px;
+            left: 24px;
+            width: 320px;
+        }
+
+        #controls-panel {
+            top: 24px;
+            right: 24px;
+            width: 25%;
+            min-width: 300px;
+            max-width: 400px;
+            max-height: calc(100vh - 48px);
+            overflow-y: auto;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #111;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .formula-row {
+            margin-bottom: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 8px;
+        }
+
+        .formula-row span.val {
+            color: #4361EE;
+            font-weight: 800;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 8px;
+            cursor: pointer;
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: 2px solid;
+        }
+
+        #force1::-webkit-slider-thumb { border-color: #FF3366; }
+        #radius1::-webkit-slider-thumb { border-color: #4361EE; }
+        #radius2::-webkit-slider-thumb { border-color: #4361EE; }
+        #disp1::-webkit-slider-thumb { border-color: #20c997; }
+
+        .floating-label {
+            position: absolute;
+            z-index: 5;
+            font-weight: 800;
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            transition: opacity 0.1s;
+        }
+
+        #lbl-f1 { color: #FF3366; }
+        #lbl-f2 { color: #7209B7; }
+        #lbl-a1, #lbl-a2 { color: #4361EE; }
+        #lbl-p { color: #f59f00; }
+
+        /* Custom Scrollbar for controls */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="formula-card" class="glass-panel">
+        <h2>System Physics</h2>
+        <div class="formula-row">
+            <span>Pressure (P)</span>
+            <span class="val" id="out-p">0 Pa</span>
+        </div>
+        <div class="formula-row">
+            <span>Output Force (F₂)</span>
+            <span class="val" id="out-f2" style="color: #7209B7;">0 N</span>
+        </div>
+        <div class="formula-row">
+            <span>Mech. Advantage</span>
+            <span class="val" id="out-ma">0</span>
+        </div>
+        <div class="formula-row">
+            <span>Output Disp. (Δy₂)</span>
+            <span class="val" id="out-dy2">0 m</span>
+        </div>
+    </div>
+
+    <div id="controls-panel" class="glass-panel">
+        <h2>Controls</h2>
+        
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #FF3366;">Input Force (F₁)</span>
+                <span id="val-f1">100 N</span>
+            </div>
+            <input type="range" id="force1" min="10" max="500" step="10" value="100">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #4361EE;">Small Radius (r₁)</span>
+                <span id="val-r1">1.0 m</span>
+            </div>
+            <input type="range" id="radius1" min="0.5" max="1.5" step="0.1" value="1.0">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #4361EE;">Large Radius (r₂)</span>
+                <span id="val-r2">2.5 m</span>
+            </div>
+            <input type="range" id="radius2" min="1.5" max="4.0" step="0.1" value="2.5">
+        </div>
+
+        <div class="control-group">
+            <div class="control-header">
+                <span style="color: #20c997;">Input Displacement (Δy₁)</span>
+                <span id="val-dy1">0.00 m</span>
+            </div>
+            <input type="range" id="disp1" min="0" max="2.0" step="0.05" value="0">
+        </div>
+    </div>
+
+    <!-- 3D Floating Labels -->
+    <div id="lbl-f1" class="floating-label">F₁</div>
+    <div id="lbl-f2" class="floating-label">F₂</div>
+    <div id="lbl-a1" class="floating-label">A₁</div>
+    <div id="lbl-a2" class="floating-label">A₂</div>
+    <div id="lbl-p" class="floating-label">P</div>
+
+    <!-- Three.js and OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // --- Scene Setup ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf0f4f8);
+        scene.fog = new THREE.FogExp2(0xf0f4f8, 0.015);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 8, 35);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.maxPolarAngle = Math.PI / 2 + 0.1; // Don't go too far below ground
+        controls.minDistance = 10;
+        controls.maxDistance = 60;
+        controls.target.set(0, 4, 0);
+
+        // --- Lighting ---
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+        dirLight.position.set(15, 25, 15);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 50;
+        dirLight.shadow.camera.left = -15;
+        dirLight.shadow.camera.right = 15;
+        dirLight.shadow.camera.top = 15;
+        dirLight.shadow.camera.bottom = -15;
+        scene.add(dirLight);
+
+        const fillLight = new THREE.DirectionalLight(0xe2e8f0, 0.4);
+        fillLight.position.set(-15, 10, -15);
+        scene.add(fillLight);
+
+        // --- Floor ---
+        const floorGeo = new THREE.PlaneGeometry(100, 100);
+        const floorMat = new THREE.MeshStandardMaterial({ 
+            color: 0xe2e8f0, 
+            roughness: 0.8, 
+            metalness: 0.1 
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = -0.5;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const grid = new THREE.GridHelper(100, 50, 0xcbd5e1, 0xe2e8f0);
+        grid.position.y = -0.49;
+        scene.add(grid);
+
+        // --- Materials ---
+        const glassMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0xffffff,
+            transmission: 0.9,
+            opacity: 1,
+            transparent: true,
+            roughness: 0.05,
+            metalness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1,
+            side: THREE.DoubleSide,
+            depthWrite: false
+        });
+
+        const fluidMaterial = new THREE.MeshPhysicalMaterial({
+            color: 0x4361EE,
+            transmission: 0.2,
+            opacity: 0.95,
+            transparent: true,
+            roughness: 0.2,
+            metalness: 0.1
+        });
+
+        const pistonMaterial = new THREE.MeshStandardMaterial({
+            color: 0xADB5BD,
+            roughness: 0.3,
+            metalness: 0.8
+        });
+
+        // --- Geometry Constants ---
+        const DISTANCE = 14; // Distance between cylinder centers
+        const LEFT_X = -DISTANCE / 2;
+        const RIGHT_X = DISTANCE / 2;
+        const BASE_HEIGHT = 6; // Base fluid height
+        const GLASS_HEIGHT = 14;
+        const BOTTOM_PIPE_RADIUS = 0.6;
+        const BOTTOM_PIPE_Y = 0;
+
+        // --- Meshes ---
+        // 1. Glass Container
+        const baseCylGeo = new THREE.CylinderGeometry(1, 1, 1, 64, 1, true);
+        const basePipeGeo = new THREE.CylinderGeometry(1, 1, 1, 64, 1, false);
+
+        const leftGlass = new THREE.Mesh(baseCylGeo, glassMaterial);
+        const rightGlass = new THREE.Mesh(baseCylGeo, glassMaterial);
+        const bottomGlass = new THREE.Mesh(basePipeGeo, glassMaterial);
+
+        leftGlass.position.set(LEFT_X, GLASS_HEIGHT / 2, 0);
+        rightGlass.position.set(RIGHT_X, GLASS_HEIGHT / 2, 0);
+        
+        bottomGlass.rotation.z = Math.PI / 2;
+        bottomGlass.position.set(0, BOTTOM_PIPE_Y, 0);
+        bottomGlass.scale.set(BOTTOM_PIPE_RADIUS + 0.05, DISTANCE, BOTTOM_PIPE_RADIUS + 0.05);
+
+        scene.add(leftGlass, rightGlass, bottomGlass);
+
+        // 2. Fluid
+        const fluidCylGeo = new THREE.CylinderGeometry(1, 1, 1, 64);
+        const leftFluid = new THREE.Mesh(fluidCylGeo, fluidMaterial);
+        const rightFluid = new THREE.Mesh(fluidCylGeo, fluidMaterial);
+        const bottomFluid = new THREE.Mesh(fluidCylGeo, fluidMaterial);
+
+        bottomFluid.rotation.z = Math.PI / 2;
+        bottomFluid.position.set(0, BOTTOM_PIPE_Y, 0);
+        bottomFluid.scale.set(BOTTOM_PIPE_RADIUS, DISTANCE + 1, BOTTOM_PIPE_RADIUS); // +1 to overlap slightly and avoid gaps
+
+        scene.add(leftFluid, rightFluid, bottomFluid);
+
+        // 3. Pistons
+        const pistonGeo = new THREE.CylinderGeometry(1, 1, 0.6, 64);
+        const leftPiston = new THREE.Mesh(pistonGeo, pistonMaterial);
+        const rightPiston = new THREE.Mesh(pistonGeo, pistonMaterial);
+        leftPiston.castShadow = true;
+        rightPiston.castShadow = true;
+        scene.add(leftPiston, rightPiston);
+
+        // 4. Force Arrows
+        const dirDown = new THREE.Vector3(0, -1, 0);
+        const dirUp = new THREE.Vector3(0, 1, 0);
+        const arrow1 = new THREE.ArrowHelper(dirDown, new THREE.Vector3(LEFT_X, 10, 0), 2, 0xFF3366, 0.8, 0.4);
+        const arrow2 = new THREE.ArrowHelper(dirUp, new THREE.Vector3(RIGHT_X, 10, 0), 2, 0x7209B7, 0.8, 0.4);
+        
+        // Make arrows thicker
+        arrow1.line.material.linewidth = 5;
+        arrow2.line.material.linewidth = 5;
+        scene.add(arrow1, arrow2);
+
+        // 5. Pressure Particles (in bottom pipe)
+        const particleCount = 400;
+        const particleGeo = new THREE.BufferGeometry();
+        const particlePos = new Float32Array(particleCount * 3);
+        
+        for(let i=0; i<particleCount; i++) {
+            // Random point in cylinder
+            const theta = Math.random() * Math.PI * 2;
+            const r = Math.sqrt(Math.random()) * (BOTTOM_PIPE_RADIUS - 0.1);
+            const x = (Math.random() - 0.5) * DISTANCE;
+            const y = r * Math.sin(theta);
+            const z = r * Math.cos(theta);
+            
+            particlePos[i*3] = x;
+            particlePos[i*3+1] = y + BOTTOM_PIPE_Y;
+            particlePos[i*3+2] = z;
+        }
+        particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+        const particleMat = new THREE.PointsMaterial({
+            color: 0xffffff,
+            size: 0.15,
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending
+        });
+        const particles = new THREE.Points(particleGeo, particleMat);
+        scene.add(particles);
+
+        // --- State Variables ---
+        let state = {
+            f1: 100,
+            r1: 1.0,
+            r2: 2.5,
+            dy1: 0,
+            a1: 0,
+            a2: 0,
+            p: 0,
+            f2: 0,
+            dy2: 0,
+            ma: 0
+        };
+
+        // --- DOM Elements ---
+        const ui = {
+            f1: document.getElementById('force1'),
+            r1: document.getElementById('radius1'),
+            r2: document.getElementById('radius2'),
+            dy1: document.getElementById('disp1'),
+            valF1: document.getElementById('val-f1'),
+            valR1: document.getElementById('val-r1'),
+            valR2: document.getElementById('val-r2'),
+            valDy1: document.getElementById('val-dy1'),
+            outP: document.getElementById('out-p'),
+            outF2: document.getElementById('out-f2'),
+            outMa: document.getElementById('out-ma'),
+            outDy2: document.getElementById('out-dy2'),
+            lblF1: document.getElementById('lbl-f1'),
+            lblF2: document.getElementById('lbl-f2'),
+            lblA1: document.getElementById('lbl-a1'),
+            lblA2: document.getElementById('lbl-a2'),
+            lblP: document.getElementById('lbl-p')
+        };
+
+        // --- Update Logic ---
+        function updatePhysics() {
+            // Read inputs
+            state.f1 = parseFloat(ui.f1.value);
+            state.r1 = parseFloat(ui.r1.value);
+            state.r2 = parseFloat(ui.r2.value);
+            state.dy1 = parseFloat(ui.dy1.value);
+
+            // Calculations
+            state.a1 = Math.PI * Math.pow(state.r1, 2);
+            state.a2 = Math.PI * Math.pow(state.r2, 2);
+            state.p = state.f1 / state.a1;
+            state.f2 = state.p * state.a2;
+            state.ma = state.a2 / state.a1;
+            
+            // Volume conservation: V1 = V2 => A1 * dy1 = A2 * dy2
+            state.dy2 = state.dy1 * (state.a1 / state.a2);
+
+            // Update UI Text
+            ui.valF1.innerText = `${state.f1} N`;
+            ui.valR1.innerText = `${state.r1.toFixed(1)} m`;
+            ui.valR2.innerText = `${state.r2.toFixed(1)} m`;
+            ui.valDy1.innerText = `${state.dy1.toFixed(2)} m`;
+
+            ui.outP.innerText = `${state.p.toFixed(1)} Pa`;
+            ui.outF2.innerText = `${state.f2.toFixed(1)} N`;
+            ui.outMa.innerText = `${state.ma.toFixed(2)}`;
+            ui.outDy2.innerText = `${state.dy2.toFixed(2)} m`;
+
+            updateVisuals();
+        }
+
+        function updateVisuals() {
+            // 1. Scale Glass (add slight offset to avoid z-fighting with fluid)
+            leftGlass.scale.set(state.r1 + 0.05, GLASS_HEIGHT, state.r1 + 0.05);
+            rightGlass.scale.set(state.r2 + 0.05, GLASS_HEIGHT, state.r2 + 0.05);
+
+            // 2. Calculate Fluid Heights
+            const h1 = BASE_HEIGHT - state.dy1;
+            const h2 = BASE_HEIGHT + state.dy2;
+
+            // 3. Scale and Position Fluid
+            // Cylinder origin is center. To keep bottom at BOTTOM_PIPE_Y + BOTTOM_PIPE_RADIUS
+            const fluidBottomY = BOTTOM_PIPE_Y + BOTTOM_PIPE_RADIUS / 2;
+            
+            leftFluid.scale.set(state.r1, h1, state.r1);
+            leftFluid.position.set(LEFT_X, fluidBottomY + h1 / 2, 0);
+
+            rightFluid.scale.set(state.r2, h2, state.r2);
+            rightFluid.position.set(RIGHT_X, fluidBottomY + h2 / 2, 0);
+
+            // 4. Position Pistons
+            const pistonY1 = fluidBottomY + h1 + 0.3; // 0.3 is half of piston height
+            const pistonY2 = fluidBottomY + h2 + 0.3;
+            
+            leftPiston.scale.set(state.r1, 1, state.r1);
+            leftPiston.position.set(LEFT_X, pistonY1, 0);
+
+            rightPiston.scale.set(state.r2, 1, state.r2);
+            rightPiston.position.set(RIGHT_X, pistonY2, 0);
+
+            // 5. Update Arrows
+            // Strict proportionality for arrows based on force.
+            // Using a scale factor to keep them visible but proportional.
+            const arrowScale = 0.02; 
+            const len1 = Math.max(state.f1 * arrowScale, 1); // Min length 1
+            const len2 = Math.max(state.f2 * arrowScale, 1);
+
+            arrow1.position.set(LEFT_X, pistonY1 + len1 + 0.3, 0);
+            arrow1.setLength(len1, Math.min(len1*0.3, 1), Math.min(len1*0.2, 0.8));
+
+            arrow2.position.set(RIGHT_X, pistonY2 + 0.3, 0);
+            arrow2.setLength(len2, Math.min(len2*0.3, 1.5), Math.min(len2*0.2, 1.2));
+        }
+
+        // --- Event Listeners ---
+        [ui.f1, ui.r1, ui.r2, ui.dy1].forEach(el => {
+            el.addEventListener('input', updatePhysics);
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // --- 3D to 2D Label Projection ---
+        function updateLabels() {
+            const tempV = new THREE.Vector3();
+
+            const project = (vec, el) => {
+                tempV.copy(vec);
+                tempV.project(camera);
+                
+                // Check if behind camera
+                if(tempV.z > 1) {
+                    el.style.opacity = 0;
+                    return;
+                }
+
+                const x = (tempV.x *  .5 + .5) * window.innerWidth;
+                const y = (tempV.y * -.5 + .5) * window.innerHeight;
+                
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                el.style.opacity = 1;
+            };
+
+            // F1 Label (Top of input arrow)
+            project(new THREE.Vector3(LEFT_X - state.r1 - 0.5, leftPiston.position.y + 2, 0), ui.lblF1);
+            
+            // F2 Label (Top of output arrow)
+            const len2 = Math.max(state.f2 * 0.02, 1);
+            project(new THREE.Vector3(RIGHT_X + state.r2 + 0.5, rightPiston.position.y + len2 / 2, 0), ui.lblF2);
+
+            // A1 Label
+            project(new THREE.Vector3(LEFT_X, leftPiston.position.y - 1.5, state.r1 + 0.5), ui.lblA1);
+            
+            // A2 Label
+            project(new THREE.Vector3(RIGHT_X, rightPiston.position.y - 1.5, state.r2 + 0.5), ui.lblA2);
+
+            // P Label (Center of bottom pipe)
+            project(new THREE.Vector3(0, BOTTOM_PIPE_Y, BOTTOM_PIPE_RADIUS + 0.5), ui.lblP);
+        }
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = clock.getElapsedTime();
+
+            // Animate particles based on pressure
+            // Higher pressure = faster pulse and brighter
+            const pulseRate = 2 + state.p * 0.005;
+            particleMat.opacity = 0.3 + 0.5 * Math.abs(Math.sin(time * pulseRate));
+            
+            // Slowly rotate particles for fluid dynamic feel
+            particles.rotation.x = time * 0.1;
+
+            controls.update();
+            updateLabels();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        updatePhysics();
+        animate();
+
+    </script>
+</body>
+</html>

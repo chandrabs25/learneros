@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wave Mechanics: LCAO Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Scene Visibility */
+        .scene1 { animation: fade-scene1 12s infinite; }
+        .scene2 { animation: fade-scene2 12s infinite; }
+
+        @keyframes fade-scene1 {
+            0%, 41% { opacity: 1; visibility: visible; }
+            45%, 95% { opacity: 0; visibility: hidden; }
+            100% { opacity: 1; visibility: visible; }
+        }
+
+        @keyframes fade-scene2 {
+            0%, 45% { opacity: 0; visibility: hidden; }
+            50%, 91% { opacity: 1; visibility: visible; }
+            95%, 100% { opacity: 0; visibility: hidden; }
+        }
+
+        /* Scene 1: Constructive Interference (Bonding) */
+        .s1-ao-left { animation: s1-move-left 12s infinite; }
+        .s1-ao-right { animation: s1-move-right 12s infinite; }
+        .s1-fade-out { animation: s1-ao-fade 12s infinite; }
+        .s1-fade-in { animation: s1-mo-fade 12s infinite; }
+        .s1-energy-line { animation: s1-draw-line 12s infinite; }
+        
+        @keyframes s1-move-left {
+            0%, 8% { transform: translateX(0); }
+            25%, 100% { transform: translateX(60px); }
+        }
+        @keyframes s1-move-right {
+            0%, 8% { transform: translateX(0); }
+            25%, 100% { transform: translateX(-60px); }
+        }
+        @keyframes s1-ao-fade {
+            0%, 15% { opacity: 1; }
+            25%, 100% { opacity: 0; }
+        }
+        @keyframes s1-mo-fade {
+            0%, 15% { opacity: 0; transform: scale(0.8); transform-origin: 300px 280px; }
+            25%, 100% { opacity: 1; transform: scale(1); transform-origin: 300px 280px; }
+        }
+        @keyframes s1-draw-line {
+            0%, 15% { stroke-dashoffset: 110; }
+            25%, 100% { stroke-dashoffset: 0; }
+        }
+
+        /* Scene 2: Destructive Interference (Antibonding) */
+        .s2-ao-left { animation: s2-move-left 12s infinite; }
+        .s2-ao-right { animation: s2-move-right 12s infinite; }
+        .s2-fade-out { animation: s2-ao-fade 12s infinite; }
+        .s2-fade-in { animation: s2-mo-fade 12s infinite; }
+        .s2-energy-line { animation: s2-draw-line 12s infinite; }
+
+        @keyframes s2-move-left {
+            0%, 58% { transform: translateX(0); }
+            75%, 100% { transform: translateX(50px); }
+        }
+        @keyframes s2-move-right {
+            0%, 58% { transform: translateX(0); }
+            75%, 100% { transform: translateX(-50px); }
+        }
+        @keyframes s2-ao-fade {
+            0%, 65% { opacity: 1; }
+            75%, 100% { opacity: 0; }
+        }
+        @keyframes s2-mo-fade {
+            0%, 65% { opacity: 0; transform: scale(0.8); transform-origin: 300px 280px; }
+            75%, 100% { opacity: 1; transform: scale(1); transform-origin: 300px 280px; }
+        }
+        @keyframes s2-draw-line {
+            0%, 65% { stroke-dashoffset: 150; }
+            75%, 100% { stroke-dashoffset: 0; }
+        }
+
+        /* Floating Animation for Labels */
+        .float { animation: float-anim 3s ease-in-out infinite; }
+        @keyframes float-anim {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
+    <title id="svg-title">Wave Mechanics: Linear Combination of Atomic Orbitals (LCAO)</title>
+    <desc id="svg-desc">An animation showing two 1s atomic orbitals combining to form a bonding molecular orbital (constructive interference) and an antibonding molecular orbital (destructive interference), along with their corresponding energy levels.</desc>
+
+    <defs>
+        <!-- Gradients for Orbitals -->
+        <radialGradient id="grad-ao-blue" cx="50%" cy="50%" r="50%">
+            <stop offset="10%" stop-color="#4488FF" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="#4488FF" stop-opacity="0"/>
+        </radialGradient>
+        
+        <radialGradient id="grad-ao-red" cx="50%" cy="50%" r="50%">
+            <stop offset="10%" stop-color="#FF4444" stop-opacity="0.85"/>
+            <stop offset="100%" stop-color="#FF4444" stop-opacity="0"/>
+        </radialGradient>
+
+        <radialGradient id="grad-mo-bond" cx="300" cy="280" r="120" gradientUnits="userSpaceOnUse">
+            <stop offset="15%" stop-color="#4488FF" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="#4488FF" stop-opacity="0"/>
+        </radialGradient>
+
+        <radialGradient id="grad-anti-left" cx="250" cy="280" r="70" gradientUnits="userSpaceOnUse">
+            <stop offset="5%" stop-color="#4488FF" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="#4488FF" stop-opacity="0"/>
+        </radialGradient>
+
+        <radialGradient id="grad-anti-right" cx="350" cy="280" r="70" gradientUnits="userSpaceOnUse">
+            <stop offset="5%" stop-color="#FF4444" stop-opacity="0.9"/>
+            <stop offset="100%" stop-color="#FF4444" stop-opacity="0"/>
+        </radialGradient>
+
+        <linearGradient id="grad-wave-anti" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="48%" stop-color="#4488FF"/>
+            <stop offset="52%" stop-color="#FF4444"/>
+        </linearGradient>
+
+        <!-- Arrowhead Marker -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00"/>
+        </marker>
+    </defs>
+
+    <!-- Background Grid / Base -->
+    <rect width="100%" height="100%" fill="#ffffff" rx="12"/>
+    
+    <!-- Title -->
+    <text x="400" y="40" font-size="22" font-weight="700" text-anchor="middle" fill="#333333">Wave Mechanics: Linear Combination of Atomic Orbitals (LCAO)</text>
+    
+    <!-- Wave Baseline -->
+    <line x1="120" y1="120" x2="480" y2="120" stroke="#CCCCCC" stroke-width="1" stroke-dasharray="4,4"/>
+
+    <!-- Energy Diagram Static Elements -->
+    <g id="energy-diagram">
+        <!-- Axis -->
+        <line x1="620" y1="420" x2="620" y2="100" stroke="#F77F00" stroke-width="2" marker-end="url(#arrow)"/>
+        <text x="605" y="260" font-size="14" font-weight="600" fill="#F77F00" transform="rotate(-90, 605, 260)" text-anchor="middle">Energy (E)</text>
+        
+        <!-- AO Levels -->
+        <line x1="630" y1="280" x2="660" y2="280" stroke="#404040" stroke-width="3" stroke-linecap="round"/>
+        <line x1="700" y1="280" x2="730" y2="280" stroke="#404040" stroke-width="3" stroke-linecap="round"/>
+        
+        <text x="645" y="270" font-size="12" font-weight="600" fill="#404040" text-anchor="middle" class="mono">1s</text>
+        <text x="715" y="270" font-size="12" font-weight="600" fill="#404040" text-anchor="middle" class="mono">1s</text>
+    </g>
+
+    <!-- Legend -->
+    <g id="legend" transform="translate(40, 430)">
+        <rect x="0" y="0" width="12" height="12" fill="#4488FF" rx="2"/>
+        <text x="20" y="10" font-size="12" fill="#555">Positive Phase (+)</text>
+        
+        <rect x="0" y="20" width="12" height="12" fill="#FF4444" rx="2"/>
+        <text x="20" y="30" font-size="12" fill="#555">Negative Phase (-)</text>
+        
+        <line x1="0" y1="46" x2="12" y2="46" stroke="#7209B7" stroke-width="2" stroke-dasharray="3,2"/>
+        <text x="20" y="50" font-size="12" fill="#555">Energy Transition</text>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- SCENE 1: CONSTRUCTIVE INTERFERENCE (BONDING)-->
+    <!-- ========================================== -->
+    <g class="scene1">
+        
+        <!-- Wave Representations -->
+        <g class="s1-fade-out">
+            <path d="M 160 120 Q 180 70 200 120 T 240 120" fill="none" stroke="#4488FF" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M 360 120 Q 380 70 400 120 T 440 120" fill="none" stroke="#4488FF" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
+        <g class="s1-fade-in">
+            <path d="M 160 120 C 200 120, 220 40, 300 40 C 380 40, 400 120, 440 120" fill="none" stroke="#4488FF" stroke-width="3.5" stroke-linecap="round"/>
+            <text x="300" y="30" font-size="14" font-weight="600" fill="#4488FF" text-anchor="middle">Constructive Interference</text>
+        </g>
+
+        <!-- Orbitals -->
+        <!-- Left AO -->
+        <g class="s1-ao-left">
+            <g class="s1-fade-out">
+                <circle cx="200" cy="280" r="55" fill="url(#grad-ao-blue)"/>
+                <text x="200" y="360" font-size="14" fill="#555" text-anchor="middle" class="mono">ψ<tspan baseline-shift="sub" font-size="0.7em">A</tspan></text>
+            </g>
+            <circle cx="200" cy="280" r="3" fill="#404040"/>
+            <text x="200" y="275" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle" class="s1-fade-out">+</text>
+        </g>
+
+        <!-- Right AO -->
+        <g class="s1-ao-right">
+            <g class="s1-fade-out">
+                <circle cx="400" cy="280" r="55" fill="url(#grad-ao-blue)"/>
+                <text x="400" y="360" font-size="14" fill="#555" text-anchor="middle" class="mono">ψ<tspan baseline-shift="sub" font-size="0.7em">B</tspan></text>
+            </g>
+            <circle cx="400" cy="280" r="3" fill="#404040"/>
+            <text x="400" y="275" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle" class="s1-fade-out">+</text>
+        </g>
+
+        <!-- Bonding MO -->
+        <g class="s1-fade-in">
+            <ellipse cx="300" cy="280" rx="115" ry="65" fill="url(#grad-mo-bond)"/>
+            <text x="260" y="275" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">+</text>
+            <text x="340" y="275" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">+</text>
+            
+            <!-- Equation -->
+            <text x="300" y="380" font-size="18" font-weight="600" fill="#4488FF" text-anchor="middle" class="mono float">
+                σ<tspan baseline-shift="sub" font-size="0.7em">1s</tspan> = ψ<tspan baseline-shift="sub" font-size="0.7em">A</tspan> + ψ<tspan baseline-shift="sub" font-size="0.7em">B</tspan>
+            </text>
+            <text x="300" y="400" font-size="13" fill="#666" text-anchor="middle">Bonding Molecular Orbital</text>
+        </g>
+
+        <!-- Energy Diagram Updates -->
+        <g class="s1-fade-in">
+            <!-- Connecting Lines -->
+            <line x1="645" y1="280" x2="665" y2="380" stroke="#7209B7" stroke-width="2" stroke-dasharray="4,4" class="s1-energy-line" stroke-dasharray="110" stroke-dashoffset="110"/>
+            <line x1="715" y1="280" x2="695" y2="380" stroke="#7209B7" stroke-width="2" stroke-dasharray="4,4" class="s1-energy-line" stroke-dasharray="110" stroke-dashoffset="110"/>
+            
+            <!-- MO Level -->
+            <line x1="650" y1="380" x2="710" y2="380" stroke="#4488FF" stroke-width="4" stroke-linecap="round"/>
+            <text x="680" y="400" font-size="14" font-weight="600" fill="#4488FF" text-anchor="middle" class="mono">σ<tspan baseline-shift="sub" font-size="0.7em">1s</tspan></text>
+        </g>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- SCENE 2: DESTRUCTIVE INTERFERENCE (ANTIBONDING)-->
+    <!-- ========================================== -->
+    <g class="scene2">
+        
+        <!-- Wave Representations -->
+        <g class="s2-fade-out">
+            <path d="M 160 120 Q 180 70 200 120 T 240 120" fill="none" stroke="#4488FF" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M 360 120 Q 380 170 400 120 T 440 120" fill="none" stroke="#FF4444" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
+        <g class="s2-fade-in">
+            <path d="M 160 120 C 200 120, 220 40, 280 40 C 295 40, 295 120, 300 120 C 305 120, 305 200, 320 200 C 380 200, 400 120, 440 120" fill="none" stroke="url(#grad-wave-anti)" stroke-width="3.5" stroke-linecap="round"/>
+            <text x="300" y="30" font-size="14" font-weight="600" fill="#FF4444" text-anchor="middle">Destructive Interference</text>
+        </g>
+
+        <!-- Orbitals -->
+        <!-- Left AO -->
+        <g class="s2-ao-left">
+            <g class="s2-fade-out">
+                <circle cx="200" cy="280" r="55" fill="url(#grad-ao-blue)"/>
+                <text x="200" y="360" font-size="14" fill="#555" text-anchor="middle" class="mono">ψ<tspan baseline-shift="sub" font-size="0.7em">A</tspan></text>
+            </g>
+            <circle cx="200" cy="280" r="3" fill="#404040"/>
+            <text x="200" y="275" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle" class="s2-fade-out">+</text>
+        </g>
+
+        <!-- Right AO -->
+        <g class="s2-ao-right">
+            <g class="s2-fade-out">
+                <circle cx="400" cy="280" r="55" fill="url(#grad-ao-red)"/>
+                <text x="400" y="360" font-size="14" fill="#555" text-anchor="middle" class="mono">ψ<tspan baseline-shift="sub" font-size="0.7em">B</tspan></text>
+            </g>
+            <circle cx="400" cy="280" r="3" fill="#404040"/>
+            <text x="400" y="275" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle" class="s2-fade-out">-</text>
+        </g>
+
+        <!-- Antibonding MO -->
+        <g class="s2-fade-in">
+            <!-- Left Lobe -->
+            <path d="M 280 200 C 160 200, 160 360, 280 360 C 295 360, 295 200, 280 200 Z" fill="url(#grad-anti-left)"/>
+            <!-- Right Lobe -->
+            <path d="M 320 200 C 440 200, 440 360, 320 360 C 305 360, 305 200, 320 200 Z" fill="url(#grad-anti-right)"/>
+            
+            <text x="250" y="275" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">+</text>
+            <text x="350" y="275" font-size="16" font-weight="bold" fill="#ffffff" text-anchor="middle">-</text>
+
+            <!-- Nodal Plane -->
+            <line x1="300" y1="170" x2="300" y2="390" stroke="#404040" stroke-width="2" stroke-dasharray="6,4"/>
+            <text x="300" y="160" font-size="12" font-weight="600" fill="#404040" text-anchor="middle">Nodal Plane</text>
+            
+            <!-- Equation -->
+            <text x="300" y="420" font-size="18" font-weight="600" fill="#FF4444" text-anchor="middle" class="mono float">
+                σ*<tspan baseline-shift="sub" font-size="0.7em">1s</tspan> = ψ<tspan baseline-shift="sub" font-size="0.7em">A</tspan> - ψ<tspan baseline-shift="sub" font-size="0.7em">B</tspan>
+            </text>
+            <text x="300" y="440" font-size="13" fill="#666" text-anchor="middle">Antibonding Molecular Orbital</text>
+        </g>
+
+        <!-- Energy Diagram Updates -->
+        <g class="s2-fade-in">
+            <!-- Connecting Lines -->
+            <line x1="645" y1="280" x2="665" y2="140" stroke="#7209B7" stroke-width="2" stroke-dasharray="4,4" class="s2-energy-line" stroke-dasharray="150" stroke-dashoffset="150"/>
+            <line x1="715" y1="280" x2="695" y2="140" stroke="#7209B7" stroke-width="2" stroke-dasharray="4,4" class="s2-energy-line" stroke-dasharray="150" stroke-dashoffset="150"/>
+            
+            <!-- MO Level -->
+            <line x1="650" y1="140" x2="710" y2="140" stroke="#FF4444" stroke-width="4" stroke-linecap="round"/>
+            <text x="680" y="130" font-size="14" font-weight="600" fill="#FF4444" text-anchor="middle" class="mono">σ*<tspan baseline-shift="sub" font-size="0.7em">1s</tspan></text>
+        </g>
+    </g>
+
+</svg>
+
+</body>
+</html>

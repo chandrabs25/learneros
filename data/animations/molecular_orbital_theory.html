@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Orbital Diagram: O2</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Base Diagram Animation */
+        @keyframes fade-base {
+            0%, 5% { opacity: 0; }
+            10%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .base-diagram {
+            animation: fade-base 24s infinite;
+        }
+
+        /* Highlight Box Animation */
+        @keyframes fade-highlight {
+            0%, 54% { opacity: 0; transform: translateY(10px); }
+            56%, 90% { opacity: 1; transform: translateY(0); }
+            95%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+        .highlight-box {
+            animation: fade-highlight 24s infinite;
+        }
+
+        /* Pulse Animation for Paramagnetic Electrons */
+        @keyframes pulse-ring {
+            0%, 54% { opacity: 0; transform: scale(0.5); }
+            55% { opacity: 0.5; transform: scale(1); }
+            60% { opacity: 0; transform: scale(2.5); }
+            65% { opacity: 0.5; transform: scale(1); }
+            70% { opacity: 0; transform: scale(2.5); }
+            75% { opacity: 0.5; transform: scale(1); }
+            80% { opacity: 0; transform: scale(2.5); }
+            85% { opacity: 0.5; transform: scale(1); }
+            90% { opacity: 0; transform: scale(2.5); }
+            95%, 100% { opacity: 0; transform: scale(0.5); }
+        }
+        .pulse {
+            animation: pulse-ring 24s infinite;
+        }
+
+        /* Electron Animations */
+        .electron {
+            animation-duration: 24s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+        }
+
+        /* e1: OA 2s up -> sigma 2s up */
+        @keyframes move-e1 {
+            0%, 8% { transform: translate(145px, 470px) scaleY(1); opacity: 0; }
+            9%, 25% { transform: translate(145px, 450px) scaleY(1); opacity: 1; }
+            28%, 95% { transform: translate(395px, 500px) scaleY(1); opacity: 1; }
+            100% { transform: translate(395px, 500px) scaleY(1); opacity: 0; }
+        }
+        .e1 { animation-name: move-e1; }
+
+        /* e2: OA 2s down -> sigma* 2s down */
+        @keyframes move-e2 {
+            0%, 10% { transform: translate(155px, 470px) scaleY(-1); opacity: 0; }
+            11%, 30% { transform: translate(155px, 450px) scaleY(-1); opacity: 1; }
+            33%, 95% { transform: translate(405px, 400px) scaleY(-1); opacity: 1; }
+            100% { transform: translate(405px, 400px) scaleY(-1); opacity: 0; }
+        }
+        .e2 { animation-name: move-e2; }
+
+        /* e3: OB 2s up -> sigma* 2s up */
+        @keyframes move-e3 {
+            0%, 8% { transform: translate(645px, 470px) scaleY(1); opacity: 0; }
+            9%, 30% { transform: translate(645px, 450px) scaleY(1); opacity: 1; }
+            33%, 95% { transform: translate(395px, 400px) scaleY(1); opacity: 1; }
+            100% { transform: translate(395px, 400px) scaleY(1); opacity: 0; }
+        }
+        .e3 { animation-name: move-e3; }
+
+        /* e4: OB 2s down -> sigma 2s down */
+        @keyframes move-e4 {
+            0%, 10% { transform: translate(655px, 470px) scaleY(-1); opacity: 0; }
+            11%, 25% { transform: translate(655px, 450px) scaleY(-1); opacity: 1; }
+            28%, 95% { transform: translate(405px, 500px) scaleY(-1); opacity: 1; }
+            100% { transform: translate(405px, 500px) scaleY(-1); opacity: 0; }
+        }
+        .e4 { animation-name: move-e4; }
+
+        /* e5: OA 2px up -> pi 2px up */
+        @keyframes move-e5 {
+            0%, 12% { transform: translate(115px, 270px) scaleY(1); opacity: 0; }
+            13%, 40% { transform: translate(115px, 250px) scaleY(1); opacity: 1; }
+            43%, 95% { transform: translate(375px, 270px) scaleY(1); opacity: 1; }
+            100% { transform: translate(375px, 270px) scaleY(1); opacity: 0; }
+        }
+        .e5 { animation-name: move-e5; }
+
+        /* e6: OA 2py up -> pi 2py up */
+        @keyframes move-e6 {
+            0%, 14% { transform: translate(150px, 270px) scaleY(1); opacity: 0; }
+            15%, 42% { transform: translate(150px, 250px) scaleY(1); opacity: 1; }
+            45%, 95% { transform: translate(415px, 270px) scaleY(1); opacity: 1; }
+            100% { transform: translate(415px, 270px) scaleY(1); opacity: 0; }
+        }
+        .e6 { animation-name: move-e6; }
+
+        /* e7: OA 2pz up -> sigma 2pz up */
+        @keyframes move-e7 {
+            0%, 16% { transform: translate(180px, 270px) scaleY(1); opacity: 0; }
+            17%, 35% { transform: translate(180px, 250px) scaleY(1); opacity: 1; }
+            38%, 95% { transform: translate(395px, 320px) scaleY(1); opacity: 1; }
+            100% { transform: translate(395px, 320px) scaleY(1); opacity: 0; }
+        }
+        .e7 { animation-name: move-e7; }
+
+        /* e8: OA 2px down -> pi* 2px up (Spin Flip for Hund's Rule) */
+        @keyframes move-e8 {
+            0%, 18% { transform: translate(125px, 270px) scaleY(-1); opacity: 0; }
+            19%, 47% { transform: translate(125px, 250px) scaleY(-1); opacity: 1; }
+            50%, 95% { transform: translate(380px, 180px) scaleY(1); opacity: 1; }
+            100% { transform: translate(380px, 180px) scaleY(1); opacity: 0; }
+        }
+        .e8 { animation-name: move-e8; }
+
+        /* e9: OB 2px up -> pi 2px down (Spin Flip) */
+        @keyframes move-e9 {
+            0%, 12% { transform: translate(595px, 270px) scaleY(1); opacity: 0; }
+            13%, 40% { transform: translate(595px, 250px) scaleY(1); opacity: 1; }
+            43%, 95% { transform: translate(385px, 270px) scaleY(-1); opacity: 1; }
+            100% { transform: translate(385px, 270px) scaleY(-1); opacity: 0; }
+        }
+        .e9 { animation-name: move-e9; }
+
+        /* e10: OB 2py up -> pi 2py down (Spin Flip) */
+        @keyframes move-e10 {
+            0%, 14% { transform: translate(630px, 270px) scaleY(1); opacity: 0; }
+            15%, 42% { transform: translate(630px, 250px) scaleY(1); opacity: 1; }
+            45%, 95% { transform: translate(425px, 270px) scaleY(-1); opacity: 1; }
+            100% { transform: translate(425px, 270px) scaleY(-1); opacity: 0; }
+        }
+        .e10 { animation-name: move-e10; }
+
+        /* e11: OB 2pz up -> sigma 2pz down (Spin Flip) */
+        @keyframes move-e11 {
+            0%, 16% { transform: translate(660px, 270px) scaleY(1); opacity: 0; }
+            17%, 35% { transform: translate(660px, 250px) scaleY(1); opacity: 1; }
+            38%, 95% { transform: translate(405px, 320px) scaleY(-1); opacity: 1; }
+            100% { transform: translate(405px, 320px) scaleY(-1); opacity: 0; }
+        }
+        .e11 { animation-name: move-e11; }
+
+        /* e12: OB 2px down -> pi* 2py up (Spin Flip for Hund's Rule) */
+        @keyframes move-e12 {
+            0%, 18% { transform: translate(605px, 270px) scaleY(-1); opacity: 0; }
+            19%, 47% { transform: translate(605px, 250px) scaleY(-1); opacity: 1; }
+            50%, 95% { transform: translate(420px, 180px) scaleY(1); opacity: 1; }
+            100% { transform: translate(420px, 180px) scaleY(1); opacity: 0; }
+        }
+        .e12 { animation-name: move-e12; }
+
+        .orbital-label {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 14px;
+            fill: #404040;
+        }
+        
+        .title {
+            font-family: 'Inter', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            fill: #2b2d42;
+            text-anchor: middle;
+        }
+
+        .subtitle {
+            font-family: 'Inter', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            fill: #6c757d;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="svg-container">
+        <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+            <title>Molecular Orbital Energy Level Diagram for Dioxygen (O2)</title>
+            <desc>An animated diagram showing the atomic orbitals of two oxygen atoms combining to form the molecular orbitals of an O2 molecule, demonstrating paramagnetism through unpaired electrons in the pi* orbitals.</desc>
+
+            <defs>
+                <!-- Electron Arrow Definition -->
+                <g id="e-arrow">
+                    <path d="M0,12 L0,-12 M0,-12 L-4,-5 M0,-12 L4,-5" stroke="#F77F00" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+            </defs>
+
+            <!-- BASE DIAGRAM (Fades in and out) -->
+            <g class="base-diagram">
+                <!-- Title -->
+                <text x="400" y="40" class="title">Molecular Orbital Diagram: O<tspan baseline-shift="sub" font-size="0.7em">2</tspan></text>
+                
+                <!-- Energy Axis -->
+                <g stroke="#404040" stroke-width="2" fill="none">
+                    <line x1="50" y1="500" x2="50" y2="100" />
+                    <path d="M 45 110 L 50 100 L 55 110" />
+                </g>
+                <text x="-300" y="35" transform="rotate(-90)" font-family="Inter" font-size="16" font-weight="600" fill="#404040" text-anchor="middle">Energy (E)</text>
+
+                <!-- Connecting Dashed Lines -->
+                <g stroke="#CCCCCC" stroke-dasharray="5,5" stroke-width="1.5" opacity="0.7">
+                    <!-- 2s connections -->
+                    <line x1="165" y1="450" x2="385" y2="500" />
+                    <line x1="165" y1="450" x2="385" y2="400" />
+                    <line x1="635" y1="450" x2="415" y2="500" />
+                    <line x1="635" y1="450" x2="415" y2="400" />
+                    
+                    <!-- 2p connections from OA -->
+                    <line x1="195" y1="250" x2="385" y2="320" /> <!-- to sigma 2pz -->
+                    <line x1="195" y1="250" x2="365" y2="270" /> <!-- to pi 2p -->
+                    <line x1="195" y1="250" x2="365" y2="180" /> <!-- to pi* 2p -->
+                    <line x1="195" y1="250" x2="385" y2="120" /> <!-- to sigma* 2pz -->
+
+                    <!-- 2p connections from OB -->
+                    <line x1="585" y1="250" x2="415" y2="320" /> <!-- to sigma 2pz -->
+                    <line x1="585" y1="250" x2="435" y2="270" /> <!-- to pi 2p -->
+                    <line x1="585" y1="250" x2="435" y2="180" /> <!-- to pi* 2p -->
+                    <line x1="585" y1="250" x2="415" y2="120" /> <!-- to sigma* 2pz -->
+                </g>
+
+                <!-- Atomic Orbitals (OA) -->
+                <g stroke="#404040" stroke-width="3" stroke-linecap="round">
+                    <line x1="135" y1="450" x2="165" y2="450" /> <!-- 2s -->
+                    <line x1="105" y1="250" x2="135" y2="250" /> <!-- 2px -->
+                    <line x1="135" y1="250" x2="165" y2="250" transform="translate(10,0)" /> <!-- 2py -->
+                    <line x1="165" y1="250" x2="195" y2="250" transform="translate(20,0)" /> <!-- 2pz -->
+                </g>
+                <text x="100" y="455" class="orbital-label" text-anchor="end">2s</text>
+                <text x="90" y="255" class="orbital-label" text-anchor="end">2p</text>
+                <text x="150" y="550" class="subtitle">O Atom</text>
+
+                <!-- Atomic Orbitals (OB) -->
+                <g stroke="#404040" stroke-width="3" stroke-linecap="round">
+                    <line x1="635" y1="450" x2="665" y2="450" /> <!-- 2s -->
+                    <line x1="585" y1="250" x2="615" y2="250" /> <!-- 2px -->
+                    <line x1="615" y1="250" x2="645" y2="250" transform="translate(10,0)" /> <!-- 2py -->
+                    <line x1="645" y1="250" x2="675" y2="250" transform="translate(20,0)" /> <!-- 2pz -->
+                </g>
+                <text x="680" y="455" class="orbital-label" text-anchor="start">2s</text>
+                <text x="710" y="255" class="orbital-label" text-anchor="start">2p</text>
+                <text x="640" y="550" class="subtitle">O Atom</text>
+
+                <!-- Molecular Orbitals (O2) -->
+                <!-- Bonding MOs (Deep Blue) -->
+                <g stroke="#4361EE" stroke-width="3" stroke-linecap="round">
+                    <line x1="385" y1="500" x2="415" y2="500" /> <!-- sigma 2s -->
+                    <line x1="385" y1="320" x2="415" y2="320" /> <!-- sigma 2pz -->
+                    <line x1="365" y1="270" x2="395" y2="270" /> <!-- pi 2px -->
+                    <line x1="405" y1="270" x2="435" y2="270" /> <!-- pi 2py -->
+                </g>
+                <!-- Antibonding MOs (Bright Red) -->
+                <g stroke="#EF233C" stroke-width="3" stroke-linecap="round">
+                    <line x1="385" y1="400" x2="415" y2="400" /> <!-- sigma* 2s -->
+                    <line x1="365" y1="180" x2="395" y2="180" /> <!-- pi* 2px -->
+                    <line x1="405" y1="180" x2="435" y2="180" /> <!-- pi* 2py -->
+                    <line x1="385" y1="120" x2="415" y2="120" /> <!-- sigma* 2pz -->
+                </g>
+                
+                <!-- MO Labels -->
+                <text x="435" y="505" class="orbital-label">σ<tspan baseline-shift="sub" font-size="0.7em">2s</tspan></text>
+                <text x="435" y="405" class="orbital-label">σ<tspan baseline-shift="super" font-size="0.7em">*</tspan><tspan baseline-shift="sub" font-size="0.7em">2s</tspan></text>
+                <text x="435" y="325" class="orbital-label">σ<tspan baseline-shift="sub" font-size="0.7em">2p<tspan baseline-shift="sub" font-size="0.8em">z</tspan></tspan></text>
+                <text x="455" y="275" class="orbital-label">π<tspan baseline-shift="sub" font-size="0.7em">2p<tspan baseline-shift="sub" font-size="0.8em">x,y</tspan></tspan></text>
+                <text x="455" y="185" class="orbital-label">π<tspan baseline-shift="super" font-size="0.7em">*</tspan><tspan baseline-shift="sub" font-size="0.7em">2p<tspan baseline-shift="sub" font-size="0.8em">x,y</tspan></tspan></text>
+                <text x="435" y="125" class="orbital-label">σ<tspan baseline-shift="super" font-size="0.7em">*</tspan><tspan baseline-shift="sub" font-size="0.7em">2p<tspan baseline-shift="sub" font-size="0.8em">z</tspan></tspan></text>
+                
+                <text x="400" y="550" class="subtitle">O<tspan baseline-shift="sub" font-size="0.7em">2</tspan> Molecule</text>
+
+                <!-- Legend -->
+                <rect x="40" y="530" width="240" height="60" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1.5"/>
+                <line x1="50" y1="545" x2="70" y2="545" stroke="#404040" stroke-width="3" stroke-linecap="round"/>
+                <text x="80" y="549" font-family="Inter" font-size="11" fill="#404040">Atomic Orbital</text>
+                
+                <line x1="50" y1="560" x2="70" y2="560" stroke="#4361EE" stroke-width="3" stroke-linecap="round"/>
+                <text x="80" y="564" font-family="Inter" font-size="11" fill="#404040">Bonding MO</text>
+                
+                <line x1="50" y1="575" x2="70" y2="575" stroke="#EF233C" stroke-width="3" stroke-linecap="round"/>
+                <text x="80" y="579" font-family="Inter" font-size="11" fill="#404040">Antibonding MO</text>
+
+                <g transform="translate(180, 555) scale(0.7)"><use href="#e-arrow"/></g>
+                <text x="195" y="559" font-family="Inter" font-size="11" fill="#404040">Electron</text>
+            </g>
+
+            <!-- Pulse Rings for Paramagnetism -->
+            <circle cx="380" cy="180" r="12" fill="#F77F00" class="pulse" style="transform-origin: 380px 180px;" />
+            <circle cx="420" cy="180" r="12" fill="#F77F00" class="pulse" style="transform-origin: 420px 180px;" />
+
+            <!-- Highlight Info Box -->
+            <g class="highlight-box">
+                <rect x="540" y="50" width="230" height="85" rx="8" fill="#ffffff" stroke="#F77F00" stroke-width="2" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.1))"/>
+                <text x="655" y="75" text-anchor="middle" font-family="Inter" font-size="14" font-weight="700" fill="#404040">Bond Order</text>
+                <text x="655" y="95" text-anchor="middle" font-family="Roboto Mono" font-size="13" font-weight="600" fill="#4361EE">1/2(10 - 6) = 2</text>
+                <text x="655" y="118" text-anchor="middle" font-family="Inter" font-size="13" font-weight="700" fill="#EF233C">Paramagnetic</text>
+                <text x="655" y="132" text-anchor="middle" font-family="Inter" font-size="10" fill="#6c757d">(Unpaired Electrons)</text>
+            </g>
+
+            <!-- ELECTRONS -->
+            <!-- 2s electrons -->
+            <g class="electron e1"><use href="#e-arrow"/></g>
+            <g class="electron e2"><use href="#e-arrow"/></g>
+            <g class="electron e3"><use href="#e-arrow"/></g>
+            <g class="electron e4"><use href="#e-arrow"/></g>
+            
+            <!-- 2p electrons -->
+            <g class="electron e5"><use href="#e-arrow"/></g>
+            <g class="electron e6"><use href="#e-arrow"/></g>
+            <g class="electron e7"><use href="#e-arrow"/></g>
+            <g class="electron e8"><use href="#e-arrow"/></g>
+            <g class="electron e9"><use href="#e-arrow"/></g>
+            <g class="electron e10"><use href="#e-arrow"/></g>
+            <g class="electron e11"><use href="#e-arrow"/></g>
+            <g class="electron e12"><use href="#e-arrow"/></g>
+
+        </svg>
+    </div>
+</body>
+</html>
