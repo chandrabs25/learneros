@@ -129,9 +129,9 @@ function AuthPageContent() {
             {/* Header */}
             <header className="gw-header">
                 <div className="gw-logo-box">
-                    <span className="material-symbols-outlined">navigation</span>
+                    <img src="/learneros-logo.jpg" alt="LearnerOS" className="gw-logo-image" />
                 </div>
-                <span className="gw-logo-text">The Gateway</span>
+                <span className="gw-logo-text">LearnerOS</span>
             </header>
 
             {/* Main */}
