@@ -2,6 +2,8 @@
 LearnerOS — Configuration (loaded from environment variables)
 """
 
+from urllib.parse import urlparse
+
 from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings
 
@@ -41,6 +43,9 @@ class Settings(BaseSettings):
 
     # Frontend URL (for CORS)
     FRONTEND_URL: str = "http://localhost:3000"
+    # Optional comma-separated extra origins for CORS.
+    # Example: "https://www.learneros.me,https://learneros.me"
+    CORS_ORIGINS: str = ""
 
     # Optional public R2 base URL for animation assets.
     # Example: https://pub-xxxxxxxx.r2.dev/animations
@@ -49,13 +54,39 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         """Allowed CORS origins."""
-        origins = [
+        base_origins = [
             "http://localhost:3000",
             "http://localhost:3001",
         ]
-        if self.FRONTEND_URL and self.FRONTEND_URL not in origins:
-            origins.append(self.FRONTEND_URL)
-        return origins
+        if self.FRONTEND_URL:
+            base_origins.append(self.FRONTEND_URL.strip())
+        if self.CORS_ORIGINS:
+            base_origins.extend([o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()])
+
+        normalized: list[str] = []
+        seen: set[str] = set()
+
+        def add_origin(origin: str) -> None:
+            if not origin:
+                return
+            if origin in seen:
+                return
+            seen.add(origin)
+            normalized.append(origin)
+
+        for origin in base_origins:
+            add_origin(origin)
+            parsed = urlparse(origin)
+            if parsed.scheme in {"http", "https"} and parsed.netloc:
+                host = parsed.hostname or ""
+                if host.startswith("www."):
+                    alt_host = host[4:]
+                    if alt_host:
+                        add_origin(f"{parsed.scheme}://{alt_host}")
+                else:
+                    add_origin(f"{parsed.scheme}://www.{host}")
+
+        return normalized
 
     class Config:
         env_file = ".env"
