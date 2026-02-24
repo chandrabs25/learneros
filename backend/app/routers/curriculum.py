@@ -507,7 +507,9 @@ async def concept_lineage(
         subject_slug = "".join(ch.lower() if ch.isalnum() else "-" for ch in subject_name).strip("-")
         while "--" in subject_slug:
             subject_slug = subject_slug.replace("--", "-")
-        subject_node_id = f"subject:{subject_slug}"
+        # Subject nodes must be grade-scoped to avoid collapsing
+        # Grade 11 Physics and Grade 12 Physics into one node.
+        subject_node_id = f"subject:{grade}:{subject_slug}"
         chapter_node_id = f"chapter:{chapter_id}"
 
         add_node(grade_node_id, "grade", f"Class {grade}", {"grade": grade})
