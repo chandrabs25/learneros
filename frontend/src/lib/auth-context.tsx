@@ -21,34 +21,25 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
+import {
+    consumePendingNext,
+    resolvePostLoginRoute,
+    setPendingNext,
+} from "@/lib/auth-redirect";
 
 interface AuthContextType {
     user: User | null;
     loading: boolean;
     role: string;
-    signInWithGoogle: () => Promise<void>;
-    signInWithEmail: (email: string, password: string) => Promise<void>;
-    signUpWithEmail: (name: string, email: string, password: string) => Promise<void>;
+    signInWithGoogle: (nextPath?: string) => Promise<void>;
+    signInWithEmail: (email: string, password: string, nextPath?: string) => Promise<void>;
+    signUpWithEmail: (name: string, email: string, password: string, nextPath?: string) => Promise<void>;
     signOut: () => Promise<void>;
     getIdToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 const googleProvider = new GoogleAuthProvider();
-
-const TO_ONBOARDING = "/onboarding/institute";
-
-async function getPostLoginRoute(user: User): Promise<string> {
-    try {
-        const tokenResult = await user.getIdTokenResult(true);
-        const role = String(tokenResult.claims?.role || "student").toLowerCase();
-        if (role === "teacher") return "/teacher/dashboard";
-        if (role === "admin" || role === "superadmin") return "/admin/dashboard";
-        return TO_ONBOARDING;
-    } catch {
-        return TO_ONBOARDING;
-    }
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -88,7 +79,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         getRedirectResult(auth)
             .then(async (result) => {
                 if (result?.user) {
-                    router.replace(await getPostLoginRoute(result.user));
+                    const route = await resolvePostLoginRoute({
+                        user: result.user,
+                        nextFromSession: consumePendingNext(),
+                    });
+                    router.replace(route);
                 }
             })
             .catch(() => {
@@ -96,10 +91,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             });
     }, [router]);
 
-    const signInWithGoogle = async () => {
+    const signInWithGoogle = async (nextPath?: string) => {
+        if (nextPath) setPendingNext(nextPath);
         try {
             const result = await signInWithPopup(auth, googleProvider);
-            if (result.user) router.replace(await getPostLoginRoute(result.user));
+            if (result.user) {
+                const route = await resolvePostLoginRoute({
+                    user: result.user,
+                    nextFromQuery: nextPath || null,
+                    nextFromSession: consumePendingNext(),
+                });
+                router.replace(route);
+            }
         } catch (e: unknown) {
             const code = typeof e === "object" && e && "code" in e ? String((e as { code?: string }).code || "") : "";
             // Browsers can block/limit popup close/opener behavior (COOP). Redirect is more reliable.
@@ -115,16 +118,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const signInWithEmail = async (email: string, password: string) => {
+    const signInWithEmail = async (email: string, password: string, nextPath?: string) => {
+        if (nextPath) setPendingNext(nextPath);
         const result = await signInWithEmailAndPassword(auth, email, password);
-        if (result.user) router.replace(await getPostLoginRoute(result.user));
+        if (result.user) {
+            const route = await resolvePostLoginRoute({
+                user: result.user,
+                nextFromQuery: nextPath || null,
+                nextFromSession: consumePendingNext(),
+            });
+            router.replace(route);
+        }
     };
 
-    const signUpWithEmail = async (name: string, email: string, password: string) => {
+    const signUpWithEmail = async (name: string, email: string, password: string, nextPath?: string) => {
+        if (nextPath) setPendingNext(nextPath);
         const result = await createUserWithEmailAndPassword(auth, email, password);
         if (result.user) {
             await updateProfile(result.user, { displayName: name });
-            router.replace(await getPostLoginRoute(result.user));
+            const route = await resolvePostLoginRoute({
+                user: result.user,
+                nextFromQuery: nextPath || null,
+                nextFromSession: consumePendingNext(),
+            });
+            router.replace(route);
         }
     };
 

@@ -3,6 +3,7 @@
 import { CSSProperties, FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { setPendingNext } from "@/lib/auth-redirect";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -45,7 +46,9 @@ export default function TeacherApplyPage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/auth");
+      const nextPath = "/teacher/apply";
+      setPendingNext(nextPath);
+      router.replace(`/auth?next=${encodeURIComponent(nextPath)}`);
     }
   }, [loading, user, router]);
 

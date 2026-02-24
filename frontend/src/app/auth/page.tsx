@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, useEffect, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { consumePendingNext, resolvePostLoginRoute } from "@/lib/auth-redirect";
 
 type Tab = "login" | "signup";
 
 export default function AuthPage() {
     const { signInWithGoogle, signInWithEmail, signUpWithEmail, user, loading, getIdToken } = useAuth();
     const router = useRouter();
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const searchParams = useSearchParams();
+    const nextPath = searchParams.get("next");
 
     const [tab, setTab] = useState<Tab>("login");
     const [name, setName] = useState("");
@@ -19,7 +21,7 @@ export default function AuthPage() {
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
 
-    // Redirect authenticated users based on role immediately.
+    // Redirect authenticated users, honoring safe "next" intent when present.
     useEffect(() => {
         let cancelled = false;
         (async () => {
@@ -27,32 +29,38 @@ export default function AuthPage() {
             try {
                 const token = await getIdToken();
                 if (!token) {
-                    if (!cancelled) router.replace("/onboarding/institute");
+                    if (!cancelled) {
+                        const route = await resolvePostLoginRoute({
+                            user,
+                            nextFromQuery: nextPath,
+                            nextFromSession: consumePendingNext(),
+                        });
+                        router.replace(route);
+                    }
                     return;
                 }
-                const res = await fetch(`${API_URL}/auth/me`, {
-                    headers: { Authorization: `Bearer ${token}` },
+                const route = await resolvePostLoginRoute({
+                    user,
+                    nextFromQuery: nextPath,
+                    nextFromSession: consumePendingNext(),
                 });
-                const data = await res.json();
-                const role = String(data?.role || "").toLowerCase();
                 if (cancelled) return;
-                if (role === "teacher") {
-                    router.replace("/teacher/dashboard");
-                    return;
-                }
-                if (role === "admin" || role === "superadmin") {
-                    router.replace("/admin/dashboard");
-                    return;
-                }
-                router.replace("/onboarding/institute");
+                router.replace(route);
             } catch {
-                if (!cancelled) router.replace("/onboarding/institute");
+                if (!cancelled) {
+                    const route = await resolvePostLoginRoute({
+                        user,
+                        nextFromQuery: nextPath,
+                        nextFromSession: consumePendingNext(),
+                    });
+                    router.replace(route);
+                }
             }
         })();
         return () => {
             cancelled = true;
         };
-    }, [loading, user, getIdToken, router, API_URL]);
+    }, [loading, user, getIdToken, router, nextPath]);
 
     if (!loading && user) {
         return null;
@@ -80,8 +88,8 @@ export default function AuthPage() {
         }
         setBusy(true);
         try {
-            if (tab === "login") await signInWithEmail(email, password);
-            else await signUpWithEmail(name, email, password);
+            if (tab === "login") await signInWithEmail(email, password, nextPath || undefined);
+            else await signUpWithEmail(name, email, password, nextPath || undefined);
         } catch (err: unknown) {
             const code = typeof err === "object" && err && "code" in err ? String((err as { code?: string }).code || "") : "";
             setError(friendlyError(code));
@@ -93,7 +101,7 @@ export default function AuthPage() {
     const handleGoogle = async () => {
         setError(null);
         setBusy(true);
-        try { await signInWithGoogle(); }
+        try { await signInWithGoogle(nextPath || undefined); }
         catch (err: unknown) {
             const code = typeof err === "object" && err && "code" in err ? String((err as { code?: string }).code || "") : "";
             setError(friendlyError(code));
