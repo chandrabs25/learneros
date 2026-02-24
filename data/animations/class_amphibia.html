@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physiology of Rana tigrina: 3-Chambered Heart & Dual Respiration</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* Typography */
+        .title { font-size: 24px; font-weight: 700; fill: #2C3E50; text-anchor: middle; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #7F8C8D; text-anchor: middle; }
+        .label { font-size: 13px; font-weight: 600; fill: #2C3E50; }
+        .label-light { font-size: 12px; font-weight: 400; fill: #34495E; }
+        .process-label { font-family: 'Roboto Mono', monospace; font-size: 11px; fill: #E74C3C; font-weight: 500; }
+        .legend-text { font-size: 12px; fill: #2C3E50; }
+
+        /* Heart Animations */
+        .atrium {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: atrial-systole 3s ease-in-out infinite;
+        }
+
+        .ventricle-base {
+            transform-box: fill-box;
+            transform-origin: top center;
+            animation: ventricular-systole 3s ease-in-out infinite;
+        }
+
+        .ventricle-mixed {
+            transform-box: fill-box;
+            transform-origin: top center;
+            animation: ventricular-mixing 3s ease-in-out infinite;
+        }
+
+        .truncus {
+            transform-box: fill-box;
+            transform-origin: bottom center;
+            animation: truncus-pulse 3s ease-in-out infinite;
+        }
+
+        /* Keyframes for Cardiac Cycle */
+        /* 0-1s: Atrial Systole (Contract) */
+        @keyframes atrial-systole {
+            0%, 10% { transform: scale(1); }
+            20%, 30% { transform: scale(0.85); }
+            40%, 100% { transform: scale(1); }
+        }
+
+        /* 1-2s: Ventricular Mixing (Color Transition) */
+        @keyframes ventricular-mixing {
+            0%, 25% { opacity: 0; }
+            35%, 85% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        /* 2-3s: Ventricular Systole (Contract) */
+        @keyframes ventricular-systole {
+            0%, 60% { transform: scale(1); }
+            70%, 85% { transform: scale(0.85); }
+            95%, 100% { transform: scale(1); }
+        }
+
+        @keyframes truncus-pulse {
+            0%, 65% { transform: scale(1); }
+            75%, 85% { transform: scale(1.05) scaleY(1.1); }
+            95%, 100% { transform: scale(1); }
+        }
+
+        /* Blood Flow Animations */
+        .flow-path {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 12 8;
+            animation: flow-dash 1.5s linear infinite;
+        }
+
+        .flow-path.venous { stroke: #3498DB; }
+        .flow-path.arterial { stroke: #E74C3C; }
+        .flow-path.mixed { stroke: #9B59B6; }
+        .flow-path.pulmocutaneous { stroke: #8E44AD; }
+
+        .flow-path-reverse {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+            stroke-dasharray: 12 8;
+            animation: flow-dash-reverse 1.5s linear infinite;
+        }
+        .flow-path-reverse.venous { stroke: #3498DB; }
+        .flow-path-reverse.arterial { stroke: #E74C3C; }
+
+        @keyframes flow-dash {
+            to { stroke-dashoffset: -20; }
+        }
+        @keyframes flow-dash-reverse {
+            to { stroke-dashoffset: 20; }
+        }
+
+        /* Respiration Animation */
+        .lung-sac {
+            transform-box: fill-box;
+            transform-origin: center;
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        .mucus-layer {
+            animation: shimmer 3s infinite alternate;
+        }
+
+        @keyframes shimmer {
+            0% { opacity: 0.6; }
+            100% { opacity: 0.9; }
+        }
+
+        /* O2 Particles */
+        .o2-particle {
+            fill: #FFFFFF;
+            stroke: #2C3E50;
+            stroke-width: 1;
+            filter: drop-shadow(0 0 2px rgba(255,255,255,0.8));
+        }
+
+        .co2-particle {
+            fill: #34495E;
+            stroke: #FFFFFF;
+            stroke-width: 1;
+        }
+
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <!-- Gradients -->
+        <linearGradient id="ventricle-split" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#3498DB" />
+            <stop offset="45%" stop-color="#3498DB" />
+            <stop offset="55%" stop-color="#E74C3C" />
+            <stop offset="100%" stop-color="#E74C3C" />
+        </linearGradient>
+
+        <linearGradient id="skin-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#6B8E23" />
+            <stop offset="100%" stop-color="#556B2F" />
+        </linearGradient>
+
+        <!-- Drop Shadows -->
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.15" />
+        </filter>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+
+        <!-- Motion Paths for O2 -->
+        <path id="lung-path-left" d="M 250 220 C 280 250, 400 280, 480 300" fill="none" />
+        <path id="lung-path-right" d="M 750 220 C 720 250, 600 280, 520 300" fill="none" />
+        <path id="skin-path-left" d="M 200 520 C 250 450, 450 400, 510 310" fill="none" />
+        <path id="skin-path-right" d="M 800 520 C 750 450, 550 400, 510 310" fill="none" />
+        
+        <!-- Motion Paths for CO2 -->
+        <path id="co2-lung-left" d="M 490 310 C 400 270, 280 240, 250 220" fill="none" />
+        <path id="co2-skin-right" d="M 490 310 C 550 400, 750 450, 800 520" fill="none" />
+
+        <!-- Arrow Markers -->
+        <marker id="arrow-venous" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 Z" fill="#3498DB" />
+        </marker>
+        <marker id="arrow-arterial" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 Z" fill="#E74C3C" />
+        </marker>
+        <marker id="arrow-mixed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 Z" fill="#9B59B6" />
+        </marker>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#f8f9fa" />
+
+    <!-- Title & Header -->
+    <text x="500" y="40" class="title">Physiology of Rana tigrina: 3-Chambered Heart &amp; Dual Respiration</text>
+    <text x="500" y="65" class="subtitle">Continuous loop showing Atrial Systole (0-1s), Ventricular Mixing (1-2s), and Ventricular Systole (2-3s)</text>
+
+    <!-- Legend -->
+    <g transform="translate(800, 80)" filter="url(#shadow)">
+        <rect x="0" y="0" width="160" height="100" rx="8" fill="#FFFFFF" stroke="#E0E0E0" />
+        <text x="80" y="20" class="label" text-anchor="middle">Blood Types</text>
+        <circle cx="20" cy="40" r="6" fill="#E74C3C" />
+        <text x="35" y="44" class="legend-text">Oxygenated (Arterial)</text>
+        <circle cx="20" cy="60" r="6" fill="#3498DB" />
+        <text x="35" y="64" class="legend-text">Deoxygenated (Venous)</text>
+        <circle cx="20" cy="80" r="6" fill="#9B59B6" />
+        <text x="35" y="84" class="legend-text">Mixed Blood</text>
+    </g>
+
+    <!-- Poikilothermic Note -->
+    <g transform="translate(40, 80)" filter="url(#shadow)">
+        <rect x="0" y="0" width="180" height="60" rx="6" fill="#FFF3CD" stroke="#FFE69C" />
+        <text x="90" y="25" class="process-label" text-anchor="middle" fill="#856404">Poikilothermic Regulation</text>
+        <text x="90" y="45" class="label-light" text-anchor="middle" font-size="10px">Dual respiration adapts</text>
+        <text x="90" y="57" class="label-light" text-anchor="middle" font-size="10px">to aquatic/terrestrial life</text>
+    </g>
+
+    <!-- ==================== RESPIRATORY SURFACES ==================== -->
+
+    <!-- Lungs (Pulmonary Respiration) -->
+    <g id="lungs" filter="url(#shadow)">
+        <!-- Left Lung -->
+        <path class="lung-sac" d="M 250 140 C 180 140, 160 260, 250 280 C 320 260, 300 140, 250 140 Z" fill="#F39C12" stroke="#E74C3C" stroke-width="2" />
+        <!-- Faveoli (Internal structure) Left -->
+        <path d="M 200 180 Q 250 200 280 170 M 190 220 Q 250 240 290 210 M 220 260 Q 250 270 270 250" fill="none" stroke="#E74C3C" stroke-width="1.5" opacity="0.6" />
+        
+        <!-- Right Lung -->
+        <path class="lung-sac" d="M 750 140 C 820 140, 840 260, 750 280 C 680 260, 700 140, 750 140 Z" fill="#F39C12" stroke="#E74C3C" stroke-width="2" />
+        <!-- Faveoli Right -->
+        <path d="M 800 180 Q 750 200 720 170 M 810 220 Q 750 240 710 210 M 780 260 Q 750 270 730 250" fill="none" stroke="#E74C3C" stroke-width="1.5" opacity="0.6" />
+
+        <text x="250" y="120" class="label" text-anchor="middle">Right Lung</text>
+        <text x="750" y="120" class="label" text-anchor="middle">Left Lung</text>
+        <text x="250" y="310" class="process-label" text-anchor="middle">Pulmonary Respiration</text>
+        <text x="750" y="310" class="process-label" text-anchor="middle">Pulmonary Respiration</text>
+    </g>
+
+    <!-- Skin (Cutaneous Respiration) -->
+    <g id="skin" filter="url(#shadow)">
+        <!-- Skin Base -->
+        <path d="M 100 540 Q 500 520 900 540 L 900 600 L 100 600 Z" fill="url(#skin-grad)" />
+        <!-- Mucus Layer -->
+        <path class="mucus-layer" d="M 100 530 Q 500 510 900 530 L 900 540 Q 500 520 100 540 Z" fill="#E8F4FD" />
+        
+        <!-- Capillary Network in Skin -->
+        <path d="M 150 560 Q 200 540 250 570 T 350 550 T 450 580 T 550 550 T 650 570 T 750 540 T 850 560" fill="none" stroke="#E74C3C" stroke-width="2" opacity="0.8" />
+        <path d="M 150 580 Q 200 560 250 590 T 350 570 T 450 600 T 550 570 T 650 590 T 750 560 T 850 580" fill="none" stroke="#3498DB" stroke-width="2" opacity="0.8" />
+
+        <text x="500" y="620" class="label" text-anchor="middle">Moist Epidermis (Skin)</text>
+        <text x="500" y="500" class="process-label" text-anchor="middle">Cutaneous Respiration (O₂ Diffusion via Mucus Layer)</text>
+    </g>
+
+
+    <!-- ==================== VASCULAR PATHWAYS (BACKGROUND) ==================== -->
+    
+    <!-- Systemic Veins to Sinus Venosus (Deoxygenated) -->
+    <path class="flow-path venous" d="M 150 450 C 300 450, 400 350, 460 270" marker-end="url(#arrow-venous)" />
+    <path class="flow-path venous" d="M 850 450 C 700 450, 600 350, 540 270" marker-end="url(#arrow-venous)" />
+    
+    <!-- Pulmonary Veins to Left Atrium (Oxygenated) -->
+    <path class="flow-path arterial" d="M 280 260 C 350 280, 450 280, 510 300" />
+    <path class="flow-path arterial" d="M 720 260 C 650 280, 550 280, 530 300" />
+
+    <!-- Cutaneous Vein to Left Atrium (Oxygenated - joins pulmonary return functionally in this diagram) -->
+    <path class="flow-path arterial" d="M 300 540 C 400 450, 500 400, 520 320" />
+    <path class="flow-path arterial" d="M 700 540 C 600 450, 540 400, 530 320" />
+
+    <!-- Sinus Venosus (Dorsal to Heart - Dashed outline) -->
+    <polygon points="440,240 560,240 500,300" fill="#E8F4FD" stroke="#3498DB" stroke-width="2" stroke-dasharray="4 4" opacity="0.7" />
+    <text x="500" y="230" class="label-light" text-anchor="middle" fill="#3498DB">Sinus Venosus (Dorsal)</text>
+
+
+    <!-- ==================== THE 3-CHAMBERED HEART ==================== -->
+    <g id="heart" filter="url(#shadow)">
+        
+        <!-- Right Atrium (Deoxygenated) -->
+        <g class="atrium">
+            <path d="M 498 320 L 498 260 C 460 250, 430 270, 440 310 C 445 330, 470 330, 498 320 Z" fill="#3498DB" stroke="#2C3E50" stroke-width="2" />
+            <text x="460" y="295" class="label" fill="#FFFFFF" text-anchor="middle" font-size="11px">Right</text>
+            <text x="460" y="310" class="label" fill="#FFFFFF" text-anchor="middle" font-size="11px">Atrium</text>
+        </g>
+
+        <!-- Left Atrium (Oxygenated) -->
+        <g class="atrium">
+            <path d="M 502 320 L 502 260 C 540 250, 570 270, 560 310 C 555 330, 530 330, 502 320 Z" fill="#E74C3C" stroke="#2C3E50" stroke-width="2" />
+            <text x="540" y="295" class="label" fill="#FFFFFF" text-anchor="middle" font-size="11px">Left</text>
+            <text x="540" y="310" class="label" fill="#FFFFFF" text-anchor="middle" font-size="11px">Atrium</text>
+        </g>
+
+        <!-- Single Ventricle Base (Split Red/Blue) -->
+        <g class="ventricle-base">
+            <path d="M 445 315 C 440 360, 480 420, 500 430 C 520 420, 560 360, 555 315 C 530 330, 470 330, 445 315 Z" fill="url(#ventricle-split)" stroke="#2C3E50" stroke-width="2" />
+        </g>
+
+        <!-- Single Ventricle Mixed Overlay (Fades in to show mixing) -->
+        <g class="ventricle-mixed">
+            <path d="M 445 315 C 440 360, 480 420, 500 430 C 520 420, 560 360, 555 315 C 530 330, 470 330, 445 315 Z" fill="#9B59B6" stroke="#2C3E50" stroke-width="2" />
+            <text x="500" y="370" class="label" fill="#FFFFFF" text-anchor="middle">Single</text>
+            <text x="500" y="385" class="label" fill="#FFFFFF" text-anchor="middle">Ventricle</text>
+            <text x="500" y="405" class="process-label" fill="#F1C40F" text-anchor="middle" font-size="10px">(Mixing)</text>
+        </g>
+
+        <!-- Truncus Arteriosus (Exits Ventricle, carries mixed blood) -->
+        <g class="truncus">
+            <path d="M 485 330 L 485 220 C 485 200, 460 190, 440 190 L 440 210 C 460 210, 465 220, 465 230 L 465 320 Z" fill="#9B59B6" stroke="#2C3E50" stroke-width="2" />
+            <path d="M 515 330 L 515 220 C 515 200, 540 190, 560 190 L 560 210 C 540 210, 535 220, 535 230 L 535 320 Z" fill="#9B59B6" stroke="#2C3E50" stroke-width="2" />
+            <rect x="485" y="240" width="30" height="90" fill="#9B59B6" />
+            <line x1="485" y1="240" x2="485" y2="330" stroke="#2C3E50" stroke-width="2" />
+            <line x1="515" y1="240" x2="515" y2="330" stroke="#2C3E50" stroke-width="2" />
+            <text x="500" y="285" class="label" fill="#FFFFFF" text-anchor="middle" font-size="10px" transform="rotate(-90 500 285)">Truncus</text>
+        </g>
+    </g>
+
+
+    <!-- ==================== VASCULAR PATHWAYS (FOREGROUND/OUTFLOW) ==================== -->
+    
+    <!-- Systemic Arches (Mixed blood to body) -->
+    <path class="flow-path-reverse mixed" d="M 150 380 C 300 380, 400 200, 450 200" marker-start="url(#arrow-mixed)" />
+    <path class="flow-path-reverse mixed" d="M 850 380 C 700 380, 600 200, 550 200" marker-start="url(#arrow-mixed)" />
+    
+    <text x="150" y="370" class="label-light" fill="#9B59B6">To Systemic Circulation (Body)</text>
+    <text x="850" y="370" class="label-light" fill="#9B59B6" text-anchor="end">To Systemic Circulation (Body)</text>
+
+    <!-- Pulmocutaneous Arches (Mixed blood to Lungs/Skin for oxygenation) -->
+    <path class="flow-path-reverse pulmocutaneous" d="M 280 220 C 350 180, 420 190, 445 195" marker-start="url(#arrow-mixed)" />
+    <path class="flow-path-reverse pulmocutaneous" d="M 720 220 C 650 180, 580 190, 555 195" marker-start="url(#arrow-mixed)" />
+
+    <text x="350" y="180" class="label-light" fill="#8E44AD" font-size="10px">Pulmocutaneous Arch</text>
+    <text x="650" y="180" class="label-light" fill="#8E44AD" font-size="10px" text-anchor="end">Pulmocutaneous Arch</text>
+
+
+    <!-- ==================== GAS EXCHANGE ANIMATION (PARTICLES) ==================== -->
+    
+    <!-- O2 Particles from Lungs -->
+    <g>
+        <circle class="o2-particle" cx="0" cy="0" r="4">
+            <animateMotion dur="2.5s" repeatCount="indefinite">
+                <mpath href="#lung-path-left"/>
+            </animateMotion>
+        </circle>
+        <circle class="o2-particle" cx="0" cy="0" r="4">
+            <animateMotion dur="2.5s" begin="1.25s" repeatCount="indefinite">
+                <mpath href="#lung-path-left"/>
+            </animateMotion>
+        </circle>
+        
+        <circle class="o2-particle" cx="0" cy="0" r="4">
+            <animateMotion dur="2.5s" repeatCount="indefinite">
+                <mpath href="#lung-path-right"/>
+            </animateMotion>
+        </circle>
+        <circle class="o2-particle" cx="0" cy="0" r="4">
+            <animateMotion dur="2.5s" begin="1.25s" repeatCount="indefinite">
+                <mpath href="#lung-path-right"/>
+            </animateMotion>
+        </circle>
+    </g>
+
+    <!-- O2 Particles from Skin -->
+    <g>
+        <circle class="o2-particle" cx="0" cy="0" r="4">
+            <animateMotion dur="3s" repeatCount="indefinite">
+                <mpath href="#skin-path-left"/>
+            </animateMotion>
+        </circle>
+        <circle class="o2-particle" cx="0" cy="0" r="4">
+            <animateMotion dur="3s" begin="1.5s" repeatCount="indefinite">
+                <mpath href="#skin-path-left"/>
+            </animateMotion>
+        </circle>
+
+        <circle class="o2-particle" cx="0" cy="0" r="4">
+            <animateMotion dur="3s" repeatCount="indefinite">
+                <mpath href="#skin-path-right"/>
+            </animateMotion>
+        </circle>
+        <circle class="o2-particle" cx="0" cy="0" r="4">
+            <animateMotion dur="3s" begin="1.5s" repeatCount="indefinite">
+                <mpath href="#skin-path-right"/>
+            </animateMotion>
+        </circle>
+    </g>
+
+    <!-- CO2 Particles (Exiting) -->
+    <g>
+        <circle class="co2-particle" cx="0" cy="0" r="3">
+            <animateMotion dur="2.5s" repeatCount="indefinite">
+                <mpath href="#co2-lung-left"/>
+            </animateMotion>
+        </circle>
+        <circle class="co2-particle" cx="0" cy="0" r="3">
+            <animateMotion dur="3s" begin="0.5s" repeatCount="indefinite">
+                <mpath href="#co2-skin-right"/>
+            </animateMotion>
+        </circle>
+    </g>
+
+    <!-- Particle Legend -->
+    <g transform="translate(800, 190)">
+        <circle cx="20" cy="10" r="4" class="o2-particle" />
+        <text x="35" y="14" class="legend-text">O₂ Diffusion</text>
+        <circle cx="20" cy="30" r="3" class="co2-particle" />
+        <text x="35" y="34" class="legend-text">CO₂ Excretion</text>
+    </g>
+
+    <!-- Informational Annotations -->
+    <line x1="440" y1="290" x2="380" y2="290" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2 2" />
+    <text x="375" y="294" class="label-light" text-anchor="end">Receives deoxygenated blood</text>
+
+    <line x1="560" y1="290" x2="620" y2="290" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2 2" />
+    <text x="625" y="294" class="label-light" text-anchor="start">Receives oxygenated blood</text>
+
+    <line x1="500" y1="430" x2="500" y2="470" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2 2" />
+    <text x="500" y="485" class="label-light" text-anchor="middle">No ventricular septum</text>
+
+</svg>
+
+</body>
+</html>

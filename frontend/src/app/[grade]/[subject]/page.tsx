@@ -14,6 +14,7 @@ interface Chapter {
     section_count: number;
     exercise_count: number;
     concept_count: number;
+    cover_image_url?: string;
 }
 
 export default function ChapterExplorerPage() {
@@ -119,7 +120,16 @@ export default function ChapterExplorerPage() {
             <section className="chapter-detail">
                 {selected ? (
                     <>
-                        <div className="hero-area">
+                        <div
+                            className="hero-area"
+                            style={{
+                                backgroundImage: selected.cover_image_url
+                                    ? `linear-gradient(135deg, rgba(224, 231, 255, 0.55), rgba(240, 253, 244, 0.5)), url("${selected.cover_image_url}")`
+                                    : undefined,
+                                backgroundSize: selected.cover_image_url ? "cover" : undefined,
+                                backgroundPosition: selected.cover_image_url ? "center" : undefined,
+                            }}
+                        >
                             <div className="badges">
                                 <span className="badge badge-dark">Grade {grade}</span>
                                 <span className="badge badge-light">

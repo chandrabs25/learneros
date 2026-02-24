@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     # Optional public R2 base URL for animation assets.
     # Example: https://pub-xxxxxxxx.r2.dev/animations
     ANIMATIONS_R2_PUBLIC_BASE_URL: str = ""
+    # Public chapter-cover assets settings.
+    # Deterministic cover URL format:
+    # {CHAPTER_COVERS_ASSETS_DOMAIN}/{CHAPTER_COVERS_PREFIX}/grade-{grade}/{subject-slug}/chapter-{NN}-{title-slug}.jpg
+    CHAPTER_COVERS_ASSETS_DOMAIN: str = "https://assets.learneros.me"
+    CHAPTER_COVERS_PREFIX: str = "chapter-covers"
 
     @property
     def cors_origins(self) -> list[str]:

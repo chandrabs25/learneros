@@ -9,6 +9,7 @@ Routes:
   GET /api/chapters/{chapter_id:path}/graph            → knowledge graph (insights overlay if auth'd)
 """
 
+import re
 import time
 
 from fastapi import APIRouter, Depends, HTTPException, Response, Query
@@ -22,6 +23,29 @@ _cache: dict[str, tuple[float, object]] = {}
 _CACHE_TTL_SECONDS = 3600.0
 _PUBLIC_BROWSER_CACHE_SECONDS = 86400
 _PUBLIC_EDGE_CACHE_SECONDS = 2592000
+
+
+def _slugify(value: str) -> str:
+    value = (value or "").strip().lower()
+    value = value.replace("&", " and ")
+    value = re.sub(r"[^a-z0-9]+", "-", value)
+    value = re.sub(r"-{2,}", "-", value).strip("-")
+    return value or "untitled"
+
+
+def _chapter_cover_url(grade: int, subject: str, chapter_number: int | str, chapter_title: str) -> str:
+    try:
+        chapter_num = int(chapter_number)
+    except (TypeError, ValueError):
+        chapter_num = 0
+    domain = settings.CHAPTER_COVERS_ASSETS_DOMAIN.rstrip("/")
+    prefix = settings.CHAPTER_COVERS_PREFIX.strip("/")
+    subject_slug = _slugify(subject)
+    title_slug = _slugify(chapter_title)
+    return (
+        f"{domain}/{prefix}/grade-{grade}/{subject_slug}/"
+        f"chapter-{chapter_num:02d}-{title_slug}.jpg"
+    )
 
 
 def _set_public_cache_headers(
@@ -142,6 +166,13 @@ async def list_chapters(grade: int, subject: str, response: Response):
         raise HTTPException(
             status_code=404,
             detail=f"No chapters found for grade {grade}, {subject}",
+        )
+    for row in rows:
+        row["cover_image_url"] = _chapter_cover_url(
+            grade=grade,
+            subject=subject,
+            chapter_number=row.get("number"),
+            chapter_title=row.get("title", ""),
         )
     _cache_set(key, rows)
     return rows
