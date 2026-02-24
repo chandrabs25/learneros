@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -18,6 +18,7 @@ interface Chapter {
 
 export default function ChapterExplorerPage() {
     const params = useParams();
+    const searchParams = useSearchParams();
     const grade = params.grade as string;
     const subject = params.subject as string;
     const [chapters, setChapters] = useState<Chapter[]>([]);
@@ -26,16 +27,41 @@ export default function ChapterExplorerPage() {
 
     useEffect(() => {
         const subjectName = subject.charAt(0).toUpperCase() + subject.slice(1);
+        const queryChapter = searchParams.get("chapter");
+        const storageKey = `learneros:lastChapter:${grade}:${subject}`;
         fetch(`${API_URL}/api/grades/${grade}/subjects/${subjectName}/chapters`)
             .then((r) => r.json())
             .then((data) => {
                 const list = Array.isArray(data) ? data : [];
                 setChapters(list);
-                if (list.length > 0) setSelected(list[0]);
+                if (list.length > 0) {
+                    const fromQuery = queryChapter
+                        ? list.find((ch) => String(ch.number) === String(queryChapter))
+                        : null;
+
+                    let fromStorage: Chapter | undefined;
+                    if (!fromQuery && typeof window !== "undefined") {
+                        const storedChapter = window.localStorage.getItem(storageKey);
+                        if (storedChapter) {
+                            fromStorage = list.find((ch) => String(ch.number) === String(storedChapter));
+                        }
+                    }
+
+                    setSelected(fromQuery || fromStorage || list[0]);
+                } else {
+                    setSelected(null);
+                }
                 setLoading(false);
             })
             .catch(() => setLoading(false));
-    }, [grade, subject]);
+    }, [grade, subject, searchParams]);
+
+    useEffect(() => {
+        if (!selected) return;
+        if (typeof window === "undefined") return;
+        const storageKey = `learneros:lastChapter:${grade}:${subject}`;
+        window.localStorage.setItem(storageKey, String(selected.number));
+    }, [selected, grade, subject]);
 
     if (loading) {
         return (

@@ -317,7 +317,9 @@ export default function InsightsAnalyticsPage() {
                           <span style={{ fontSize: "0.64rem", color: "#64748b", marginLeft: "auto" }}>{ins.source_title}</span>
                         )}
                       </div>
-                      <p style={{ margin: 0, color: "#0f172a", fontSize: "0.96rem", lineHeight: 1.55 }}>{ins.content}</p>
+                      <div style={{ margin: 0, color: "#0f172a", fontSize: "0.96rem", lineHeight: 1.55 }}>
+                        <TutorMarkdown text={ins.content} />
+                      </div>
 
                       {(ins.type === "PARTIAL_UNDERSTANDING" || ins.type === "MISCONCEPTION") && (
                         <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>

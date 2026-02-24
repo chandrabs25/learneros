@@ -158,6 +158,7 @@ export default function SectionViewerPage() {
     const [conceptCount, setConceptCount] = useState(0);
     const [chapterExerciseCount, setChapterExerciseCount] = useState(0);
     const [chapterSections, setChapterSections] = useState<SectionNavItem[]>([]);
+    const [chapterTitle, setChapterTitle] = useState("");
     const [insightsOpen, setInsightsOpen] = useState(false);
     const [insightsLoading, setInsightsLoading] = useState(false);
     const [insightsError, setInsightsError] = useState("");
@@ -205,6 +206,16 @@ export default function SectionViewerPage() {
                 Array.isArray(data) ? data.filter((s: SectionNavItem) => s.title?.toLowerCase() !== "exercises") : []
             ))
             .catch(() => setChapterSections([]));
+
+        const subjectName = subject.charAt(0).toUpperCase() + subject.slice(1);
+        fetch(`${API_URL}/api/grades/${grade}/subjects/${subjectName}/chapters`)
+            .then((r) => r.json())
+            .then((data) => {
+                const list = Array.isArray(data) ? data : [];
+                const currentChapter = list.find((c) => c?.id === chapterId);
+                setChapterTitle(currentChapter?.title || "");
+            })
+            .catch(() => setChapterTitle(""));
     }, [sectionId, chapterId]);
 
     // Scroll to top when changing subsection
@@ -476,9 +487,42 @@ export default function SectionViewerPage() {
             {/* ────── Left sidebar: Chapter sections ────── */}
             <aside className="section-sidebar">
                 <div className="section-sidebar-inner">
+                    <button
+                        onClick={() => router.push(`/${grade}/${subject}?chapter=${encodeURIComponent(chapter)}`)}
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.4rem",
+                            width: "fit-content",
+                            padding: "0.5rem 0.875rem",
+                            background: "white",
+                            border: "1px solid var(--border)",
+                            borderRadius: "999px",
+                            fontSize: "0.75rem",
+                            fontWeight: 700,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.05em",
+                            color: "var(--text-secondary)",
+                            cursor: "pointer",
+                            boxShadow: "0 2px 5px rgba(0,0,0,0.02)",
+                            transition: "all 0.2s ease",
+                            marginBottom: "0.9rem",
+                        }}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.background = "#f8fafc";
+                            e.currentTarget.style.borderColor = "#cbd5e1";
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.background = "white";
+                            e.currentTarget.style.borderColor = "var(--border)";
+                        }}
+                    >
+                        <span className="material-symbols-outlined" style={{ fontSize: "1rem" }}>arrow_back</span>
+                        Back to Textbook
+                    </button>
                     <h3 className="section-sidebar-heading">
                         <Link href={`/${grade}/${subject}/${chapter}`} style={{ color: "inherit", textDecoration: "none" }}>
-                            Chapter {chapter}
+                            {chapterTitle ? `Chapter ${chapter}: ${chapterTitle}` : `Chapter ${chapter}`}
                         </Link>
                     </h3>
                     <nav className="section-sidebar-nav">
@@ -560,40 +604,18 @@ export default function SectionViewerPage() {
                 <div style={{ marginBottom: "2.5rem" }}>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.5rem" }}>
                         <nav className="breadcrumb">
-                            <Link href="/">Hub</Link>
+                            <Link href="/">Home</Link>
                             <span className="sep">›</span>
                             <Link href={`/${grade}/${subject}`}>
                                 {subject.charAt(0).toUpperCase() + subject.slice(1)}
                             </Link>
                             <span className="sep">›</span>
-                            <Link href={`/${grade}/${subject}/${chapter}`}>Chapter {chapter}</Link>
+                            <Link href={`/${grade}/${subject}/${chapter}`}>
+                                {chapterTitle ? `Chapter ${chapter}: ${chapterTitle}` : `Chapter ${chapter}`}
+                            </Link>
                             <span className="sep">›</span>
                             <span className="current">Section {section}</span>
                         </nav>
-
-                        <button
-                            onClick={() => router.push(`/${grade}/${subject}`)}
-                            style={{
-                                display: "flex", alignItems: "center", gap: "0.4rem",
-                                padding: "0.5rem 0.875rem", background: "white",
-                                border: "1px solid var(--border)", borderRadius: "999px",
-                                fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase",
-                                letterSpacing: "0.05em", color: "var(--text-secondary)",
-                                cursor: "pointer", boxShadow: "0 2px 5px rgba(0,0,0,0.02)",
-                                transition: "all 0.2s ease"
-                            }}
-                            onMouseOver={(e) => {
-                                e.currentTarget.style.background = "#f8fafc";
-                                e.currentTarget.style.borderColor = "#cbd5e1";
-                            }}
-                            onMouseOut={(e) => {
-                                e.currentTarget.style.background = "white";
-                                e.currentTarget.style.borderColor = "var(--border)";
-                            }}
-                        >
-                            <span className="material-symbols-outlined" style={{ fontSize: "1rem" }}>arrow_back</span>
-                            Back to Textbook
-                        </button>
                     </div>
 
                     {/* Content type badge */}
@@ -854,7 +876,9 @@ export default function SectionViewerPage() {
                                     <div className="section-insight-concept">
                                         {ins.concept_name || ins.concept_id || "General"}
                                     </div>
-                                    <p className="section-insight-content">{ins.content}</p>
+                                    <div className="section-insight-content">
+                                        <TutorMarkdown text={ins.content} compact />
+                                    </div>
                                     {(ins.type === "PARTIAL_UNDERSTANDING" || ins.type === "MISCONCEPTION") && (
                                         <div style={{ marginTop: "0.6rem", display: "flex", gap: "0.45rem", flexWrap: "wrap" }}>
                                             <button
