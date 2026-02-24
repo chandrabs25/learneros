@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, FormEvent } from "react";
+import { Suspense, useState, useEffect, FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { consumePendingNext, resolvePostLoginRoute } from "@/lib/auth-redirect";
@@ -8,6 +8,14 @@ import { consumePendingNext, resolvePostLoginRoute } from "@/lib/auth-redirect";
 type Tab = "login" | "signup";
 
 export default function AuthPage() {
+    return (
+        <Suspense fallback={null}>
+            <AuthPageContent />
+        </Suspense>
+    );
+}
+
+function AuthPageContent() {
     const { signInWithGoogle, signInWithEmail, signUpWithEmail, user, loading, getIdToken } = useAuth();
     const router = useRouter();
     const searchParams = useSearchParams();
