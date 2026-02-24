@@ -124,7 +124,7 @@ export default function ChapterExplorerPage() {
                             className="hero-area"
                             style={{
                                 backgroundImage: selected.cover_image_url
-                                    ? `linear-gradient(135deg, rgba(224, 231, 255, 0.55), rgba(240, 253, 244, 0.5)), url("${selected.cover_image_url}")`
+                                    ? `url("${selected.cover_image_url}")`
                                     : undefined,
                                 backgroundSize: selected.cover_image_url ? "cover" : undefined,
                                 backgroundPosition: selected.cover_image_url ? "center" : undefined,

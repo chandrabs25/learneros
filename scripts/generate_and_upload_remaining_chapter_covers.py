@@ -81,10 +81,20 @@ def parse_bucket_url(bucket_url: str) -> tuple[str, str]:
     return endpoint_url, bucket
 
 
-def fetch_json(url: str, timeout_s: float = 60.0) -> Any:
+def fetch_json(url: str, timeout_s: float = 60.0, retries: int = 3) -> Any:
     req = Request(url, headers={"Accept": "application/json"})
-    with urlopen(req, timeout=timeout_s) as resp:  # nosec - operator-controlled URL
-        return json.loads(resp.read().decode("utf-8"))
+    last_exc: Exception | None = None
+    for attempt in range(1, retries + 1):
+        try:
+            with urlopen(req, timeout=timeout_s) as resp:  # nosec - operator-controlled URL
+                return json.loads(resp.read().decode("utf-8"))
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            if attempt < retries:
+                time.sleep(min(2 ** attempt, 5))
+            continue
+    assert last_exc is not None
+    raise last_exc
 
 
 def chapter_sort_key(chapter_number: str) -> tuple[int, str]:
@@ -102,15 +112,26 @@ def discover_all_chapters(api_url: str) -> list[ChapterEntry]:
         grade = str(g.get("grade") or "").strip()
         if not grade:
             continue
-        subjects = fetch_json(f"{api_url.rstrip('/')}/api/grades/{quote(grade)}/subjects")
+        try:
+            subjects = fetch_json(f"{api_url.rstrip('/')}/api/grades/{quote(grade)}/subjects")
+        except Exception as exc:  # noqa: BLE001
+            print(f"[WARN] Failed to fetch subjects for grade {grade}: {exc}", file=sys.stderr)
+            continue
         for s in subjects or []:
             subject_name = str(s.get("name") or "").strip()
             if not subject_name:
                 continue
             subject_slug = slugify(subject_name)
-            chapters = fetch_json(
-                f"{api_url.rstrip('/')}/api/grades/{quote(grade)}/subjects/{quote(subject_name)}/chapters"
-            )
+            try:
+                chapters = fetch_json(
+                    f"{api_url.rstrip('/')}/api/grades/{quote(grade)}/subjects/{quote(subject_name)}/chapters"
+                )
+            except Exception as exc:  # noqa: BLE001
+                print(
+                    f"[WARN] Failed to fetch chapters for grade {grade} subject {subject_name}: {exc}",
+                    file=sys.stderr,
+                )
+                continue
             for ch in chapters or []:
                 ch_num = str(ch.get("number") or "").strip()
                 ch_title = str(ch.get("title") or "").strip()
@@ -346,4 +367,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

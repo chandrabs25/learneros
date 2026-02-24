@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Molecular Mechanism of Translation</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+    }
+    header {
+        text-align: center;
+        padding: 20px 0;
+        width: 100%;
+        background-color: #ffffff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+    h1 {
+        margin: 0;
+        color: #2C3E50;
+        font-size: 24px;
+    }
+    p.subtitle {
+        margin: 5px 0 0 0;
+        color: #7F8C8D;
+        font-size: 14px;
+    }
+    .svg-container {
+        width: 100%;
+        max-width: 1200px;
+        background-color: #f8f9fa;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    svg {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+    .mono {
+        font-family: 'Roboto Mono', monospace;
+        font-weight: 700;
+    }
+    .inter {
+        font-family: 'Inter', sans-serif;
+    }
+    
+    /* Animations */
+    #mrna-strand {
+        animation: mrna-shift 12s linear infinite;
+        will-change: transform;
+    }
+    #trna-a {
+        animation: trna-a-move 12s linear infinite;
+        will-change: transform, opacity;
+    }
+    #trna-p {
+        animation: trna-p-move 12s linear infinite;
+        will-change: transform, opacity;
+    }
+    #polypeptide {
+        animation: chain-move 12s linear infinite;
+        will-change: transform;
+    }
+
+    @keyframes mrna-shift {
+        0%, 50% { transform: translateX(0); }
+        65%, 95% { transform: translateX(-100px); }
+        95.1%, 100% { transform: translateX(0); }
+    }
+
+    @keyframes trna-a-move {
+        0%, 5% { transform: translate(750px, 150px); opacity: 0; }
+        10% { opacity: 1; }
+        20%, 50% { transform: translate(600px, 340px); opacity: 1; }
+        65%, 95% { transform: translate(500px, 340px); opacity: 1; }
+        95.1%, 100% { transform: translate(750px, 150px); opacity: 0; }
+    }
+
+    @keyframes trna-p-move {
+        0%, 50% { transform: translate(500px, 340px); opacity: 1; }
+        65%, 75% { transform: translate(400px, 340px); opacity: 1; }
+        85%, 95% { transform: translate(250px, 150px); opacity: 0; }
+        95.1%, 100% { transform: translate(500px, 340px); opacity: 1; }
+    }
+
+    @keyframes chain-move {
+        0%, 25% { transform: translate(500px, 290px); }
+        40%, 50% { transform: translate(600px, 260px); }
+        65%, 95% { transform: translate(500px, 260px); }
+        95.1%, 100% { transform: translate(500px, 290px); }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Protein Synthesis: Translation of the Genetic Code</h1>
+    <p class="subtitle">The Ribosome reads mRNA 5' to 3' to assemble a polypeptide chain</p>
+</header>
+
+<div class="svg-container">
+    <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of molecular translation">
+        <defs>
+            <!-- Shadows -->
+            <filter id="drop-shadow" x="-10%" y="-10%" width="130%" height="130%">
+                <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#2C3E50" flood-opacity="0.15"/>
+            </filter>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+
+            <!-- Gradients -->
+            <linearGradient id="large-sub-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#B8C4D4" />
+                <stop offset="100%" stop-color="#8F9CB0" />
+            </linearGradient>
+            <linearGradient id="small-sub-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#E2E8F0" />
+                <stop offset="100%" stop-color="#C1C9D2" />
+            </linearGradient>
+            <radialGradient id="aa-grad" cx="30%" cy="30%" r="70%">
+                <stop offset="0%" stop-color="#B5E8DA" />
+                <stop offset="100%" stop-color="#7ABBAA" />
+            </radialGradient>
+
+            <!-- tRNA Template Path -->
+            <path id="trna-body" d="M -10 -50 L 10 -50 L 10 -10 C 40 -10, 50 10, 20 15 L 15 25 C 40 50, -40 50, -15 25 L -20 15 C -50 10, -40 -10, -10 -10 Z" fill="#FFD93D" stroke="#2C3E50" stroke-width="2" filter="url(#drop-shadow)"/>
+            
+            <!-- Codon Templates -->
+            <g id="codon-GCA">
+                <rect x="-42" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="-30" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">G</text>
+                <rect x="-12" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="0" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">C</text>
+                <rect x="18" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="30" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">A</text>
+            </g>
+            <g id="codon-CUC">
+                <rect x="-42" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="-30" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">C</text>
+                <rect x="-12" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="0" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">U</text>
+                <rect x="18" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="30" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">C</text>
+            </g>
+            <g id="codon-AUG">
+                <rect x="-42" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="-30" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">A</text>
+                <rect x="-12" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="0" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">U</text>
+                <rect x="18" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="30" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">G</text>
+            </g>
+            <g id="codon-UUC">
+                <rect x="-42" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="-30" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">U</text>
+                <rect x="-12" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="0" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">U</text>
+                <rect x="18" y="375" width="24" height="20" rx="3" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+                <text x="30" y="390" class="mono" font-size="14" fill="#2C3E50" text-anchor="middle">C</text>
+            </g>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa"/>
+
+        <!-- Ribosome Large Subunit (60S) -->
+        <g id="ribosome-large" filter="url(#drop-shadow)">
+            <path d="M 280 390 
+                     L 370 390 L 370 250 A 30 30 0 0 1 430 250 L 430 390 
+                     L 470 390 L 470 250 A 30 30 0 0 1 530 250 L 530 390 
+                     L 570 390 L 570 250 A 30 30 0 0 1 630 250 L 630 390 
+                     L 720 390 
+                     C 750 100, 250 100, 280 390 Z" 
+                  fill="url(#large-sub-grad)" stroke="#2C3E50" stroke-width="3"/>
+            
+            <!-- Site Labels -->
+            <text x="400" y="190" class="inter" font-size="32" font-weight="bold" fill="#2C3E50" text-anchor="middle" opacity="0.6">E</text>
+            <text x="500" y="190" class="inter" font-size="32" font-weight="bold" fill="#2C3E50" text-anchor="middle" opacity="0.6">P</text>
+            <text x="600" y="190" class="inter" font-size="32" font-weight="bold" fill="#2C3E50" text-anchor="middle" opacity="0.6">A</text>
+            
+            <text x="700" y="200" class="inter" font-size="16" font-weight="bold" fill="#2C3E50">Large Subunit</text>
+        </g>
+
+        <!-- Ribosome Small Subunit (40S) -->
+        <g id="ribosome-small" filter="url(#drop-shadow)">
+            <path d="M 280 410 C 280 490, 720 490, 720 410 Z" fill="url(#small-sub-grad)" stroke="#2C3E50" stroke-width="3"/>
+            <text x="500" y="465" class="inter" font-size="16" font-weight="bold" fill="#2C3E50" text-anchor="middle">Small Subunit</text>
+        </g>
+
+        <!-- mRNA Strand (Animated) -->
+        <g id="mrna-strand">
+            <!-- Backbone -->
+            <rect x="-200" y="395" width="1600" height="10" fill="#FFA07A" stroke="#2C3E50" stroke-width="2"/>
+            
+            <!-- Codons -->
+            <use href="#codon-GCA" x="0"/>
+            <use href="#codon-CUC" x="100"/>
+            <use href="#codon-GCA" x="200"/>
+            <use href="#codon-CUC" x="300"/>
+            <use href="#codon-GCA" x="400"/> <!-- E Site initially -->
+            <use href="#codon-AUG" x="500"/> <!-- P Site initially -->
+            <use href="#codon-UUC" x="600"/> <!-- A Site initially -->
+            <use href="#codon-CUC" x="700"/>
+            <use href="#codon-GCA" x="800"/>
+            <use href="#codon-CUC" x="900"/>
+            <use href="#codon-GCA" x="1000"/>
+            <use href="#codon-CUC" x="1100"/>
+        </g>
+
+        <!-- Static mRNA Labels and Overlays -->
+        <g id="mrna-static-labels">
+            <rect x="10" y="380" width="40" height="30" fill="#f8f9fa"/>
+            <rect x="950" y="380" width="40" height="30" fill="#f8f9fa"/>
+            <text x="30" y="405" class="mono" font-size="20" font-weight="bold" fill="#E74C3C" text-anchor="middle">5'</text>
+            <text x="970" y="405" class="mono" font-size="20" font-weight="bold" fill="#E74C3C" text-anchor="middle">3'</text>
+            <text x="120" y="425" class="inter" font-size="16" font-weight="bold" fill="#E74C3C">mRNA</text>
+            
+            <!-- Codon Bracket -->
+            <path d="M 558 415 L 558 422 L 642 422 L 642 415" fill="none" stroke="#2C3E50" stroke-width="2"/>
+            <text x="600" y="440" class="inter" font-size="14" fill="#2C3E50" text-anchor="middle">Codon</text>
+        </g>
+
+        <!-- tRNAs -->
+        <!-- P-Site tRNA (Starts at P, moves to E, exits) -->
+        <g id="trna-p">
+            <use href="#trna-body"/>
+            <!-- Anticodon UAC -->
+            <rect x="-42" y="20" width="24" height="15" rx="2" fill="#FFD93D" stroke="#2C3E50" stroke-width="2"/>
+            <text x="-30" y="32" class="mono" font-size="12" fill="#2C3E50" text-anchor="middle">U</text>
+            <rect x="-12" y="20" width="24" height="15" rx="2" fill="#FFD93D" stroke="#2C3E50" stroke-width="2"/>
+            <text x="0" y="32" class="mono" font-size="12" fill="#2C3E50" text-anchor="middle">A</text>
+            <rect x="18" y="20" width="24" height="15" rx="2" fill="#FFD93D" stroke="#2C3E50" stroke-width="2"/>
+            <text x="30" y="32" class="mono" font-size="12" fill="#2C3E50" text-anchor="middle">C</text>
+        </g>
+
+        <!-- A-Site tRNA (Enters A, moves to P) -->
+        <g id="trna-a">
+            <use href="#trna-body"/>
+            <!-- Anticodon AAG -->
+            <rect x="-42" y="20" width="24" height="15" rx="2" fill="#FFD93D" stroke="#2C3E50" stroke-width="2"/>
+            <text x="-30" y="32" class="mono" font-size="12" fill="#2C3E50" text-anchor="middle">A</text>
+            <rect x="-12" y="20" width="24" height="15" rx="2" fill="#FFD93D" stroke="#2C3E50" stroke-width="2"/>
+            <text x="0" y="32" class="mono" font-size="12" fill="#2C3E50" text-anchor="middle">A</text>
+            <rect x="18" y="20" width="24" height="15" rx="2" fill="#FFD93D" stroke="#2C3E50" stroke-width="2"/>
+            <text x="30" y="32" class="mono" font-size="12" fill="#2C3E50" text-anchor="middle">G</text>
+            
+            <!-- Anticodon Bracket -->
+            <path d="M -42 15 L -42 8 L 42 8 L 42 15" fill="none" stroke="#2C3E50" stroke-width="2"/>
+            <text x="0" y="0" class="inter" font-size="12" fill="#2C3E50" text-anchor="middle">Anticodon</text>
+            <text x="60" y="-10" class="inter" font-size="14" font-weight="bold" fill="#F39C12">tRNA</text>
+        </g>
+
+        <!-- Polypeptide Chain (Animated) -->
+        <g id="polypeptide" filter="url(#drop-shadow)">
+            <!-- Connectors -->
+            <line x1="0" y1="0" x2="0" y2="-120" stroke="#2C3E50" stroke-width="4"/>
+            
+            <!-- Amino Acids -->
+            <circle cx="0" cy="-120" r="15" fill="url(#aa-grad)" stroke="#2C3E50" stroke-width="2"/>
+            <text x="0" y="-116" class="inter" font-size="11" font-weight="bold" fill="#2C3E50" text-anchor="middle">Val</text>
+            
+            <circle cx="0" cy="-90" r="15" fill="url(#aa-grad)" stroke="#2C3E50" stroke-width="2"/>
+            <text x="0" y="-86" class="inter" font-size="11" font-weight="bold" fill="#2C3E50" text-anchor="middle">Ser</text>
+            
+            <circle cx="0" cy="-60" r="15" fill="url(#aa-grad)" stroke="#2C3E50" stroke-width="2"/>
+            <text x="0" y="-56" class="inter" font-size="11" font-weight="bold" fill="#2C3E50" text-anchor="middle">Leu</text>
+            
+            <circle cx="0" cy="-30" r="15" fill="url(#aa-grad)" stroke="#2C3E50" stroke-width="2"/>
+            <text x="0" y="-26" class="inter" font-size="11" font-weight="bold" fill="#2C3E50" text-anchor="middle">Gly</text>
+            
+            <circle cx="0" cy="0" r="15" fill="url(#aa-grad)" stroke="#2C3E50" stroke-width="2"/>
+            <text x="0" y="4" class="inter" font-size="11" font-weight="bold" fill="#2C3E50" text-anchor="middle">Met</text>
+
+            <!-- Incoming Amino Acid (Attached to bottom of chain group to move seamlessly) -->
+            <line x1="0" y1="0" x2="0" y2="30" stroke="#2C3E50" stroke-width="4"/>
+            <circle cx="0" cy="30" r="15" fill="url(#aa-grad)" stroke="#2C3E50" stroke-width="2"/>
+            <text x="0" y="34" class="inter" font-size="11" font-weight="bold" fill="#2C3E50" text-anchor="middle">Phe</text>
+
+            <!-- Label -->
+            <path d="M -20 -130 C -50 -150, -100 -100, -120 -80" fill="none" stroke="#2C3E50" stroke-width="1" stroke-dasharray="4 4"/>
+            <text x="-130" y="-70" class="inter" font-size="14" font-weight="bold" fill="#27AE60" text-anchor="end">Growing Polypeptide Chain</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(20, 480)">
+            <rect width="180" height="100" fill="#ffffff" stroke="#BDC3C7" stroke-width="2" rx="8" filter="url(#drop-shadow)"/>
+            <text x="90" y="20" class="inter" font-size="14" font-weight="bold" fill="#2C3E50" text-anchor="middle">Key</text>
+            
+            <rect x="15" y="35" width="15" height="15" rx="2" fill="#FFA07A" stroke="#2C3E50" stroke-width="1"/>
+            <text x="40" y="47" class="inter" font-size="12" fill="#2C3E50">mRNA Strand</text>
+            
+            <rect x="15" y="55" width="15" height="15" rx="2" fill="#FFD93D" stroke="#2C3E50" stroke-width="1"/>
+            <text x="40" y="67" class="inter" font-size="12" fill="#2C3E50">tRNA Molecule</text>
+            
+            <circle cx="22.5" cy="82.5" r="7.5" fill="#98D8C8" stroke="#2C3E50" stroke-width="1"/>
+            <text x="40" y="87" class="inter" font-size="12" fill="#2C3E50">Amino Acid</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>
