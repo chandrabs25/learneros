@@ -342,8 +342,8 @@ export default function HubPage() {
                 </Link>
               </li>
               <li>
-                <a className="hub-footer-link" href="mailto:srichandrasamanapallli@gmail.com">
-                  srichandrasamanapallli@gmail.com
+                <a className="hub-footer-link" href="mailto:srichandra@learneros.me">
+                  srichandra@learneros.me
                 </a>
               </li>
             </ul>
