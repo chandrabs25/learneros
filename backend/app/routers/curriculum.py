@@ -11,7 +11,7 @@ Routes:
 
 import time
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException, Response, Query
 
 from app.auth import get_optional_user
 from app.config import settings
@@ -410,3 +410,144 @@ async def chapter_graph(
         "section_ids": section_ids,
         "concept_ids": concept_ids,
     }
+
+
+@router.get("/concepts/{concept_id:path}/lineage")
+async def concept_lineage(
+    concept_id: str,
+    response: Response,
+    chapter_limit: int = Query(default=60, ge=1, le=60),
+):
+    """
+    Return cross-curriculum lineage graph for a concept:
+      concept -> grades -> subjects -> chapters
+    """
+    _set_public_cache_headers(response)
+    key = f"concept_lineage|{concept_id}|{chapter_limit}"
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
+
+    concept_rows = read_query(
+        """
+        MATCH (c:Concept {id: $concept_id})
+        RETURN c.id AS id, c.name AS name
+        LIMIT 1
+        """,
+        concept_id=concept_id,
+    )
+    if not concept_rows:
+        raise HTTPException(status_code=404, detail="Concept not found")
+
+    chapter_rows = read_query(
+        """
+        MATCH (c:Concept {id: $concept_id})
+        OPTIONAL MATCH (sec:Section)-[:REQUIRES]->(c)
+        OPTIONAL MATCH (ch_from_sec:Chapter)-[:CONTAINS]->(sec)
+        OPTIONAL MATCH (ex:Exercise)-[:TESTS]->(c)
+        OPTIONAL MATCH (es:ExerciseSet)-[:CONTAINS]->(ex)
+        OPTIONAL MATCH (ch_from_ex:Chapter)-[:HAS_EXERCISE_SET]->(es)
+        WITH c, collect(DISTINCT ch_from_sec) + collect(DISTINCT ch_from_ex) AS chapters
+        UNWIND chapters AS ch
+        WITH DISTINCT c, ch
+        WHERE ch IS NOT NULL
+        MATCH (t:Textbook)-[:CONTAINS]->(ch)
+        MATCH (s:Subject)-[:CONTAINS]->(t)
+        RETURN t.grade AS grade,
+               s.name AS subject_name,
+               ch.id AS chapter_id,
+               ch.number AS chapter_number,
+               ch.title AS chapter_title
+        ORDER BY toInteger(t.grade), s.name, toInteger(ch.number), ch.number, ch.title
+        """,
+        concept_id=concept_id,
+    )
+
+    chapter_total = len(chapter_rows)
+    limited_rows = chapter_rows[:chapter_limit]
+    truncated = chapter_total > chapter_limit
+
+    concept = {
+        "id": concept_rows[0]["id"],
+        "name": (concept_rows[0].get("name") or concept_rows[0]["id"]).replace("_", " ").title(),
+    }
+
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    seen_nodes: set[str] = set()
+    seen_edges: set[tuple[str, str, str]] = set()
+
+    concept_node_id = concept["id"]
+    nodes.append({"id": concept_node_id, "type": "concept", "label": concept["name"], "meta": {}})
+    seen_nodes.add(concept_node_id)
+
+    def add_node(node_id: str, node_type: str, label: str, meta: dict):
+        if node_id in seen_nodes:
+            return
+        seen_nodes.add(node_id)
+        nodes.append({"id": node_id, "type": node_type, "label": label, "meta": meta})
+
+    def add_edge(source: str, target: str, edge_type: str = "HAS"):
+        key_edge = (source, target, edge_type)
+        if key_edge in seen_edges:
+            return
+        seen_edges.add(key_edge)
+        edges.append({"source": source, "target": target, "type": edge_type})
+
+    for row in limited_rows:
+        grade = str(row.get("grade", ""))
+        subject_name = str(row.get("subject_name", "")).strip()
+        chapter_id = str(row.get("chapter_id", "")).strip()
+        chapter_number = str(row.get("chapter_number", "")).strip()
+        chapter_title = str(row.get("chapter_title", "")).strip()
+        if not grade or not subject_name or not chapter_id or not chapter_number:
+            continue
+
+        grade_node_id = f"grade:{grade}"
+        subject_slug = "".join(ch.lower() if ch.isalnum() else "-" for ch in subject_name).strip("-")
+        while "--" in subject_slug:
+            subject_slug = subject_slug.replace("--", "-")
+        subject_node_id = f"subject:{subject_slug}"
+        chapter_node_id = f"chapter:{chapter_id}"
+
+        add_node(grade_node_id, "grade", f"Class {grade}", {"grade": grade})
+        add_node(
+            subject_node_id,
+            "subject",
+            subject_name,
+            {
+                "subject_name": subject_name,
+                "subject_slug": subject_slug,
+            },
+        )
+        add_node(
+            chapter_node_id,
+            "chapter",
+            f"{chapter_number}. {chapter_title}" if chapter_title else chapter_number,
+            {
+                "grade": grade,
+                "subject_name": subject_name,
+                "subject_slug": subject_slug,
+                "chapter_id": chapter_id,
+                "chapter_number": chapter_number,
+                "chapter_title": chapter_title,
+            },
+        )
+
+        add_edge(concept_node_id, grade_node_id)
+        add_edge(grade_node_id, subject_node_id)
+        add_edge(subject_node_id, chapter_node_id)
+
+    payload = {
+        "concept": concept,
+        "nodes": nodes,
+        "edges": edges,
+        "meta": {
+            "chapter_total": chapter_total,
+            "chapter_returned": len([n for n in nodes if n.get("type") == "chapter"]),
+            "limit": chapter_limit,
+            "truncated": truncated,
+        },
+    }
+    _cache_set(key, payload)
+    return payload
