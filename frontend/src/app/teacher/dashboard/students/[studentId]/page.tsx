@@ -56,6 +56,8 @@ export default function TeacherStudentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [data, setData] = useState<StudentDetail | null>(null);
+  const [selectedType, setSelectedType] = useState<"ALL" | "COMPETENCY" | "PARTIAL_UNDERSTANDING" | "MISCONCEPTION">("ALL");
+  const [selectedWindow, setSelectedWindow] = useState<"1d" | "3d" | "7d" | "30d">("30d");
 
   useEffect(() => {
     let cancelled = false;
@@ -98,6 +100,55 @@ export default function TeacherStudentDetailPage() {
       return bt - at;
     });
   }, [data]);
+
+  const activeInsightsFiltered = useMemo(() => {
+    const list = data?.active_insights || [];
+    const now = Date.now();
+    const windowMs: Record<"1d" | "3d" | "7d" | "30d", number> = {
+      "1d": 24 * 60 * 60 * 1000,
+      "3d": 3 * 24 * 60 * 60 * 1000,
+      "7d": 7 * 24 * 60 * 60 * 1000,
+      "30d": 30 * 24 * 60 * 60 * 1000,
+    };
+    return list.filter((ins) => {
+      if (selectedType !== "ALL" && ins.type !== selectedType) return false;
+      if (!ins.created_at) return false;
+      const ts = new Date(ins.created_at).getTime();
+      if (Number.isNaN(ts)) return false;
+      return now - ts <= windowMs[selectedWindow];
+    });
+  }, [data, selectedType, selectedWindow]);
+
+  const timelineFiltered = useMemo(() => {
+    const now = Date.now();
+    const windowMs: Record<"1d" | "3d" | "7d" | "30d", number> = {
+      "1d": 24 * 60 * 60 * 1000,
+      "3d": 3 * 24 * 60 * 60 * 1000,
+      "7d": 7 * 24 * 60 * 60 * 1000,
+      "30d": 30 * 24 * 60 * 60 * 1000,
+    };
+    return timelineSorted.filter((ins) => {
+      if (selectedType !== "ALL" && ins.type !== selectedType) return false;
+      if (!ins.created_at) return false;
+      const ts = new Date(ins.created_at).getTime();
+      if (Number.isNaN(ts)) return false;
+      return now - ts <= windowMs[selectedWindow];
+    });
+  }, [selectedType, selectedWindow, timelineSorted]);
+
+  const filterCardStyle = (type: "ALL" | "COMPETENCY" | "PARTIAL_UNDERSTANDING" | "MISCONCEPTION") => {
+    const active = selectedType === type;
+    return {
+      background: active ? "#ecfeff" : "#fff",
+      border: active ? "1px solid #22d3ee" : "1px solid #e2e8f0",
+      borderRadius: 14,
+      padding: "0.9rem 1rem",
+      cursor: "pointer",
+      textAlign: "left" as const,
+      transition: "all 140ms ease",
+      boxShadow: active ? "0 0 0 1px rgba(34, 211, 238, 0.12)" : "none",
+    };
+  };
 
   return (
     <main style={{ background: "#f5f8f8", minHeight: "calc(100vh - 72px)", padding: "1.2rem 1.6rem 2rem" }}>
@@ -143,28 +194,60 @@ export default function TeacherStudentDetailPage() {
             </section>
 
             <section style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0,1fr))", gap: "0.9rem" }}>
-              <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "0.9rem 1rem" }}>
+              <button type="button" onClick={() => setSelectedType("COMPETENCY")} style={filterCardStyle("COMPETENCY")}>
                 <div style={{ color: "#64748b", fontWeight: 600, fontSize: "0.92rem" }}>Competencies</div>
                 <div style={{ fontSize: "2rem", fontWeight: 800, marginTop: "0.35rem" }}>{data.active_counts.competency}</div>
-              </div>
-              <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "0.9rem 1rem" }}>
+              </button>
+              <button type="button" onClick={() => setSelectedType("PARTIAL_UNDERSTANDING")} style={filterCardStyle("PARTIAL_UNDERSTANDING")}>
                 <div style={{ color: "#64748b", fontWeight: 600, fontSize: "0.92rem" }}>Partial Understanding</div>
                 <div style={{ fontSize: "2rem", fontWeight: 800, marginTop: "0.35rem" }}>{data.active_counts.partial_understanding}</div>
-              </div>
-              <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "0.9rem 1rem" }}>
+              </button>
+              <button type="button" onClick={() => setSelectedType("MISCONCEPTION")} style={filterCardStyle("MISCONCEPTION")}>
                 <div style={{ color: "#64748b", fontWeight: 600, fontSize: "0.92rem" }}>Misconceptions</div>
                 <div style={{ fontSize: "2rem", fontWeight: 800, marginTop: "0.35rem" }}>{data.active_counts.misconception}</div>
-              </div>
-              <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "0.9rem 1rem" }}>
+              </button>
+              <button type="button" onClick={() => setSelectedType("ALL")} style={filterCardStyle("ALL")}>
                 <div style={{ color: "#64748b", fontWeight: 600, fontSize: "0.92rem" }}>Active Insights</div>
                 <div style={{ fontSize: "2rem", fontWeight: 800, marginTop: "0.35rem" }}>{(data.active_insights || []).length}</div>
-              </div>
+              </button>
+            </section>
+
+            <section style={{ display: "flex", gap: "0.55rem", flexWrap: "wrap", alignItems: "center" }}>
+              {[
+                { key: "1d", label: "Past 1 Day" },
+                { key: "3d", label: "Past 3 Days" },
+                { key: "7d", label: "Past Week" },
+                { key: "30d", label: "Past Month" },
+              ].map((w) => {
+                const active = selectedWindow === w.key;
+                return (
+                  <button
+                    key={w.key}
+                    type="button"
+                    onClick={() => setSelectedWindow(w.key as "1d" | "3d" | "7d" | "30d")}
+                    style={{
+                      border: active ? "1px solid #22d3ee" : "1px solid #cbd5e1",
+                      background: active ? "#ecfeff" : "#fff",
+                      color: active ? "#0f172a" : "#334155",
+                      borderRadius: 999,
+                      padding: "0.33rem 0.65rem",
+                      fontSize: "0.78rem",
+                      fontWeight: 700,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {w.label}
+                  </button>
+                );
+              })}
             </section>
 
             <section style={{ display: "grid", gridTemplateColumns: "1.1fr 1.4fr", gap: "0.9rem" }}>
               <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.65rem" }}>
-                <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Active Insights</h2>
-                {(data.active_insights || []).map((ins) => {
+                <h2 style={{ margin: 0, fontSize: "1.1rem" }}>
+                  Active Insights {selectedType !== "ALL" ? `• ${selectedType.replaceAll("_", " ")}` : ""} • {selectedWindow.toUpperCase()}
+                </h2>
+                {activeInsightsFiltered.map((ins) => {
                   const cs = styleForType(ins.type);
                   return (
                     <article key={ins.id} style={{ border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.7rem 0.75rem" }}>
@@ -181,13 +264,19 @@ export default function TeacherStudentDetailPage() {
                     </article>
                   );
                 })}
-                {(data.active_insights || []).length === 0 && <div style={{ color: "#64748b" }}>No active insights yet.</div>}
+                {activeInsightsFiltered.length === 0 && (
+                  <div style={{ color: "#64748b" }}>
+                    No active insights for {selectedType === "ALL" ? "the current selection" : selectedType.replaceAll("_", " ").toLowerCase()}.
+                  </div>
+                )}
               </div>
 
               <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "1rem" }}>
-                <h2 style={{ marginTop: 0, marginBottom: "0.8rem", fontSize: "1.1rem" }}>Insight Timeline</h2>
+                <h2 style={{ marginTop: 0, marginBottom: "0.8rem", fontSize: "1.1rem" }}>
+                  Insight Timeline {selectedType !== "ALL" ? `• ${selectedType.replaceAll("_", " ")}` : ""} • {selectedWindow.toUpperCase()}
+                </h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem", maxHeight: 620, overflowY: "auto", paddingRight: "0.25rem" }}>
-                  {timelineSorted.map((t) => {
+                  {timelineFiltered.map((t) => {
                     const s = styleForType(t.type);
                     return (
                       <article key={t.id} style={{ border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.7rem 0.8rem", background: t.is_active ? "#f8fafc" : "#fff" }}>
@@ -215,7 +304,11 @@ export default function TeacherStudentDetailPage() {
                       </article>
                     );
                   })}
-                  {timelineSorted.length === 0 && <div style={{ color: "#64748b" }}>No insight timeline yet.</div>}
+                  {timelineFiltered.length === 0 && (
+                    <div style={{ color: "#64748b" }}>
+                      No insight timeline items for {selectedType === "ALL" ? "the current selection" : selectedType.replaceAll("_", " ").toLowerCase()}.
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
