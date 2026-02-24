@@ -15,9 +15,9 @@ class Settings(BaseSettings):
    
 
     # Neo4j
-    NEO4J_URI:str = "neo4j+s://763a18af.databases.neo4j.io"
-    NEO4J_USER:str = "neo4j"
-    NEO4J_PASSWORD:str = "xLLVtnzQuAJREwmkuEWVAvIcdBbIKEqJbHdDgUfvDG0"
+    NEO4J_URI: str = ""
+    NEO4J_USER: str = ""
+    NEO4J_PASSWORD: str = ""
 
     # LLM
     GEMINI_API_KEY: str = ""

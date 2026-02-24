@@ -196,8 +196,8 @@ async def admin_approve_teacher_application(
         claims["role"] = "teacher"
         claims["institute_id"] = app["institute_id"]
         fb_auth.set_custom_user_claims(app["uid"], claims)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to set teacher claims: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to set teacher claims")
 
     write_query(
         """
@@ -261,4 +261,3 @@ async def admin_reject_teacher_application(
     if not rows:
         raise HTTPException(status_code=404, detail="Pending application not found")
     return {"status": "ok", "application_id": application_id}
-

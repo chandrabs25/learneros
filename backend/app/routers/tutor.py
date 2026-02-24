@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import TypedDict
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from openai import OpenAI
 from langgraph.graph import StateGraph, END
@@ -17,6 +17,7 @@ from langgraph.graph import StateGraph, END
 from app.auth import get_optional_user, CurrentUser
 from app.config import settings
 from app.database import read_query, write_query
+from app.services.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/api", tags=["tutor"])
 
@@ -528,11 +529,19 @@ def _get_global_graph():
 async def tutor_chat(
     section_id: str,
     body: TutorChatPayload,
+    request: Request,
     user: CurrentUser | None = Depends(get_optional_user),
 ):
     msg = (body.message or "").strip()
     if not msg:
         raise HTTPException(status_code=400, detail="message is required")
+    enforce_rate_limit(
+        request,
+        scope="tutor_subsection_chat",
+        limit=30,
+        window_seconds=60,
+        user_key=user.student_id if user else None,
+    )
 
     session_id = body.session_id or f"tutor:{uuid.uuid4().hex}"
     history = _load_conversation_history(user.student_id, session_id, limit=12) if user else []
@@ -584,11 +593,19 @@ async def latest_subsection_tutor_session(
 @router.post("/tutor/chat", response_model=GlobalTutorChatResponse)
 async def global_tutor_chat(
     body: GlobalTutorChatPayload,
+    request: Request,
     user: CurrentUser | None = Depends(get_optional_user),
 ):
     msg = (body.message or "").strip()
     if not msg:
         raise HTTPException(status_code=400, detail="message is required")
+    enforce_rate_limit(
+        request,
+        scope="tutor_global_chat",
+        limit=30,
+        window_seconds=60,
+        user_key=user.student_id if user else None,
+    )
 
     session_id = body.session_id or f"global_tutor:{uuid.uuid4().hex}"
     history = _load_conversation_history(user.student_id, session_id, limit=12) if user else []

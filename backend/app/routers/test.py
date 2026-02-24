@@ -26,6 +26,7 @@ from openai import OpenAI
 from app.config import settings
 from app.database import read_query, write_query
 from app.services.generation_cache import build_generation_cache, stable_cache_key
+from app.services.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/api", tags=["test"])
 logger = logging.getLogger(__name__)
@@ -354,6 +355,7 @@ def _valid_mcq_payload(data: dict) -> bool:
 async def generate_question(
     section_id: str,
     subsection_id: str,
+    request: Request,
     response: Response,
     variant: int = 0,
 ):
@@ -371,6 +373,7 @@ async def generate_question(
             status_code=400,
             detail=f"subsection_id '{subsection_id}' not found in section '{section_id}'",
         )
+    enforce_rate_limit(request, scope="test_question_generation", limit=30, window_seconds=60)
     target_sub = next(s for s in meta["subsections"] if s["id"] == subsection_id)
 
     cache_key = stable_cache_key(
@@ -476,6 +479,13 @@ async def evaluate_answer(
     """Evaluate a student's answer and return structured insights.
     If authenticated, auto-persists insights to Neo4j."""
     _set_no_store_headers(response)
+    enforce_rate_limit(
+        request,
+        scope="test_question_evaluation",
+        limit=60,
+        window_seconds=60,
+        user_key=user.student_id if user else None,
+    )
     meta = _fetch_section_meta(section_id)
     context = meta["full_text"]
 
@@ -824,6 +834,7 @@ def _persist_insight_safe(student_id: str, ins: dict) -> None:
 async def generate_mcq(
     section_id: str,
     subsection_id: str,
+    request: Request,
     response: Response,
     concept_id: str | None = None,
     variant: int = 0,
@@ -839,6 +850,7 @@ async def generate_mcq(
             status_code=400,
             detail=f"subsection_id '{subsection_id}' not found in section '{section_id}'",
         )
+    enforce_rate_limit(request, scope="test_mcq_generation", limit=30, window_seconds=60)
     target_sub = next(s for s in meta["subsections"] if s["id"] == subsection_id)
 
     focus_concept = None
@@ -982,6 +994,13 @@ async def evaluate_mcq(
     """Evaluate an MCQ answer and return insights.
     If authenticated, auto-persists insights to Neo4j."""
     _set_no_store_headers(response)
+    enforce_rate_limit(
+        request,
+        scope="test_mcq_evaluation",
+        limit=60,
+        window_seconds=60,
+        user_key=user.student_id if user else None,
+    )
     meta = _fetch_section_meta(section_id)
     context = meta["full_text"]
     source_id = body.subsection_id
@@ -1118,6 +1137,13 @@ async def evaluate_exercise_answer(
 ):
     """Evaluate chapter-end exercise answers (text or image) and persist reconciled insights."""
     _set_no_store_headers(response)
+    enforce_rate_limit(
+        request,
+        scope="test_exercise_evaluation",
+        limit=20,
+        window_seconds=60,
+        user_key=user.student_id if user else None,
+    )
     meta = _fetch_section_meta(section_id)
     context = meta["full_text"]
     source_id = section_id

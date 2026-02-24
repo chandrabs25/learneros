@@ -21,33 +21,39 @@ export default function LatexText({
 }: LatexTextProps) {
     const html = useMemo(() => {
         if (!children) return "";
-        let text = children;
+        const escapeHtml = (value: string) =>
+            value
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#39;");
 
-        // Replace display math ($$...$$) first
-        text = text.replace(/\$\$([\s\S]*?)\$\$/g, (_match, tex) => {
-            try {
-                return katex.renderToString(tex.trim(), {
-                    displayMode: true,
-                    throwOnError: false,
-                });
-            } catch {
-                return `$$${tex}$$`;
+        const regex = /(\$\$[\s\S]*?\$\$|\$[^$\n]+?\$)/g;
+        const parts = children.split(regex).filter((part) => part.length > 0);
+        const rendered: string[] = [];
+
+        for (const part of parts) {
+            const isDisplay = part.startsWith("$$") && part.endsWith("$$");
+            const isInline = part.startsWith("$") && part.endsWith("$") && !isDisplay;
+            if (isDisplay || isInline) {
+                const tex = isDisplay ? part.slice(2, -2).trim() : part.slice(1, -1).trim();
+                try {
+                    rendered.push(
+                        katex.renderToString(tex, {
+                            displayMode: isDisplay,
+                            throwOnError: false,
+                        }),
+                    );
+                } catch {
+                    rendered.push(escapeHtml(part));
+                }
+                continue;
             }
-        });
+            rendered.push(escapeHtml(part));
+        }
 
-        // Replace inline math ($...$)
-        text = text.replace(/\$([^$\n]+?)\$/g, (_match, tex) => {
-            try {
-                return katex.renderToString(tex.trim(), {
-                    displayMode: false,
-                    throwOnError: false,
-                });
-            } catch {
-                return `$${tex}$`;
-            }
-        });
-
-        return text;
+        return rendered.join("");
     }, [children]);
 
     return (

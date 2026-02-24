@@ -35,8 +35,8 @@ def _resolve_uid(uid: str | None, email: str | None) -> str:
     try:
         user = fb_auth.get_user_by_email(email)
         return user.uid
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=f"User not found for email: {e}")
+    except Exception:
+        raise HTTPException(status_code=404, detail="User not found for email")
 
 
 def _ensure_teacher_link(uid: str, institute_id: str) -> None:
@@ -86,8 +86,8 @@ async def admin_set_user_claims(
     get_firebase_app()
     try:
         user = fb_auth.get_user(uid)
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=f"User not found for uid: {e}")
+    except Exception:
+        raise HTTPException(status_code=404, detail="User not found for uid")
 
     claims = dict(user.custom_claims or {})
     claims["role"] = body.role
@@ -99,8 +99,8 @@ async def admin_set_user_claims(
 
     try:
         fb_auth.set_custom_user_claims(uid, claims)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to set claims: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to set claims")
 
     return {
         "status": "ok",
@@ -121,8 +121,8 @@ async def admin_get_user_claims(
     get_firebase_app()
     try:
         user = fb_auth.get_user(resolved_uid)
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=f"User not found: {e}")
+    except Exception:
+        raise HTTPException(status_code=404, detail="User not found")
     return {
         "uid": user.uid,
         "email": user.email,

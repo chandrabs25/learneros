@@ -6,6 +6,8 @@ Two dependency functions:
   - get_optional_user:  OPTIONAL auth — returns None if no token (for teaching)
 """
 
+import logging
+
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -14,6 +16,7 @@ from app.database import write_query
 
 # Extracts "Bearer <token>" from Authorization header
 _bearer_scheme = HTTPBearer(auto_error=False)
+logger = logging.getLogger(__name__)
 
 
 class CurrentUser:
@@ -138,8 +141,9 @@ async def get_current_user(
 
     try:
         decoded = verify_id_token(credentials.credentials)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+    except Exception:
+        logger.exception("Token verification failed in get_current_user")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     role = str(decoded.get("role", "student")).lower()
     # Claims are the source of truth for authorization.
@@ -169,8 +173,9 @@ async def get_authenticated_user(
 
     try:
         decoded = verify_id_token(credentials.credentials)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+    except Exception:
+        logger.exception("Token verification failed in get_authenticated_user")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     return CurrentIdentity(
         uid=decoded["uid"],
@@ -229,8 +234,9 @@ async def get_current_teacher(
 
     try:
         decoded = verify_id_token(credentials.credentials)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+    except Exception:
+        logger.exception("Token verification failed in get_current_teacher")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     role = str(decoded.get("role", "")).lower()
     institute_id = decoded.get("institute_id")
@@ -261,8 +267,9 @@ async def get_current_admin(
 
     try:
         decoded = verify_id_token(credentials.credentials)
-    except Exception as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
+    except Exception:
+        logger.exception("Token verification failed in get_current_admin")
+        raise HTTPException(status_code=401, detail="Invalid token")
 
     role = str(decoded.get("role", "")).lower()
     if role not in {"admin", "superadmin"}:

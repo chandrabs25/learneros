@@ -58,20 +58,20 @@ async def delete_me(current_user: CurrentIdentity = Depends(get_authenticated_us
         )
         write_query(
             """
-            OPTIONAL MATCH (ta:TeacherApplication {uid: $uid})
+            OPTIONAL MATCH (ta:TeacherApplication {applicant_uid: $uid})
             DETACH DELETE ta
             """,
             uid=uid,
         )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete profile data: {e}")
+    except Exception:
+        raise HTTPException(status_code=500, detail="Failed to delete profile data")
 
     try:
         firebase_auth.delete_user(uid, app=get_firebase_app())
-    except Exception as e:
+    except Exception:
         raise HTTPException(
             status_code=500,
-            detail=f"Profile data deleted but failed to delete Firebase account: {e}",
+            detail="Profile data deleted but failed to delete Firebase account",
         )
 
     return {"status": "ok", "deleted": True}
