@@ -6,6 +6,22 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "LearnerOS",
   description: "Adaptive learning platform powered by AI",
+  icons: {
+    icon: "/icon.png",
+    apple: "/apple-icon.png",
+    shortcut: "/favicon.ico",
+  },
+  openGraph: {
+    title: "LearnerOS",
+    description: "Adaptive learning platform powered by AI",
+    images: ["/opengraph-image.png"],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "LearnerOS",
+    description: "Adaptive learning platform powered by AI",
+    images: ["/opengraph-image.png"],
+  },
 };
 
 export default function RootLayout({
@@ -44,4 +60,3 @@ export default function RootLayout({
     </html>
   );
 }
-
