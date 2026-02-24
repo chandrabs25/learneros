@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evolution: From Genetic Variation to Hominid Speciation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Roboto+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --membrane: #4A90D9;
+            --nucleus: #2C3E50;
+            --cytoplasm: #E8F4FD;
+            --dna-mat: #FF6B6B;
+            --dna-pat: #4A90D9;
+            --protein: #98D8C8;
+            --hominid-main: #F39C12;
+            --hominid-dark: #D68910;
+            --text-main: #333333;
+            --text-muted: #666666;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--nucleus);
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+            border: 1px solid #e9ecef;
+        }
+
+        /* Typography */
+        .title-text { font-family: 'Inter', sans-serif; font-weight: 600; fill: var(--nucleus); }
+        .label-text { font-family: 'Inter', sans-serif; font-weight: 500; fill: var(--text-main); font-size: 14px; }
+        .sci-text { font-family: 'Roboto Mono', monospace; font-style: italic; fill: var(--text-main); font-size: 13px; }
+        .sub-text { font-family: 'Roboto Mono', monospace; fill: var(--text-muted); font-size: 11px; }
+        .legend-text { font-family: 'Inter', sans-serif; font-size: 11px; fill: var(--text-main); }
+
+        /* Animations */
+        .chr-mat { animation: moveMat 20s infinite ease-in-out; }
+        .chr-pat { animation: movePat 20s infinite ease-in-out; }
+        .tip-orig { animation: fadeOutTip 20s infinite ease-in-out; }
+        .tip-swap { animation: fadeInTip 20s infinite ease-in-out; opacity: 0; }
+        .pulse-arrow { animation: shootPulse 20s infinite ease-in-out; stroke-dasharray: 15 250; stroke-dashoffset: 265; opacity: 0; }
+        
+        .hominid-1 { animation: appear1 20s infinite ease-in-out; opacity: 0; }
+        .hominid-2 { animation: appear2 20s infinite ease-in-out; opacity: 0; }
+        .hominid-3 { animation: appear3 20s infinite ease-in-out; opacity: 0; }
+        .hominid-4 { animation: appear4 20s infinite ease-in-out; opacity: 0; }
+        .hominid-5 { animation: appear5 20s infinite ease-in-out; opacity: 0; }
+        .brain-pulse { animation: pulseBrain 20s infinite ease-in-out; }
+
+        /* Keyframes */
+        @keyframes moveMat {
+            0%, 10% { transform: translateX(0); }
+            15%, 85% { transform: translateX(14px); }
+            90%, 100% { transform: translateX(0); }
+        }
+        @keyframes movePat {
+            0%, 10% { transform: translateX(0); }
+            15%, 85% { transform: translateX(-14px); }
+            90%, 100% { transform: translateX(0); }
+        }
+        @keyframes fadeOutTip {
+            0%, 16% { opacity: 1; }
+            20%, 85% { opacity: 0; }
+            89%, 100% { opacity: 1; }
+        }
+        @keyframes fadeInTip {
+            0%, 16% { opacity: 0; }
+            20%, 85% { opacity: 1; }
+            89%, 100% { opacity: 0; }
+        }
+        @keyframes shootPulse {
+            0%, 24% { stroke-dashoffset: 265; opacity: 0; }
+            25% { opacity: 1; }
+            35% { stroke-dashoffset: 0; opacity: 1; }
+            36%, 100% { opacity: 0; }
+        }
+        @keyframes appear1 {
+            0%, 39% { opacity: 0; transform: translateY(10px); }
+            42%, 92% { opacity: 1; transform: translateY(0); }
+            96%, 100% { opacity: 0; }
+        }
+        @keyframes appear2 {
+            0%, 49% { opacity: 0; transform: translateY(10px); }
+            52%, 92% { opacity: 1; transform: translateY(0); }
+            96%, 100% { opacity: 0; }
+        }
+        @keyframes appear3 {
+            0%, 59% { opacity: 0; transform: translateY(10px); }
+            62%, 92% { opacity: 1; transform: translateY(0); }
+            96%, 100% { opacity: 0; }
+        }
+        @keyframes appear4 {
+            0%, 69% { opacity: 0; transform: translateY(10px); }
+            72%, 92% { opacity: 1; transform: translateY(0); }
+            96%, 100% { opacity: 0; }
+        }
+        @keyframes appear5 {
+            0%, 79% { opacity: 0; transform: translateY(10px); }
+            82%, 92% { opacity: 1; transform: translateY(0); }
+            96%, 100% { opacity: 0; }
+        }
+        @keyframes pulseBrain {
+            0%, 82% { r: 0; opacity: 0; }
+            85%, 92% { r: 6px; opacity: 1; }
+            96%, 100% { r: 0; opacity: 0; }
+        }
+        @keyframes pulseBrainSmall {
+            0%, 72% { r: 0; opacity: 0; }
+            75%, 92% { r: 3.5px; opacity: 1; }
+            96%, 100% { r: 0; opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>The Mechanisms and Milestones of Hominid Evolution</h1>
+    
+    <svg viewBox="0 0 850 550" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram showing meiosis and hominid evolution">
+        <title>Evolution: From Genetic Variation to Hominid Speciation</title>
+        <desc>An animation demonstrating how genetic variation generated during meiosis (crossing over) provides the foundation for macro-evolutionary changes, illustrated by the progression of hominid species from Dryopithecus to Homo sapiens.</desc>
+
+        <!-- Definitions for gradients and markers -->
+        <defs>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#98D8C8" />
+            </marker>
+            <linearGradient id="variationGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#FF6B6B" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#98D8C8" stop-opacity="0.8"/>
+            </linearGradient>
+        </defs>
+
+        <!-- Background Grid/Accents (Subtle) -->
+        <line x1="360" y1="420" x2="800" y2="420" stroke="#e9ecef" stroke-width="2" stroke-dasharray="6 6" />
+
+        <!-- ========================================== -->
+        <!-- ZONE 1: THE GENETIC ENGINE (MEIOSIS)       -->
+        <!-- ========================================== -->
+        <g id="meiosis-zone">
+            <!-- Cell Membrane -->
+            <circle cx="160" cy="260" r="110" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="3" />
+            
+            <!-- Nucleus (Prophase I) -->
+            <circle cx="160" cy="260" r="75" fill="none" stroke="var(--nucleus)" stroke-width="2" stroke-dasharray="5 5" />
+            
+            <!-- Chromosomes Group -->
+            <g id="chromosomes">
+                <!-- Maternal Chromosome (Red) -->
+                <g class="chr-mat">
+                    <!-- Top Left -->
+                    <path d="M 115 200 L 135 260" stroke="var(--dna-mat)" stroke-width="8" stroke-linecap="round" />
+                    <!-- Bottom Left -->
+                    <path d="M 115 320 L 135 260" stroke="var(--dna-mat)" stroke-width="8" stroke-linecap="round" />
+                    <!-- Top Right -->
+                    <path d="M 155 200 L 135 260" stroke="var(--dna-mat)" stroke-width="8" stroke-linecap="round" />
+                    <!-- Bottom Right (Main Body) -->
+                    <path d="M 135 260 L 145 290" stroke="var(--dna-mat)" stroke-width="8" stroke-linecap="round" />
+                    
+                    <!-- Bottom Right Tip (Original Red) -->
+                    <path d="M 145 290 L 155 320" stroke="var(--dna-mat)" stroke-width="8" stroke-linecap="round" class="tip-orig" />
+                    <!-- Bottom Right Tip (Swapped Blue) -->
+                    <path d="M 145 290 L 155 320" stroke="var(--dna-pat)" stroke-width="8" stroke-linecap="round" class="tip-swap" />
+                    
+                    <!-- Centromere -->
+                    <circle cx="135" cy="260" r="5" fill="#ffffff" stroke="var(--dna-mat)" stroke-width="2" />
+                </g>
+
+                <!-- Paternal Chromosome (Blue) -->
+                <g class="chr-pat">
+                    <!-- Top Right -->
+                    <path d="M 205 200 L 185 260" stroke="var(--dna-pat)" stroke-width="8" stroke-linecap="round" />
+                    <!-- Bottom Right -->
+                    <path d="M 205 320 L 185 260" stroke="var(--dna-pat)" stroke-width="8" stroke-linecap="round" />
+                    <!-- Top Left -->
+                    <path d="M 165 200 L 185 260" stroke="var(--dna-pat)" stroke-width="8" stroke-linecap="round" />
+                    <!-- Bottom Left (Main Body) -->
+                    <path d="M 185 260 L 175 290" stroke="var(--dna-pat)" stroke-width="8" stroke-linecap="round" />
+                    
+                    <!-- Bottom Left Tip (Original Blue) -->
+                    <path d="M 175 290 L 165 320" stroke="var(--dna-pat)" stroke-width="8" stroke-linecap="round" class="tip-orig" />
+                    <!-- Bottom Left Tip (Swapped Red) -->
+                    <path d="M 175 290 L 165 320" stroke="var(--dna-mat)" stroke-width="8" stroke-linecap="round" class="tip-swap" />
+                    
+                    <!-- Centromere -->
+                    <circle cx="185" cy="260" r="5" fill="#ffffff" stroke="var(--dna-pat)" stroke-width="2" />
+                </g>
+            </g>
+
+            <!-- Labels for Meiosis -->
+            <text x="160" y="400" text-anchor="middle" class="label-text">Meiosis: Crossing Over</text>
+            <text x="160" y="420" text-anchor="middle" class="sub-text">Recombination of Homologous Chromosomes</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- ZONE 2: THE EVOLUTIONARY FLOW              -->
+        <!-- ========================================== -->
+        <g id="flow-zone">
+            <!-- Base Path -->
+            <path d="M 280 260 Q 330 260 350 330 T 380 420" fill="none" stroke="url(#variationGrad)" stroke-width="4" marker-end="url(#arrowhead)" />
+            
+            <!-- Animated Pulse (Shooting Star effect) -->
+            <path d="M 280 260 Q 330 260 350 330 T 380 420" fill="none" stroke="var(--protein)" stroke-width="6" stroke-linecap="round" class="pulse-arrow" />
+            
+            <!-- Flow Label -->
+            <text x="430" y="140" text-anchor="middle" class="label-text" fill="var(--protein)">Genetic Recombination → Phenotypic Diversity</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- ZONE 3: THE PHENOTYPIC TIMELINE (HOMINIDS) -->
+        <!-- ========================================== -->
+        <g id="timeline-zone">
+            <!-- Timeline Base -->
+            <line x1="360" y1="420" x2="800" y2="420" stroke="var(--nucleus)" stroke-width="3" stroke-linecap="round" />
+            
+            <!-- 1. Dryopithecus (~15 mya) -->
+            <g class="hominid-1">
+                <!-- Back Limbs (Darker) -->
+                <path d="M 410 378 L 415 420" stroke="var(--hominid-dark)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 390 395 L 385 420" stroke="var(--hominid-dark)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Torso (Hunched/Horizontal) -->
+                <path d="M 415 375 Q 395 375 390 395" stroke="var(--hominid-main)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Front Limbs -->
+                <path d="M 390 395 L 395 420" stroke="var(--hominid-main)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 405 378 L 425 420" stroke="var(--hominid-main)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Head -->
+                <circle cx="420" cy="370" r="10" fill="var(--hominid-main)" />
+                <!-- Label -->
+                <text x="405" y="450" text-anchor="middle" class="sci-text">Dryopithecus</text>
+                <text x="405" y="468" text-anchor="middle" class="sub-text">~15 mya</text>
+            </g>
+
+            <!-- 2. Ramapithecus (~14 mya) -->
+            <g class="hominid-2">
+                <!-- Back Limbs -->
+                <path d="M 495 365 L 505 400" stroke="var(--hominid-dark)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 480 390 L 475 420" stroke="var(--hominid-dark)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Torso (Slightly more upright) -->
+                <path d="M 495 355 Q 480 370 480 390" stroke="var(--hominid-main)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Front Limbs -->
+                <path d="M 480 390 L 485 420" stroke="var(--hominid-main)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 490 360 L 505 400" stroke="var(--hominid-main)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Head -->
+                <circle cx="500" cy="350" r="11" fill="var(--hominid-main)" />
+                <!-- Label -->
+                <text x="490" y="485" text-anchor="middle" class="sci-text">Ramapithecus</text>
+                <text x="490" y="503" text-anchor="middle" class="sub-text">~14 mya</text>
+            </g>
+
+            <!-- 3. Australopithecus (~2-4 mya) -->
+            <g class="hominid-3">
+                <!-- Back Limbs -->
+                <path d="M 580 335 L 595 370" stroke="var(--hominid-dark)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 575 385 L 570 420" stroke="var(--hominid-dark)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Torso (Bipedal, curved spine) -->
+                <path d="M 582 330 Q 570 360 575 385" stroke="var(--hominid-main)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Front Limbs -->
+                <path d="M 575 385 L 585 420" stroke="var(--hominid-main)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 580 335 L 595 370" stroke="var(--hominid-main)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Head -->
+                <circle cx="585" cy="320" r="12" fill="var(--hominid-main)" />
+                <!-- Label -->
+                <text x="580" y="450" text-anchor="middle" class="sci-text">Australopithecus</text>
+                <text x="580" y="468" text-anchor="middle" class="sub-text">~2-4 mya</text>
+            </g>
+
+            <!-- 4. Homo habilis (~2 mya) -->
+            <g class="hominid-4">
+                <!-- Back Limbs -->
+                <path d="M 668 310 L 685 350" stroke="var(--hominid-dark)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 665 375 L 660 420" stroke="var(--hominid-dark)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Torso (Erect) -->
+                <path d="M 668 300 Q 660 340 665 375" stroke="var(--hominid-main)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Front Limbs -->
+                <path d="M 665 375 L 670 420" stroke="var(--hominid-main)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 668 310 L 685 350" stroke="var(--hominid-main)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Tool -->
+                <circle cx="685" cy="350" r="4" fill="#7F8C8D" />
+                <!-- Head & Brain -->
+                <circle cx="670" cy="290" r="13" fill="var(--hominid-main)" />
+                <circle cx="672" cy="288" r="3.5" fill="var(--nucleus)" style="animation: pulseBrainSmall 20s infinite ease-in-out;" />
+                <!-- Label -->
+                <text x="670" y="485" text-anchor="middle" class="sci-text">Homo habilis</text>
+                <text x="670" y="503" text-anchor="middle" class="sub-text">~2 mya (650cc)</text>
+            </g>
+
+            <!-- 5. Homo sapiens (Modern) -->
+            <g class="hominid-5">
+                <!-- Back Limbs -->
+                <path d="M 760 275 L 750 320" stroke="var(--hominid-dark)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 760 360 L 750 420" stroke="var(--hominid-dark)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Torso (Fully Erect) -->
+                <path d="M 760 264 L 760 360" stroke="var(--hominid-main)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Front Limbs -->
+                <path d="M 760 360 L 765 420" stroke="var(--hominid-main)" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M 760 275 L 775 330" stroke="var(--hominid-main)" stroke-width="7" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+                <!-- Spear -->
+                <path d="M 765 340 L 790 200" stroke="#7F8C8D" stroke-width="3" fill="none" stroke-linecap="round" />
+                <!-- Head & Brain -->
+                <circle cx="760" cy="250" r="14" fill="var(--hominid-main)" />
+                <circle cx="762" cy="247" r="6" fill="var(--nucleus)" class="brain-pulse" />
+                <!-- Label -->
+                <text x="760" y="450" text-anchor="middle" class="sci-text">Homo sapiens</text>
+                <text x="760" y="468" text-anchor="middle" class="sub-text">Modern (1400cc)</text>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- LEGEND                                     -->
+        <!-- ========================================== -->
+        <g id="legend" transform="translate(640, 20)">
+            <rect x="0" y="0" width="180" height="95" fill="#ffffff" stroke="#e9ecef" stroke-width="1" rx="6" />
+            <text x="10" y="20" class="label-text" font-size="12" font-weight="600">Legend</text>
+            
+            <circle cx="15" cy="35" r="5" fill="var(--dna-mat)" />
+            <text x="28" y="39" class="legend-text">Maternal DNA</text>
+            
+            <circle cx="15" cy="50" r="5" fill="var(--dna-pat)" />
+            <text x="28" y="54" class="legend-text">Paternal DNA</text>
+            
+            <circle cx="15" cy="65" r="5" fill="var(--hominid-main)" />
+            <text x="28" y="69" class="legend-text">Phenotype (Hominid)</text>
+            
+            <circle cx="15" cy="80" r="5" fill="var(--nucleus)" />
+            <text x="28" y="84" class="legend-text">Cranial Capacity</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

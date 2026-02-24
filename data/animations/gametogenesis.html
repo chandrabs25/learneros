@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gametogenesis: Spermatogenesis vs. Oogenesis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px;
+        }
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+        text {
+            user-select: none;
+        }
+        .ploidy {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            fill: #E74C3C;
+        }
+        .ploidy-n {
+            fill: #3498DB;
+        }
+        
+        /* Animation Classes */
+        .anim-element {
+            animation-duration: 20s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+            animation-fill-mode: both;
+        }
+
+        /* Spermatogenesis Keyframes */
+        @keyframes sp-gonia {
+            0%, 5% { transform: translate(250px, 80px) scale(1); opacity: 1; }
+            15%, 20% { transform: translate(250px, 140px) scale(1); opacity: 1; }
+            30%, 35% { transform: translate(250px, 260px) scale(1.3); opacity: 1; }
+            35.01%, 100% { opacity: 0; transform: translate(250px, 260px) scale(1.3); }
+        }
+        @keyframes sp-stem {
+            0%, 14.99% { opacity: 0; transform: translate(250px, 140px); }
+            15% { opacity: 1; transform: translate(250px, 140px); }
+            20%, 95% { opacity: 1; transform: translate(350px, 140px); }
+            96%, 100% { opacity: 0; transform: translate(350px, 140px); }
+        }
+        @keyframes sp-sec1 {
+            0%, 35% { opacity: 0; transform: translate(250px, 260px) scale(1.3); }
+            35.01% { opacity: 1; transform: translate(250px, 260px) scale(1); }
+            45%, 55% { opacity: 1; transform: translate(190px, 400px) scale(1); }
+            55.01%, 100% { opacity: 0; transform: translate(190px, 400px) scale(1); }
+        }
+        @keyframes sp-sec2 {
+            0%, 35% { opacity: 0; transform: translate(250px, 260px) scale(1.3); }
+            35.01% { opacity: 1; transform: translate(250px, 260px) scale(1); }
+            45%, 55% { opacity: 1; transform: translate(310px, 400px) scale(1); }
+            55.01%, 100% { opacity: 0; transform: translate(310px, 400px) scale(1); }
+        }
+        @keyframes sp-tid1 {
+            0%, 55% { opacity: 0; transform: translate(190px, 400px); }
+            55.01% { opacity: 1; transform: translate(190px, 400px); }
+            65%, 75% { opacity: 1; transform: translate(160px, 540px); }
+            85%, 95% { opacity: 1; transform: translate(160px, 680px); }
+            96%, 100% { opacity: 0; transform: translate(160px, 680px); }
+        }
+        @keyframes sp-tid2 {
+            0%, 55% { opacity: 0; transform: translate(190px, 400px); }
+            55.01% { opacity: 1; transform: translate(190px, 400px); }
+            65%, 75% { opacity: 1; transform: translate(220px, 540px); }
+            85%, 95% { opacity: 1; transform: translate(220px, 680px); }
+            96%, 100% { opacity: 0; transform: translate(220px, 680px); }
+        }
+        @keyframes sp-tid3 {
+            0%, 55% { opacity: 0; transform: translate(310px, 400px); }
+            55.01% { opacity: 1; transform: translate(310px, 400px); }
+            65%, 75% { opacity: 1; transform: translate(280px, 540px); }
+            85%, 95% { opacity: 1; transform: translate(280px, 680px); }
+            96%, 100% { opacity: 0; transform: translate(280px, 680px); }
+        }
+        @keyframes sp-tid4 {
+            0%, 55% { opacity: 0; transform: translate(310px, 400px); }
+            55.01% { opacity: 1; transform: translate(310px, 400px); }
+            65%, 75% { opacity: 1; transform: translate(340px, 540px); }
+            85%, 95% { opacity: 1; transform: translate(340px, 680px); }
+            96%, 100% { opacity: 0; transform: translate(340px, 680px); }
+        }
+
+        /* Oogenesis Keyframes */
+        @keyframes egg-gonia {
+            0%, 5% { transform: translate(650px, 80px) scale(1); opacity: 1; }
+            15%, 20% { transform: translate(650px, 140px) scale(1); opacity: 1; }
+            30%, 35% { transform: translate(650px, 260px) scale(1.8); opacity: 1; }
+            35.01%, 100% { opacity: 0; transform: translate(650px, 260px) scale(1.8); }
+        }
+        @keyframes egg-stem {
+            0%, 14.99% { opacity: 0; transform: translate(650px, 140px); }
+            15% { opacity: 1; transform: translate(650px, 140px); }
+            20%, 95% { opacity: 1; transform: translate(550px, 140px); }
+            96%, 100% { opacity: 0; transform: translate(550px, 140px); }
+        }
+        @keyframes egg-sec {
+            0%, 35% { opacity: 0; transform: translate(650px, 260px) scale(1.8); }
+            35.01% { opacity: 1; transform: translate(650px, 260px) scale(1.6); }
+            45%, 55% { opacity: 1; transform: translate(630px, 400px) scale(1.6); }
+            55.01%, 100% { opacity: 0; transform: translate(630px, 400px) scale(1.6); }
+        }
+        @keyframes egg-pb1 {
+            0%, 35% { opacity: 0; transform: translate(650px, 260px) scale(1.8); }
+            35.01% { opacity: 1; transform: translate(650px, 260px) scale(0.4); }
+            45%, 95% { opacity: 1; transform: translate(730px, 400px) scale(0.4); }
+            96%, 100% { opacity: 0; transform: translate(730px, 400px) scale(0.4); }
+        }
+        @keyframes egg-ootid {
+            0%, 55% { opacity: 0; transform: translate(630px, 400px) scale(1.6); }
+            55.01% { opacity: 1; transform: translate(630px, 400px) scale(1.5); }
+            65%, 75% { opacity: 1; transform: translate(630px, 540px) scale(1.5); }
+            85%, 95% { opacity: 1; transform: translate(630px, 680px) scale(1.5); }
+            96%, 100% { opacity: 0; transform: translate(630px, 680px) scale(1.5); }
+        }
+        @keyframes egg-pb2 {
+            0%, 55% { opacity: 0; transform: translate(630px, 400px) scale(1.6); }
+            55.01% { opacity: 1; transform: translate(630px, 400px) scale(0.3); }
+            65%, 95% { opacity: 1; transform: translate(710px, 540px) scale(0.3); }
+            96%, 100% { opacity: 0; transform: translate(710px, 540px) scale(0.3); }
+        }
+
+        /* Internal Cell Animations */
+        @keyframes fade-out-dna { 0%, 15% { opacity: 1; } 20%, 100% { opacity: 0; } }
+        @keyframes fade-in-dna { 0%, 15% { opacity: 0; } 20%, 100% { opacity: 1; } }
+        
+        @keyframes head-shrink {
+            0%, 75% { transform: scale(1); }
+            85%, 100% { transform: scale(0.55); }
+        }
+        @keyframes tail-grow {
+            0%, 75% { stroke-dashoffset: 60; opacity: 0; }
+            76% { opacity: 1; }
+            85%, 100% { stroke-dashoffset: 0; opacity: 1; }
+        }
+        @keyframes zp-appear {
+            0%, 75% { stroke-width: 0; opacity: 0; }
+            85%, 100% { stroke-width: 6; opacity: 0.4; }
+        }
+
+        /* Apply Animations */
+        .sp-gonia { animation-name: sp-gonia; }
+        .sp-stem { animation-name: sp-stem; }
+        .sp-sec1 { animation-name: sp-sec1; }
+        .sp-sec2 { animation-name: sp-sec2; }
+        .sp-tid1 { animation-name: sp-tid1; }
+        .sp-tid2 { animation-name: sp-tid2; }
+        .sp-tid3 { animation-name: sp-tid3; }
+        .sp-tid4 { animation-name: sp-tid4; }
+
+        .egg-gonia { animation-name: egg-gonia; }
+        .egg-stem { animation-name: egg-stem; }
+        .egg-sec { animation-name: egg-sec; }
+        .egg-pb1 { animation-name: egg-pb1; }
+        .egg-ootid { animation-name: egg-ootid; }
+        .egg-pb2 { animation-name: egg-pb2; }
+
+        .dna-unrep { animation: fade-out-dna 20s infinite linear; }
+        .dna-rep { animation: fade-in-dna 20s infinite linear; }
+        .sperm-head { animation: head-shrink 20s infinite ease-in-out; }
+        .sperm-tail { animation: tail-grow 20s infinite ease-in-out; }
+        .zona-pellucida { animation: zp-appear 20s infinite ease-in-out; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 900 750" aria-label="Animated diagram comparing Spermatogenesis and Oogenesis">
+        <title>Gametogenesis: Spermatogenesis vs. Oogenesis</title>
+        <desc>An animated biological diagram showing the stages of gamete formation. On the left, spermatogenesis produces four equal spermatozoa from one spermatogonium. On the right, oogenesis produces one large ovum and two small polar bodies from one oogonium. The animation highlights ploidy changes and cellular differentiation.</desc>
+
+        <defs>
+            <!-- Chromosome X (Replicated) -->
+            <g id="chr-x" stroke="#FF6B6B" stroke-width="1.5" stroke-linecap="round">
+                <line x1="-3" y1="-3" x2="3" y2="3"/>
+                <line x1="-3" y1="3" x2="3" y2="-3"/>
+            </g>
+            <!-- Chromosome I (Unreplicated) -->
+            <g id="chr-i" stroke="#FF6B6B" stroke-width="1.5" stroke-linecap="round">
+                <line x1="0" y1="-3" x2="0" y2="3"/>
+            </g>
+            
+            <!-- DNA States -->
+            <g id="dna-2n-unrep">
+                <use href="#chr-i" x="-5" y="-3" transform="rotate(15)"/>
+                <use href="#chr-i" x="5" y="-3" transform="rotate(-15)"/>
+                <use href="#chr-i" x="-3" y="4" transform="rotate(45)"/>
+                <use href="#chr-i" x="3" y="4" transform="rotate(-45)"/>
+            </g>
+            <g id="dna-2n-rep">
+                <use href="#chr-x" x="-5" y="-3"/>
+                <use href="#chr-x" x="5" y="-3"/>
+                <use href="#chr-x" x="-3" y="4" transform="scale(0.8)"/>
+                <use href="#chr-x" x="3" y="4" transform="scale(0.8)"/>
+            </g>
+            <g id="dna-n-rep">
+                <use href="#chr-x" x="-2" y="0"/>
+                <use href="#chr-x" x="4" y="2" transform="scale(0.8)"/>
+            </g>
+            <g id="dna-n-unrep">
+                <use href="#chr-i" x="-2" y="0"/>
+                <use href="#chr-i" x="3" y="2"/>
+            </g>
+
+            <!-- Base Cell -->
+            <g id="base-cell">
+                <circle r="15" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+                <circle r="7" fill="#2C3E50" opacity="0.8"/>
+            </g>
+        </defs>
+
+        <!-- Background Flow Lines -->
+        <g stroke="#98D8C8" stroke-width="2" stroke-dasharray="4 4" fill="none" opacity="0.6">
+            <!-- Spermatogenesis Paths -->
+            <path d="M 250,80 L 250,260"/>
+            <path d="M 250,140 L 350,140"/>
+            <path d="M 250,260 L 190,400"/>
+            <path d="M 250,260 L 310,400"/>
+            <path d="M 190,400 L 160,540 L 160,680"/>
+            <path d="M 190,400 L 220,540 L 220,680"/>
+            <path d="M 310,400 L 280,540 L 280,680"/>
+            <path d="M 310,400 L 340,540 L 340,680"/>
+
+            <!-- Oogenesis Paths -->
+            <path d="M 650,80 L 650,260"/>
+            <path d="M 650,140 L 550,140"/>
+            <path d="M 650,260 L 630,400"/>
+            <path d="M 650,260 L 730,400"/>
+            <path d="M 630,400 L 630,540 L 630,680"/>
+            <path d="M 630,400 L 710,540"/>
+        </g>
+
+        <!-- Divider Line -->
+        <line x1="450" y1="60" x2="450" y2="720" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="8 8"/>
+
+        <!-- Static Typography -->
+        <text x="450" y="35" font-size="22" font-weight="700" text-anchor="middle" fill="#2C3E50">Gametogenesis: Spermatogenesis vs. Oogenesis</text>
+        
+        <text x="250" y="65" font-size="16" font-weight="600" text-anchor="middle" fill="#4A90D9">Testis (Spermatogenesis)</text>
+        <text x="650" y="65" font-size="16" font-weight="600" text-anchor="middle" fill="#E74C3C">Ovary (Oogenesis)</text>
+
+        <!-- Phase Labels (Right) -->
+        <g font-size="13" font-weight="600" text-anchor="end" fill="#7F8C8D">
+            <text x="880" y="145">Multiplication Phase</text>
+            <text x="880" y="265">Growth Phase</text>
+            <text x="880" y="405">Meiosis I (Maturation)</text>
+            <text x="880" y="545">Meiosis II (Maturation)</text>
+            <text x="880" y="685">Differentiation</text>
+        </g>
+
+        <!-- Cell Labels (Sperm - Left) -->
+        <g font-size="13" font-weight="600" text-anchor="end" fill="#2C3E50">
+            <text x="140" y="85">Spermatogonium <tspan class="ploidy">(2n)</tspan></text>
+            <text x="140" y="265">Primary Spermatocyte <tspan class="ploidy">(2n)</tspan></text>
+            <text x="140" y="405">Secondary Spermatocytes <tspan class="ploidy ploidy-n">(n)</tspan></text>
+            <text x="140" y="545">Spermatids <tspan class="ploidy ploidy-n">(n)</tspan></text>
+            <text x="140" y="685">Spermatozoa <tspan class="ploidy ploidy-n">(n)</tspan></text>
+        </g>
+
+        <!-- Cell Labels (Egg - Right) -->
+        <g font-size="13" font-weight="600" text-anchor="start" fill="#2C3E50">
+            <text x="760" y="85">Oogonium <tspan class="ploidy">(2n)</tspan></text>
+            <text x="760" y="260">Primary Oocyte <tspan class="ploidy">(2n)</tspan></text>
+            <text x="760" y="278" font-size="10" font-weight="400" fill="#E74C3C">Arrested in Prophase I until puberty</text>
+            <text x="760" y="400">Secondary Oocyte <tspan class="ploidy ploidy-n">(n)</tspan></text>
+            <text x="760" y="418" font-size="10" font-weight="400" fill="#7F8C8D">+ 1st Polar Body</text>
+            <text x="760" y="540">Ootid <tspan class="ploidy ploidy-n">(n)</tspan></text>
+            <text x="760" y="558" font-size="10" font-weight="400" fill="#7F8C8D">+ 2nd Polar Body</text>
+            <text x="760" y="685">Ovum <tspan class="ploidy ploidy-n">(n)</tspan></text>
+        </g>
+
+        <!-- ANIMATED ELEMENTS -->
+
+        <!-- SPERMATOGENESIS -->
+        <g class="anim-element sp-gonia">
+            <use href="#base-cell"/>
+            <g class="dna-unrep"><use href="#dna-2n-unrep"/></g>
+            <g class="dna-rep"><use href="#dna-2n-rep"/></g>
+        </g>
+        
+        <g class="anim-element sp-stem">
+            <use href="#base-cell"/>
+            <use href="#dna-2n-unrep"/>
+            <text x="25" y="4" font-size="10" fill="#7F8C8D">Stem Cell</text>
+        </g>
+
+        <g class="anim-element sp-sec1">
+            <use href="#base-cell"/>
+            <use href="#dna-n-rep"/>
+        </g>
+        <g class="anim-element sp-sec2">
+            <use href="#base-cell"/>
+            <use href="#dna-n-rep"/>
+        </g>
+
+        <!-- Spermatids / Spermatozoa -->
+        <!-- Tid 1 -->
+        <g class="anim-element sp-tid1">
+            <path class="sperm-tail" d="M 0,5 Q 8,20 0,35 T 0,60" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="60"/>
+            <g class="sperm-head">
+                <use href="#base-cell"/>
+                <use href="#dna-n-unrep"/>
+            </g>
+        </g>
+        <!-- Tid 2 -->
+        <g class="anim-element sp-tid2">
+            <path class="sperm-tail" d="M 0,5 Q -8,20 0,35 T 0,60" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="60"/>
+            <g class="sperm-head">
+                <use href="#base-cell"/>
+                <use href="#dna-n-unrep"/>
+            </g>
+        </g>
+        <!-- Tid 3 -->
+        <g class="anim-element sp-tid3">
+            <path class="sperm-tail" d="M 0,5 Q 8,20 0,35 T 0,60" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="60"/>
+            <g class="sperm-head">
+                <use href="#base-cell"/>
+                <use href="#dna-n-unrep"/>
+            </g>
+        </g>
+        <!-- Tid 4 -->
+        <g class="anim-element sp-tid4">
+            <path class="sperm-tail" d="M 0,5 Q -8,20 0,35 T 0,60" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="60"/>
+            <g class="sperm-head">
+                <use href="#base-cell"/>
+                <use href="#dna-n-unrep"/>
+            </g>
+        </g>
+
+
+        <!-- OOGENESIS -->
+        <g class="anim-element egg-gonia">
+            <use href="#base-cell"/>
+            <g class="dna-unrep"><use href="#dna-2n-unrep"/></g>
+            <g class="dna-rep"><use href="#dna-2n-rep"/></g>
+        </g>
+
+        <g class="anim-element egg-stem">
+            <use href="#base-cell"/>
+            <use href="#dna-2n-unrep"/>
+            <text x="-25" y="4" font-size="10" text-anchor="end" fill="#7F8C8D">Stem Cell</text>
+        </g>
+
+        <g class="anim-element egg-sec">
+            <use href="#base-cell"/>
+            <use href="#dna-n-rep"/>
+        </g>
+
+        <g class="anim-element egg-pb1">
+            <use href="#base-cell"/>
+            <use href="#dna-n-rep"/>
+        </g>
+
+        <g class="anim-element egg-ootid">
+            <circle class="zona-pellucida" r="18" fill="none" stroke="#F39C12"/>
+            <use href="#base-cell"/>
+            <use href="#dna-n-unrep"/>
+        </g>
+
+        <g class="anim-element egg-pb2">
+            <use href="#base-cell"/>
+            <use href="#dna-n-unrep"/>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(20, 720)" font-size="11" font-weight="600" fill="#2C3E50">
+            <circle cx="10" cy="-4" r="6" fill="#E8F4FD" stroke="#4A90D9" stroke-width="1.5"/>
+            <text x="22" y="0">Cell Membrane & Cytoplasm</text>
+            
+            <circle cx="200" cy="-4" r="5" fill="#2C3E50" opacity="0.8"/>
+            <text x="212" y="0">Nucleus</text>
+
+            <g transform="translate(280, -4)">
+                <line x1="-3" y1="-3" x2="3" y2="3" stroke="#FF6B6B" stroke-width="1.5"/>
+                <line x1="-3" y1="3" x2="3" y2="-3" stroke="#FF6B6B" stroke-width="1.5"/>
+            </g>
+            <text x="292" y="0">DNA / Chromosomes</text>
+
+            <circle cx="430" cy="-4" r="6" fill="none" stroke="#F39C12" stroke-width="3" opacity="0.5"/>
+            <text x="442" y="0">Zona Pellucida</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

@@ -4,8 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import TutorMarkdown from "@/components/TutorMarkdown";
 import "katex/dist/katex.min.css";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -909,11 +908,13 @@ export default function SectionViewerPage() {
                                                 <p style={{ margin: 0, fontSize: "0.78rem", color: "#b91c1c" }}>{explainById[ins.id].error}</p>
                                             ) : (
                                                 <>
-                                                    <p style={{ margin: 0, fontSize: "0.8rem", color: "#0f172a", lineHeight: 1.45 }}>{explainById[ins.id].text}</p>
+                                                    <TutorMarkdown text={explainById[ins.id].text || ""} compact />
                                                     {!!explainById[ins.id].points?.length && (
                                                         <ul style={{ margin: "0.35rem 0 0", paddingLeft: "0.95rem" }}>
                                                             {explainById[ins.id].points!.map((p, i) => (
-                                                                <li key={i} style={{ fontSize: "0.74rem", color: "#334155", marginBottom: "0.22rem" }}>{p}</li>
+                                                                <li key={i} style={{ fontSize: "0.74rem", color: "#334155", marginBottom: "0.22rem" }}>
+                                                                    <TutorMarkdown text={p} compact />
+                                                                </li>
                                                             ))}
                                                         </ul>
                                                     )}
@@ -930,7 +931,7 @@ export default function SectionViewerPage() {
                                                 <p style={{ margin: 0, fontSize: "0.78rem", color: "#b91c1c" }}>{testById[ins.id].error}</p>
                                             ) : (
                                                 <>
-                                                    <p style={{ margin: 0, fontSize: "0.81rem", color: "#0f172a", fontWeight: 700 }}>{testById[ins.id].question}</p>
+                                                    <TutorMarkdown text={testById[ins.id].question || ""} compact />
                                                     <div style={{ display: "grid", gap: "0.28rem", marginTop: "0.45rem" }}>
                                                         {Object.entries(testById[ins.id].options || {}).map(([k, v]) => (
                                                             <button
@@ -948,7 +949,12 @@ export default function SectionViewerPage() {
                                                                     fontFamily: "var(--font-body)",
                                                                 }}
                                                             >
-                                                                <strong>{k}.</strong> {v}
+                                                                <span style={{ display: "inline-flex", gap: "0.35rem", alignItems: "flex-start" }}>
+                                                                    <strong style={{ marginTop: 2 }}>{k}.</strong>
+                                                                    <span style={{ flex: 1 }}>
+                                                                        <TutorMarkdown text={String(v)} compact />
+                                                                    </span>
+                                                                </span>
                                                             </button>
                                                         ))}
                                                     </div>
@@ -977,7 +983,9 @@ export default function SectionViewerPage() {
                                                         )}
                                                     </div>
                                                     {!!testById[ins.id].feedback && (
-                                                        <p style={{ margin: "0.38rem 0 0", fontSize: "0.74rem", color: "#1e3a8a" }}>{testById[ins.id].feedback}</p>
+                                                        <div style={{ marginTop: "0.38rem", fontSize: "0.74rem", color: "#1e3a8a" }}>
+                                                            <TutorMarkdown text={testById[ins.id].feedback || ""} compact />
+                                                        </div>
                                                     )}
                                                 </>
                                             )}
@@ -1024,33 +1032,7 @@ export default function SectionViewerPage() {
                                     lineHeight: 1.5,
                                 }}
                             >
-                                <ReactMarkdown
-                                    remarkPlugins={[remarkGfm]}
-                                    components={{
-                                        p: ({ children }) => <p style={{ margin: "0 0 0.55rem 0" }}>{children}</p>,
-                                        ul: ({ children }) => <ul style={{ margin: "0.2rem 0 0.55rem 1.2rem" }}>{children}</ul>,
-                                        ol: ({ children }) => <ol style={{ margin: "0.2rem 0 0.55rem 1.2rem" }}>{children}</ol>,
-                                        code: ({ children }) => (
-                                            <code style={{ background: "rgba(148,163,184,0.2)", borderRadius: 6, padding: "0.1rem 0.3rem" }}>{children}</code>
-                                        ),
-                                        pre: ({ children }) => (
-                                            <pre style={{ background: "rgba(15,23,42,0.08)", borderRadius: 10, padding: "0.75rem", overflowX: "auto" }}>{children}</pre>
-                                        ),
-                                        table: ({ children }) => (
-                                            <div style={{ overflowX: "auto", borderRadius: 8, border: "1px solid #cbd5e1", background: "white", marginBottom: "0.5rem" }}>
-                                                <table style={{ borderCollapse: "collapse", minWidth: "100%", fontSize: "0.84rem", color: "#0f172a" }}>{children}</table>
-                                            </div>
-                                        ),
-                                        th: ({ children }) => (
-                                            <th style={{ textAlign: "left", padding: "0.42rem 0.5rem", borderBottom: "1px solid #cbd5e1", background: "#f8fafc", fontWeight: 700, whiteSpace: "nowrap" }}>{children}</th>
-                                        ),
-                                        td: ({ children }) => (
-                                            <td style={{ padding: "0.38rem 0.5rem", borderTop: "1px solid #e2e8f0", verticalAlign: "top" }}>{children}</td>
-                                        ),
-                                    }}
-                                >
-                                    {m.text || ""}
-                                </ReactMarkdown>
+                                <TutorMarkdown text={m.text || ""} compact isUser={m.role === "user"} />
                                 {m.role === "assistant" && typeof m.matchedCount === "number" && (
                                     <div style={{ marginTop: 6, fontSize: "0.68rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>
                                         {m.matchedCount} matched insight{m.matchedCount === 1 ? "" : "s"} used

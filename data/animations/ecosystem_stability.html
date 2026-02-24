@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecosystem Stability & Trophic Cascade</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --plant: #2ECC71;
+            --herbivore: #F39C12;
+            --carnivore: #E67E22;
+            --apex: #E74C3C;
+            --energy: #F1C40F;
+            --bg: #f8f9fa;
+            --text-dark: #2C3E50;
+            --text-light: #7F8C8D;
+            --link: #95A5A6;
+            --link-broken: #BDC3C7;
+            --danger: #C0392B;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--text-dark);
+            margin: 0 0 8px 0;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: var(--text-light);
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography inside SVG */
+        .label { font-family: 'Inter', sans-serif; font-size: 13px; fill: var(--text-dark); }
+        .label-bold { font-weight: 700; }
+        .mono { font-family: 'Roboto Mono', monospace; font-size: 12px; }
+
+        /* Base Animations */
+        .pulse-node {
+            animation: gentle-pulse 4s infinite ease-in-out;
+            transform-origin: 0 0;
+        }
+
+        @keyframes gentle-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+
+        /* Extinction Animations (Phase 2 & 4) */
+        .apex-node { animation: apex-fade 20s infinite; }
+        @keyframes apex-fade {
+            0%, 28% { opacity: 1; filter: none; }
+            30%, 34% { opacity: 0.5; filter: grayscale(100%); }
+            36%, 80% { opacity: 0.2; filter: grayscale(100%); }
+            85%, 100% { opacity: 1; filter: drop-shadow(0 0 8px var(--plant)); }
+        }
+
+        .prod4-node { animation: prod-fade 20s infinite; }
+        @keyframes prod-fade {
+            0%, 36% { opacity: 1; filter: none; }
+            40%, 80% { opacity: 0.1; filter: grayscale(100%); }
+            85%, 100% { opacity: 1; filter: drop-shadow(0 0 8px var(--plant)); }
+        }
+
+        .cross-apex { animation: cross-a 20s infinite; transform-origin: 500px 80px; opacity: 0; }
+        @keyframes cross-a {
+            0%, 32% { opacity: 0; transform: scale(0); }
+            36%, 80% { opacity: 1; transform: scale(1); }
+            85%, 100% { opacity: 0; transform: scale(0); }
+        }
+
+        .cross-prod { animation: cross-p 20s infinite; transform-origin: 740px 380px; opacity: 0; }
+        @keyframes cross-p {
+            0%, 38% { opacity: 0; transform: scale(0); }
+            42%, 80% { opacity: 1; transform: scale(1); }
+            85%, 100% { opacity: 0; transform: scale(0); }
+        }
+
+        /* Link Breaking (Phase 3) */
+        .link-broken-apex { animation: break-apex 20s infinite; }
+        @keyframes break-apex {
+            0%, 32% { stroke: var(--link); stroke-dasharray: none; opacity: 1; }
+            36%, 80% { stroke: var(--link-broken); stroke-dasharray: 6 6; opacity: 0.4; }
+            85%, 100% { stroke: var(--link); stroke-dasharray: none; opacity: 1; }
+        }
+
+        .link-broken-prod { animation: break-prod 20s infinite; }
+        @keyframes break-prod {
+            0%, 38% { stroke: var(--link); stroke-dasharray: none; opacity: 1; }
+            42%, 80% { stroke: var(--link-broken); stroke-dasharray: 6 6; opacity: 0.4; }
+            85%, 100% { stroke: var(--link); stroke-dasharray: none; opacity: 1; }
+        }
+
+        /* Trophic Cascade Shake (Phase 3) */
+        .shake-node { animation: cascade-shake 20s infinite; transform-origin: 0 0; }
+        @keyframes cascade-shake {
+            0%, 45% { transform: translate(0, 0); }
+            46%, 50%, 54%, 58%, 62%, 66%, 70%, 74%, 78% { transform: translate(-1.5px, -2px); }
+            48%, 52%, 56%, 60%, 64%, 68%, 72%, 76% { transform: translate(1.5px, 2px); }
+            80%, 100% { transform: translate(0, 0); }
+        }
+
+        /* Energy Flow Animations */
+        .energy {
+            fill: none;
+            stroke: var(--energy);
+            stroke-width: 3;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 3px var(--energy));
+        }
+
+        .pulse-t1-t2 { stroke-dasharray: 10 40; animation: flow-t1-t2 20s infinite linear; }
+        @keyframes flow-t1-t2 {
+            0% { stroke-dashoffset: 1000; }
+            30% { stroke-dashoffset: 750; }
+            50% { stroke-dashoffset: 600; }
+            80% { stroke-dashoffset: 550; }
+            100% { stroke-dashoffset: 500; }
+        }
+
+        .pulse-t2-t3 { stroke-dasharray: 10 90; animation: flow-t2-t3 20s infinite linear; }
+        @keyframes flow-t2-t3 {
+            0% { stroke-dashoffset: 1000; }
+            30% { stroke-dashoffset: 800; }
+            50% { stroke-dashoffset: 700; }
+            80% { stroke-dashoffset: 650; }
+            100% { stroke-dashoffset: 600; }
+        }
+
+        .pulse-t3-t4 { stroke-dasharray: 10 140; animation: flow-t3-t4 20s infinite linear; }
+        @keyframes flow-t3-t4 {
+            0% { stroke-dashoffset: 900; }
+            30% { stroke-dashoffset: 700; }
+            50% { stroke-dashoffset: 600; }
+            80% { stroke-dashoffset: 550; }
+            100% { stroke-dashoffset: 450; }
+        }
+
+        .energy-fade-apex { animation: e-fade-a 20s infinite; }
+        @keyframes e-fade-a { 0%, 32% { opacity: 1; } 36%, 80% { opacity: 0; } 85%, 100% { opacity: 1; } }
+
+        .energy-fade-prod { animation: e-fade-p 20s infinite; }
+        @keyframes e-fade-p { 0%, 38% { opacity: 1; } 42%, 80% { opacity: 0; } 85%, 100% { opacity: 1; } }
+
+        /* Stability Gauge */
+        .gauge-bar { animation: gauge-drop 20s infinite ease-in-out; }
+        @keyframes gauge-drop {
+            0%, 35% { width: 400px; fill: var(--plant); }
+            45%, 80% { width: 120px; fill: var(--danger); }
+            85%, 100% { width: 400px; fill: var(--plant); }
+        }
+
+        .stable-text { animation: fade-out 20s infinite; }
+        .critical-text { opacity: 0; animation: fade-in 20s infinite; }
+        @keyframes fade-out { 0%, 35% { opacity: 1; } 40%, 80% { opacity: 0; } 85%, 100% { opacity: 1; } }
+        @keyframes fade-in { 0%, 35% { opacity: 0; } 40%, 80% { opacity: 1; } 85%, 100% { opacity: 0; } }
+
+        /* Warning Text */
+        .cascade-text { opacity: 0; animation: text-flash 20s infinite; }
+        @keyframes text-flash {
+            0%, 42% { opacity: 0; transform: scale(0.9); }
+            46%, 76% { opacity: 1; transform: scale(1); }
+            80%, 100% { opacity: 0; transform: scale(0.9); }
+        }
+
+        /* Human Activity Cursor */
+        .cursor-group { animation: cursor-move 20s infinite ease-in-out; opacity: 0; }
+        @keyframes cursor-move {
+            0%, 22% { transform: translate(650px, -50px); opacity: 0; }
+            25% { transform: translate(515px, 95px); opacity: 1; }
+            28% { transform: translate(515px, 95px) scale(0.85); opacity: 1; }
+            31% { transform: translate(515px, 95px) scale(1); opacity: 1; }
+            35% { transform: translate(755px, 395px); opacity: 1; }
+            38% { transform: translate(755px, 395px) scale(0.85); opacity: 1; }
+            41% { transform: translate(755px, 395px) scale(1); opacity: 1; }
+            46%, 100% { transform: translate(900px, 550px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Ecosystem Stability & Biodiversity Loss</h1>
+        <p class="subtitle">The "Rivet Popper" Hypothesis & Trophic Cascades</p>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.15" />
+                </filter>
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                
+                <!-- Arrow Markers for Links -->
+                <marker id="arrow-t2" viewBox="0 0 10 10" refX="28" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--link)" />
+                </marker>
+                <marker id="arrow-t3" viewBox="0 0 10 10" refX="32" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--link)" />
+                </marker>
+                <marker id="arrow-t4" viewBox="0 0 10 10" refX="40" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--link)" />
+                </marker>
+                <marker id="arrow-t4-broken" viewBox="0 0 10 10" refX="40" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--link-broken)" />
+                </marker>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#ffffff" />
+
+            <!-- Left Labels -->
+            <g class="label">
+                <text x="25" y="80" class="label-bold" fill="var(--apex)">T4: Apex Predator</text>
+                <text x="25" y="98" fill="var(--text-light)">(Keystone Species)</text>
+                
+                <text x="25" y="180" class="label-bold" fill="var(--carnivore)">T3: Secondary Consumers</text>
+                <text x="25" y="280" class="label-bold" fill="var(--herbivore)">T2: Primary Consumers</text>
+                <text x="25" y="380" class="label-bold" fill="var(--plant)">T1: Primary Producers</text>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(620, 15)">
+                <rect width="160" height="90" rx="6" fill="#ffffff" stroke="#E0E0E0" stroke-width="1" filter="url(#shadow)" />
+                <text x="80" y="20" class="label label-bold" text-anchor="middle" font-size="11">Legend</text>
+                <circle cx="20" cy="35" r="6" fill="var(--plant)" />
+                <text x="35" y="39" class="label" font-size="11">Plant Biomass</text>
+                <circle cx="20" cy="55" r="6" fill="var(--herbivore)" />
+                <text x="35" y="59" class="label" font-size="11">Animal Tissue</text>
+                <line x1="14" y1="75" x2="26" y2="75" stroke="var(--energy)" stroke-width="3" stroke-dasharray="4 2" />
+                <text x="35" y="79" class="label" font-size="11">Energy Flow</text>
+            </g>
+
+            <!-- Links (Drawn Bottom to Top) -->
+            <g stroke="var(--link)" stroke-width="2" fill="none">
+                <!-- T1 to T2 -->
+                <path d="M 260 380 L 340 280" marker-end="url(#arrow-t2)" />
+                <path d="M 420 380 L 340 280" marker-end="url(#arrow-t2)" />
+                <path d="M 420 380 L 500 280" marker-end="url(#arrow-t2)" />
+                <path d="M 580 380 L 500 280" marker-end="url(#arrow-t2)" />
+                <path d="M 580 380 L 660 280" marker-end="url(#arrow-t2)" />
+                <path d="M 740 380 L 660 280" class="link-broken-prod" marker-end="url(#arrow-t2)" />
+                
+                <!-- T2 to T3 -->
+                <path d="M 340 280 L 420 180" marker-end="url(#arrow-t3)" />
+                <path d="M 500 280 L 420 180" marker-end="url(#arrow-t3)" />
+                <path d="M 500 280 L 580 180" marker-end="url(#arrow-t3)" />
+                <path d="M 660 280 L 580 180" marker-end="url(#arrow-t3)" />
+                
+                <!-- T3 to T4 -->
+                <path d="M 420 180 L 500 80" class="link-broken-apex" marker-end="url(#arrow-t4)" />
+                <path d="M 580 180 L 500 80" class="link-broken-apex" marker-end="url(#arrow-t4)" />
+            </g>
+
+            <!-- Energy Pulses -->
+            <g>
+                <!-- T1 to T2 -->
+                <path d="M 260 380 L 340 280" class="energy pulse-t1-t2" />
+                <path d="M 420 380 L 340 280" class="energy pulse-t1-t2" />
+                <path d="M 420 380 L 500 280" class="energy pulse-t1-t2" />
+                <path d="M 580 380 L 500 280" class="energy pulse-t1-t2" />
+                <path d="M 580 380 L 660 280" class="energy pulse-t1-t2" />
+                <g class="energy-fade-prod">
+                    <path d="M 740 380 L 660 280" class="energy pulse-t1-t2" />
+                </g>
+
+                <!-- T2 to T3 -->
+                <path d="M 340 280 L 420 180" class="energy pulse-t2-t3" />
+                <path d="M 500 280 L 420 180" class="energy pulse-t2-t3" />
+                <path d="M 500 280 L 580 180" class="energy pulse-t2-t3" />
+                <path d="M 660 280 L 580 180" class="energy pulse-t2-t3" />
+
+                <!-- T3 to T4 -->
+                <g class="energy-fade-apex">
+                    <path d="M 420 180 L 500 80" class="energy pulse-t3-t4" />
+                    <path d="M 580 180 L 500 80" class="energy pulse-t3-t4" />
+                </g>
+            </g>
+
+            <!-- Nodes -->
+            <g id="nodes">
+                <!-- T1: Primary Producers -->
+                <g transform="translate(260, 380)">
+                    <g class="pulse-node shake-node">
+                        <circle cx="0" cy="0" r="18" fill="var(--plant)" filter="url(#shadow)" />
+                        <path d="M -6,4 C -12,-4 -4,-12 0,-14 C 4,-12 12,-4 6,4 C 3,6 -3,6 -6,4 Z" fill="#ffffff" opacity="0.9" />
+                    </g>
+                </g>
+                <g transform="translate(420, 380)">
+                    <g class="pulse-node shake-node">
+                        <circle cx="0" cy="0" r="18" fill="var(--plant)" filter="url(#shadow)" />
+                        <path d="M -6,4 C -12,-4 -4,-12 0,-14 C 4,-12 12,-4 6,4 C 3,6 -3,6 -6,4 Z" fill="#ffffff" opacity="0.9" />
+                    </g>
+                </g>
+                <g transform="translate(580, 380)">
+                    <g class="pulse-node shake-node">
+                        <circle cx="0" cy="0" r="18" fill="var(--plant)" filter="url(#shadow)" />
+                        <path d="M -6,4 C -12,-4 -4,-12 0,-14 C 4,-12 12,-4 6,4 C 3,6 -3,6 -6,4 Z" fill="#ffffff" opacity="0.9" />
+                    </g>
+                </g>
+                <!-- Extinct Producer -->
+                <g transform="translate(740, 380)">
+                    <g class="pulse-node prod4-node">
+                        <circle cx="0" cy="0" r="18" fill="var(--plant)" filter="url(#shadow)" />
+                        <path d="M -6,4 C -12,-4 -4,-12 0,-14 C 4,-12 12,-4 6,4 C 3,6 -3,6 -6,4 Z" fill="#ffffff" opacity="0.9" />
+                    </g>
+                </g>
+
+                <!-- T2: Primary Consumers -->
+                <g transform="translate(340, 280)">
+                    <g class="pulse-node shake-node">
+                        <circle cx="0" cy="0" r="22" fill="var(--herbivore)" filter="url(#shadow)" />
+                        <path d="M -5,-2 C -8,-10 -3,-12 -1,-5 C 0,-6 2,-6 3,-5 C 5,-12 10,-10 7,-2 C 10,3 5,8 1,8 C -3,8 -8,3 -5,-2 Z" fill="#ffffff" opacity="0.9" />
+                    </g>
+                </g>
+                <g transform="translate(500, 280)">
+                    <g class="pulse-node shake-node">
+                        <circle cx="0" cy="0" r="22" fill="var(--herbivore)" filter="url(#shadow)" />
+                        <path d="M -5,-2 C -8,-10 -3,-12 -1,-5 C 0,-6 2,-6 3,-5 C 5,-12 10,-10 7,-2 C 10,3 5,8 1,8 C -3,8 -8,3 -5,-2 Z" fill="#ffffff" opacity="0.9" />
+                    </g>
+                </g>
+                <g transform="translate(660, 280)">
+                    <g class="pulse-node shake-node">
+                        <circle cx="0" cy="0" r="22" fill="var(--herbivore)" filter="url(#shadow)" />
+                        <path d="M -5,-2 C -8,-10 -3,-12 -1,-5 C 0,-6 2,-6 3,-5 C 5,-12 10,-10 7,-2 C 10,3 5,8 1,8 C -3,8 -8,3 -5,-2 Z" fill="#ffffff" opacity="0.9" />
+                    </g>
+                </g>
+
+                <!-- T3: Secondary Consumers -->
+                <g transform="translate(420, 180)">
+                    <g class="pulse-node shake-node">
+                        <circle cx="0" cy="0" r="26" fill="var(--carnivore)" filter="url(#shadow)" />
+                        <path d="M -8,-6 L -3,-1 L 1,-3 L 5,-1 L 10,-6 L 7,3 L 1,8 L -5,3 Z" fill="#ffffff" opacity="0.9" />
+                    </g>
+                </g>
+                <g transform="translate(580, 180)">
+                    <g class="pulse-node shake-node">
+                        <circle cx="0" cy="0" r="26" fill="var(--carnivore)" filter="url(#shadow)" />
+                        <path d="M -8,-6 L -3,-1 L 1,-3 L 5,-1 L 10,-6 L 7,3 L 1,8 L -5,3 Z" fill="#ffffff" opacity="0.9" />
+                    </g>
+                </g>
+
+                <!-- T4: Apex Predator -->
+                <g transform="translate(500, 80)">
+                    <g class="pulse-node apex-node">
+                        <circle cx="0" cy="0" r="34" fill="var(--apex)" filter="url(#shadow)" />
+                        <path d="M -12,-8 L -6,-1 L 1,-4 L 8,-1 L 14,-8 L 10,5 L 1,12 L -8,5 Z" fill="#ffffff" opacity="0.9" transform="scale(1.1)" />
+                    </g>
+                </g>
+            </g>
+
+            <!-- Extinction Cross Marks -->
+            <g class="cross-apex">
+                <path d="M 475 55 L 525 105 M 525 55 L 475 105" stroke="var(--danger)" stroke-width="8" stroke-linecap="round" filter="url(#shadow)" />
+            </g>
+            <g class="cross-prod">
+                <path d="M 725 365 L 755 395 M 755 365 L 725 395" stroke="var(--danger)" stroke-width="6" stroke-linecap="round" filter="url(#shadow)" />
+            </g>
+
+            <!-- Trophic Cascade Warning Text -->
+            <g class="cascade-text" transform="translate(500, 240)">
+                <text x="0" y="0" font-family="Inter" font-size="26" font-weight="bold" text-anchor="middle" fill="var(--danger)" filter="url(#shadow)">TROPHIC CASCADE</text>
+                <text x="0" y="22" font-family="Inter" font-size="14" text-anchor="middle" fill="var(--danger)">Ecosystem Stability Compromised</text>
+            </g>
+
+            <!-- Stability Gauge -->
+            <g transform="translate(0, 460)">
+                <text x="180" y="12" class="label label-bold" text-anchor="end">System Stability</text>
+                
+                <!-- Gauge Background -->
+                <rect x="200" y="0" width="400" height="16" rx="8" fill="#E8F4FD" />
+                
+                <!-- Gauge Foreground (Animated) -->
+                <rect x="200" y="0" width="400" height="16" rx="8" class="gauge-bar" />
+                
+                <!-- Gauge Text -->
+                <text x="615" y="12" class="mono stable-text" fill="var(--plant)" font-weight="bold">100% (Stable)</text>
+                <text x="615" y="12" class="mono critical-text" fill="var(--danger)" font-weight="bold">30% (Critical)</text>
+                
+                <text x="400" y="12" class="mono" fill="#ffffff" font-size="10" text-anchor="middle" font-weight="bold">Species Richness (S)</text>
+            </g>
+
+            <!-- Human Activity Cursor -->
+            <g class="cursor-group">
+                <path d="M 0 0 L 18 6 L 8 10 L 10 20 L 5 21 L 3 11 L -5 15 Z" fill="#2C3E50" stroke="#ffffff" stroke-width="1.5" filter="url(#shadow)" />
+                <rect x="15" y="12" width="105" height="20" rx="4" fill="#2C3E50" opacity="0.9" />
+                <text x="20" y="26" font-family="Inter" font-size="10" fill="#ffffff" font-weight="bold">Human Activity</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

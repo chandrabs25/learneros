@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From Flower to Formula: The Logic of Floral Diagrams</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            max-width: 100%;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        text {
+            fill: #2C3E50;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            fill: #7F8C8D;
+        }
+
+        .label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .formula {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 32px;
+        }
+
+        .legend-title {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .legend-text {
+            font-size: 13px;
+            fill: #34495E;
+        }
+
+        /* Visibility Keyframes for Sequential Build */
+        @keyframes fadeIn1 {
+            0%, 5% { opacity: 0; }
+            13%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes fadeIn2 {
+            0%, 13% { opacity: 0; }
+            20%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes fadeIn3 {
+            0%, 26% { opacity: 0; }
+            33%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes fadeIn4 {
+            0%, 40% { opacity: 0; }
+            47%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes fadeIn5 {
+            0%, 60% { opacity: 0; }
+            67%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Drawing Animation for Adhesion Line */
+        @keyframes drawArc {
+            0%, 40% { stroke-dashoffset: 100; opacity: 0; }
+            50%, 95% { stroke-dashoffset: 0; opacity: 1; }
+            100% { stroke-dashoffset: 100; opacity: 0; }
+        }
+
+        /* Pulsing Animations for Diagram Whorls */
+        @keyframes pulseK {
+            0%, 13% { fill: #2ECC71; stroke-width: 2px; transform: scale(1); }
+            20% { fill: #58D68D; stroke-width: 3.5px; transform: scale(1.03); }
+            26%, 100% { fill: #2ECC71; stroke-width: 2px; transform: scale(1); }
+        }
+        @keyframes pulseC {
+            0%, 26% { fill: #9B59B6; stroke-width: 2px; transform: scale(1); }
+            33% { fill: #BB8FCE; stroke-width: 3.5px; transform: scale(1.03); }
+            40%, 100% { fill: #9B59B6; stroke-width: 2px; transform: scale(1); }
+        }
+        @keyframes pulseA {
+            0%, 40% { fill: #F1C40F; stroke-width: 1.5px; transform: scale(1); }
+            50% { fill: #F7DC6F; stroke-width: 3px; transform: scale(1.08); }
+            60%, 100% { fill: #F1C40F; stroke-width: 1.5px; transform: scale(1); }
+        }
+        @keyframes pulseG {
+            0%, 60% { fill: #27AE60; stroke-width: 2px; transform: scale(1); }
+            70% { fill: #52BE80; stroke-width: 3.5px; transform: scale(1.05); }
+            80%, 100% { fill: #27AE60; stroke-width: 2px; transform: scale(1); }
+        }
+
+        /* Global Glow for Final Integration Phase */
+        @keyframes globalGlow {
+            0%, 80% { filter: none; }
+            87%, 95% { filter: drop-shadow(0 0 10px rgba(44, 62, 80, 0.2)); }
+            100% { filter: none; }
+        }
+
+        /* Assigning Animations */
+        .phase1 { animation: fadeIn1 15s infinite; }
+        .phase2 { animation: fadeIn2 15s infinite; }
+        .phase3 { animation: fadeIn3 15s infinite; }
+        .phase4 { animation: fadeIn4 15s infinite; }
+        .phase5 { animation: fadeIn5 15s infinite; }
+        
+        .adhesion-arc {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: drawArc 15s infinite;
+        }
+
+        .whorl-k { animation: pulseK 15s infinite; transform-origin: 0 0; }
+        .whorl-c { animation: pulseC 15s infinite; transform-origin: 0 0; }
+        .whorl-a { animation: pulseA 15s infinite; transform-origin: 0 0; }
+        .whorl-g { animation: pulseG 15s infinite; transform-origin: 0 0; }
+        
+        .glow-wrapper { animation: globalGlow 15s infinite; }
+
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+    <title>Floral Morphology: Floral Diagram &amp; Formula</title>
+    <desc>An animated diagram showing the translation of a flower's morphological structures (Calyx, Corolla, Androecium, Gynoecium) into a semi-technical floral formula.</desc>
+
+    <defs>
+        <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.08"/>
+        </filter>
+        <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5">
+            <circle cx="5" cy="5" r="3" fill="#7F8C8D"/>
+        </marker>
+    </defs>
+
+    <!-- Header -->
+    <text x="400" y="40" text-anchor="middle" class="title">From Flower to Formula: The Logic of Floral Diagrams</text>
+    <text x="400" y="65" text-anchor="middle" class="subtitle">Watch how morphological structures translate into a floral formula</text>
+
+    <g class="glow-wrapper">
+        <!-- ========================================== -->
+        <!-- LEFT SIDE: FLORAL DIAGRAM                  -->
+        <!-- ========================================== -->
+        
+        <!-- Symmetry Lines (Phase 1) -->
+        <g class="phase1">
+            <line x1="200" y1="80" x2="200" y2="460" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="6,6" />
+            <line x1="20" y1="270" x2="380" y2="270" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="6,6" />
+        </g>
+
+        <!-- Mother Axis -->
+        <circle cx="200" cy="90" r="7" fill="#2C3E50" />
+        <text x="20" y="95" class="label">Mother Axis</text>
+        <line x1="105" y1="90" x2="185" y2="90" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#dot)"/>
+
+        <!-- Floral Diagram Center Translated to (200, 270) -->
+        <g transform="translate(200, 270)">
+            
+            <!-- Calyx (K) - Outer Whorl -->
+            <g class="whorl-k">
+                <!-- 5 Sepals (Valvate Aestivation) -->
+                <path d="M -66 -99 A 118 118 0 0 1 66 -99 L 0 -138 Z" stroke="#2C3E50" />
+                <path d="M -66 -99 A 118 118 0 0 1 66 -99 L 0 -138 Z" stroke="#2C3E50" transform="rotate(72)" />
+                <path d="M -66 -99 A 118 118 0 0 1 66 -99 L 0 -138 Z" stroke="#2C3E50" transform="rotate(144)" />
+                <path d="M -66 -99 A 118 118 0 0 1 66 -99 L 0 -138 Z" stroke="#2C3E50" transform="rotate(216)" />
+                <path d="M -66 -99 A 118 118 0 0 1 66 -99 L 0 -138 Z" stroke="#2C3E50" transform="rotate(288)" />
+                
+                <!-- Gamosepalous Fusion Brackets -->
+                <path d="M -41 -111 Q 0 -100 41 -111" stroke="#2ECC71" fill="none" stroke-width="2.5" transform="rotate(36)"/>
+                <path d="M -41 -111 Q 0 -100 41 -111" stroke="#2ECC71" fill="none" stroke-width="2.5" transform="rotate(108)"/>
+                <path d="M -41 -111 Q 0 -100 41 -111" stroke="#2ECC71" fill="none" stroke-width="2.5" transform="rotate(180)"/>
+                <path d="M -41 -111 Q 0 -100 41 -111" stroke="#2ECC71" fill="none" stroke-width="2.5" transform="rotate(252)"/>
+                <path d="M -41 -111 Q 0 -100 41 -111" stroke="#2ECC71" fill="none" stroke-width="2.5" transform="rotate(324)"/>
+            </g>
+
+            <!-- Corolla (C) - Second Whorl -->
+            <g class="whorl-c">
+                <!-- 5 Petals (Twisted Aestivation) -->
+                <path d="M -50 -68 C -20 -100, 40 -100, 65 -65 C 40 -85, -20 -85, -50 -68 Z" stroke="#2C3E50" />
+                <path d="M -50 -68 C -20 -100, 40 -100, 65 -65 C 40 -85, -20 -85, -50 -68 Z" stroke="#2C3E50" transform="rotate(72)" />
+                <path d="M -50 -68 C -20 -100, 40 -100, 65 -65 C 40 -85, -20 -85, -50 -68 Z" stroke="#2C3E50" transform="rotate(144)" />
+                <path d="M -50 -68 C -20 -100, 40 -100, 65 -65 C 40 -85, -20 -85, -50 -68 Z" stroke="#2C3E50" transform="rotate(216)" />
+                <path d="M -50 -68 C -20 -100, 40 -100, 65 -65 C 40 -85, -20 -85, -50 -68 Z" stroke="#2C3E50" transform="rotate(288)" />
+                
+                <!-- Gamopetalous Fusion Brackets -->
+                <path d="M -30 -75 Q 0 -65 30 -75" stroke="#9B59B6" fill="none" stroke-width="2.5" transform="rotate(36)"/>
+                <path d="M -30 -75 Q 0 -65 30 -75" stroke="#9B59B6" fill="none" stroke-width="2.5" transform="rotate(108)"/>
+                <path d="M -30 -75 Q 0 -65 30 -75" stroke="#9B59B6" fill="none" stroke-width="2.5" transform="rotate(180)"/>
+                <path d="M -30 -75 Q 0 -65 30 -75" stroke="#9B59B6" fill="none" stroke-width="2.5" transform="rotate(252)"/>
+                <path d="M -30 -75 Q 0 -65 30 -75" stroke="#9B59B6" fill="none" stroke-width="2.5" transform="rotate(324)"/>
+            </g>
+
+            <!-- Androecium (A) - Third Whorl -->
+            <g class="whorl-a">
+                <!-- Epipetalous Adhesion Lines -->
+                <line x1="0" y1="-61" x2="0" y2="-75" stroke="#2C3E50" stroke-width="1.5" stroke-dasharray="3,3" />
+                <line x1="0" y1="-61" x2="0" y2="-75" stroke="#2C3E50" stroke-width="1.5" stroke-dasharray="3,3" transform="rotate(72)" />
+                <line x1="0" y1="-61" x2="0" y2="-75" stroke="#2C3E50" stroke-width="1.5" stroke-dasharray="3,3" transform="rotate(144)" />
+                <line x1="0" y1="-61" x2="0" y2="-75" stroke="#2C3E50" stroke-width="1.5" stroke-dasharray="3,3" transform="rotate(216)" />
+                <line x1="0" y1="-61" x2="0" y2="-75" stroke="#2C3E50" stroke-width="1.5" stroke-dasharray="3,3" transform="rotate(288)" />
+
+                <!-- 5 Stamens (Dithecous) -->
+                <g>
+                    <ellipse cx="-5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                    <ellipse cx="5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                </g>
+                <g transform="rotate(72)">
+                    <ellipse cx="-5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                    <ellipse cx="5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                </g>
+                <g transform="rotate(144)">
+                    <ellipse cx="-5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                    <ellipse cx="5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                </g>
+                <g transform="rotate(216)">
+                    <ellipse cx="-5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                    <ellipse cx="5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                </g>
+                <g transform="rotate(288)">
+                    <ellipse cx="-5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                    <ellipse cx="5" cy="-55" rx="4" ry="6" stroke="#2C3E50" />
+                </g>
+            </g>
+
+            <!-- Gynoecium (G) - Center Whorl -->
+            <g class="whorl-g">
+                <!-- Ovary Wall -->
+                <circle cx="0" cy="0" r="25" stroke="#2C3E50" />
+                
+                <!-- Septa (Tricarpellary, Syncarpous) -->
+                <line x1="0" y1="0" x2="0" y2="-25" stroke="#2C3E50" stroke-width="2"/>
+                <line x1="0" y1="0" x2="21.65" y2="12.5" stroke="#2C3E50" stroke-width="2"/>
+                <line x1="0" y1="0" x2="-21.65" y2="12.5" stroke="#2C3E50" stroke-width="2"/>
+                
+                <!-- Ovules (Axile Placentation) -->
+                <g transform="rotate(60)">
+                    <circle cx="-4" cy="-10" r="3" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1"/>
+                    <circle cx="4" cy="-10" r="3" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1"/>
+                </g>
+                <g transform="rotate(180)">
+                    <circle cx="-4" cy="-10" r="3" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1"/>
+                    <circle cx="4" cy="-10" r="3" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1"/>
+                </g>
+                <g transform="rotate(300)">
+                    <circle cx="-4" cy="-10" r="3" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1"/>
+                    <circle cx="4" cy="-10" r="3" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1"/>
+                </g>
+            </g>
+        </g>
+
+        <!-- Diagram Labels -->
+        <text x="20" y="150" class="label" fill="#2ECC71">Calyx (Sepals)</text>
+        <line x1="125" y1="145" x2="160" y2="155" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#dot)"/>
+
+        <text x="20" y="200" class="label" fill="#9B59B6">Corolla (Petals)</text>
+        <line x1="130" y1="195" x2="150" y2="205" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#dot)"/>
+
+        <text x="20" y="350" class="label" fill="#F39C12">Androecium (Stamens)</text>
+        <line x1="175" y1="345" x2="185" y2="320" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#dot)"/>
+
+        <text x="20" y="400" class="label" fill="#27AE60">Gynoecium (Ovary)</text>
+        <line x1="155" y1="395" x2="195" y2="295" stroke="#7F8C8D" stroke-width="1.5" marker-end="url(#dot)"/>
+
+
+        <!-- ========================================== -->
+        <!-- RIGHT SIDE: FLORAL FORMULA                 -->
+        <!-- ========================================== -->
+
+        <!-- Formula Text Elements -->
+        <g class="phase1">
+            <text x="470" y="240" text-anchor="middle" class="formula">⊕</text>
+        </g>
+        
+        <g class="phase2">
+            <text x="530" y="240" text-anchor="middle" class="formula" fill="#2ECC71">K<tspan dy="0.3em" font-size="0.6em">(5)</tspan></text>
+        </g>
+        
+        <g class="phase3">
+            <text x="600" y="240" text-anchor="middle" class="formula" fill="#9B59B6">C<tspan dy="0.3em" font-size="0.6em">(5)</tspan></text>
+        </g>
+        
+        <g class="phase4">
+            <text x="660" y="240" text-anchor="middle" class="formula" fill="#F39C12">A<tspan dy="0.3em" font-size="0.6em">5</tspan></text>
+            <!-- Adhesion Arc (Epipetalous) -->
+            <path d="M 600 205 Q 630 175 660 205" fill="none" stroke="#2C3E50" stroke-width="3" class="adhesion-arc"/>
+        </g>
+        
+        <g class="phase5">
+            <text x="720" y="240" text-anchor="middle" class="formula" fill="#27AE60">G<tspan dy="0.3em" font-size="0.6em">(3)</tspan></text>
+            <!-- Superior Ovary Line -->
+            <line x1="705" y1="248" x2="735" y2="248" stroke="#27AE60" stroke-width="3" />
+        </g>
+
+        <!-- Legend / Key Box -->
+        <g transform="translate(450, 310)">
+            <rect x="0" y="0" width="310" height="150" rx="8" fill="#ffffff" stroke="#e0e0e0" filter="url(#shadow)"/>
+            <text x="20" y="30" class="legend-title">Formula Key:</text>
+            
+            <text x="20" y="55" class="legend-text"><tspan font-family="Roboto Mono" font-weight="bold">⊕</tspan> = Actinomorphic (Radial Symmetry)</text>
+            <text x="20" y="75" class="legend-text"><tspan font-family="Roboto Mono" font-weight="bold">K</tspan> = Calyx, <tspan font-family="Roboto Mono" font-weight="bold">C</tspan> = Corolla, <tspan font-family="Roboto Mono" font-weight="bold">A</tspan> = Androecium</text>
+            <text x="20" y="95" class="legend-text"><tspan font-family="Roboto Mono" font-weight="bold">( )</tspan> = Fused parts (Cohesion)</text>
+            <text x="20" y="115" class="legend-text"><tspan font-family="Roboto Mono" font-weight="bold">⁀</tspan> (above C &amp; A) = Epipetalous (Adhesion)</text>
+            <text x="20" y="135" class="legend-text"><tspan font-family="Roboto Mono" font-weight="bold" text-decoration="underline">G</tspan> = Superior Ovary (Hypogynous)</text>
+        </g>
+
+    </g>
+</svg>
+
+</body>
+</html>

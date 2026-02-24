@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ovarian Cycle and Endocrine Coordination</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Animations */
+        @keyframes moveFollicle {
+            0% { transform: translate(300px, 250px) scale(0.4); }
+            10% { transform: translate(310px, 190px) scale(0.6); }
+            20% { transform: translate(350px, 150px) scale(0.8); }
+            30% { transform: translate(420px, 110px) scale(1.1); }
+            41.6% { transform: translate(500px, 100px) scale(1.4); }
+            45% { transform: translate(520px, 105px) scale(1.2); }
+            50% { transform: translate(600px, 120px) scale(1.3); }
+            58% { transform: translate(660px, 170px) scale(1.5); }
+            66.6% { transform: translate(700px, 250px) scale(1.6); }
+            75% { transform: translate(690px, 310px) scale(1.2); }
+            83.3% { transform: translate(650px, 350px) scale(0.8); }
+            90% { transform: translate(580px, 375px) scale(0.6); }
+            95% { transform: translate(500px, 380px) scale(0.5); }
+            98% { transform: translate(400px, 350px) scale(0.4); }
+            100% { transform: translate(300px, 250px) scale(0.4); }
+        }
+
+        @keyframes moveOocyte {
+            0% { transform: translate(300px, 250px) scale(0.4); opacity: 1; }
+            10% { transform: translate(310px, 190px) scale(0.6); opacity: 1; }
+            20% { transform: translate(350px, 145px) scale(0.8); opacity: 1; }
+            30% { transform: translate(420px, 100px) scale(1.1); opacity: 1; }
+            41.6% { transform: translate(500px, 85px) scale(1.4); opacity: 1; }
+            45% { transform: translate(500px, 10px) scale(1.8); opacity: 1; }
+            48% { transform: translate(500px, -20px) scale(2); opacity: 0; }
+            100% { transform: translate(500px, -20px) scale(2); opacity: 0; }
+        }
+
+        @keyframes showFollicle {
+            0%, 41.6% { opacity: 1; }
+            43%, 100% { opacity: 0; }
+        }
+
+        @keyframes showLuteum {
+            0%, 42% { opacity: 0; }
+            45%, 80% { opacity: 1; }
+            83%, 100% { opacity: 0; }
+        }
+
+        @keyframes showAlbicans {
+            0%, 80% { opacity: 0; }
+            83%, 95% { opacity: 1; }
+            98%, 100% { opacity: 0; }
+        }
+
+        @keyframes growAntrum {
+            0%, 15% { transform: scale(0); opacity: 0; }
+            20% { transform: scale(0.5) translate(-2px, 2px); opacity: 1; }
+            41.6% { transform: scale(1.2) translate(-4px, 4px); opacity: 1; }
+            42%, 100% { transform: scale(0); opacity: 0; }
+        }
+
+        @keyframes estrogenPulse {
+            0% { transform: scale(0.8); opacity: 0.8; stroke-width: 6px; }
+            100% { transform: scale(2.5); opacity: 0; stroke-width: 1px; }
+        }
+
+        @keyframes showEstrogenPulse {
+            0%, 41.6% { opacity: 1; }
+            42%, 100% { opacity: 0; }
+        }
+
+        @keyframes progesteronePulse {
+            0% { transform: scale(0.8); opacity: 0.8; stroke-width: 6px; }
+            100% { transform: scale(2.5); opacity: 0; stroke-width: 1px; }
+        }
+
+        @keyframes showProgesteronePulse {
+            0%, 45% { opacity: 0; }
+            50%, 80% { opacity: 1; }
+            85%, 100% { opacity: 0; }
+        }
+
+        @keyframes drawGraph {
+            0% { stroke-dashoffset: 1000; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes moveTime {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(700px); }
+        }
+
+        @keyframes fadeLabelDev { 5%, 30% { opacity: 1; } 0%, 4%, 31%, 100% { opacity: 0; } }
+        @keyframes fadeLabelGraaf { 32%, 44% { opacity: 1; } 0%, 31%, 45%, 100% { opacity: 0; } }
+        @keyframes fadeLabelOvu { 44%, 50% { opacity: 1; } 0%, 43%, 51%, 100% { opacity: 0; } }
+        @keyframes fadeLabelLut { 55%, 80% { opacity: 1; } 0%, 54%, 81%, 100% { opacity: 0; } }
+        @keyframes fadeLabelAlb { 85%, 95% { opacity: 1; } 0%, 84%, 96%, 100% { opacity: 0; } }
+
+        /* Apply Animations */
+        .moving-group { animation: moveFollicle 12s linear infinite; }
+        .moving-oocyte { animation: moveOocyte 12s linear infinite; }
+        .follicle-struct { animation: showFollicle 12s linear infinite; }
+        .luteum-struct { animation: showLuteum 12s linear infinite; }
+        .albicans-struct { animation: showAlbicans 12s linear infinite; }
+        .antrum-struct { animation: growAntrum 12s linear infinite; transform-origin: center; }
+        
+        .estrogen-halo { animation: estrogenPulse 1.5s ease-out infinite; }
+        .estrogen-halo-container { animation: showEstrogenPulse 12s linear infinite; }
+        
+        .progesterone-halo { animation: progesteronePulse 1.5s ease-out infinite; }
+        .progesterone-halo-container { animation: showProgesteronePulse 12s linear infinite; }
+
+        .graph-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: drawGraph 12s linear infinite;
+        }
+        .time-indicator { animation: moveTime 12s linear infinite; }
+
+        .lbl-dev { animation: fadeLabelDev 12s linear infinite; opacity: 0; }
+        .lbl-graaf { animation: fadeLabelGraaf 12s linear infinite; opacity: 0; }
+        .lbl-ovu { animation: fadeLabelOvu 12s linear infinite; opacity: 0; }
+        .lbl-lut { animation: fadeLabelLut 12s linear infinite; opacity: 0; }
+        .lbl-alb { animation: fadeLabelAlb 12s linear infinite; opacity: 0; }
+
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg">
+    <title>The Ovarian Cycle and Endocrine Coordination</title>
+    <desc>Animated diagram showing the stages of the ovarian cycle including follicular development, ovulation, and corpus luteum formation, synchronized with a graph of estrogen and progesterone levels.</desc>
+
+    <defs>
+        <radialGradient id="ovary-grad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#F5B041" stop-opacity="0.1" />
+            <stop offset="80%" stop-color="#F39C12" stop-opacity="0.2" />
+            <stop offset="100%" stop-color="#E67E22" stop-opacity="0.3" />
+        </radialGradient>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#ffffff" rx="12" />
+
+    <!-- Header / Title -->
+    <text x="500" y="40" font-size="26" font-weight="700" text-anchor="middle" fill="#2C3E50">Ovarian Cycle: Folliculogenesis &amp; Endocrine Function</text>
+    <text x="500" y="65" font-size="14" font-weight="400" text-anchor="middle" fill="#7F8C8D">Histological changes synchronized with steroid hormone production</text>
+
+    <!-- OVARIAN CROSS SECTION (Top 70%) -->
+    <g id="ovary-section">
+        <!-- Ovary Stroma (Almond Shape) -->
+        <path d="M 250 250 C 250 80, 750 80, 750 250 C 750 420, 250 420, 250 250 Z" fill="url(#ovary-grad)" stroke="#D35400" stroke-width="3" />
+        
+        <!-- Blood Vessels (Medulla) -->
+        <g id="blood-vessels" opacity="0.7">
+            <!-- Arteries -->
+            <path d="M 500 420 C 500 370, 480 340, 450 320 M 500 370 C 520 340, 550 320, 580 300 M 480 340 C 460 300, 420 280, 380 270 M 550 320 C 570 280, 610 260, 640 250" fill="none" stroke="#E74C3C" stroke-width="4" stroke-linecap="round" />
+            <!-- Veins -->
+            <path d="M 515 420 C 515 380, 535 350, 565 330 M 515 380 C 495 350, 465 330, 435 310 M 535 350 C 555 310, 595 290, 635 280 M 465 330 C 445 290, 405 270, 370 260" fill="none" stroke="#3498DB" stroke-width="4" stroke-linecap="round" />
+        </g>
+
+        <!-- Dynamic Labels -->
+        <text class="lbl-dev" x="330" y="100" font-size="14" font-weight="600" fill="#D35400" text-anchor="middle">Developing Follicle</text>
+        <text class="lbl-graaf" x="500" y="30" font-size="14" font-weight="600" fill="#D35400" text-anchor="middle">Graafian Follicle</text>
+        <text class="lbl-ovu" x="630" y="50" font-size="14" font-weight="600" fill="#E74C3C" text-anchor="middle">Ovulation</text>
+        <text class="lbl-lut" x="780" y="180" font-size="14" font-weight="600" fill="#F39C12" text-anchor="middle">Corpus Luteum</text>
+        <text class="lbl-alb" x="740" y="400" font-size="14" font-weight="600" fill="#7F8C8D" text-anchor="middle">Corpus Albicans</text>
+
+        <!-- Moving Follicle Group -->
+        <g class="moving-group">
+            
+            <!-- Endocrine Pulses -->
+            <g class="estrogen-halo-container">
+                <circle class="estrogen-halo" cx="0" cy="0" r="35" fill="none" stroke="#FF6B6B" />
+            </g>
+            <g class="progesterone-halo-container">
+                <circle class="progesterone-halo" cx="0" cy="0" r="35" fill="none" stroke="#98D8C8" />
+            </g>
+
+            <!-- 1. Follicle Structure (0-45%) -->
+            <g class="follicle-struct">
+                <!-- Granulosa Cells (Dashed outer ring) -->
+                <circle cx="0" cy="0" r="30" fill="#FAD7A1" stroke="#E67E22" stroke-width="8" stroke-dasharray="6 4" />
+                <!-- Antrum (Fluid-filled space) -->
+                <circle class="antrum-struct" cx="-4" cy="4" r="22" fill="#E8F4FD" />
+            </g>
+
+            <!-- 2. Corpus Luteum Structure (45-85%) -->
+            <g class="luteum-struct">
+                <!-- Folded, glandular appearance -->
+                <path d="M 0 -35 C 20 -35, 25 -15, 35 -10 C 45 -5, 35 20, 20 30 C 10 40, -10 40, -25 30 C -40 20, -45 -5, -35 -10 C -25 -15, -20 -35, 0 -35 Z" fill="#F1C40F" stroke="#F39C12" stroke-width="3" filter="url(#glow)" />
+                <!-- Internal folds -->
+                <path d="M -15 -15 L 15 15 M -20 10 L 5 25 M 15 -20 L 25 0" stroke="#F39C12" stroke-width="3" stroke-linecap="round" />
+            </g>
+
+            <!-- 3. Corpus Albicans Structure (85-100%) -->
+            <g class="albicans-struct">
+                <!-- Scar tissue appearance -->
+                <path d="M 0 -20 L 12 -8 L 18 -12 L 12 8 L 18 18 L 0 12 L -12 18 L -8 8 L -18 -8 L -8 -12 Z" fill="#ECF0F1" stroke="#BDC3C7" stroke-width="2" />
+                <path d="M -5 -5 L 5 5 M -5 5 L 5 -5" stroke="#BDC3C7" stroke-width="2" />
+            </g>
+        </g>
+
+        <!-- Moving Oocyte (Separate to allow ejection) -->
+        <g class="moving-oocyte">
+            <!-- Zona Pellucida / Corona Radiata -->
+            <circle cx="0" cy="0" r="16" fill="none" stroke="#FF6B6B" stroke-width="3" stroke-dasharray="3 3" opacity="0.8" />
+            <!-- Cytoplasm & Membrane -->
+            <circle cx="0" cy="0" r="12" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" />
+            <!-- Nucleus -->
+            <circle cx="2" cy="-2" r="4" fill="#2C3E50" />
+        </g>
+    </g>
+
+    <!-- HORMONE GRAPH (Bottom 30%) -->
+    <g id="hormone-graph" transform="translate(0, 20)">
+        <!-- Graph Background -->
+        <rect x="100" y="460" width="800" height="200" fill="#ffffff" rx="8" stroke="#E0E0E0" stroke-width="1" />
+        
+        <!-- Grid Lines -->
+        <line x1="150" y1="510" x2="850" y2="510" stroke="#f1f2f6" stroke-width="1" />
+        <line x1="150" y1="570" x2="850" y2="570" stroke="#f1f2f6" stroke-width="1" />
+        <line x1="150" y1="630" x2="850" y2="630" stroke="#f1f2f6" stroke-width="1" />
+
+        <!-- Axes -->
+        <line x1="150" y1="630" x2="850" y2="630" stroke="#2C3E50" stroke-width="2" />
+        <line x1="150" y1="630" x2="150" y2="480" stroke="#2C3E50" stroke-width="2" />
+
+        <!-- Axis Labels -->
+        <text x="500" y="655" font-size="12" font-weight="600" fill="#2C3E50" text-anchor="middle">Days of Menstrual Cycle</text>
+        <text x="130" y="555" font-size="12" font-weight="600" fill="#2C3E50" text-anchor="middle" transform="rotate(-90 130 555)">Hormone Level</text>
+
+        <!-- X-Axis Ticks -->
+        <text x="150" y="645" font-size="10" fill="#7F8C8D" text-anchor="middle">Day 0</text>
+        <text x="500" y="645" font-size="10" fill="#7F8C8D" text-anchor="middle">Day 14 (Ovulation)</text>
+        <text x="850" y="645" font-size="10" fill="#7F8C8D" text-anchor="middle">Day 28</text>
+
+        <!-- Graph Legend -->
+        <g transform="translate(170, 475)">
+            <rect x="0" y="0" width="12" height="12" fill="#FF6B6B" rx="2" />
+            <text x="18" y="10" font-size="12" font-weight="700" fill="#FF6B6B">Estrogen</text>
+            <text x="18" y="22" font-family="'Roboto Mono', monospace" font-size="9" fill="#FF6B6B">17β-Estradiol</text>
+            
+            <rect x="110" y="0" width="12" height="12" fill="#98D8C8" rx="2" />
+            <text x="128" y="10" font-size="12" font-weight="700" fill="#16A085">Progesterone</text>
+            <text x="128" y="22" font-family="'Roboto Mono', monospace" font-size="9" fill="#16A085">C₂₁H₃₀O₂</text>
+        </g>
+
+        <!-- Hormone Lines -->
+        <!-- Estrogen (Red): Peaks just before ovulation (Day 12-13), secondary peak in luteal phase -->
+        <path class="graph-line" d="M 150 620 C 300 620, 400 490, 441 490 C 470 490, 480 600, 500 600 C 550 600, 580 560, 616 560 C 700 560, 800 620, 850 620" fill="none" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+        
+        <!-- Progesterone (Teal): Low during follicular, peaks mid-luteal (Day 21) -->
+        <path class="graph-line" d="M 150 625 L 441 625 C 500 625, 550 490, 616 490 C 700 490, 750 625, 850 625" fill="none" stroke="#98D8C8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+
+        <!-- Animated Time Indicator -->
+        <g class="time-indicator">
+            <line x1="150" y1="480" x2="150" y2="630" stroke="#34495E" stroke-width="2" stroke-dasharray="4 4" />
+            <polygon points="145,480 155,480 150,488" fill="#34495E" />
+        </g>
+    </g>
+
+</svg>
+
+</body>
+</html>

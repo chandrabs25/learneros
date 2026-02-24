@@ -5,6 +5,8 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import LatexText from "@/components/LatexText";
+import { fetchGenerationJSON } from "@/lib/generation-cache";
+import TutorMarkdown from "@/components/TutorMarkdown";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -100,6 +102,7 @@ export default function TestMePage() {
     const [submitting, setSubmitting] = useState(false);
     const [evalResult, setEvalResult] = useState<EvalResult | null>(null);
     const [error, setError] = useState("");
+    const [variant, setVariant] = useState(0);
     const [insightsSaved, setInsightsSaved] = useState(false);
     const [persistenceWarning, setPersistenceWarning] = useState("");
 
@@ -114,12 +117,9 @@ export default function TestMePage() {
         setError("");
         (async () => {
             try {
-                const token = await getIdToken();
-                const headers: Record<string, string> = {};
-                if (token) headers["Authorization"] = `Bearer ${token}`;
-                const r = await fetch(`${API_URL}/api/sections/${sectionId}/test/question?subsection_id=${encodeURIComponent(targetSubsection)}`, { headers });
-                if (!r.ok) throw new Error(`HTTP ${r.status}`);
-                const data = await r.json();
+                const data = await fetchGenerationJSON<QuestionData>(
+                    `${API_URL}/api/sections/${sectionId}/test/question?subsection_id=${encodeURIComponent(targetSubsection)}&variant=${variant}`,
+                );
                 setQuestionData(data);
             } catch (e: unknown) {
                 setError(e instanceof Error ? e.message : "Failed to generate question");
@@ -127,7 +127,7 @@ export default function TestMePage() {
                 setLoading(false);
             }
         })();
-    }, [sectionId, getIdToken, targetSubsection]);
+    }, [sectionId, targetSubsection, variant]);
 
     /* Submit answer for evaluation */
     const handleSubmit = async () => {
@@ -177,20 +177,7 @@ export default function TestMePage() {
         setAnswer("");
         setInsightsSaved(false);
         setPersistenceWarning("");
-        setLoading(true);
-        setError("");
-        try {
-            const token = await getIdToken();
-            const headers: Record<string, string> = {};
-            if (token) headers["Authorization"] = `Bearer ${token}`;
-            const r = await fetch(`${API_URL}/api/sections/${sectionId}/test/question?subsection_id=${encodeURIComponent(targetSubsection)}`, { headers });
-            const data = await r.json();
-            setQuestionData(data);
-        } catch {
-            setError("Failed to generate question");
-        } finally {
-            setLoading(false);
-        }
+        setVariant((v) => v + 1);
     };
 
     /* Grade colour */
@@ -262,7 +249,9 @@ export default function TestMePage() {
                                             <span className="material-symbols-outlined" style={{ fontSize: "0.875rem", color: "var(--primary)" }}>psychology</span>
                                             <span>AI Generated Question</span>
                                         </div>
-                                        <LatexText as="h2" className="test-question-text font-display">{questionData.question}</LatexText>
+                                        <div className="test-question-text font-display">
+                                            <TutorMarkdown text={questionData.question} />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -314,7 +303,9 @@ export default function TestMePage() {
                                     </div>
                                     <div>
                                         <h2 className="test-results-title font-display">Evaluation Complete</h2>
-                                        <LatexText as="p" className="test-results-feedback">{evalResult.feedback}</LatexText>
+                                        <div className="test-results-feedback">
+                                            <TutorMarkdown text={evalResult.feedback} />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -327,7 +318,11 @@ export default function TestMePage() {
                                                 Strengths
                                             </h4>
                                             <ul>
-                                                {evalResult.strengths.map((s, i) => <LatexText as="li" key={i}>{s}</LatexText>)}
+                                                {evalResult.strengths.map((s, i) => (
+                                                    <li key={i}>
+                                                        <TutorMarkdown text={s} compact />
+                                                    </li>
+                                                ))}
                                             </ul>
                                         </div>
                                     )}
@@ -338,7 +333,11 @@ export default function TestMePage() {
                                                 Areas to Improve
                                             </h4>
                                             <ul>
-                                                {evalResult.improvements.map((s, i) => <LatexText as="li" key={i}>{s}</LatexText>)}
+                                                {evalResult.improvements.map((s, i) => (
+                                                    <li key={i}>
+                                                        <TutorMarkdown text={s} compact />
+                                                    </li>
+                                                ))}
                                             </ul>
                                         </div>
                                     )}
@@ -395,7 +394,7 @@ export default function TestMePage() {
                                             <span className="material-symbols-outlined">auto_awesome</span>
                                             Ideal Answer
                                         </h4>
-                                        <p>{evalResult.model_answer}</p>
+                                        <TutorMarkdown text={evalResult.model_answer} />
                                     </div>
                                 )}
 

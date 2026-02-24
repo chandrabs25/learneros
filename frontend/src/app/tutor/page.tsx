@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import TutorMarkdown from "@/components/TutorMarkdown";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -184,31 +183,7 @@ export default function TutorPage() {
                   overflowWrap: "anywhere",
                 }}
               >
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    p: ({ children }) => <p style={{ margin: "0 0 0.65rem 0" }}>{children}</p>,
-                    ul: ({ children }) => <ul style={{ margin: "0.2rem 0 0.65rem 1.2rem" }}>{children}</ul>,
-                    ol: ({ children }) => <ol style={{ margin: "0.2rem 0 0.65rem 1.2rem" }}>{children}</ol>,
-                    code: ({ children }) => (
-                      <code style={{ background: "rgba(148,163,184,0.2)", borderRadius: 6, padding: "0.1rem 0.3rem" }}>{children}</code>
-                    ),
-                    pre: ({ children }) => (
-                      <pre style={{ background: "rgba(15,23,42,0.08)", borderRadius: 10, padding: "0.75rem", overflowX: "auto" }}>{children}</pre>
-                    ),
-                    table: ({ children }) => (
-                      <div style={{ overflowX: "auto", border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff", marginBottom: "0.6rem" }}>
-                        <table style={{ borderCollapse: "collapse", width: "100%" }}>{children}</table>
-                      </div>
-                    ),
-                    th: ({ children }) => (
-                      <th style={{ textAlign: "left", padding: "0.4rem 0.5rem", borderBottom: "1px solid #cbd5e1", background: "#f8fafc" }}>{children}</th>
-                    ),
-                    td: ({ children }) => <td style={{ padding: "0.35rem 0.5rem", borderTop: "1px solid #e2e8f0", verticalAlign: "top" }}>{children}</td>,
-                  }}
-                >
-                  {m.text || ""}
-                </ReactMarkdown>
+                <TutorMarkdown text={m.text || ""} isUser={m.role === "user"} />
               </div>
             ))}
           </div>

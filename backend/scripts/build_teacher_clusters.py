@@ -176,43 +176,6 @@ def _recommended_actions(
     return actions[:3]
 
 
-def _maybe_log_mlflow(institute_result: dict) -> None:
-    tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
-    if not tracking_uri:
-        return
-    try:
-        import mlflow  # type: ignore
-
-        mlflow.set_tracking_uri(tracking_uri)
-        mlflow.set_experiment(os.getenv("MLFLOW_CLUSTER_EXPERIMENT", "teacher-clustering"))
-        with mlflow.start_run(run_name=f"cluster_{institute_result.get('institute_id')}"):
-            mlflow.log_params(
-                {
-                    "engine_version": str(institute_result.get("engine_version") or "semantic_v2"),
-                    "algorithm": str(institute_result.get("algorithm") or "none"),
-                    "status": str(institute_result.get("status") or "unknown"),
-                }
-            )
-            for metric_key in [
-                "student_count",
-                "eligible_students",
-                "noise_students",
-                "clusters",
-                "k",
-                "silhouette",
-                "noise_ratio",
-                "size_imbalance",
-                "cluster_entropy",
-            ]:
-                val = institute_result.get(metric_key)
-                if isinstance(val, int | float):
-                    mlflow.log_metric(metric_key, float(val))
-            mlflow.log_text(json.dumps(institute_result, ensure_ascii=False, indent=2), "cluster_run_summary.json")
-    except Exception:
-        # Non-blocking observability.
-        return
-
-
 def persist_snapshot(
     institute_id: str,
     *,
@@ -456,7 +419,6 @@ def main() -> int:
                 hdbscan_min_cluster_size=args.hdbscan_min_cluster_size,
                 hdbscan_min_samples=args.hdbscan_min_samples,
             )
-            _maybe_log_mlflow(result)
             print(json.dumps(result))
             if result.get("status") == "error":
                 any_fail = True
@@ -468,7 +430,6 @@ def main() -> int:
                 "engine_version": "semantic_v2",
                 "error": str(exc),
             }
-            _maybe_log_mlflow(err_result)
             print(json.dumps(err_result))
     return 1 if any_fail else 0
 

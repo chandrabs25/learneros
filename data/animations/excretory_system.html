@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Diagram of the Human Excretory System</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        svg {
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #f8f9fa;
+        }
+        text {
+            user-select: none;
+        }
+        
+        /* Continuous Flows */
+        .flow-fast {
+            animation: flow-dash 2s linear infinite;
+        }
+        .flow-reverse {
+            animation: flow-dash-reverse 2s linear infinite;
+        }
+        .flow-slow {
+            animation: flow-dash 4s linear infinite;
+        }
+        
+        @keyframes flow-dash {
+            to { stroke-dashoffset: -50; }
+        }
+        @keyframes flow-dash-reverse {
+            to { stroke-dashoffset: 50; }
+        }
+
+        /* Sequential Narrative Animations (15s Loop) */
+        
+        /* 1. Water Reabsorption (Descending Limb) */
+        .anim-water {
+            animation: water-move 15s infinite;
+        }
+        .anim-water-2 {
+            animation: water-move 15s infinite 0.5s;
+        }
+        @keyframes water-move {
+            0%, 25% { opacity: 0; transform: translateX(0); }
+            30%, 35% { opacity: 1; transform: translateX(0); }
+            40% { opacity: 1; transform: translateX(-20px); }
+            45%, 100% { opacity: 0; transform: translateX(-20px); }
+        }
+
+        /* 2. Na+ Reabsorption (Ascending Limb) */
+        .anim-na {
+            animation: na-move 15s infinite;
+        }
+        .anim-na-2 {
+            animation: na-move 15s infinite 0.5s;
+        }
+        @keyframes na-move {
+            0%, 45% { opacity: 0; transform: translateX(0); }
+            50%, 55% { opacity: 1; transform: translateX(0); }
+            60% { opacity: 1; transform: translateX(20px); }
+            65%, 100% { opacity: 0; transform: translateX(20px); }
+        }
+
+        /* 3. Urea Secretion (Capillary to DCT) */
+        .anim-urea-sec {
+            animation: urea-sec-move 15s infinite;
+        }
+        @keyframes urea-sec-move {
+            0%, 55% { opacity: 0; transform: translateX(0); }
+            60%, 65% { opacity: 1; transform: translateX(0); }
+            70% { opacity: 1; transform: translateX(20px); }
+            75%, 100% { opacity: 0; transform: translateX(20px); }
+        }
+
+        /* 4. ANF Action & Vasodilation */
+        .anim-anf {
+            animation: anf-appear 15s infinite;
+            transform-origin: center;
+        }
+        @keyframes anf-appear {
+            0%, 65% { opacity: 0; transform: scale(0.5) translateY(-10px); }
+            70%, 90% { opacity: 1; transform: scale(1.2) translateY(0); }
+            95%, 100% { opacity: 0; transform: scale(0.5) translateY(-10px); }
+        }
+
+        .anim-vasodilate {
+            animation: vasodilate 15s infinite;
+        }
+        @keyframes vasodilate {
+            0%, 65% { stroke-width: 8px; stroke: #E74C3C; }
+            75%, 85% { stroke-width: 14px; stroke: #ff7675; }
+            95%, 100% { stroke-width: 8px; stroke: #E74C3C; }
+        }
+
+        /* 5. Urine Pulses */
+        .anim-cd-pulse {
+            animation: cd-pulse 15s linear infinite;
+        }
+        @keyframes cd-pulse {
+            0%, 70% { stroke-dashoffset: 350; opacity: 0; }
+            75% { opacity: 1; }
+            85% { stroke-dashoffset: 0; opacity: 1; }
+            90%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        .anim-ureter-pulse {
+            animation: ureter-pulse 15s linear infinite;
+        }
+        @keyframes ureter-pulse {
+            0%, 80% { stroke-dashoffset: 200; opacity: 0; }
+            85% { opacity: 1; }
+            95% { stroke-dashoffset: 0; opacity: 1; }
+            100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        /* Hover Interactions */
+        .interactive-group {
+            transition: filter 0.3s ease;
+        }
+        .interactive-group:hover {
+            filter: brightness(1.1) drop-shadow(0 0 4px rgba(0,0,0,0.2));
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 1000 650" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" aria-label="Animated Diagram of the Human Excretory System">
+    
+    <defs>
+        <!-- Shadows and Filters -->
+        <filter id="card-shadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.06" />
+        </filter>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+
+        <!-- Gradients -->
+        <radialGradient id="kidney-grad" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stop-color="#C0392B" />
+            <stop offset="100%" stop-color="#7A1B1B" />
+        </radialGradient>
+        
+        <linearGradient id="vasa-desc" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#E74C3C" />
+            <stop offset="100%" stop-color="#8E44AD" />
+        </linearGradient>
+        
+        <linearGradient id="vasa-asc" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stop-color="#8E44AD" />
+            <stop offset="100%" stop-color="#3498DB" />
+        </linearGradient>
+
+        <linearGradient id="bladder-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#F5B041" stop-opacity="0.8" />
+            <stop offset="100%" stop-color="#E67E22" stop-opacity="0.9" />
+        </linearGradient>
+
+        <!-- Patterns -->
+        <pattern id="dot-grid" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1" fill="#e2e8f0" />
+        </pattern>
+
+        <!-- Markers -->
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 Z" fill="#E74C3C" />
+        </marker>
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 Z" fill="#3498DB" />
+        </marker>
+    </defs>
+
+    <!-- Background -->
+    <rect width="1000" height="650" fill="#f8f9fa" />
+
+    <!-- Title Section -->
+    <g id="title-group">
+        <text x="500" y="40" text-anchor="middle" font-family="Inter" font-size="22" font-weight="700" fill="#2C3E50">Physiology of the Human Excretory System</text>
+        <text x="240" y="75" text-anchor="middle" font-family="Inter" font-size="16" font-weight="600" fill="#4A90D9">Macro-Anatomy</text>
+        <text x="725" y="75" text-anchor="middle" font-family="Inter" font-size="16" font-weight="600" fill="#4A90D9">Nephron Function</text>
+        <line x1="480" y1="60" x2="480" y2="560" stroke="#bdc3c7" stroke-width="2" stroke-dasharray="6,6" />
+    </g>
+
+    <!-- ========================================== -->
+    <!-- LEFT PANEL: GROSS ANATOMY                  -->
+    <!-- ========================================== -->
+    <g id="left-panel">
+        <!-- Card Background -->
+        <rect x="30" y="90" width="420" height="460" rx="16" fill="#ffffff" filter="url(#card-shadow)" />
+        <rect x="30" y="90" width="420" height="460" rx="16" fill="url(#dot-grid)" opacity="0.6" />
+
+        <!-- Major Blood Vessels -->
+        <g class="interactive-group" aria-label="Aorta and Vena Cava">
+            <!-- Aorta -->
+            <path d="M 220 110 L 220 520" fill="none" stroke="#E74C3C" stroke-width="14" stroke-linecap="round" />
+            <path d="M 220 110 L 220 520" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="10 15" class="flow-fast" opacity="0.6" />
+            <!-- Vena Cava -->
+            <path d="M 260 110 L 260 520" fill="none" stroke="#3498DB" stroke-width="14" stroke-linecap="round" />
+            <path d="M 260 110 L 260 520" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="10 15" class="flow-reverse" opacity="0.6" />
+        </g>
+
+        <!-- Renal Arteries & Veins -->
+        <g aria-label="Renal Blood Vessels">
+            <!-- To Right Kidney (Anatomical Right is Left side of image) -->
+            <path d="M 220 250 L 170 250" fill="none" stroke="#E74C3C" stroke-width="8" />
+            <path d="M 260 270 L 170 270" fill="none" stroke="#3498DB" stroke-width="8" />
+            <!-- To Left Kidney -->
+            <path d="M 220 270 L 310 270" fill="none" stroke="#E74C3C" stroke-width="8" />
+            <path d="M 260 250 L 310 250" fill="none" stroke="#3498DB" stroke-width="8" />
+        </g>
+
+        <!-- Kidneys -->
+        <g class="interactive-group" aria-label="Kidneys">
+            <!-- Adrenal Glands -->
+            <path d="M 120 205 Q 140 175 170 195 Q 140 215 120 205 Z" fill="#F39C12" opacity="0.9" />
+            <path d="M 360 205 Q 340 175 310 195 Q 340 215 360 205 Z" fill="#F39C12" opacity="0.9" />
+            
+            <!-- Right Kidney (Image Left) -->
+            <path d="M 180 240 C 180 180, 100 180, 100 260 C 100 340, 180 340, 180 280 C 165 270, 165 250, 180 240 Z" fill="url(#kidney-grad)" stroke="#641E16" stroke-width="2" />
+            <!-- Left Kidney (Image Right) -->
+            <path d="M 300 240 C 300 180, 380 180, 380 260 C 380 340, 300 340, 300 280 C 315 270, 315 250, 300 240 Z" fill="url(#kidney-grad)" stroke="#641E16" stroke-width="2" />
+        </g>
+
+        <!-- Ureters -->
+        <g class="interactive-group" aria-label="Ureters">
+            <path d="M 175 280 Q 175 380 220 450" fill="none" stroke="#F39C12" stroke-width="6" stroke-linecap="round" />
+            <path d="M 305 280 Q 305 380 260 450" fill="none" stroke="#F39C12" stroke-width="6" stroke-linecap="round" />
+            
+            <!-- Ureter Urine Pulse Animation -->
+            <path d="M 175 280 Q 175 380 220 450" fill="none" stroke="#F1C40F" stroke-width="6" stroke-linecap="round" stroke-dasharray="20 200" class="anim-ureter-pulse" />
+            <path d="M 305 280 Q 305 380 260 450" fill="none" stroke="#F1C40F" stroke-width="6" stroke-linecap="round" stroke-dasharray="20 200" class="anim-ureter-pulse" />
+        </g>
+
+        <!-- Urinary Bladder & Urethra -->
+        <g class="interactive-group" aria-label="Urinary Bladder">
+            <path d="M 240 440 C 190 440, 190 490, 220 510 C 230 520, 250 520, 260 510 C 290 490, 290 440, 240 440 Z" fill="url(#bladder-grad)" stroke="#D68910" stroke-width="2" />
+            <path d="M 235 515 L 235 535 M 245 515 L 245 535" fill="none" stroke="#E67E22" stroke-width="3" stroke-linecap="round" />
+        </g>
+
+        <!-- Left Panel Labels -->
+        <g font-family="Inter" font-size="12" fill="#2C3E50">
+            <polyline points="105,240 80,240" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="75" y="244" text-anchor="end">Right Kidney</text>
+
+            <polyline points="375,240 400,240" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="405" y="244" text-anchor="start">Left Kidney</text>
+
+            <polyline points="185,250 150,210 130,210" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="125" y="214" text-anchor="end">Renal Artery</text>
+
+            <polyline points="175,350 130,350" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="125" y="354" text-anchor="end">Ureter</text>
+
+            <polyline points="275,480 320,480" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="325" y="484" text-anchor="start">Urinary Bladder</text>
+        </g>
+
+        <!-- ANF Molecules (Left Panel) -->
+        <g class="anim-anf">
+            <polygon points="190,235 194,238 194,243 190,246 186,243 186,238" fill="#2ECC71" filter="url(#glow)" />
+            <polygon points="200,240 204,243 204,248 200,251 196,248 196,243" fill="#2ECC71" filter="url(#glow)" />
+        </g>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- RIGHT PANEL: NEPHRON FUNCTION              -->
+    <!-- ========================================== -->
+    <g id="right-panel">
+        <!-- Card Background -->
+        <rect x="500" y="90" width="470" height="460" rx="16" fill="#ffffff" filter="url(#card-shadow)" />
+        <rect x="500" y="90" width="470" height="460" rx="16" fill="url(#dot-grid)" opacity="0.6" />
+
+        <!-- Peritubular Capillaries (Vasa Recta) -->
+        <g class="interactive-group" aria-label="Peritubular Capillaries">
+            <!-- Descending Vasa Recta -->
+            <path d="M 660 150 Q 690 150 690 250 L 690 460" fill="none" stroke="url(#vasa-desc)" stroke-width="4" stroke-linecap="round" />
+            <!-- Capillary Loop -->
+            <path d="M 690 460 A 40 40 0 0 0 770 460" fill="none" stroke="#8E44AD" stroke-width="4" />
+            <!-- Ascending Vasa Recta -->
+            <path d="M 770 460 L 770 250 Q 770 150 820 150" fill="none" stroke="url(#vasa-asc)" stroke-width="4" stroke-linecap="round" />
+            <!-- Cross Connections -->
+            <line x1="690" y1="300" x2="770" y2="300" stroke="#8E44AD" stroke-width="2" opacity="0.5" />
+            <line x1="690" y1="380" x2="770" y2="380" stroke="#8E44AD" stroke-width="2" opacity="0.5" />
+            
+            <!-- Blood Flow Animation in Capillaries -->
+            <path d="M 660 150 Q 690 150 690 250 L 690 460 A 40 40 0 0 0 770 460 L 770 250 Q 770 150 820 150" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="8 12" class="flow-slow" opacity="0.7" />
+        </g>
+
+        <!-- Nephron Tubule -->
+        <g class="interactive-group" aria-label="Nephron Tubule">
+            <!-- Bowman's Capsule Outer -->
+            <path d="M 630 175 C 570 175, 570 225, 630 225" fill="#E8F4FD" stroke="#4A90D9" stroke-width="10" stroke-linecap="round" />
+            
+            <!-- Tubule Path (PCT -> Loop -> DCT -> CD) -->
+            <path d="M 630 200 Q 650 170 670 200 T 710 200 L 710 450 A 20 20 0 0 0 750 450 L 750 200 Q 770 170 790 200 T 830 200 L 830 520" fill="none" stroke="#FFD700" stroke-width="14" stroke-linecap="round" opacity="0.4" />
+            <path d="M 630 200 Q 650 170 670 200 T 710 200 L 710 450 A 20 20 0 0 0 750 450 L 750 200 Q 770 170 790 200 T 830 200 L 830 520" fill="none" stroke="#D4AC0D" stroke-width="2" stroke-linecap="round" />
+            
+            <!-- Filtrate Flow Animation -->
+            <path d="M 630 200 Q 650 170 670 200 T 710 200 L 710 450 A 20 20 0 0 0 750 450 L 750 200 Q 770 170 790 200 T 830 200 L 830 520" fill="none" stroke="#F1C40F" stroke-width="6" stroke-dasharray="10 20" class="flow-slow" />
+            
+            <!-- Urine Pulse in Collecting Duct -->
+            <path d="M 830 200 L 830 520" fill="none" stroke="#E67E22" stroke-width="8" stroke-dasharray="30 350" class="anim-cd-pulse" />
+        </g>
+
+        <!-- Glomerulus & Arteries -->
+        <g class="interactive-group" aria-label="Glomerulus">
+            <!-- Afferent Arteriole (Wider, Animated Vasodilation) -->
+            <path d="M 520 200 L 590 200" fill="none" stroke-linecap="round" class="anim-vasodilate" />
+            <!-- Glomerulus Tuft -->
+            <path d="M 585 200 C 590 180, 610 180, 610 200 C 610 220, 590 220, 595 200 C 600 185, 615 195, 615 205 C 615 215, 600 215, 605 200 L 620 200" fill="none" stroke="#E74C3C" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
+            <!-- Efferent Arteriole (Narrower) -->
+            <path d="M 610 190 Q 620 150 660 150" fill="none" stroke="#E74C3C" stroke-width="4" stroke-linecap="round" />
+            
+            <!-- Blood Flow in Arteries -->
+            <path d="M 520 200 L 590 200" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="5 10" class="flow-fast" opacity="0.8" />
+            <path d="M 610 190 Q 620 150 660 150" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="5 10" class="flow-fast" opacity="0.8" />
+        </g>
+
+        <!-- ========================================== -->
+        <!-- MOLECULAR ANIMATIONS (The Narrative)       -->
+        <!-- ========================================== -->
+        
+        <!-- 1. Water Reabsorption (Descending Loop -> Capillary) -->
+        <g>
+            <circle cx="710" cy="300" r="4.5" fill="#5DADE2" class="anim-water" />
+            <circle cx="710" cy="380" r="4.5" fill="#5DADE2" class="anim-water-2" />
+        </g>
+
+        <!-- 2. Na+ Reabsorption (Ascending Loop -> Capillary) -->
+        <g>
+            <circle cx="750" cy="340" r="4" fill="#FFFFFF" stroke="#95A5A6" stroke-width="1.5" class="anim-na" />
+            <circle cx="750" cy="420" r="4" fill="#FFFFFF" stroke="#95A5A6" stroke-width="1.5" class="anim-na-2" />
+        </g>
+
+        <!-- 3. Urea Secretion (Capillary -> DCT) -->
+        <g>
+            <circle cx="770" cy="180" r="4.5" fill="#795548" class="anim-urea-sec" />
+        </g>
+
+        <!-- 4. Urea Concentration in Collecting Duct (Static + Animated) -->
+        <g>
+            <!-- Static increasing density -->
+            <circle cx="830" cy="250" r="3.5" fill="#795548" opacity="0.8" />
+            <circle cx="826" cy="350" r="3.5" fill="#795548" opacity="0.8" />
+            <circle cx="834" cy="360" r="3.5" fill="#795548" opacity="0.8" />
+            <circle cx="825" cy="450" r="3.5" fill="#795548" opacity="0.9" />
+            <circle cx="835" cy="455" r="3.5" fill="#795548" opacity="0.9" />
+            <circle cx="830" cy="465" r="3.5" fill="#795548" opacity="0.9" />
+            <circle cx="824" cy="500" r="3.5" fill="#795548" opacity="1" />
+            <circle cx="836" cy="505" r="3.5" fill="#795548" opacity="1" />
+            <circle cx="830" cy="515" r="3.5" fill="#795548" opacity="1" />
+            <circle cx="825" cy="510" r="3.5" fill="#795548" opacity="1" />
+        </g>
+
+        <!-- 5. ANF Molecules (Triggering Vasodilation) -->
+        <g class="anim-anf">
+            <polygon points="550,175 555,179 555,185 550,189 545,185 545,179" fill="#2ECC71" filter="url(#glow)" />
+            <polygon points="565,180 570,184 570,190 565,194 560,190 560,184" fill="#2ECC71" filter="url(#glow)" />
+            <polygon points="540,190 545,194 545,200 540,204 535,200 535,194" fill="#2ECC71" filter="url(#glow)" />
+        </g>
+
+        <!-- Right Panel Labels & Callouts -->
+        <g font-family="Inter" font-size="12" fill="#2C3E50">
+            <!-- Anatomy Labels -->
+            <polyline points="550,200 550,150 520,150" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="515" y="154" text-anchor="end">Afferent Arteriole</text>
+
+            <polyline points="640,170 640,120 670,120" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="675" y="124" text-anchor="start">Efferent Arteriole</text>
+
+            <polyline points="610,225 610,260 580,260" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="575" y="264" text-anchor="end">Bowman's Capsule</text>
+
+            <polyline points="670,200 670,160 700,160" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="705" y="164" text-anchor="start">Proximal Convoluted Tubule</text>
+
+            <polyline points="730,450 730,490 700,490" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="695" y="494" text-anchor="end">Loop of Henle</text>
+
+            <polyline points="790,200 790,160 820,160" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="825" y="164" text-anchor="start">Distal Convoluted Tubule</text>
+
+            <polyline points="830,350 860,350" fill="none" stroke="#7f8c8d" stroke-width="1" />
+            <text x="865" y="354" text-anchor="start">Collecting Duct</text>
+
+            <!-- Process Callouts -->
+            <text x="575" y="280" text-anchor="end" font-size="11" font-weight="700" fill="#E74C3C">Ultrafiltration</text>
+            <text x="695" y="510" text-anchor="end" font-size="11" font-weight="700" fill="#2980B9">Selective Reabsorption</text>
+            
+            <!-- Animated ANF Callout -->
+            <g class="anim-anf">
+                <text x="515" y="135" text-anchor="end" font-size="11" font-weight="700" fill="#27AE60">ANF Action: Vasodilation</text>
+            </g>
+        </g>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- LEGEND                                     -->
+    <!-- ========================================== -->
+    <g id="legend" transform="translate(150, 570)">
+        <rect x="0" y="0" width="700" height="60" rx="8" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" filter="url(#card-shadow)" />
+        
+        <g font-family="Inter" font-size="12" fill="#2C3E50">
+            <!-- Arterial Blood -->
+            <line x1="20" y1="20" x2="40" y2="20" stroke="#E74C3C" stroke-width="4" stroke-linecap="round" />
+            <text x="50" y="24">Arterial Blood</text>
+            
+            <!-- Venous Blood -->
+            <line x1="20" y1="40" x2="40" y2="40" stroke="#3498DB" stroke-width="4" stroke-linecap="round" />
+            <text x="50" y="44">Venous Blood</text>
+
+            <!-- Filtrate/Urine -->
+            <line x1="160" y1="30" x2="180" y2="30" stroke="#FFD700" stroke-width="4" stroke-linecap="round" />
+            <text x="190" y="34">Filtrate / Urine</text>
+
+            <!-- Water -->
+            <circle cx="310" cy="20" r="5" fill="#5DADE2" />
+            <text x="325" y="24" font-family="Roboto Mono">H₂O</text>
+            <text x="355" y="24">(Water)</text>
+
+            <!-- Na+ Ions -->
+            <circle cx="310" cy="40" r="5" fill="#FFFFFF" stroke="#95A5A6" stroke-width="1.5" />
+            <text x="325" y="44" font-family="Roboto Mono">Na⁺</text>
+            <text x="355" y="44">(Sodium)</text>
+
+            <!-- Urea -->
+            <circle cx="450" cy="30" r="5" fill="#795548" />
+            <text x="465" y="34">Urea / Waste</text>
+
+            <!-- ANF -->
+            <polygon points="570,26 575,30 575,36 570,40 565,36 565,30" fill="#2ECC71" />
+            <text x="585" y="34">ANF (Hormone)</text>
+        </g>
+    </g>
+
+</svg>
+
+</body>
+</html>

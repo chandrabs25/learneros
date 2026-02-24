@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Early Embryogenesis: From Zygote to Gastrula</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            max-width: 100%;
+            max-height: 100vh;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Base Animation Classes */
+        .anim {
+            animation-duration: 14s;
+            animation-iteration-count: infinite;
+            animation-timing-function: ease-in-out;
+            animation-fill-mode: both;
+        }
+
+        /* Stage Opacity Keyframes */
+        @keyframes o-zygote { 0%, 10% { opacity: 1; } 11%, 100% { opacity: 0; } }
+        @keyframes o-2cell { 0%, 10% { opacity: 0; } 11%, 17% { opacity: 1; } 18%, 100% { opacity: 0; } }
+        @keyframes o-4cell { 0%, 17% { opacity: 0; } 18%, 24% { opacity: 1; } 25%, 100% { opacity: 0; } }
+        @keyframes o-8cell { 0%, 24% { opacity: 0; } 25%, 31% { opacity: 1; } 32%, 100% { opacity: 0; } }
+        @keyframes o-morula { 0%, 31% { opacity: 0; } 32%, 38% { opacity: 1; } 39%, 100% { opacity: 0; } }
+        @keyframes o-base-circle { 0%, 31% { opacity: 1; } 32%, 100% { opacity: 0; } }
+        @keyframes o-zona { 0%, 38% { opacity: 1; } 39%, 100% { opacity: 0; } }
+        @keyframes o-gastrula-group { 0%, 38% { opacity: 0; } 39%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+        /* Cleavage Pulse Effect */
+        @keyframes pulse-cleavage {
+            0%, 9% { transform: scale(1); }
+            10% { transform: scale(0.96); }
+            11%, 16% { transform: scale(1); }
+            17% { transform: scale(0.96); }
+            18%, 23% { transform: scale(1); }
+            24% { transform: scale(0.96); }
+            25%, 100% { transform: scale(1); }
+        }
+
+        /* Morphing Keyframes for Gastrulation */
+        @keyframes morph-endoderm {
+            0%, 53% { d: path('M 430 391 C 468 430 532 430 570 391'); stroke: #4A90D9; }
+            82%, 95% { d: path('M 430 391 C 460 220 540 220 570 391'); stroke: #F1C40F; }
+            100% { d: path('M 430 391 C 468 430 532 430 570 391'); stroke: #4A90D9; }
+        }
+
+        @keyframes morph-blastocoel {
+            0%, 53% { d: path('M 430 391 A 100 100 0 1 1 570 391 C 532 430 468 430 430 391'); }
+            82%, 95% { d: path('M 430 391 A 100 100 0 1 1 570 391 C 540 220 460 220 430 391'); }
+            100% { d: path('M 430 391 A 100 100 0 1 1 570 391 C 532 430 468 430 430 391'); }
+        }
+
+        @keyframes fade-mesoderm {
+            0%, 53% { opacity: 0; transform: scale(0.5); }
+            82%, 95% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        /* Label Animations */
+        @keyframes o-label-blastocoel { 0%, 38% { opacity: 0; } 39%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+        @keyframes o-label-gastrula { 0%, 75% { opacity: 0; } 82%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+        /* Timeline Highlights */
+        @keyframes tl-zygote { 0%, 31% { fill: #4A90D9; font-weight: 700; } 32%, 100% { fill: #95A5A6; font-weight: 500; } }
+        @keyframes tl-morula { 0%, 31% { fill: #95A5A6; font-weight: 500; } 32%, 38% { fill: #4A90D9; font-weight: 700; } 39%, 100% { fill: #95A5A6; font-weight: 500; } }
+        @keyframes tl-blastula { 0%, 38% { fill: #95A5A6; font-weight: 500; } 39%, 53% { fill: #4A90D9; font-weight: 700; } 54%, 100% { fill: #95A5A6; font-weight: 500; } }
+        @keyframes tl-gastrula { 0%, 53% { fill: #95A5A6; font-weight: 500; } 54%, 95% { fill: #4A90D9; font-weight: 700; } 96%, 100% { fill: #95A5A6; font-weight: 500; } }
+
+        /* Element Assignments */
+        .zygote-nuc { animation-name: o-zygote; }
+        .cell-2 { animation-name: o-2cell; }
+        .cell-4 { animation-name: o-4cell; }
+        .cell-8 { animation-name: o-8cell; }
+        .morula { animation-name: o-morula; }
+        .base-circle { animation-name: o-base-circle; }
+        .zona { animation-name: o-zona; }
+        .cleavage-group { animation-name: pulse-cleavage; transform-origin: 500px 320px; }
+        .gastrula-group { animation-name: o-gastrula-group; }
+        
+        .morph-endo { animation-name: morph-endoderm; }
+        .morph-blasto { animation-name: morph-blastocoel; }
+        .meso-left { animation-name: fade-mesoderm; transform-origin: 440px 290px; }
+        .meso-right { animation-name: fade-mesoderm; transform-origin: 560px 290px; }
+
+        .lbl-blasto { animation-name: o-label-blastocoel; }
+        .lbl-gastrula { animation-name: o-label-gastrula; }
+
+        .tl-zygote { animation-name: tl-zygote; }
+        .tl-morula { animation-name: tl-morula; }
+        .tl-blastula { animation-name: tl-blastula; }
+        .tl-gastrula { animation-name: tl-gastrula; }
+
+        /* Typography */
+        .title { font-size: 26px; font-weight: 700; fill: #2C3E50; text-anchor: middle; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #7F8C8D; text-anchor: middle; }
+        .label { font-size: 14px; font-weight: 500; fill: #2C3E50; }
+        .label-line { stroke: #95A5A6; stroke-width: 2; fill: none; stroke-dasharray: 4 2; }
+        .timeline-text { font-family: 'Roboto Mono', monospace; font-size: 14px; text-anchor: middle; }
+        .legend-text { font-size: 13px; fill: #34495E; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg">
+    <title>Early Embryogenesis: From Zygote to Gastrula</title>
+    <desc>Animated diagram showing the stages of embryonic development including cleavage, morula, blastula, and gastrulation.</desc>
+
+    <!-- Definitions -->
+    <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#95A5A6" />
+        </marker>
+        <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4" markerHeight="4">
+            <circle cx="5" cy="5" r="5" fill="#95A5A6" />
+        </marker>
+    </defs>
+
+    <!-- Background -->
+    <rect width="1000" height="650" fill="#ffffff" rx="12" />
+
+    <!-- Title -->
+    <text x="500" y="45" class="title">Early Embryonic Development</text>
+    <text x="500" y="70" class="subtitle">Continuous holoblastic cleavage leading to germ layer formation</text>
+
+    <!-- Legend -->
+    <g transform="translate(40, 90)">
+        <rect width="160" height="135" rx="8" fill="#f8f9fa" stroke="#BDC3C7" stroke-width="1" />
+        <text x="80" y="25" class="label" text-anchor="middle" font-weight="700">Key / Germ Layers</text>
+        
+        <rect x="15" y="40" width="14" height="14" rx="3" fill="#4A90D9" />
+        <text x="40" y="52" class="legend-text">Ectoderm (Outer)</text>
+        
+        <rect x="15" y="65" width="14" height="14" rx="3" fill="#E74C3C" />
+        <text x="40" y="77" class="legend-text">Mesoderm (Middle)</text>
+        
+        <rect x="15" y="90" width="14" height="14" rx="3" fill="#F1C40F" />
+        <text x="40" y="102" class="legend-text">Endoderm (Inner)</text>
+        
+        <rect x="15" y="115" width="14" height="14" rx="3" fill="#E8F4FD" stroke="#4A90D9" stroke-width="1" />
+        <text x="40" y="127" class="legend-text">Blastocoel / Fluid</text>
+    </g>
+
+    <!-- Timeline at Bottom -->
+    <g transform="translate(0, 580)">
+        <!-- Arrows -->
+        <path d="M 240 0 Q 300 -25 360 0" fill="none" stroke="#BDC3C7" stroke-width="3" marker-end="url(#arrow)" />
+        <path d="M 440 0 Q 500 -25 560 0" fill="none" stroke="#BDC3C7" stroke-width="3" marker-end="url(#arrow)" />
+        <path d="M 640 0 Q 700 -25 760 0" fill="none" stroke="#BDC3C7" stroke-width="3" marker-end="url(#arrow)" />
+        
+        <!-- Labels -->
+        <text x="200" y="5" class="anim timeline-text tl-zygote">Cleavage (Mitosis)</text>
+        <text x="400" y="5" class="anim timeline-text tl-morula">Morula</text>
+        <text x="600" y="5" class="anim timeline-text tl-blastula">Blastula</text>
+        <text x="800" y="5" class="anim timeline-text tl-gastrula">Gastrula</text>
+    </g>
+
+    <!-- Main Animation Area -->
+    <g id="main-embryo">
+        <!-- Zona Pellucida (Outer boundary, constant volume constraint) -->
+        <circle cx="500" cy="320" r="105" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="6 4" class="anim zona" />
+        <text x="500" y="200" class="anim subtitle zona" text-anchor="middle">Zona Pellucida</text>
+
+        <!-- Cleavage Stages (0% - 31%) -->
+        <g class="anim cleavage-group">
+            <!-- Base Cytoplasm Circle -->
+            <circle cx="500" cy="320" r="100" fill="#E8F4FD" stroke="#4A90D9" stroke-width="4" class="anim base-circle" />
+            
+            <!-- Zygote Nucleus -->
+            <circle cx="500" cy="320" r="14" fill="#2C3E50" class="anim zygote-nuc" />
+
+            <!-- 2-Cell Division Line & Nuclei -->
+            <line x1="500" y1="220" x2="500" y2="420" stroke="#4A90D9" stroke-width="4" class="anim cell-2 cell-4 cell-8" />
+            <g class="anim cell-2">
+                <circle cx="450" cy="320" r="12" fill="#2C3E50" />
+                <circle cx="550" cy="320" r="12" fill="#2C3E50" />
+            </g>
+
+            <!-- 4-Cell Division Line & Nuclei -->
+            <line x1="400" y1="320" x2="600" y2="320" stroke="#4A90D9" stroke-width="4" class="anim cell-4 cell-8" />
+            <g class="anim cell-4">
+                <circle cx="450" cy="270" r="10" fill="#2C3E50" />
+                <circle cx="550" cy="270" r="10" fill="#2C3E50" />
+                <circle cx="450" cy="370" r="10" fill="#2C3E50" />
+                <circle cx="550" cy="370" r="10" fill="#2C3E50" />
+            </g>
+
+            <!-- 8-Cell Division Lines & Nuclei -->
+            <line x1="429" y1="249" x2="571" y2="391" stroke="#4A90D9" stroke-width="4" class="anim cell-8" />
+            <line x1="429" y1="391" x2="571" y2="249" stroke="#4A90D9" stroke-width="4" class="anim cell-8" />
+            <g class="anim cell-8">
+                <circle cx="450" cy="270" r="8" fill="#2C3E50" />
+                <circle cx="550" cy="270" r="8" fill="#2C3E50" />
+                <circle cx="450" cy="370" r="8" fill="#2C3E50" />
+                <circle cx="550" cy="370" r="8" fill="#2C3E50" />
+                <circle cx="500" cy="245" r="8" fill="#2C3E50" />
+                <circle cx="500" cy="395" r="8" fill="#2C3E50" />
+                <circle cx="425" cy="320" r="8" fill="#2C3E50" />
+                <circle cx="575" cy="320" r="8" fill="#2C3E50" />
+            </g>
+        </g>
+
+        <!-- Morula Stage (32% - 38%) -->
+        <g class="anim morula">
+            <!-- Cluster of cells -->
+            <circle cx="500" cy="320" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="470" cy="300" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="530" cy="300" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="470" cy="340" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="530" cy="340" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="500" cy="270" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="500" cy="370" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="440" cy="320" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="560" cy="320" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="450" cy="280" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="550" cy="280" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="450" cy="360" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="550" cy="360" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="480" cy="240" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="520" cy="240" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="480" cy="400" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+            <circle cx="520" cy="400" r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" />
+        </g>
+
+        <!-- Blastula & Gastrula Stages (39% - 95%) -->
+        <g class="anim gastrula-group">
+            
+            <!-- Blastocoel Fluid (Morphs to compress during gastrulation) -->
+            <path class="anim morph-blasto" fill="#E8F4FD" />
+
+            <!-- Mesoderm Cells (Bud off and fade in during gastrulation) -->
+            <g class="anim meso-left">
+                <circle cx="435" cy="280" r="12" fill="#E74C3C" />
+                <circle cx="450" cy="295" r="12" fill="#E74C3C" />
+                <circle cx="425" cy="300" r="12" fill="#E74C3C" />
+                <circle cx="440" cy="315" r="12" fill="#E74C3C" />
+            </g>
+            <g class="anim meso-right">
+                <circle cx="565" cy="280" r="12" fill="#E74C3C" />
+                <circle cx="550" cy="295" r="12" fill="#E74C3C" />
+                <circle cx="575" cy="300" r="12" fill="#E74C3C" />
+                <circle cx="560" cy="315" r="12" fill="#E74C3C" />
+            </g>
+
+            <!-- Ectoderm (Outer layer, remains static in this cross-section) -->
+            <path d="M 430 391 A 100 100 0 1 1 570 391" fill="none" stroke="#4A90D9" stroke-width="20" stroke-linecap="round" />
+
+            <!-- Endoderm (Invaginates and changes color from blue to yellow) -->
+            <path class="anim morph-endo" fill="none" stroke-width="20" stroke-linecap="round" />
+
+            <!-- Dynamic Labels for Blastula/Gastrula -->
+            
+            <!-- Blastocoel Label -->
+            <g class="anim lbl-blasto">
+                <path d="M 500 160 L 500 100" class="label-line" marker-start="url(#dot)" />
+                <text x="500" y="90" class="label" text-anchor="middle">Blastocoel</text>
+            </g>
+
+            <!-- Gastrula Structural Labels -->
+            <g class="anim lbl-gastrula">
+                <!-- Ectoderm -->
+                <path d="M 605 220 L 680 180" class="label-line" marker-start="url(#dot)" />
+                <text x="690" y="175" class="label" fill="#4A90D9" font-weight="700">Ectoderm</text>
+
+                <!-- Mesoderm -->
+                <path d="M 585 295 L 680 295" class="label-line" marker-start="url(#dot)" />
+                <text x="690" y="300" class="label" fill="#E74C3C" font-weight="700">Mesoderm</text>
+
+                <!-- Endoderm -->
+                <path d="M 545 250 L 680 370" class="label-line" marker-start="url(#dot)" />
+                <text x="690" y="375" class="label" fill="#F1C40F" font-weight="700">Endoderm</text>
+
+                <!-- Archenteron (Primitive Gut) -->
+                <path d="M 500 330 L 500 450" class="label-line" marker-start="url(#dot)" />
+                <text x="500" y="470" class="label" text-anchor="middle">Archenteron (Primitive Gut)</text>
+
+                <!-- Blastopore -->
+                <path d="M 500 391 L 500 420 L 380 450" class="label-line" marker-start="url(#dot)" />
+                <text x="370" y="455" class="label" text-anchor="end">Blastopore</text>
+            </g>
+        </g>
+    </g>
+
+</svg>
+
+</body>
+</html>

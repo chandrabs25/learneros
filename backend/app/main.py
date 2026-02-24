@@ -25,7 +25,6 @@ from app.routers import (
     teacher_dashboard,
 )
 from app.database import close_driver
-from app.observability import setup_mlflow_tracing
 
 # Resolve animation assets path: main.py → app/ → backend/ → project root
 ANIMATIONS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "animations"
@@ -35,7 +34,6 @@ ANIMATIONS_DIR = Path(__file__).resolve().parent.parent.parent / "data" / "anima
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     # Startup: initialize connections
-    setup_mlflow_tracing()
     print(f"🚀 LearnerOS Backend starting up (env: {settings.ENVIRONMENT})")
     yield
     # Shutdown: close connections

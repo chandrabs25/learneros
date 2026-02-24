@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import TutorMarkdown from "@/components/TutorMarkdown";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -371,11 +372,13 @@ export default function InsightsAnalyticsPage() {
                             <p style={{ margin: 0, fontSize: "0.85rem", color: "#b91c1c" }}>{explainById[ins.id].error}</p>
                           ) : (
                             <>
-                              <p style={{ margin: 0, fontSize: "0.9rem", color: "#0f172a", lineHeight: 1.5 }}>{explainById[ins.id].text}</p>
+                              <TutorMarkdown text={explainById[ins.id].text || ""} compact />
                               {!!explainById[ins.id].points?.length && (
                                 <ul style={{ margin: "0.45rem 0 0", paddingLeft: "1rem" }}>
                                   {explainById[ins.id].points!.map((p, i) => (
-                                    <li key={i} style={{ fontSize: "0.82rem", color: "#334155", marginBottom: "0.25rem" }}>{p}</li>
+                                    <li key={i} style={{ fontSize: "0.82rem", color: "#334155", marginBottom: "0.25rem" }}>
+                                      <TutorMarkdown text={p} compact />
+                                    </li>
                                   ))}
                                 </ul>
                               )}
@@ -392,7 +395,7 @@ export default function InsightsAnalyticsPage() {
                             <p style={{ margin: 0, fontSize: "0.85rem", color: "#b91c1c" }}>{testById[ins.id].error}</p>
                           ) : (
                             <>
-                              <p style={{ margin: 0, fontSize: "0.9rem", color: "#0f172a", fontWeight: 700 }}>{testById[ins.id].question}</p>
+                              <TutorMarkdown text={testById[ins.id].question || ""} compact />
                               <div style={{ display: "grid", gap: "0.35rem", marginTop: "0.5rem" }}>
                                 {Object.entries(testById[ins.id].options || {}).map(([k, v]) => (
                                   <button
@@ -410,7 +413,12 @@ export default function InsightsAnalyticsPage() {
                                       fontFamily: "var(--font-body)",
                                     }}
                                   >
-                                    <strong>{k}.</strong> {v}
+                                    <span style={{ display: "inline-flex", gap: "0.35rem", alignItems: "flex-start" }}>
+                                      <strong style={{ marginTop: 2 }}>{k}.</strong>
+                                      <span style={{ flex: 1 }}>
+                                        <TutorMarkdown text={String(v)} compact />
+                                      </span>
+                                    </span>
                                   </button>
                                 ))}
                               </div>
@@ -439,7 +447,9 @@ export default function InsightsAnalyticsPage() {
                                 )}
                               </div>
                               {!!testById[ins.id].feedback && (
-                                <p style={{ margin: "0.45rem 0 0", fontSize: "0.82rem", color: "#1e3a8a" }}>{testById[ins.id].feedback}</p>
+                                <div style={{ marginTop: "0.45rem", fontSize: "0.82rem", color: "#1e3a8a" }}>
+                                  <TutorMarkdown text={testById[ins.id].feedback || ""} compact />
+                                </div>
                               )}
                             </>
                           )}

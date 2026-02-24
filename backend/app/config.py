@@ -20,7 +20,6 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD:str = "xLLVtnzQuAJREwmkuEWVAvIcdBbIKEqJbHdDgUfvDG0"
 
     # LLM
-    GROQ_API_KEY: str = ""
     GEMINI_API_KEY: str = ""
     # Fireworks-hosted Kimi 2.5 (OpenAI-compatible API)
     FIREWORKS_API_KEY: str = ""
@@ -31,11 +30,11 @@ class Settings(BaseSettings):
     FIREWORKS_BASE_URL: str = "https://api.fireworks.ai/inference/v1"
     FIREWORKS_MODEL: str = "accounts/fireworks/models/kimi-k2p5"
     FIREWORKS_EMBEDDING_MODEL: str = "fireworks/qwen3-embedding-8b"
-    # MLflow GenAI tracing (optional)
-    MLFLOW_ENABLE_TRACING: bool = False
-    MLFLOW_TRACKING_URI: str = "sqlite:///mlflow.db"
-    MLFLOW_EXPERIMENT_NAME: str = "ai-tutor"
-
+    GEN_CACHE_TTL_SECONDS: int = 604800
+    GEN_CACHE_MAX_ENTRIES: int = 5000
+    GEN_PROMPT_VERSION: str = "v2"
+    UPSTASH_REDIS_REST_URL: str = ""
+    UPSTASH_REDIS_REST_TOKEN: str = ""
     # Firebase (path to service account JSON)
     FIREBASE_SERVICE_ACCOUNT: str = ""
     FIREBASE_SERVICE_ACCOUNT_JSON: str = ""

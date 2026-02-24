@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 import uuid
 from typing import Literal
 from urllib import error as urlerror
@@ -18,12 +19,13 @@ from urllib import parse as urlparse
 from urllib import request as urlrequest
 from pydantic import BaseModel
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request, Response
 from app.auth import get_optional_user, CurrentUser
 from openai import OpenAI
 
 from app.config import settings
 from app.database import read_query, write_query
+from app.services.generation_cache import build_generation_cache, stable_cache_key
 
 router = APIRouter(prefix="/api", tags=["test"])
 logger = logging.getLogger(__name__)
@@ -64,6 +66,15 @@ def _get_embedding_client() -> OpenAI:
 MODEL = settings.FIREWORKS_MODEL
 EVAL_MODEL = settings.FIREWORKS_MODEL
 EXERCISE_EVAL_MODEL = "gemini-3.1-pro-preview"
+GEN_BROWSER_TTL_SECONDS = 300
+GEN_EDGE_TTL_SECONDS = 604800
+GEN_STALE_WHILE_REVALIDATE_SECONDS = 86400
+_generation_cache = build_generation_cache(
+    max_entries=settings.GEN_CACHE_MAX_ENTRIES,
+    default_ttl_seconds=settings.GEN_CACHE_TTL_SECONDS,
+    upstash_url=settings.UPSTASH_REDIS_REST_URL,
+    upstash_token=settings.UPSTASH_REDIS_REST_TOKEN,
+)
 
 
 def _generate_reconcile_text(prompt: str) -> str:
@@ -297,11 +308,54 @@ def _fetch_section_meta(section_id: str) -> dict:
     }
 
 
+def _set_generation_cache_headers(response: Response, cache_status: str, cache_key: str) -> None:
+    response.headers["Cache-Control"] = (
+        f"public, max-age={GEN_BROWSER_TTL_SECONDS}, "
+        f"s-maxage={GEN_EDGE_TTL_SECONDS}, "
+        f"stale-while-revalidate={GEN_STALE_WHILE_REVALIDATE_SECONDS}"
+    )
+    response.headers["CDN-Cache-Control"] = (
+        f"public, max-age={GEN_EDGE_TTL_SECONDS}, "
+        f"stale-while-revalidate={GEN_STALE_WHILE_REVALIDATE_SECONDS}"
+    )
+    response.headers["X-Gen-Cache"] = cache_status
+    response.headers["X-Gen-Cache-Key"] = cache_key[:16]
+
+
+def _set_no_store_headers(response: Response) -> None:
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["CDN-Cache-Control"] = "no-store"
+
+
+def _valid_question_payload(data: dict) -> bool:
+    return (
+        isinstance(data.get("question"), str)
+        and isinstance(data.get("subsection_id"), str)
+        and isinstance(data.get("hint"), str)
+        and isinstance(data.get("key_terms"), list)
+    )
+
+
+def _valid_mcq_payload(data: dict) -> bool:
+    options = data.get("options")
+    return (
+        isinstance(data.get("question"), str)
+        and isinstance(options, dict)
+        and all(k in options for k in ("A", "B", "C", "D"))
+        and data.get("correct_answer") in ("A", "B", "C", "D")
+        and isinstance(data.get("explanation"), str)
+        and isinstance(data.get("subsection_id"), str)
+        and isinstance(data.get("key_terms"), list)
+    )
+
+
 # ── Generate Question ──────────────────────────────────────────────────
 @router.get("/sections/{section_id:path}/test/question")
 async def generate_question(
     section_id: str,
     subsection_id: str,
+    response: Response,
+    variant: int = 0,
 ):
     """Generate an AI question from section content, targeting the given subsection.
     The subsection_id is required — the question is always about one specific subsection.
@@ -319,6 +373,29 @@ async def generate_question(
         )
     target_sub = next(s for s in meta["subsections"] if s["id"] == subsection_id)
 
+    cache_key = stable_cache_key(
+        "test_question",
+        {
+            "section_id": section_id,
+            "subsection_id": target_sub["id"],
+            "variant": variant,
+            "model": MODEL,
+            "prompt_version": settings.GEN_PROMPT_VERSION,
+        },
+    )
+    cached = _generation_cache.get(cache_key)
+    if cached is not None:
+        if not _valid_question_payload(cached):
+            _generation_cache.delete(cache_key)
+        else:
+            _set_generation_cache_headers(response, "HIT", cache_key)
+            logger.info(
+                "Generation cache hit",
+                extra={"endpoint": "test_question", "cache_key": cache_key[:16], "model": MODEL},
+            )
+            return cached
+
+    started = time.monotonic()
     prompt = f"""You are an educational assessment AI.
 
 The student is currently studying the subsection "{target_sub["title"]}" 
@@ -358,7 +435,7 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
     if subsection_id not in valid_sub_ids:
         subsection_id = meta["subsections"][0]["id"] if meta["subsections"] else section_id
 
-    return {
+    payload = {
         "section_id": section_id,
         "section_title": meta["section_title"],
         "subsection_id": subsection_id,
@@ -366,6 +443,18 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
         "hint": data.get("hint", ""),
         "key_terms": data.get("key_terms", meta["key_terms"][:5]),
     }
+    _generation_cache.set(cache_key, payload)
+    _set_generation_cache_headers(response, "MISS", cache_key)
+    logger.info(
+        "Generation cache miss",
+        extra={
+            "endpoint": "test_question",
+            "cache_key": cache_key[:16],
+            "model": MODEL,
+            "latency_ms": round((time.monotonic() - started) * 1000, 2),
+        },
+    )
+    return payload
 
 
 # ── Evaluate Answer ────────────────────────────────────────────────────
@@ -380,11 +469,13 @@ async def evaluate_answer(
     section_id: str,
     body: AnswerPayload,
     request: Request,
+    response: Response,
     background_tasks: BackgroundTasks,
     user: CurrentUser | None = Depends(get_optional_user),
 ):
     """Evaluate a student's answer and return structured insights.
     If authenticated, auto-persists insights to Neo4j."""
+    _set_no_store_headers(response)
     meta = _fetch_section_meta(section_id)
     context = meta["full_text"]
 
@@ -733,7 +824,9 @@ def _persist_insight_safe(student_id: str, ins: dict) -> None:
 async def generate_mcq(
     section_id: str,
     subsection_id: str,
+    response: Response,
     concept_id: str | None = None,
+    variant: int = 0,
 ):
     """Generate a conceptual MCQ from full section context, targeted to one subsection."""
     meta = _fetch_section_meta(section_id)
@@ -771,6 +864,30 @@ async def generate_mcq(
             "- Make distractors around common confusion related to this concept."
         )
 
+    cache_key = stable_cache_key(
+        "test_mcq",
+        {
+            "section_id": section_id,
+            "subsection_id": target_sub["id"],
+            "concept_id": concept_id or "",
+            "variant": variant,
+            "model": MODEL,
+            "prompt_version": settings.GEN_PROMPT_VERSION,
+        },
+    )
+    cached = _generation_cache.get(cache_key)
+    if cached is not None:
+        if not _valid_mcq_payload(cached):
+            _generation_cache.delete(cache_key)
+        else:
+            _set_generation_cache_headers(response, "HIT", cache_key)
+            logger.info(
+                "Generation cache hit",
+                extra={"endpoint": "test_mcq", "cache_key": cache_key[:16], "model": MODEL},
+            )
+            return cached
+
+    started = time.monotonic()
     prompt = f"""You are an educational assessment AI. Based on the following study material,
 generate ONE conceptual multiple-choice question (MCQ) that tests deep understanding
 (not simple recall). The question should require the student to apply, analyze, or
@@ -820,7 +937,7 @@ RULES:
     if data.get("subsection_id") != target_sub["id"]:
         data["subsection_id"] = target_sub["id"]
 
-    return {
+    payload = {
         "section_id": section_id,
         "section_title": meta["section_title"],
         "subsection_id": target_sub["id"],
@@ -830,6 +947,18 @@ RULES:
         "explanation": data.get("explanation", ""),
         "key_terms": data.get("key_terms", meta["key_terms"][:5]),
     }
+    _generation_cache.set(cache_key, payload)
+    _set_generation_cache_headers(response, "MISS", cache_key)
+    logger.info(
+        "Generation cache miss",
+        extra={
+            "endpoint": "test_mcq",
+            "cache_key": cache_key[:16],
+            "model": MODEL,
+            "latency_ms": round((time.monotonic() - started) * 1000, 2),
+        },
+    )
+    return payload
 
 
 # ── MCQ Evaluation ─────────────────────────────────────────────────────
@@ -846,11 +975,13 @@ async def evaluate_mcq(
     section_id: str,
     body: MCQAnswerPayload,
     request: Request,
+    response: Response,
     background_tasks: BackgroundTasks,
     user: CurrentUser | None = Depends(get_optional_user),
 ):
     """Evaluate an MCQ answer and return insights.
     If authenticated, auto-persists insights to Neo4j."""
+    _set_no_store_headers(response)
     meta = _fetch_section_meta(section_id)
     context = meta["full_text"]
     source_id = body.subsection_id
@@ -981,10 +1112,12 @@ async def evaluate_exercise_answer(
     section_id: str,
     body: ExerciseAnswerPayload,
     request: Request,
+    response: Response,
     background_tasks: BackgroundTasks,
     user: CurrentUser | None = Depends(get_optional_user),
 ):
     """Evaluate chapter-end exercise answers (text or image) and persist reconciled insights."""
+    _set_no_store_headers(response)
     meta = _fetch_section_meta(section_id)
     context = meta["full_text"]
     source_id = section_id

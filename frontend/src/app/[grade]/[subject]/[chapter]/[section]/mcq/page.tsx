@@ -5,6 +5,8 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import LatexText from "@/components/LatexText";
+import { fetchGenerationJSON } from "@/lib/generation-cache";
+import TutorMarkdown from "@/components/TutorMarkdown";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -96,24 +98,18 @@ export default function MCQPracticePage() {
         setSelected(null);
         setResult(null);
         try {
-            const token = await getIdToken();
-            const headers: Record<string, string> = {};
-            if (token) headers["Authorization"] = `Bearer ${token}`;
             const targetConceptId = questionPlan[questionIndex];
             const conceptPart = targetConceptId ? `&concept_id=${encodeURIComponent(targetConceptId)}` : "";
-            const r = await fetch(
-                `${API_URL}/api/sections/${sectionId}/test/mcq?subsection_id=${encodeURIComponent(targetSubsection)}${conceptPart}`,
-                { headers }
+            const data = await fetchGenerationJSON<MCQData>(
+                `${API_URL}/api/sections/${sectionId}/test/mcq?subsection_id=${encodeURIComponent(targetSubsection)}${conceptPart}&variant=${questionIndex}`
             );
-            const data = await r.json();
-            if (!r.ok) throw new Error(data?.detail || `HTTP ${r.status}`);
             setMcq(data);
         } catch (e: unknown) {
             setError(e instanceof Error ? e.message : "Failed to load question");
             setMcq(null);
         }
         setLoading(false);
-    }, [sectionId, targetSubsection, questionPlan, questionIndex, getIdToken]);
+    }, [sectionId, targetSubsection, questionPlan, questionIndex]);
 
     // Build question plan: minimum 2 questions, else one per concept.
     useEffect(() => {
@@ -273,7 +269,9 @@ export default function MCQPracticePage() {
                     ) : mcq ? (
                         <>
                             <div className="mcq-card-badge">MULTIPLE CHOICE</div>
-                            <LatexText as="h2" className="mcq-question">{mcq.question}</LatexText>
+                            <div className="mcq-question">
+                                <TutorMarkdown text={mcq.question} />
+                            </div>
 
                             {/* Options */}
                             <div className="mcq-options">
@@ -301,7 +299,9 @@ export default function MCQPracticePage() {
                                             disabled={!!result}
                                         >
                                             <span className="mcq-option-label">{label}</span>
-                                            <LatexText className="mcq-option-text">{text}</LatexText>
+                                            <div className="mcq-option-text">
+                                                <TutorMarkdown text={text} compact />
+                                            </div>
                                             {result && isCorrect && (
                                                 <span className="material-symbols-outlined mcq-option-icon">check_circle</span>
                                             )}
@@ -322,9 +322,11 @@ export default function MCQPracticePage() {
                                         </span>
                                         <strong>{result.is_correct ? "Correct!" : "Not quite right"}</strong>
                                     </div>
-                                    <LatexText as="p">{result.feedback}</LatexText>
+                                    <TutorMarkdown text={result.feedback} compact />
                                     {result.explanation && (
-                                        <LatexText as="p" className="mcq-feedback-explanation">{result.explanation}</LatexText>
+                                        <div className="mcq-feedback-explanation">
+                                            <TutorMarkdown text={result.explanation} compact />
+                                        </div>
                                     )}
                                 </div>
                             )}

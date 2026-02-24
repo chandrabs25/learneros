@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Embryo Sac: Structure & Double Fertilization</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2C3E50;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+        }
+
+        /* Typography inside SVG */
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #2C3E50;
+            font-size: 14px;
+        }
+        .title-svg {
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .label-bold {
+            font-weight: 600;
+        }
+        .sci-notation {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+        }
+
+        /* Lines */
+        .pointer-line {
+            stroke: #7F8C8D;
+            stroke-width: 1.5;
+            fill: none;
+        }
+
+        /* --- Animations --- */
+        
+        /* Polar Nuclei Pulse */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .polar-group {
+            transform-origin: 450px 320px;
+            animation: pulse 3s infinite ease-in-out;
+        }
+
+        /* Pollen Tube Growth */
+        @keyframes growTube {
+            0%, 25% { stroke-dashoffset: 200; opacity: 0; }
+            26% { opacity: 1; stroke-dashoffset: 200; }
+            41.6% { stroke-dashoffset: 0; opacity: 1; }
+            90% { stroke-dashoffset: 0; opacity: 1; }
+            95%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        .pollen-tube {
+            stroke-dasharray: 200;
+            animation: growTube 12s infinite linear;
+        }
+
+        /* Synergid Degeneration */
+        @keyframes dimSynergid {
+            0%, 35% { opacity: 1; fill: #E8F4FD; }
+            45%, 90% { opacity: 0.4; fill: #BDC3C7; }
+            95%, 100% { opacity: 1; fill: #E8F4FD; }
+        }
+        .synergid-left {
+            animation: dimSynergid 12s infinite linear;
+        }
+
+        /* Male Gamete 1 (To Egg) */
+        @keyframes moveMG1 {
+            0%, 35% { transform: translate(320px, 640px); opacity: 0; }
+            36% { opacity: 1; }
+            41.6% { transform: translate(405px, 540px); }
+            58.3% { transform: translate(415px, 510px); }
+            70% { transform: translate(450px, 480px); opacity: 1; }
+            71%, 100% { transform: translate(450px, 480px); opacity: 0; }
+        }
+        .mg1 {
+            animation: moveMG1 12s infinite linear;
+        }
+
+        /* Male Gamete 2 (To Polar Nuclei) */
+        @keyframes moveMG2 {
+            0%, 35% { transform: translate(310px, 650px); opacity: 0; }
+            36% { opacity: 1; }
+            41.6% { transform: translate(395px, 550px); }
+            58.3% { transform: translate(405px, 520px); }
+            75% { transform: translate(450px, 320px); opacity: 1; }
+            76%, 100% { transform: translate(450px, 320px); opacity: 0; }
+        }
+        .mg2 {
+            animation: moveMG2 12s infinite linear;
+        }
+
+        /* Fade out original nuclei */
+        @keyframes fadeOutEggNuc {
+            0%, 69% { opacity: 1; }
+            70%, 95% { opacity: 0; }
+            96%, 100% { opacity: 1; }
+        }
+        .egg-nuc-group { animation: fadeOutEggNuc 12s infinite linear; }
+
+        @keyframes fadeOutPolarNuc {
+            0%, 74% { opacity: 1; }
+            75%, 95% { opacity: 0; }
+            96%, 100% { opacity: 1; }
+        }
+        .polar-nuc-group { animation: fadeOutPolarNuc 12s infinite linear; }
+
+        /* Fade in Results (Zygote & PEN) */
+        @keyframes fadeInZygote {
+            0%, 69% { opacity: 0; transform: scale(0.5); }
+            70%, 90% { opacity: 1; transform: scale(1); }
+            95%, 100% { opacity: 0; transform: scale(0.5); }
+        }
+        .zygote-result {
+            transform-origin: 450px 480px;
+            animation: fadeInZygote 12s infinite linear;
+        }
+
+        @keyframes fadeInPEN {
+            0%, 74% { opacity: 0; transform: scale(0.5); }
+            75%, 90% { opacity: 1; transform: scale(1); }
+            95%, 100% { opacity: 0; transform: scale(0.5); }
+        }
+        .pen-result {
+            transform-origin: 450px 320px;
+            animation: fadeInPEN 12s infinite linear;
+        }
+
+        /* Glow Effects */
+        @keyframes glowEgg {
+            0%, 69% { opacity: 0; transform: scale(0.5); }
+            70% { opacity: 0.8; transform: scale(1.2); }
+            75%, 100% { opacity: 0; transform: scale(1.5); }
+        }
+        .glow-egg {
+            transform-origin: 450px 480px;
+            animation: glowEgg 12s infinite linear;
+        }
+
+        @keyframes glowPolar {
+            0%, 74% { opacity: 0; transform: scale(0.5); }
+            75% { opacity: 0.8; transform: scale(1.2); }
+            80%, 100% { opacity: 0; transform: scale(1.5); }
+        }
+        .glow-polar {
+            transform-origin: 450px 320px;
+            animation: glowPolar 12s infinite linear;
+        }
+
+        /* Dynamic Labels */
+        @keyframes dynPtube {
+            0%, 25% { opacity: 0; }
+            30%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+        .dyn-ptube { animation: dynPtube 12s infinite linear; }
+
+        @keyframes dynMg {
+            0%, 35% { opacity: 0; }
+            40%, 70% { opacity: 1; }
+            75%, 100% { opacity: 0; }
+        }
+        .dyn-mg { animation: dynMg 12s infinite linear; }
+
+        @keyframes dynZygote {
+            0%, 69% { opacity: 0; }
+            70%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+        .dyn-zygote { animation: dynZygote 12s infinite linear; }
+
+        @keyframes dynPen {
+            0%, 74% { opacity: 0; }
+            75%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+        .dyn-pen { animation: dynPen 12s infinite linear; }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Embryo Sac: Structure & Double Fertilization</h1>
+        <svg viewBox="0 0 900 680" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of an embryo sac and double fertilization">
+            <defs>
+                <!-- Drop shadow for nuclei and gametes -->
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.25"/>
+                </filter>
+                <!-- Glow effect for fertilization -->
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="6" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+            </defs>
+
+            <!-- Background / Central Cell Boundary -->
+            <ellipse cx="450" cy="340" rx="160" ry="240" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3"/>
+
+            <!-- ================= STATIC STRUCTURES ================= -->
+            
+            <!-- Antipodal Cells (Chalazal End) -->
+            <g class="antipodals">
+                <ellipse cx="400" cy="130" rx="25" ry="35" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" transform="rotate(-15 400 130)"/>
+                <ellipse cx="450" cy="120" rx="25" ry="35" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+                <ellipse cx="500" cy="130" rx="25" ry="35" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" transform="rotate(15 500 130)"/>
+                <!-- Antipodal Nuclei -->
+                <circle cx="400" cy="130" r="8" fill="#2C3E50" filter="url(#shadow)"/>
+                <circle cx="450" cy="120" r="8" fill="#2C3E50" filter="url(#shadow)"/>
+                <circle cx="500" cy="130" r="8" fill="#2C3E50" filter="url(#shadow)"/>
+            </g>
+
+            <!-- Synergids (Micropylar End) -->
+            <g class="synergids">
+                <!-- Left Synergid (Animates/Degenerates) -->
+                <ellipse cx="405" cy="530" rx="35" ry="50" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" class="synergid-left"/>
+                <circle cx="405" cy="520" r="10" fill="#2C3E50" filter="url(#shadow)" class="synergid-left"/>
+                
+                <!-- Right Synergid -->
+                <ellipse cx="495" cy="530" rx="35" ry="50" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+                <circle cx="495" cy="520" r="10" fill="#2C3E50" filter="url(#shadow)"/>
+            </g>
+
+            <!-- Filiform Apparatus -->
+            <g class="filiform-apparatus">
+                <!-- Left -->
+                <path d="M 385 560 Q 395 530 405 560 Q 415 530 425 560" fill="none" stroke="#2C3E50" stroke-width="3"/>
+                <path d="M 390 570 Q 405 540 420 570" fill="none" stroke="#2C3E50" stroke-width="3"/>
+                <!-- Right -->
+                <path d="M 475 560 Q 485 530 495 560 Q 505 530 515 560" fill="none" stroke="#2C3E50" stroke-width="3"/>
+                <path d="M 480 570 Q 495 540 510 570" fill="none" stroke="#2C3E50" stroke-width="3"/>
+            </g>
+
+            <!-- Egg Cell -->
+            <g class="egg-cell">
+                <ellipse cx="450" cy="490" rx="45" ry="55" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+                <g class="egg-nuc-group">
+                    <circle cx="450" cy="480" r="14" fill="#2C3E50" filter="url(#shadow)"/>
+                </g>
+            </g>
+
+            <!-- Polar Nuclei -->
+            <g class="polar-nuc-group">
+                <g class="polar-group">
+                    <circle cx="435" cy="320" r="14" fill="#2C3E50" filter="url(#shadow)"/>
+                    <circle cx="465" cy="320" r="14" fill="#2C3E50" filter="url(#shadow)"/>
+                </g>
+            </g>
+
+            <!-- ================= ANIMATED FERTILIZATION ELEMENTS ================= -->
+            
+            <!-- Pollen Tube -->
+            <path d="M 320 640 C 350 600, 390 580, 405 540" fill="none" stroke="#FF6B6B" stroke-width="14" stroke-linecap="round" class="pollen-tube"/>
+
+            <!-- Male Gametes -->
+            <circle cx="0" cy="0" r="7" fill="#2C3E50" filter="url(#shadow)" class="mg1"/>
+            <circle cx="0" cy="0" r="7" fill="#2C3E50" filter="url(#shadow)" class="mg2"/>
+
+            <!-- Glow Effects -->
+            <circle cx="450" cy="480" r="25" fill="#F39C12" filter="url(#glow)" class="glow-egg"/>
+            <circle cx="450" cy="320" r="30" fill="#F39C12" filter="url(#glow)" class="glow-polar"/>
+
+            <!-- Fertilization Results -->
+            <g class="zygote-result">
+                <circle cx="450" cy="480" r="18" fill="#2ECC71" filter="url(#shadow)"/>
+            </g>
+            <g class="pen-result">
+                <circle cx="450" cy="320" r="22" fill="#2ECC71" filter="url(#shadow)"/>
+            </g>
+
+            <!-- ================= LABELS & ANNOTATIONS ================= -->
+            
+            <!-- Top / Bottom Indicators -->
+            <text x="450" y="60" text-anchor="middle" class="label-bold" fill="#7F8C8D">Chalazal End</text>
+            <text x="450" y="630" text-anchor="middle" class="label-bold" fill="#7F8C8D">Micropylar End</text>
+
+            <!-- Left Side Labels (Static) -->
+            <g class="labels-left">
+                <text x="180" y="135" class="label-bold">Antipodals (3)</text>
+                <polyline points="290,130 370,130" class="pointer-line"/>
+
+                <text x="180" y="245" class="label-bold">Central Cell</text>
+                <polyline points="270,240 350,240" class="pointer-line"/>
+
+                <g class="polar-nuc-group">
+                    <text x="180" y="325" class="label-bold">Polar Nuclei (2)</text>
+                    <polyline points="295,320 410,320" class="pointer-line"/>
+                </g>
+            </g>
+
+            <!-- Right Side Labels (Static) -->
+            <g class="labels-right">
+                <g class="egg-nuc-group">
+                    <text x="660" y="485" class="label-bold">Egg Cell</text>
+                    <polyline points="650,480 500,480" class="pointer-line"/>
+                </g>
+
+                <text x="660" y="535" class="label-bold">Synergids (2)</text>
+                <polyline points="650,530 535,530" class="pointer-line"/>
+
+                <text x="660" y="575" class="label-bold">Filiform Apparatus</text>
+                <polyline points="650,570 520,560" class="pointer-line"/>
+            </g>
+
+            <!-- Dynamic Process Labels -->
+            <g class="labels-dynamic">
+                <text x="180" y="600" class="dyn-ptube label-bold" fill="#FF6B6B">Pollen Tube</text>
+                
+                <g class="dyn-mg">
+                    <text x="180" y="550" class="label-bold" fill="#2C3E50">Male Gametes <tspan class="sci-notation" fill="#E74C3C">(n)</tspan></text>
+                    <polyline points="320,545 380,545" class="pointer-line" stroke-dasharray="4,4"/>
+                </g>
+
+                <g class="dyn-zygote">
+                    <text x="660" y="485" class="label-bold" fill="#27AE60">Syngamy → Zygote <tspan class="sci-notation">(2n)</tspan></text>
+                    <polyline points="650,480 480,480" class="pointer-line" stroke="#27AE60"/>
+                </g>
+
+                <g class="dyn-pen">
+                    <text x="660" y="325" class="label-bold" fill="#27AE60">Triple Fusion → PEN <tspan class="sci-notation">(3n)</tspan></text>
+                    <polyline points="650,320 480,320" class="pointer-line" stroke="#27AE60"/>
+                </g>
+            </g>
+
+            <!-- Legend -->
+            <g class="legend" transform="translate(30, 30)">
+                <rect x="0" y="0" width="160" height="130" fill="#ffffff" stroke="#BDC3C7" rx="6" filter="url(#shadow)"/>
+                <text x="15" y="25" class="label-bold" font-size="13">Legend</text>
+                
+                <circle cx="20" cy="45" r="6" fill="#2C3E50"/>
+                <text x="35" y="50" font-size="12">Nucleus <tspan class="sci-notation" fill="#E74C3C">(n)</tspan></text>
+                
+                <circle cx="20" cy="70" r="6" fill="#2ECC71"/>
+                <text x="35" y="75" font-size="12">Fertilized <tspan class="sci-notation" fill="#E74C3C">(2n/3n)</tspan></text>
+                
+                <line x1="10" y1="95" x2="30" y2="95" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round"/>
+                <text x="35" y="100" font-size="12">Pollen Tube</text>
+                
+                <line x1="10" y1="115" x2="30" y2="115" stroke="#4A90D9" stroke-width="2"/>
+                <text x="35" y="120" font-size="12">Cell Membrane</text>
+            </g>
+
+        </svg>
+    </div>
+</body>
+</html>

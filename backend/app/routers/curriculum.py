@@ -11,7 +11,7 @@ Routes:
 
 import time
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 
 from app.auth import get_optional_user
 from app.config import settings
@@ -19,7 +19,28 @@ from app.database import read_query
 
 router = APIRouter(prefix="/api", tags=["curriculum"])
 _cache: dict[str, tuple[float, object]] = {}
-_CACHE_TTL_SECONDS = 60.0
+_CACHE_TTL_SECONDS = 3600.0
+_PUBLIC_BROWSER_CACHE_SECONDS = 86400
+_PUBLIC_EDGE_CACHE_SECONDS = 2592000
+
+
+def _set_public_cache_headers(
+    response: Response,
+    browser_seconds: int = _PUBLIC_BROWSER_CACHE_SECONDS,
+    edge_seconds: int = _PUBLIC_EDGE_CACHE_SECONDS,
+) -> None:
+    # Browser gets a short TTL; CDN/edge gets longer TTL.
+    response.headers["Cache-Control"] = (
+        f"public, max-age={browser_seconds}, s-maxage={edge_seconds}, stale-while-revalidate=604800"
+    )
+    response.headers["CDN-Cache-Control"] = (
+        f"public, max-age={edge_seconds}, stale-while-revalidate=604800"
+    )
+
+
+def _set_no_store_headers(response: Response) -> None:
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["CDN-Cache-Control"] = "no-store"
 
 
 def _cache_get(key: str):
@@ -39,8 +60,9 @@ def _cache_set(key: str, payload):
 
 # ─── Grades ──────────────────────────────────────────────────────────
 @router.get("/grades")
-async def list_grades():
+async def list_grades(response: Response):
     """Return available grade levels derived from Textbook nodes."""
+    _set_public_cache_headers(response)
     key = "grades"
     cached = _cache_get(key)
     if cached is not None:
@@ -64,8 +86,9 @@ async def list_grades():
 
 # ─── Subjects ────────────────────────────────────────────────────────
 @router.get("/grades/{grade}/subjects")
-async def list_subjects(grade: int):
+async def list_subjects(grade: int, response: Response):
     """Return subjects available for a grade."""
+    _set_public_cache_headers(response)
     key = f"subjects|{grade}"
     cached = _cache_get(key)
     if cached is not None:
@@ -88,8 +111,9 @@ async def list_subjects(grade: int):
 
 # ─── Chapters ────────────────────────────────────────────────────────
 @router.get("/grades/{grade}/subjects/{subject}/chapters")
-async def list_chapters(grade: int, subject: str):
+async def list_chapters(grade: int, subject: str, response: Response):
     """Return chapters for a grade + subject combo."""
+    _set_public_cache_headers(response)
     key = f"chapters|{grade}|{subject.lower()}"
     cached = _cache_get(key)
     if cached is not None:
@@ -125,8 +149,9 @@ async def list_chapters(grade: int, subject: str):
 
 # ─── Sections ────────────────────────────────────────────────────────
 @router.get("/chapters/{chapter_id:path}/sections")
-async def list_sections(chapter_id: str):
+async def list_sections(chapter_id: str, response: Response):
     """Return sections for a chapter, with subsection + prerequisite counts."""
+    _set_public_cache_headers(response)
     key = f"sections|{chapter_id}"
     cached = _cache_get(key)
     if cached is not None:
@@ -153,8 +178,9 @@ async def list_sections(chapter_id: str):
 
 # ─── Subsections ─────────────────────────────────────────────────────
 @router.get("/sections/{section_id:path}/subsections")
-async def list_subsections(section_id: str):
+async def list_subsections(section_id: str, response: Response):
     """Return subsections with their content for a section."""
+    _set_public_cache_headers(response)
     key = f"subsections|{section_id}"
     cached = _cache_get(key)
     if cached is not None:
@@ -186,8 +212,9 @@ async def list_subsections(section_id: str):
 
 # ─── Exercises for a Section ──────────────────────────────────────────
 @router.get("/sections/{section_id:path}/exercises")
-async def list_section_exercises(section_id: str):
+async def list_section_exercises(section_id: str, response: Response):
     """Return exercises that test a section (via TESTS relationship)."""
+    _set_public_cache_headers(response)
     key = f"section_exercises|{section_id}"
     cached = _cache_get(key)
     if cached is not None:
@@ -210,7 +237,7 @@ async def list_section_exercises(section_id: str):
 
 # ─── Concepts for a Section ──────────────────────────────────────────
 @router.get("/sections/{section_id:path}/concepts")
-async def list_section_concepts(section_id: str):
+async def list_section_concepts(section_id: str, response: Response):
     """Return concepts related to a section (with animation URLs).
 
     Fetches:
@@ -219,6 +246,7 @@ async def list_section_concepts(section_id: str):
     Returns concepts that have a matching local animation file, or all
     concept assets when R2 animation hosting is configured.
     """
+    _set_public_cache_headers(response)
     from pathlib import Path
 
     animations_dir = Path(__file__).resolve().parent.parent.parent.parent / "data" / "animations"
@@ -270,6 +298,7 @@ async def list_section_concepts(section_id: str):
 @router.get("/chapters/{chapter_id:path}/graph")
 async def chapter_graph(
     chapter_id: str,
+    response: Response,
     user=Depends(get_optional_user),
 ):
     """
@@ -284,6 +313,13 @@ async def chapter_graph(
       - section_ids: for client-side insight filtering
       - concept_ids: for client-side insight filtering
     """
+    # Protect auth-sensitive graph overlays from edge cache pollution.
+    response.headers["Vary"] = "Authorization"
+    if user:
+        _set_no_store_headers(response)
+    else:
+        _set_public_cache_headers(response)
+
     # ── Nodes: sections + concepts ────────────────────────────────────
     node_rows = read_query("""
         MATCH (ch:Chapter {id: $chapter_id})-[:CONTAINS]->(sec:Section)

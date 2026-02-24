@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
+import TutorMarkdown from "@/components/TutorMarkdown";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -442,11 +443,13 @@ export default function KnowledgeGraphPage() {
                             <p style={{ margin: 0, fontSize: "0.78rem", color: "#b91c1c" }}>{explainState.error}</p>
                         ) : (
                             <>
-                                <p style={{ margin: 0, fontSize: "0.8rem", color: "#0f172a", lineHeight: 1.45 }}>{explainState.text}</p>
+                                <TutorMarkdown text={explainState.text || ""} compact />
                                 {!!explainState.points?.length && (
                                     <ul style={{ margin: "0.35rem 0 0", paddingLeft: "0.95rem" }}>
                                         {explainState.points!.map((p, i) => (
-                                            <li key={i} style={{ fontSize: "0.74rem", color: "#334155", marginBottom: "0.22rem" }}>{p}</li>
+                                            <li key={i} style={{ fontSize: "0.74rem", color: "#334155", marginBottom: "0.22rem" }}>
+                                                <TutorMarkdown text={p} compact />
+                                            </li>
                                         ))}
                                     </ul>
                                 )}
@@ -463,7 +466,7 @@ export default function KnowledgeGraphPage() {
                             <p style={{ margin: 0, fontSize: "0.78rem", color: "#b91c1c" }}>{testState.error}</p>
                         ) : (
                             <>
-                                <p style={{ margin: 0, fontSize: "0.81rem", color: "#0f172a", fontWeight: 700 }}>{testState.question}</p>
+                                <TutorMarkdown text={testState.question || ""} compact />
                                 <div style={{ display: "grid", gap: "0.28rem", marginTop: "0.45rem" }}>
                                     {Object.entries(testState.options || {}).map(([k, v]) => (
                                         <button
@@ -481,7 +484,12 @@ export default function KnowledgeGraphPage() {
                                                 fontFamily: "var(--font-body)",
                                             }}
                                         >
-                                            <strong>{k}.</strong> {v}
+                                            <span style={{ display: "inline-flex", gap: "0.35rem", alignItems: "flex-start" }}>
+                                                <strong style={{ marginTop: 2 }}>{k}.</strong>
+                                                <span style={{ flex: 1 }}>
+                                                    <TutorMarkdown text={String(v)} compact />
+                                                </span>
+                                            </span>
                                         </button>
                                     ))}
                                 </div>
@@ -510,7 +518,9 @@ export default function KnowledgeGraphPage() {
                                     )}
                                 </div>
                                 {!!testState.feedback && (
-                                    <p style={{ margin: "0.38rem 0 0", fontSize: "0.74rem", color: "#1e3a8a" }}>{testState.feedback}</p>
+                                    <div style={{ marginTop: "0.38rem", fontSize: "0.74rem", color: "#1e3a8a" }}>
+                                        <TutorMarkdown text={testState.feedback || ""} compact />
+                                    </div>
                                 )}
                             </>
                         )}
