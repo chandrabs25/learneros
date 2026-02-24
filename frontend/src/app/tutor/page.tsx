@@ -242,7 +242,7 @@ export default function TutorPage() {
 
     try {
       const res = await fetch(
-        `${API_URL}/api/concepts/${encodeURIComponent(concept.conceptId)}/lineage?chapter_limit=60`,
+        `${API_URL}/api/concepts/${encodeURIComponent(concept.conceptId)}/lineage?chapter_limit=60&v=2`,
         { signal: controller.signal },
       );
       const data = (await res.json()) as LineagePayload | { detail?: string };

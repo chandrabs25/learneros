@@ -19,6 +19,12 @@ def get_driver():
         _driver = GraphDatabase.driver(
             settings.NEO4J_URI,
             auth=(settings.NEO4J_USER, settings.NEO4J_PASSWORD),
+            connection_timeout=30,
+            connection_acquisition_timeout=30,
+            max_transaction_retry_time=30,
+            max_connection_lifetime=3600,
+            max_connection_pool_size=50,
+            keep_alive=True,
         )
     return _driver
 
@@ -35,7 +41,7 @@ def read_query(query: str, **params) -> list[dict]:
     """Execute a read query and return results as list of dicts."""
     driver = get_driver()
     with driver.session() as session:
-        result = session.run(query, **params)
+        result = session.execute_read(lambda tx: list(tx.run(query, **params)))
         return [record.data() for record in result]
 
 

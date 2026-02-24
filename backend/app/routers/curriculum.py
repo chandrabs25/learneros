@@ -423,7 +423,8 @@ async def concept_lineage(
       concept -> grades -> subjects -> chapters
     """
     _set_public_cache_headers(response)
-    key = f"concept_lineage|{concept_id}|{chapter_limit}"
+    # Version cache key so stale pre-fix lineage payloads are not reused.
+    key = f"concept_lineage:v2|{concept_id}|{chapter_limit}"
     cached = _cache_get(key)
     if cached is not None:
         return cached

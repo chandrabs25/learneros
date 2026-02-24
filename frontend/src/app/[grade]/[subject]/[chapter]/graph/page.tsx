@@ -33,6 +33,7 @@ interface InsightItem {
     content: string;
     source_id?: string;
     concept_id?: string;
+    concept_name?: string;
     created_at?: string;
     is_active?: boolean;
     source_title?: string;
@@ -102,6 +103,7 @@ export default function KnowledgeGraphPage() {
     const [chapterTitle, setChapterTitle] = useState("");
     const [chapterTitles, setChapterTitles] = useState<Record<string, string>>({});
     const [animationUrl, setAnimationUrl] = useState<string | null>(null);
+    const [lineageModalOpen, setLineageModalOpen] = useState(false);
     const [explainById, setExplainById] = useState<Record<string, ExplainState>>({});
     const [testById, setTestById] = useState<Record<string, TestState>>({});
     const [lineageLoading, setLineageLoading] = useState(false);
@@ -408,6 +410,29 @@ export default function KnowledgeGraphPage() {
         return order.map((key) => groups[key]);
     }, [panelInsights, selectedNode?.type, chapterId, chapterTitles]);
 
+    const conceptLabelById = useMemo(() => {
+        const map: Record<string, string> = {};
+        for (const n of nodes) {
+            if (n.type === "concept") {
+                map[n.id] = (n.label || "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+            }
+        }
+        return map;
+    }, [nodes]);
+
+    const insightConceptLabel = (ins: InsightItem): string | null => {
+        if (ins.concept_name && ins.concept_name.trim()) {
+            return ins.concept_name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        }
+        if (ins.concept_id && conceptLabelById[ins.concept_id]) {
+            return conceptLabelById[ins.concept_id];
+        }
+        if (ins.concept_id) {
+            return ins.concept_id.replace("concept:", "").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+        }
+        return null;
+    };
+
     useEffect(() => {
         let cancelled = false;
         const loadLineage = async () => {
@@ -415,13 +440,14 @@ export default function KnowledgeGraphPage() {
                 setLineageData(null);
                 setLineageError("");
                 setLineageLoading(false);
+                setLineageModalOpen(false);
                 return;
             }
             setLineageLoading(true);
             setLineageError("");
             try {
                 const res = await fetch(
-                    `${API_URL}/api/concepts/${encodeURIComponent(selectedNode.id)}/lineage?chapter_limit=60`,
+                    `${API_URL}/api/concepts/${encodeURIComponent(selectedNode.id)}/lineage?chapter_limit=60&v=2`,
                 );
                 const data = await res.json();
                 if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
@@ -479,6 +505,87 @@ export default function KnowledgeGraphPage() {
         const chapterNumber = node.meta?.chapter_number;
         if (!gradeValue || !subjectSlug || !chapterNumber) return;
         router.push(`/${encodeURIComponent(gradeValue)}/${encodeURIComponent(subjectSlug)}/${encodeURIComponent(chapterNumber)}`);
+    };
+
+    const renderLineageGraph = (svgWidth: number, maxLabelChars: number) => {
+        if (lineageLoading) {
+            return <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.8rem" }}>Loading concept graph...</p>;
+        }
+        if (lineageError) {
+            return <p style={{ margin: 0, color: "#ef4444", fontSize: "0.8rem" }}>{lineageError}</p>;
+        }
+        if (!lineageData || (lineageData.nodes || []).length <= 1) {
+            return <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.8rem" }}>No lineage data available for this concept.</p>;
+        }
+        return (
+            <>
+                {lineageData.meta.truncated && (
+                    <p style={{ margin: "0 0 0.45rem 0", color: "#92400e", fontSize: "0.74rem", fontWeight: 700 }}>
+                        Showing {lineageData.meta.chapter_returned} of {lineageData.meta.chapter_total} chapters.
+                    </p>
+                )}
+                <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 10, background: "#fff" }}>
+                    <svg width={svgWidth} height={Math.max(220, ((lineageData.nodes?.length || 0) + 2) * 32)}>
+                        {(lineageData.edges || []).map((edge, i) => {
+                            const from = lineageNodePositions[edge.source];
+                            const to = lineageNodePositions[edge.target];
+                            if (!from || !to) return null;
+                            return (
+                                <line
+                                    key={`${edge.source}-${edge.target}-${i}`}
+                                    x1={from.x + 36}
+                                    y1={from.y + 16}
+                                    x2={to.x - 36}
+                                    y2={to.y + 16}
+                                    stroke="#cbd5e1"
+                                    strokeWidth={1.1}
+                                />
+                            );
+                        })}
+                        {(lineageData.nodes || []).map((n) => {
+                            const p = lineageNodePositions[n.id];
+                            if (!p) return null;
+                            const color =
+                                n.type === "concept" ? "#f97316" :
+                                    n.type === "grade" ? "#0ea5e9" :
+                                        n.type === "subject" ? "#8b5cf6" : "#10b981";
+                            const isChapter = n.type === "chapter";
+                            return (
+                                <g key={n.id}>
+                                    <rect
+                                        x={p.x - 36}
+                                        y={p.y}
+                                        width={72}
+                                        height={30}
+                                        rx={8}
+                                        fill={isChapter ? "#ecfdf5" : "#ffffff"}
+                                        stroke={color}
+                                        strokeWidth={1.2}
+                                        style={isChapter ? { cursor: "pointer" } : undefined}
+                                        onClick={() => handleLineageChapterClick(n)}
+                                    />
+                                    <text
+                                        x={p.x}
+                                        y={p.y + 19}
+                                        textAnchor="middle"
+                                        fill="#0f172a"
+                                        fontSize={10.5}
+                                        fontWeight={700}
+                                        style={isChapter ? { cursor: "pointer" } : undefined}
+                                        onClick={() => handleLineageChapterClick(n)}
+                                    >
+                                        {(n.label || "").length > maxLabelChars ? `${n.label.slice(0, maxLabelChars - 1)}…` : n.label}
+                                    </text>
+                                </g>
+                            );
+                        })}
+                    </svg>
+                </div>
+                <p style={{ margin: "0.35rem 0 0", color: "var(--text-muted)", fontSize: "0.72rem" }}>
+                    Click a chapter node to open it.
+                </p>
+            </>
+        );
     };
 
     const renderInsightActions = (ins: InsightItem) => {
@@ -861,81 +968,32 @@ export default function KnowledgeGraphPage() {
                                             Concept Lineage
                                         </span>
                                     </div>
-                                    {lineageLoading ? (
-                                        <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.8rem" }}>Loading concept graph...</p>
-                                    ) : lineageError ? (
-                                        <p style={{ margin: 0, color: "#ef4444", fontSize: "0.8rem" }}>{lineageError}</p>
-                                    ) : !lineageData || (lineageData.nodes || []).length <= 1 ? (
-                                        <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.8rem" }}>No lineage data available for this concept.</p>
-                                    ) : (
-                                        <>
-                                            {lineageData.meta.truncated && (
-                                                <p style={{ margin: "0 0 0.45rem 0", color: "#92400e", fontSize: "0.74rem", fontWeight: 700 }}>
-                                                    Showing {lineageData.meta.chapter_returned} of {lineageData.meta.chapter_total} chapters.
-                                                </p>
-                                            )}
-                                            <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 10, background: "#fff" }}>
-                                                <svg width={500} height={Math.max(220, ((lineageData.nodes?.length || 0) + 2) * 32)}>
-                                                    {(lineageData.edges || []).map((edge, i) => {
-                                                        const from = lineageNodePositions[edge.source];
-                                                        const to = lineageNodePositions[edge.target];
-                                                        if (!from || !to) return null;
-                                                        return (
-                                                            <line
-                                                                key={`${edge.source}-${edge.target}-${i}`}
-                                                                x1={from.x + 36}
-                                                                y1={from.y + 16}
-                                                                x2={to.x - 36}
-                                                                y2={to.y + 16}
-                                                                stroke="#cbd5e1"
-                                                                strokeWidth={1.1}
-                                                            />
-                                                        );
-                                                    })}
-                                                    {(lineageData.nodes || []).map((n) => {
-                                                        const p = lineageNodePositions[n.id];
-                                                        if (!p) return null;
-                                                        const color =
-                                                            n.type === "concept" ? "#f97316" :
-                                                                n.type === "grade" ? "#0ea5e9" :
-                                                                    n.type === "subject" ? "#8b5cf6" : "#10b981";
-                                                        const isChapter = n.type === "chapter";
-                                                        return (
-                                                            <g key={n.id}>
-                                                                <rect
-                                                                    x={p.x - 36}
-                                                                    y={p.y}
-                                                                    width={72}
-                                                                    height={30}
-                                                                    rx={8}
-                                                                    fill={isChapter ? "#ecfdf5" : "#ffffff"}
-                                                                    stroke={color}
-                                                                    strokeWidth={1.2}
-                                                                    style={isChapter ? { cursor: "pointer" } : undefined}
-                                                                    onClick={() => handleLineageChapterClick(n)}
-                                                                />
-                                                                <text
-                                                                    x={p.x}
-                                                                    y={p.y + 19}
-                                                                    textAnchor="middle"
-                                                                    fill="#0f172a"
-                                                                    fontSize={10.5}
-                                                                    fontWeight={700}
-                                                                    style={isChapter ? { cursor: "pointer" } : undefined}
-                                                                    onClick={() => handleLineageChapterClick(n)}
-                                                                >
-                                                                    {(n.label || "").length > 14 ? `${n.label.slice(0, 13)}…` : n.label}
-                                                                </text>
-                                                            </g>
-                                                        );
-                                                    })}
-                                                </svg>
-                                            </div>
-                                            <p style={{ margin: "0.35rem 0 0", color: "var(--text-muted)", fontSize: "0.72rem" }}>
-                                                Click a chapter node to open it.
-                                            </p>
-                                        </>
-                                    )}
+                                    {(lineageData?.meta && !lineageLoading && !lineageError) ? (
+                                        <p style={{ margin: "0 0 0.45rem 0", color: "var(--text-muted)", fontSize: "0.78rem" }}>
+                                            Grades: {lineageData.nodes.filter((n) => n.type === "grade").length} • Subjects: {lineageData.nodes.filter((n) => n.type === "subject").length} • Chapters: {lineageData.meta.chapter_returned}
+                                        </p>
+                                    ) : null}
+                                    {lineageError ? (
+                                        <p style={{ margin: "0 0 0.55rem 0", color: "#ef4444", fontSize: "0.78rem" }}>{lineageError}</p>
+                                    ) : null}
+                                    <button
+                                        type="button"
+                                        disabled={lineageLoading || !!lineageError || !lineageData || (lineageData.nodes || []).length <= 1}
+                                        onClick={() => setLineageModalOpen(true)}
+                                        style={{
+                                            width: "100%",
+                                            borderRadius: 8,
+                                            border: "1px solid #cbd5e1",
+                                            background: lineageLoading ? "#f1f5f9" : "#fff",
+                                            color: "#0f172a",
+                                            fontSize: "0.78rem",
+                                            fontWeight: 700,
+                                            padding: "0.48rem 0.62rem",
+                                            cursor: lineageLoading ? "not-allowed" : "pointer",
+                                        }}
+                                    >
+                                        {lineageLoading ? "Loading Graph..." : "View Lineage Graph"}
+                                    </button>
                                 </div>
                             )}
 
@@ -1027,6 +1085,11 @@ export default function KnowledgeGraphPage() {
                                                 )}
                                             </div>
                                             <p className="kg-insight-content">{ins.content}</p>
+                                            {insightConceptLabel(ins) && (
+                                                <p className="kg-insight-content" style={{ marginTop: "0.35rem", fontSize: "0.74rem", opacity: 0.8 }}>
+                                                    Concept: {insightConceptLabel(ins)}
+                                                </p>
+                                            )}
                                             {renderInsightActions(ins)}
                                         </div>
                                     ))
@@ -1057,6 +1120,26 @@ export default function KnowledgeGraphPage() {
                             allow="accelerometer; gyroscope"
                             sandbox="allow-scripts allow-same-origin"
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* ── Fullscreen Concept Lineage Modal ── */}
+            {lineageModalOpen && selectedNode?.type === "concept" && (
+                <div className="kg-anim-overlay" onClick={() => setLineageModalOpen(false)}>
+                    <div className="kg-anim-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="kg-anim-header">
+                            <div className="kg-anim-header-left">
+                                <span className="material-symbols-outlined" style={{ fontSize: '1.25rem', color: 'var(--primary)' }}>hub</span>
+                                <span className="kg-anim-title">Concept Lineage Graph</span>
+                            </div>
+                            <button className="kg-anim-close" onClick={() => setLineageModalOpen(false)}>
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div style={{ flex: 1, padding: "1rem", overflow: "auto", background: "#f8fafc" }}>
+                            {renderLineageGraph(920, 22)}
+                        </div>
                     </div>
                 </div>
             )}
