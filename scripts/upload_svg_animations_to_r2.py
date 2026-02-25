@@ -88,6 +88,7 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated file extensions to upload (example: .html,.svg). Default: .html",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print planned uploads without uploading.")
+    parser.add_argument("--skip-existing", action="store_true", help="Skip files whose key already exists in the bucket.")
     parser.add_argument("--public-base-url", default="https://assets.learneros.me", help="Public base URL used for output preview links.")
     return parser.parse_args()
 
@@ -99,6 +100,16 @@ def _content_type_for_suffix(suffix: str) -> str:
     if s == ".svg":
         return "image/svg+xml"
     return "application/octet-stream"
+
+
+def _list_existing_keys(s3, bucket: str, prefix: str) -> set[str]:
+    """List all existing object keys under the given prefix."""
+    keys: set[str] = set()
+    paginator = s3.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket, Prefix=prefix):
+        for obj in page.get("Contents", []):
+            keys.add(obj["Key"])
+    return keys
 
 
 def main() -> int:
@@ -148,12 +159,25 @@ def main() -> int:
     print(f"Extensions : {', '.join(sorted(normalized_exts))}")
     print(f"Files found: {len(asset_files)}")
 
+    # Fetch existing keys if --skip-existing
+    existing_keys: set[str] = set()
+    if args.skip_existing:
+        print("Listing existing keys in bucket...")
+        existing_keys = _list_existing_keys(s3, bucket, args.key_prefix.strip("/"))
+        print(f"Existing   : {len(existing_keys)} objects already in bucket")
+
     uploaded = 0
+    skipped = 0
     failed = 0
 
     for file_path in asset_files:
         key = _build_key(args.key_prefix, source_dir, file_path)
         preview_url = f"{args.public_base_url.rstrip('/')}/{key}"
+
+        if args.skip_existing and key in existing_keys:
+            skipped += 1
+            continue
+
         if args.dry_run:
             print(f"[DRY-RUN] {file_path} -> s3://{bucket}/{key} ({preview_url})")
             continue
@@ -173,7 +197,7 @@ def main() -> int:
             failed += 1
             print(f"[ERR] {file_path} -> s3://{bucket}/{key} :: {exc}", file=sys.stderr)
 
-    print(f"Done. uploaded={uploaded} failed={failed}")
+    print(f"Done. uploaded={uploaded} skipped={skipped} failed={failed}")
     return 1 if failed else 0
 
 

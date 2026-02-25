@@ -78,7 +78,7 @@ def get_concepts_from_subject(subject_glob: str) -> set[str]:
         ex = ch.get("exercises")
         if ex and isinstance(ex, dict):
             for item in ex.get("items", []):
-                for tc in item.get("tests_concepts", []):
+                for tc in item.get("tests", []):
                     if tc.startswith("concept:") and not tc.startswith("concept:ncert_"):
                         concepts.add(tc)
     return concepts

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Arithmetic: The Geometry of Physical Addition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #f8f9fa;
+        }
+
+        .font-ui {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .font-math {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .label-shadow {
+            text-shadow: 2px 2px 0 #f8f9fa, -2px -2px 0 #f8f9fa, 2px -2px 0 #f8f9fa, -2px 2px 0 #f8f9fa;
+        }
+
+        /* Animations */
+        @keyframes drawA-line {
+            0% { stroke-dashoffset: 206.16; }
+            20%, 90% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 206.16; }
+        }
+
+        @keyframes drawA-head {
+            0% { transform: translate(0,0) rotate(-14.04deg); opacity: 0; }
+            1% { opacity: 1; }
+            20%, 90% { transform: translate(200px, -50px) rotate(-14.04deg); opacity: 1; }
+            91%, 100% { opacity: 0; }
+        }
+
+        @keyframes drawB-line {
+            0% { stroke-dashoffset: 180.28; }
+            20%, 90% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 180.28; }
+        }
+
+        @keyframes drawB-head {
+            0% { transform: translate(0,0) rotate(-56.31deg); opacity: 0; }
+            1% { opacity: 1; }
+            20%, 90% { transform: translate(100px, -150px) rotate(-56.31deg); opacity: 1; }
+            91%, 100% { opacity: 0; }
+        }
+
+        @keyframes moveB {
+            0%, 30% { transform: translate(0, 0); }
+            50%, 90% { transform: translate(200px, -50px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        @keyframes fadeGhost {
+            0%, 30% { opacity: 0; }
+            31%, 90% { opacity: 0.25; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes revealGhost {
+            0%, 30% { stroke-dashoffset: 0; }
+            50%, 90% { stroke-dashoffset: -206.16; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        @keyframes drawR-line {
+            0%, 55% { stroke-dashoffset: 360.56; opacity: 0; }
+            56% { opacity: 1; }
+            70%, 90% { stroke-dashoffset: 0; opacity: 1; }
+            100% { stroke-dashoffset: 360.56; opacity: 0; }
+        }
+
+        @keyframes drawR-head {
+            0%, 55% { transform: translate(0,0) rotate(-33.69deg); opacity: 0; }
+            56% { opacity: 1; }
+            70%, 90% { transform: translate(300px, -200px) rotate(-33.69deg); opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes fadeLabelAB {
+            0%, 5% { opacity: 0; }
+            15%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeLabelR {
+            0%, 55% { opacity: 0; }
+            65%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes highlightEq {
+            0%, 70% { fill: #6c757d; font-weight: 500; transform: scale(1); }
+            75%, 90% { fill: #4361EE; font-weight: 700; transform: scale(1.08); }
+            100% { fill: #6c757d; font-weight: 500; transform: scale(1); }
+        }
+
+        @keyframes masterFade {
+            0%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Vector Arithmetic: The Geometry of Physical Addition</title>
+        <desc>An animated diagram demonstrating the Triangle Law of Vector Addition. Vector A and Vector B are added head-to-tail to form the Resultant Vector R.</desc>
+
+        <!-- Definitions -->
+        <defs>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse" x="150" y="400">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e9ecef" stroke-width="1" />
+            </pattern>
+        </defs>
+
+        <!-- Background & Grid -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+        <rect width="100%" height="100%" fill="url(#grid)" />
+
+        <!-- Coordinate Axes -->
+        <g id="axes" transform="translate(150, 400)">
+            <line x1="-150" y1="0" x2="650" y2="0" stroke="#ced4da" stroke-width="2" />
+            <line x1="0" y1="-400" x2="0" y2="100" stroke="#ced4da" stroke-width="2" />
+        </g>
+
+        <!-- Static UI Elements -->
+        <text x="30" y="40" class="font-ui" font-weight="700" font-size="22" fill="#212529">Arithmetic of Physical Quantities: Vector Addition</text>
+        <text x="30" y="65" class="font-ui" font-size="14" fill="#6c757d">Triangle Law: Translating vectors head-to-tail to find the resultant sum.</text>
+
+        <!-- Animated Scene -->
+        <g style="animation: masterFade 10s infinite;">
+            
+            <!-- Physical Coordinate System Origin -->
+            <g transform="translate(150, 400)">
+                
+                <!-- Ghost B (Initial position, faded during translation) -->
+                <g style="animation: fadeGhost 10s infinite;">
+                    <line x1="0" y1="0" x2="100" y2="-150" stroke="#FF3366" stroke-width="4" stroke-dasharray="6,6" />
+                    <polygon points="0,0 -16,-6 -12,0 -16,6" fill="#FF3366" transform="translate(100, -150) rotate(-56.31)" />
+                </g>
+
+                <!-- Ghost Path (The translation path of Vector B's head) -->
+                <g>
+                    <!-- The dashed line itself -->
+                    <line x1="100" y1="-150" x2="300" y2="-200" stroke="#FF3366" stroke-width="2" stroke-dasharray="6,6" opacity="0.4" />
+                    <!-- The solid mask that reveals the dashed line -->
+                    <line x1="100" y1="-150" x2="300" y2="-200" stroke="#f8f9fa" stroke-width="4" stroke-dasharray="206.16, 400" style="animation: revealGhost 10s infinite ease-in-out;" />
+                </g>
+
+                <!-- Vector A (Green) -->
+                <g id="vector-A">
+                    <line x1="0" y1="0" x2="200" y2="-50" stroke="#06D6A0" stroke-width="4" stroke-dasharray="206.16" style="animation: drawA-line 10s infinite ease-in-out;" />
+                    <polygon points="0,0 -16,-6 -12,0 -16,6" fill="#06D6A0" style="animation: drawA-head 10s infinite ease-in-out;" />
+                    <text x="100" y="-30" class="font-ui label-shadow" text-anchor="middle" fill="#06D6A0" font-weight="700" font-size="20" style="animation: fadeLabelAB 10s infinite;">
+                        <tspan x="100" y="-30">A</tspan>
+                        <tspan x="100" y="-42" font-size="14">→</tspan>
+                    </text>
+                </g>
+
+                <!-- Vector B (Red) - Translates to tip of A -->
+                <g id="vector-B" style="animation: moveB 10s infinite ease-in-out;">
+                    <line x1="0" y1="0" x2="100" y2="-150" stroke="#FF3366" stroke-width="4" stroke-dasharray="180.28" style="animation: drawB-line 10s infinite ease-in-out;" />
+                    <polygon points="0,0 -16,-6 -12,0 -16,6" fill="#FF3366" style="animation: drawB-head 10s infinite ease-in-out;" />
+                    <text x="35" y="-85" class="font-ui label-shadow" text-anchor="middle" fill="#FF3366" font-weight="700" font-size="20" style="animation: fadeLabelAB 10s infinite;">
+                        <tspan x="35" y="-85">B</tspan>
+                        <tspan x="35" y="-97" font-size="14">→</tspan>
+                    </text>
+                </g>
+
+                <!-- Vector R (Blue) - Resultant -->
+                <g id="vector-R">
+                    <line x1="0" y1="0" x2="300" y2="-200" stroke="#4361EE" stroke-width="4" stroke-dasharray="360.56" style="animation: drawR-line 10s infinite ease-in-out;" />
+                    <polygon points="0,0 -16,-6 -12,0 -16,6" fill="#4361EE" style="animation: drawR-head 10s infinite ease-in-out;" />
+                    <text x="140" y="-110" class="font-ui label-shadow" text-anchor="middle" fill="#4361EE" font-weight="700" font-size="20" style="animation: fadeLabelR 10s infinite;">
+                        <tspan x="140" y="-110">R</tspan>
+                        <tspan x="140" y="-122" font-size="14">→</tspan>
+                    </text>
+                </g>
+
+                <!-- Origin Dot -->
+                <circle cx="0" cy="0" r="4" fill="#212529" />
+            </g>
+
+            <!-- Dynamic Readout (Bottom) -->
+            <g class="font-math" font-size="16" transform="translate(0, 465)">
+                <text x="40" fill="#06D6A0">|A| = 5.2 units</text>
+                <text x="220" fill="#FF3366">|B| = 4.5 units</text>
+                <text x="400" fill="#4361EE">|R| = 9.0 units</text>
+                
+                <!-- Equation -->
+                <g style="transform-origin: 650px 0px; animation: highlightEq 10s infinite;">
+                    <text x="600" fill="currentColor">
+                        <tspan x="600" y="0">A</tspan><tspan x="600" y="-12" font-size="12">→</tspan>
+                        <tspan x="615" y="0"> + </tspan>
+                        <tspan x="645" y="0">B</tspan><tspan x="645" y="-12" font-size="12">→</tspan>
+                        <tspan x="660" y="0"> = </tspan>
+                        <tspan x="690" y="0">R</tspan><tspan x="690" y="-12" font-size="12">→</tspan>
+                    </text>
+                </g>
+            </g>
+        </g>
+    </svg>
+</body>
+</html>

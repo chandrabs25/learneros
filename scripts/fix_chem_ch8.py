@@ -43,7 +43,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:hybridisation"]
+            "tests": ["concept:hybridisation"]
         },
         {
             "number": 2,
@@ -51,7 +51,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:sigma_pi_bonds"]
+            "tests": ["concept:sigma_pi_bonds"]
         },
         {
             "number": 3,
@@ -59,7 +59,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "application",
-            "tests_concepts": ["concept:bond_line_formulas"]
+            "tests": ["concept:bond_line_formulas"]
         },
         {
             "number": 4,
@@ -67,7 +67,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "application",
-            "tests_concepts": ["concept:iupac_nomenclature"]
+            "tests": ["concept:iupac_nomenclature"]
         },
         {
             "number": 5,
@@ -75,7 +75,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:iupac_nomenclature"]
+            "tests": ["concept:iupac_nomenclature"]
         },
         {
             "number": 6,
@@ -83,7 +83,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "application",
-            "tests_concepts": ["concept:homologous_series"]
+            "tests": ["concept:homologous_series"]
         },
         {
             "number": 7,
@@ -91,7 +91,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "application",
-            "tests_concepts": ["concept:functional_groups", "concept:structural_formulas"]
+            "tests": ["concept:functional_groups", "concept:structural_formulas"]
         },
         {
             "number": 8,
@@ -99,7 +99,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:functional_groups"]
+            "tests": ["concept:functional_groups"]
         },
         {
             "number": 9,
@@ -107,7 +107,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:inductive_effect", "concept:stability_of_anions"]
+            "tests": ["concept:inductive_effect", "concept:stability_of_anions"]
         },
         {
             "number": 10,
@@ -115,7 +115,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:hyperconjugation", "concept:inductive_effect"]
+            "tests": ["concept:hyperconjugation", "concept:inductive_effect"]
         },
         {
             "number": 11,
@@ -123,7 +123,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "application",
-            "tests_concepts": ["concept:resonance"]
+            "tests": ["concept:resonance"]
         },
         {
             "number": 12,
@@ -131,7 +131,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:electrophiles", "concept:nucleophiles"]
+            "tests": ["concept:electrophiles", "concept:nucleophiles"]
         },
         {
             "number": 13,
@@ -139,7 +139,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "application",
-            "tests_concepts": ["concept:electrophiles", "concept:nucleophiles"]
+            "tests": ["concept:electrophiles", "concept:nucleophiles"]
         },
         {
             "number": 14,
@@ -147,7 +147,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "application",
-            "tests_concepts": ["concept:organic_reaction_types"]
+            "tests": ["concept:organic_reaction_types"]
         },
         {
             "number": 15,
@@ -155,7 +155,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:isomerism", "concept:resonance"]
+            "tests": ["concept:isomerism", "concept:resonance"]
         },
         {
             "number": 16,
@@ -163,7 +163,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "application",
-            "tests_concepts": ["concept:homolysis", "concept:heterolysis", "concept:reactive_intermediates"]
+            "tests": ["concept:homolysis", "concept:heterolysis", "concept:reactive_intermediates"]
         },
         {
             "number": 17,
@@ -171,7 +171,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:inductive_effect", "concept:electromeric_effect"]
+            "tests": ["concept:inductive_effect", "concept:electromeric_effect"]
         },
         {
             "number": 18,
@@ -179,7 +179,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:purification_techniques"]
+            "tests": ["concept:purification_techniques"]
         },
         {
             "number": 19,
@@ -187,7 +187,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:crystallisation"]
+            "tests": ["concept:crystallisation"]
         },
         {
             "number": 20,
@@ -195,7 +195,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:distillation"]
+            "tests": ["concept:distillation"]
         },
         {
             "number": 21,
@@ -203,7 +203,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:lassaigne_test"]
+            "tests": ["concept:lassaigne_test"]
         },
         {
             "number": 22,
@@ -211,7 +211,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:dumas_method", "concept:kjeldahl_method"]
+            "tests": ["concept:dumas_method", "concept:kjeldahl_method"]
         },
         {
             "number": 23,
@@ -219,7 +219,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:carius_method", "concept:quantitative_analysis"]
+            "tests": ["concept:carius_method", "concept:quantitative_analysis"]
         },
         {
             "number": 24,
@@ -227,7 +227,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:chromatography"]
+            "tests": ["concept:chromatography"]
         },
         {
             "number": 25,
@@ -235,7 +235,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:lassaigne_test", "concept:halogen_detection"]
+            "tests": ["concept:lassaigne_test", "concept:halogen_detection"]
         },
         {
             "number": 26,
@@ -243,7 +243,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:lassaigne_test"]
+            "tests": ["concept:lassaigne_test"]
         },
         {
             "number": 27,
@@ -251,7 +251,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:sublimation"]
+            "tests": ["concept:sublimation"]
         },
         {
             "number": 28,
@@ -259,7 +259,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:steam_distillation"]
+            "tests": ["concept:steam_distillation"]
         },
         {
             "number": 29,
@@ -267,7 +267,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:covalent_bonding", "concept:halogen_detection"]
+            "tests": ["concept:covalent_bonding", "concept:halogen_detection"]
         },
         {
             "number": 30,
@@ -275,7 +275,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:quantitative_analysis"]
+            "tests": ["concept:quantitative_analysis"]
         },
         {
             "number": 31,
@@ -283,7 +283,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:sulphur_detection"]
+            "tests": ["concept:sulphur_detection"]
         },
         {
             "number": 32,
@@ -291,7 +291,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:quantitative_analysis", "concept:combustion"]
+            "tests": ["concept:quantitative_analysis", "concept:combustion"]
         },
         {
             "number": 33,
@@ -299,7 +299,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:kjeldahl_method"]
+            "tests": ["concept:kjeldahl_method"]
         },
         {
             "number": 34,
@@ -307,7 +307,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:carius_method"]
+            "tests": ["concept:carius_method"]
         },
         {
             "number": 35,
@@ -315,7 +315,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:carius_method"]
+            "tests": ["concept:carius_method"]
         },
         {
             "number": 36,
@@ -323,7 +323,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "mcq",
-            "tests_concepts": ["concept:hybridisation"]
+            "tests": ["concept:hybridisation"]
         },
         {
             "number": 37,
@@ -331,7 +331,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "mcq",
-            "tests_concepts": ["concept:lassaigne_test"]
+            "tests": ["concept:lassaigne_test"]
         },
         {
             "number": 38,
@@ -339,7 +339,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "mcq",
-            "tests_concepts": ["concept:carbocation_stability", "concept:hyperconjugation"]
+            "tests": ["concept:carbocation_stability", "concept:hyperconjugation"]
         },
         {
             "number": 39,
@@ -347,7 +347,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "mcq",
-            "tests_concepts": ["concept:purification_techniques"]
+            "tests": ["concept:purification_techniques"]
         },
         {
             "number": 40,
@@ -355,7 +355,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "mcq",
-            "tests_concepts": ["concept:organic_reaction_types"]
+            "tests": ["concept:organic_reaction_types"]
         }
     ]
 

@@ -3,7 +3,7 @@ One-time script to standardize biology exercise formats and strip solutions.
 
 - Converts plain list exercises → dict format with {title, items}
 - Strips 'solution' keys from exercise items
-- Ensures consistent item structure: {number, problem, tests_concepts}
+- Ensures consistent item structure: {number, problem, tests}
 
 Usage:
     python extract/fix_biology_exercises.py
@@ -44,7 +44,7 @@ def normalize_exercises(filepath: Path) -> dict:
                 items.append({
                     "number": num or (i + 1),
                     "problem": problem,
-                    "tests_concepts": [],
+                    "tests": [],
                 })
             elif isinstance(ex, dict):
                 items.append(ex)
@@ -70,9 +70,9 @@ def normalize_exercises(filepath: Path) -> dict:
                 del item[key]
                 changes["items_fixed"] += 1
 
-        # Ensure tests_concepts exists
-        if "tests_concepts" not in item:
-            item["tests_concepts"] = []
+        # Ensure tests exists
+        if "tests" not in item:
+            item["tests"] = []
             changes["items_fixed"] += 1
 
         # Ensure number and problem exist

@@ -48,7 +48,7 @@ def extract_chapter_info(filepath: str) -> dict | None:
             "solution": item.get("solution"),
             "difficulty": item.get("difficulty"),
             "exercise_type": item.get("exercise_type"),
-            "tests_concepts": item.get("tests_concepts", []),
+            "tests": item.get("tests", []),
         })
 
     return {

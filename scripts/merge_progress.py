@@ -175,7 +175,7 @@ def merge_chunks(
         sec["prerequisites"] = normalized_prereqs
 
     for ex in deduped_exercises:
-        ex["tests_concepts"] = [_normalize_concept_ref(tc) for tc in ex.get("tests_concepts", [])]
+        ex["tests"] = [_normalize_concept_ref(tc) for tc in ex.get("tests", [])]
 
     # Fix difficulty
     valid_difficulties = {"easy", "medium", "hard"}

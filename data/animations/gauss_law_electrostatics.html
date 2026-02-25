@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gauss's Law for Electrostatics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+        
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+            background: #f8f9fa;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #dee2e6;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Animations */
+        .patch-group {
+            transform-origin: 400px 250px;
+            animation: rotatePatch 12s linear infinite;
+        }
+
+        .counter-rotate {
+            transform-origin: 620px 250px;
+            animation: counterRotate 12s linear infinite;
+        }
+
+        @keyframes rotatePatch {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes counterRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
+
+        .field-pulse {
+            stroke-dasharray: 12 28;
+            animation: flow 1s linear infinite;
+        }
+
+        @keyframes flow {
+            from { stroke-dashoffset: 40; }
+            to { stroke-dashoffset: 0; }
+        }
+
+        .formula-box {
+            animation: pulse-glow 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { filter: drop-shadow(0 4px 6px rgba(247, 127, 0, 0.1)); }
+            50% { filter: drop-shadow(0 4px 12px rgba(247, 127, 0, 0.3)); }
+        }
+
+        /* Transitions for Interactivity */
+        #electric-field, #e-vector, #e-label-group {
+            transition: opacity 0.5s ease;
+        }
+        
+        #charge-circle {
+            transition: fill 0.5s ease;
+        }
+
+        /* Controls */
+        .controls {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            background: #4361EE;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(67, 97, 238, 0.2);
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: #3651D4;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 12px rgba(67, 97, 238, 0.3);
+        }
+
+        button:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(67, 97, 238, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <svg viewBox="0 0 800 500" id="gauss-svg" aria-labelledby="svg-title svg-desc">
+            <title id="svg-title">Gauss's Law for Electrostatics</title>
+            <desc id="svg-desc">An animated diagram showing a positive point charge, its radial electric field, and a spherical Gaussian surface with a moving area element.</desc>
+            
+            <defs>
+                <!-- Standard Arrowheads -->
+                <marker id="arrow-orange" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+                </marker>
+                <marker id="arrow-blue" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#4361EE" />
+                </marker>
+                <marker id="arrow-grey" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#666666" />
+                </marker>
+                
+                <!-- Tiny Arrowheads for Vector Labels -->
+                <marker id="arrow-orange-tiny" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#F77F00" />
+                </marker>
+                <marker id="arrow-blue-tiny" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#4361EE" />
+                </marker>
+
+                <!-- Drop Shadow for Charge -->
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#FF3366" flood-opacity="0.4"/>
+                </filter>
+            </defs>
+
+            <!-- Background -->
+            <rect width="800" height="500" fill="#f8f9fa" />
+
+            <!-- Title -->
+            <text x="30" y="45" font-size="24" font-weight="700" fill="#2b2d42">Gauss's Law for Electrostatics</text>
+            <text x="30" y="65" font-size="14" fill="#6c757d">Visualizing electric flux through a closed spherical surface</text>
+
+            <!-- Gaussian Surface -->
+            <circle cx="400" cy="250" r="140" fill="#4361EE" fill-opacity="0.05" stroke="#6c757d" stroke-width="1.5" stroke-dasharray="8,4" />
+            
+            <!-- Gaussian Surface Label -->
+            <g transform="translate(180, 120)">
+                <text x="0" y="0" fill="#495057" font-size="14" font-weight="600">Gaussian Surface (<tspan font-style="italic">S</tspan>)</text>
+                <path d="M 70 10 Q 110 40 125 75" fill="none" stroke="#6c757d" stroke-width="1.5" marker-end="url(#arrow-grey)" />
+            </g>
+
+            <!-- Electric Field Lines -->
+            <g id="electric-field">
+                <!-- 0 deg -->
+                <g transform="translate(400,250) rotate(0)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 30 deg -->
+                <g transform="translate(400,250) rotate(30)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 60 deg -->
+                <g transform="translate(400,250) rotate(60)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 90 deg -->
+                <g transform="translate(400,250) rotate(90)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 120 deg -->
+                <g transform="translate(400,250) rotate(120)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 150 deg -->
+                <g transform="translate(400,250) rotate(150)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 180 deg -->
+                <g transform="translate(400,250) rotate(180)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 210 deg -->
+                <g transform="translate(400,250) rotate(210)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 240 deg -->
+                <g transform="translate(400,250) rotate(240)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 270 deg -->
+                <g transform="translate(400,250) rotate(270)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 300 deg -->
+                <g transform="translate(400,250) rotate(300)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+                <!-- 330 deg -->
+                <g transform="translate(400,250) rotate(330)">
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" opacity="0.25" />
+                    <line x1="18" y1="0" x2="400" y2="0" stroke="#F77F00" stroke-width="2" class="field-pulse" />
+                    <polygon points="280,-4 288,0 280,4" fill="#F77F00" />
+                </g>
+            </g>
+
+            <!-- Central Charge -->
+            <g id="charge-group">
+                <circle id="charge-circle" cx="400" cy="250" r="14" fill="#FF3366" filter="url(#shadow)" />
+                <text id="charge-text" x="400" y="254" fill="white" font-size="13" font-weight="700" text-anchor="middle">+q</text>
+            </g>
+
+            <!-- Rotating Area Element (Patch) -->
+            <g class="patch-group">
+                <!-- Arc Segment (dA patch) -->
+                <!-- Center: 400,250. R=140. Arc from -6 to +6 degrees -->
+                <path d="M 539.2 235.4 A 140 140 0 0 1 539.2 264.6" fill="none" stroke="#4361EE" stroke-width="5" stroke-linecap="round" />
+                
+                <!-- Vectors -->
+                <!-- E Vector (Orange) -->
+                <line id="e-vector" x1="540" y1="246" x2="610" y2="246" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow-orange)" />
+                <!-- dA Vector (Blue) -->
+                <line id="da-vector" x1="540" y1="254" x2="590" y2="254" stroke="#4361EE" stroke-width="3" marker-end="url(#arrow-blue)" />
+
+                <!-- Labels (Counter-rotated to stay upright) -->
+                <g class="counter-rotate">
+                    <!-- E Label -->
+                    <g id="e-label-group">
+                        <text x="620" y="235" fill="#F77F00" font-size="16" font-weight="700" font-family="Roboto Mono" text-anchor="middle">E</text>
+                        <path d="M 614 221 L 626 221" stroke="#F77F00" stroke-width="1.5" marker-end="url(#arrow-orange-tiny)" />
+                    </g>
+                    
+                    <!-- dA Label -->
+                    <g id="da-label-group">
+                        <text x="620" y="255" fill="#4361EE" font-size="16" font-weight="700" font-family="Roboto Mono" text-anchor="middle">dA</text>
+                        <path d="M 610 241 L 630 241" stroke="#4361EE" stroke-width="1.5" marker-end="url(#arrow-blue-tiny)" />
+                    </g>
+
+                    <!-- Angle Label -->
+                    <text x="620" y="275" fill="#495057" font-size="13" font-weight="600" text-anchor="middle">θ = 0°</text>
+                </g>
+            </g>
+
+            <!-- Formula Display -->
+            <g class="formula-box" transform="translate(480, 30)">
+                <rect x="0" y="0" width="290" height="56" fill="#ffffff" rx="8" stroke="#e9ecef" stroke-width="2" />
+                <text x="145" y="34" font-family="Roboto Mono" font-size="17" fill="#2b2d42" text-anchor="middle" font-weight="600">
+                    Φ<tspan dy="4" font-size="12">E</tspan><tspan dy="-4"> = ∮</tspan><tspan dy="4" font-size="12">S</tspan><tspan dy="-4"> </tspan><tspan fill="#F77F00">E</tspan> · <tspan fill="#4361EE">dA</tspan> = <tspan id="formula-q">Q</tspan><tspan dy="4" font-size="12">encl</tspan><tspan dy="-4"> / ε</tspan><tspan dy="4" font-size="12">0</tspan><tspan id="formula-result"></tspan>
+                </text>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(30, 400)">
+                <rect x="0" y="0" width="180" height="70" fill="#ffffff" rx="8" stroke="#e9ecef" stroke-width="2" />
+                
+                <line x1="15" y1="22" x2="35" y2="22" stroke="#F77F00" stroke-width="3" marker-end="url(#arrow-orange)" />
+                <text x="48" y="26" fill="#495057" font-size="13" font-weight="600">Electric Field (<tspan font-family="Roboto Mono" font-weight="700">E</tspan>)</text>
+                
+                <line x1="15" y1="48" x2="35" y2="48" stroke="#4361EE" stroke-width="3" marker-end="url(#arrow-blue)" />
+                <text x="48" y="52" fill="#495057" font-size="13" font-weight="600">Area Vector (<tspan font-family="Roboto Mono" font-weight="700">dA</tspan>)</text>
+            </g>
+
+        </svg>
+
+        <div class="controls">
+            <button id="toggleCharge">Remove Charge</button>
+        </div>
+    </div>
+
+    <script>
+        const btn = document.getElementById('toggleCharge');
+        const field = document.getElementById('electric-field');
+        const chargeCircle = document.getElementById('charge-circle');
+        const chargeText = document.getElementById('charge-text');
+        const eVector = document.getElementById('e-vector');
+        const eLabelGroup = document.getElementById('e-label-group');
+        const formulaQ = document.getElementById('formula-q');
+        const formulaResult = document.getElementById('formula-result');
+
+        let hasCharge = true;
+
+        btn.addEventListener('click', () => {
+            hasCharge = !hasCharge;
+            if (!hasCharge) {
+                btn.textContent = "Add Charge";
+                field.style.opacity = "0";
+                chargeCircle.setAttribute('fill', '#adb5bd');
+                chargeCircle.removeAttribute('filter');
+                chargeText.textContent = "0";
+                eVector.style.opacity = "0";
+                eLabelGroup.style.opacity = "0";
+                formulaQ.textContent = "0";
+                formulaResult.textContent = " = 0";
+            } else {
+                btn.textContent = "Remove Charge";
+                field.style.opacity = "1";
+                chargeCircle.setAttribute('fill', '#FF3366');
+                chargeCircle.setAttribute('filter', 'url(#shadow)');
+                chargeText.textContent = "+q";
+                eVector.style.opacity = "1";
+                eLabelGroup.style.opacity = "1";
+                formulaQ.textContent = "Q";
+                formulaResult.textContent = "";
+            }
+        });
+    </script>
+</body>
+</html>

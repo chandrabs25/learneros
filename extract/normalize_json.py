@@ -31,9 +31,10 @@ def normalize_concept_ref(ref: str) -> str:
     return f"concept:{s}"
 
 
-def normalize_section_ref(ref: str, id_prefix: str) -> str:
+def normalize_section_ref(ref: str, id_prefix: str) -> str | None:
     """
     Normalize a section prerequisite reference to full format.
+    Returns None if the ref is unparseable (bare text like "Unit 1").
     
     Examples:
         "1.1"                     → "ncert:physics:11:1:1.1"
@@ -41,6 +42,9 @@ def normalize_section_ref(ref: str, id_prefix: str) -> str:
         "SUMMARY"                 → "ncert:physics:11:1:SUMMARY"
         "ncert:physics:11:1:7:1"  → "ncert:physics:11:1:7.1"
         "ncert:physics:11:1:1.1"  → "ncert:physics:11:1:1.1" (unchanged)
+        "ncert:biology:11:2"      → "ncert:biology:11:2" (cross-chapter, kept as-is)
+        "ncert:chem:12:6:8:2"     → "ncert:chem:12:6:8.2" (cross-chapter, colon→dot)
+        "9.2 Alkanes"             → None (unparseable bare text)
     """
     ref = ref.strip()
 
@@ -48,14 +52,18 @@ def normalize_section_ref(ref: str, id_prefix: str) -> str:
     if re.match(r"^[\d.]+$", ref) or ref.upper() == "SUMMARY":
         return f"{id_prefix}:{ref}"
 
-    # Case 2: Full format but with extra colons in the section part
-    if ref.startswith(id_prefix + ":"):
-        suffix = ref[len(id_prefix) + 1:]
-        if ":" in suffix:
+    # Case 2: Full ncert: format (same chapter or cross-chapter)
+    m = re.match(r"^(ncert:\w+:\d+:\d+)(?::(.+))?$", ref)
+    if m:
+        prefix = m.group(1)  # e.g. ncert:biology:11:2
+        suffix = m.group(2)  # e.g. "8:2" or "1.1" or None (chapter-level ref)
+        if suffix and ":" in suffix:
             suffix = suffix.replace(":", ".")
-        return f"{id_prefix}:{suffix}"
+        return f"{prefix}:{suffix}" if suffix else prefix
 
-    return ref
+    # Case 3: Bare text that can't be parsed (e.g. "9.2 Alkanes", "Unit 1")
+    # These are LLM extraction errors — drop them
+    return None
 
 
 def normalize_chapter_json(json_path: str) -> dict:
@@ -69,7 +77,7 @@ def normalize_chapter_json(json_path: str) -> dict:
     chapter_number = data["chapter"]["number"]
     id_prefix = f"{curriculum}:{subject}:{grade}:{chapter_number}"
 
-    changes = {"concepts": 0, "sections": 0, "tests_concepts": 0, "deduped": 0}
+    changes = {"concepts": 0, "sections": 0, "tests": 0, "deduped": 0, "dropped": 0}
 
     # Normalize section prerequisites
     for sec in data["chapter"]["sections"]:
@@ -84,7 +92,12 @@ def normalize_chapter_json(json_path: str) -> dict:
                 if prereq["ref"] != old_ref:
                     changes["concepts"] += 1
             elif prereq["type"] == "section":
-                prereq["ref"] = normalize_section_ref(prereq["ref"], id_prefix)
+                new_ref = normalize_section_ref(prereq["ref"], id_prefix)
+                if new_ref is None:
+                    # Unparseable bare text — drop it
+                    changes["dropped"] += 1
+                    continue
+                prereq["ref"] = new_ref
                 if prereq["ref"] != old_ref:
                     changes["sections"] += 1
 
@@ -97,17 +110,22 @@ def normalize_chapter_json(json_path: str) -> dict:
 
         sec["prerequisites"] = normalized_prereqs
 
-    # Normalize exercise tests_concepts
+    # Normalize exercise tests
     exercises = data["chapter"].get("exercises")
     if exercises:
         for item in exercises.get("items", []):
             normalized = []
-            for tc in item.get("tests_concepts", []):
+            for tc in item.get("tests", []):
+                # Section refs (like "ncert:physics:11:1:1.1") should NOT be
+                # converted to concept format — leave them as-is.
+                if tc.startswith("ncert:") or re.match(r"^concept:ncert_", tc):
+                    normalized.append(tc)
+                    continue
                 new_tc = normalize_concept_ref(tc)
                 if new_tc != tc:
-                    changes["tests_concepts"] += 1
+                    changes["tests"] += 1
                 normalized.append(new_tc)
-            item["tests_concepts"] = normalized
+            item["tests"] = normalized
 
     # Save
     with open(json_path, "w") as f:
@@ -132,7 +150,7 @@ def main():
 
     print(f"\n🔧 Normalizing {len(json_files)} chapter JSON files...\n")
 
-    total_changes = {"concepts": 0, "sections": 0, "tests_concepts": 0, "deduped": 0}
+    total_changes = {"concepts": 0, "sections": 0, "tests": 0, "deduped": 0}
 
     for json_path in json_files:
         changes = normalize_chapter_json(str(json_path))

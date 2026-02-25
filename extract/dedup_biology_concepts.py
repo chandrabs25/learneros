@@ -134,13 +134,13 @@ def process_file(filepath: str, dry_run: bool = False) -> dict:
 
         sec["prerequisites"] = new_prereqs
 
-    # 2. Process exercise tests_concepts
+    # 2. Process exercise tests
     exercises = ch.get("exercises")
     if exercises and isinstance(exercises, dict):
         for item in exercises.get("items", []):
             new_tc = []
             seen = set()
-            for tc in item.get("tests_concepts", []):
+            for tc in item.get("tests", []):
                 if not tc.startswith("concept:"):
                     new_tc.append(tc)
                     continue
@@ -157,7 +157,7 @@ def process_file(filepath: str, dry_run: bool = False) -> dict:
                     seen.add(tc)
                     new_tc.append(tc)
 
-            item["tests_concepts"] = new_tc
+            item["tests"] = new_tc
 
     if not dry_run and (changes["merged"] or changes["removed"]):
         with open(filepath, "w") as f:

@@ -74,7 +74,7 @@ def get_chemistry_concepts() -> list[str]:
         ex = ch.get("exercises")
         if ex:
             for item in ex.get("items", []):
-                for tc in item.get("tests_concepts", []):
+                for tc in item.get("tests", []):
                     if tc.startswith("concept:") and not tc.startswith("concept:ncert_"):
                         chem_concepts.add(tc)
 

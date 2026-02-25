@@ -82,6 +82,32 @@ def _cache_set(key: str, payload):
     _cache[key] = (time.time(), payload)
 
 
+# ─── Cache Purge ─────────────────────────────────────────────────────
+@router.post("/cache/purge")
+async def purge_cache(
+    response: Response,
+    prefix: str = Query(default="", description="Optional key prefix to purge (e.g. 'chapters'). Empty = purge all."),
+):
+    """Clear the in-memory cache. Use after database updates.
+
+    Examples:
+      POST /api/cache/purge              → purge everything
+      POST /api/cache/purge?prefix=chapters  → purge only chapter listings
+      POST /api/cache/purge?prefix=sections  → purge only section listings
+    """
+    _set_no_store_headers(response)
+
+    if prefix:
+        keys_to_remove = [k for k in _cache if k.startswith(prefix)]
+        for k in keys_to_remove:
+            _cache.pop(k, None)
+        return {"purged": len(keys_to_remove), "prefix": prefix}
+    else:
+        count = len(_cache)
+        _cache.clear()
+        return {"purged": count, "prefix": "(all)"}
+
+
 # ─── Grades ──────────────────────────────────────────────────────────
 @router.get("/grades")
 async def list_grades(response: Response):

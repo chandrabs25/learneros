@@ -170,7 +170,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:electrochemical_series"]
+            "tests": ["concept:electrochemical_series"]
         },
         {
             "number": 14,
@@ -178,7 +178,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:standard_electrode_potential", "concept:reducing_power"]
+            "tests": ["concept:standard_electrode_potential", "concept:reducing_power"]
         },
         {
             "number": 15,
@@ -186,7 +186,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:galvanic_cell"]
+            "tests": ["concept:galvanic_cell"]
         },
         {
             "number": 16,
@@ -194,7 +194,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:standard_cell_potential", "concept:gibbs_energy"]
+            "tests": ["concept:standard_cell_potential", "concept:gibbs_energy"]
         },
         {
             "number": 17,
@@ -202,7 +202,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:nernst_equation"]
+            "tests": ["concept:nernst_equation"]
         },
         {
             "number": 18,
@@ -210,7 +210,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:gibbs_energy", "concept:standard_cell_potential"]
+            "tests": ["concept:gibbs_energy", "concept:standard_cell_potential"]
         },
         {
             "number": 19,
@@ -218,7 +218,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:conductivity", "concept:molar_conductivity"]
+            "tests": ["concept:conductivity", "concept:molar_conductivity"]
         },
         {
             "number": 20,
@@ -226,7 +226,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:molar_conductivity"]
+            "tests": ["concept:molar_conductivity"]
         },
         {
             "number": 21,
@@ -234,7 +234,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:cell_constant", "concept:conductivity"]
+            "tests": ["concept:cell_constant", "concept:conductivity"]
         },
         {
             "number": 22,
@@ -242,7 +242,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:molar_conductivity", "concept:kohlrausch_law"]
+            "tests": ["concept:molar_conductivity", "concept:kohlrausch_law"]
         },
         {
             "number": 23,
@@ -250,7 +250,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:molar_conductivity", "concept:dissociation_constant"]
+            "tests": ["concept:molar_conductivity", "concept:dissociation_constant"]
         },
         {
             "number": 24,
@@ -258,7 +258,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:faradays_law"]
+            "tests": ["concept:faradays_law"]
         },
         {
             "number": 25,
@@ -266,7 +266,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:faradays_law"]
+            "tests": ["concept:faradays_law"]
         },
         {
             "number": 26,
@@ -274,7 +274,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:faradays_law"]
+            "tests": ["concept:faradays_law"]
         },
         {
             "number": 27,
@@ -282,7 +282,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:electrolysis", "concept:faradays_law"]
+            "tests": ["concept:electrolysis", "concept:faradays_law"]
         },
         {
             "number": 28,
@@ -290,7 +290,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:electrolysis", "concept:faradays_law"]
+            "tests": ["concept:electrolysis", "concept:faradays_law"]
         },
         {
             "number": 29,
@@ -298,7 +298,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:standard_electrode_potential", "concept:feasibility_of_reaction"]
+            "tests": ["concept:standard_electrode_potential", "concept:feasibility_of_reaction"]
         },
         {
             "number": 30,
@@ -306,7 +306,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:electrolysis", "concept:products_of_electrolysis"]
+            "tests": ["concept:electrolysis", "concept:products_of_electrolysis"]
         }
     ]
 

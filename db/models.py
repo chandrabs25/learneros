@@ -163,7 +163,7 @@ class ExerciseItem(BaseModel):
     solution: Optional[str] = Field(None, description="Official solution (supports LaTeX)")
     difficulty: Optional[Difficulty] = Field(None, description="Difficulty level")
     exercise_type: Optional[ExerciseType] = Field(None, description="Problem type")
-    tests_concepts: list[str] = Field(
+    tests: list[str] = Field(
         default_factory=list,
         description="IDs of concepts or sections this exercise tests",
     )

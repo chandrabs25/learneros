@@ -52,7 +52,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:molality", "concept:mole_fraction", "concept:molarity"]
+            "tests": ["concept:molality", "concept:mole_fraction", "concept:molarity"]
         },
         {
             "number": 14,
@@ -60,7 +60,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:molarity", "concept:stoichiometry"]
+            "tests": ["concept:molarity", "concept:stoichiometry"]
         },
         {
             "number": 15,
@@ -68,7 +68,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:mass_percentage"]
+            "tests": ["concept:mass_percentage"]
         },
         {
             "number": 16,
@@ -76,7 +76,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:molality", "concept:molarity"]
+            "tests": ["concept:molality", "concept:molarity"]
         },
         {
             "number": 17,
@@ -84,7 +84,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:ppm", "concept:molality"]
+            "tests": ["concept:ppm", "concept:molality"]
         },
         {
             "number": 18,
@@ -92,7 +92,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:molecular_interactions", "concept:non_ideal_solutions"]
+            "tests": ["concept:molecular_interactions", "concept:non_ideal_solutions"]
         },
         {
             "number": 19,
@@ -100,7 +100,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:gas_solubility", "concept:temperature_effect"]
+            "tests": ["concept:gas_solubility", "concept:temperature_effect"]
         },
         {
             "number": 20,
@@ -108,7 +108,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:henrys_law"]
+            "tests": ["concept:henrys_law"]
         },
         {
             "number": 21,
@@ -116,7 +116,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:henrys_law"]
+            "tests": ["concept:henrys_law"]
         },
         {
             "number": 22,
@@ -124,7 +124,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:raoults_law", "concept:deviations_from_raoults_law"]
+            "tests": ["concept:raoults_law", "concept:deviations_from_raoults_law"]
         },
         {
             "number": 23,
@@ -132,7 +132,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:raoults_law", "concept:molar_mass"]
+            "tests": ["concept:raoults_law", "concept:molar_mass"]
         },
         {
             "number": 24,
@@ -140,7 +140,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:raoults_law", "concept:ideal_solution"]
+            "tests": ["concept:raoults_law", "concept:ideal_solution"]
         },
         {
             "number": 25,
@@ -148,7 +148,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:raoults_law", "concept:vapour_pressure_lowering"]
+            "tests": ["concept:raoults_law", "concept:vapour_pressure_lowering"]
         },
         {
             "number": 26,
@@ -156,7 +156,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:raoults_law", "concept:vapour_pressure_lowering"]
+            "tests": ["concept:raoults_law", "concept:vapour_pressure_lowering"]
         },
         {
             "number": 27,
@@ -164,7 +164,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:raoults_law", "concept:molar_mass"]
+            "tests": ["concept:raoults_law", "concept:molar_mass"]
         },
         {
             "number": 28,
@@ -172,7 +172,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:depression_in_freezing_point"]
+            "tests": ["concept:depression_in_freezing_point"]
         },
         {
             "number": 29,
@@ -180,7 +180,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:depression_in_freezing_point", "concept:molar_mass"]
+            "tests": ["concept:depression_in_freezing_point", "concept:molar_mass"]
         },
         {
             "number": 30,
@@ -188,7 +188,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:osmotic_pressure"]
+            "tests": ["concept:osmotic_pressure"]
         },
         {
             "number": 31,
@@ -196,7 +196,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:intermolecular_forces"]
+            "tests": ["concept:intermolecular_forces"]
         },
         {
             "number": 32,
@@ -204,7 +204,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:solubility", "concept:like_dissolves_like"]
+            "tests": ["concept:solubility", "concept:like_dissolves_like"]
         },
         {
             "number": 33,
@@ -212,7 +212,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:solubility"]
+            "tests": ["concept:solubility"]
         },
         {
             "number": 34,
@@ -220,7 +220,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:molarity"]
+            "tests": ["concept:molarity"]
         },
         {
             "number": 35,
@@ -228,7 +228,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:solubility_product"]
+            "tests": ["concept:solubility_product"]
         },
         {
             "number": 36,
@@ -236,7 +236,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:mass_percentage"]
+            "tests": ["concept:mass_percentage"]
         },
         {
             "number": 37,
@@ -244,7 +244,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:molality"]
+            "tests": ["concept:molality"]
         },
         {
             "number": 38,
@@ -252,7 +252,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:molarity"]
+            "tests": ["concept:molarity"]
         },
         {
             "number": 39,
@@ -260,7 +260,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "conceptual",
-            "tests_concepts": ["concept:depression_in_freezing_point", "concept:dissociation"]
+            "tests": ["concept:depression_in_freezing_point", "concept:dissociation"]
         },
         {
             "number": 40,
@@ -268,7 +268,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:depression_in_freezing_point", "concept:vant_hoff_factor"]
+            "tests": ["concept:depression_in_freezing_point", "concept:vant_hoff_factor"]
         },
         {
             "number": 41,
@@ -276,7 +276,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:vant_hoff_factor", "concept:dissociation_constant"]
+            "tests": ["concept:vant_hoff_factor", "concept:dissociation_constant"]
         },
         {
             "number": 42,
@@ -284,7 +284,7 @@ def main():
             "solution": None,
             "difficulty": "easy",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:raoults_law", "concept:vapour_pressure_lowering"]
+            "tests": ["concept:raoults_law", "concept:vapour_pressure_lowering"]
         },
         {
             "number": 43,
@@ -292,7 +292,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:henrys_law"]
+            "tests": ["concept:henrys_law"]
         },
         {
             "number": 44,
@@ -300,7 +300,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:raoults_law", "concept:ideal_solution"]
+            "tests": ["concept:raoults_law", "concept:ideal_solution"]
         },
         {
             "number": 45,
@@ -308,7 +308,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:raoults_law", "concept:deviations_from_raoults_law"]
+            "tests": ["concept:raoults_law", "concept:deviations_from_raoults_law"]
         },
         {
             "number": 46,
@@ -316,7 +316,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:raoults_law", "concept:ideal_solution"]
+            "tests": ["concept:raoults_law", "concept:ideal_solution"]
         },
         {
             "number": 47,
@@ -324,7 +324,7 @@ def main():
             "solution": None,
             "difficulty": "hard",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:henrys_law"]
+            "tests": ["concept:henrys_law"]
         },
         {
             "number": 48,
@@ -332,7 +332,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:osmotic_pressure", "concept:vant_hoff_factor"]
+            "tests": ["concept:osmotic_pressure", "concept:vant_hoff_factor"]
         },
         {
             "number": 49,
@@ -340,7 +340,7 @@ def main():
             "solution": None,
             "difficulty": "medium",
             "exercise_type": "numerical",
-            "tests_concepts": ["concept:osmotic_pressure", "concept:vant_hoff_factor"]
+            "tests": ["concept:osmotic_pressure", "concept:vant_hoff_factor"]
         }
     ]
 

@@ -461,7 +461,7 @@ def process_file(filepath: str) -> dict:
     ex_data = ch.get("exercises")
     if ex_data:
         for item in ex_data.get("items", []):
-            old_tcs = item.get("tests_concepts", [])
+            old_tcs = item.get("tests", [])
             new_tcs = []
             seen = set()
             for tc in old_tcs:
@@ -475,7 +475,7 @@ def process_file(filepath: str) -> dict:
                     new_tcs.append(tc)
                 else:
                     changes["deduped_exercises"] += 1
-            item["tests_concepts"] = new_tcs
+            item["tests"] = new_tcs
 
     with open(filepath, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
@@ -517,7 +517,7 @@ def main():
         ex = ch.get("exercises")
         if ex:
             for item in ex.get("items", []):
-                for tc in item.get("tests_concepts", []):
+                for tc in item.get("tests", []):
                     if tc.startswith("concept:"):
                         all_concepts.add(tc)
                         ch_concepts.add(tc)

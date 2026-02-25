@@ -348,7 +348,7 @@ Return a JSON object with this structure:
         "solution": "...",
         "difficulty": "easy",
         "exercise_type": "numerical",
-        "tests_concepts": ["concept:gravity"]
+        "tests": ["concept:gravity"]
       }}
     ]
   }}
@@ -518,7 +518,7 @@ PAGE_CHUNK_SCHEMA = {
                                 "enum": ["conceptual", "numerical", "derivation",
                                          "mcq", "short_answer", "long_answer"],
                             },
-                            "tests_concepts": {
+                            "tests": {
                                 "type": "array",
                                 "items": {"type": "string"},
                             },
@@ -939,8 +939,8 @@ def merge_chunks(
         sec["prerequisites"] = normalized_prereqs
 
     for ex in deduped_exercises:
-        ex["tests_concepts"] = [
-            _normalize_concept_ref(tc) for tc in ex.get("tests_concepts", [])
+        ex["tests"] = [
+            _normalize_concept_ref(tc) for tc in ex.get("tests", [])
         ]
 
     # Derive chapter title from first section if not clear

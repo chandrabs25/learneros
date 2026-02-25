@@ -3,7 +3,7 @@ Map exercises to sections using Gemini.
 
 For each chapter JSON, sends the section outline + exercise problems to Gemini
 and asks it to assign each exercise to the most relevant section(s).
-Updates the `tests_concepts` field with proper section IDs like:
+Updates the `tests` field with proper section IDs like:
     ncert:physics:11:9:9.4
 
 Usage:
@@ -236,7 +236,7 @@ def process_file(filepath: str, dry_run: bool = False) -> dict:
         if sections:
             # Build proper section IDs: ncert:physics:11:9:9.4
             section_ids = [f"{prefix}:{ch_num}:{s}" for s in sections]
-            e["tests_concepts"] = section_ids
+            e["tests"] = section_ids
             mapped += 1
 
     print(f"✅ {mapped}/{len(ex_items)} mapped")
@@ -244,7 +244,7 @@ def process_file(filepath: str, dry_run: bool = False) -> dict:
     if dry_run:
         # Print mappings for review
         for e in ex_items:
-            tc = e.get("tests_concepts", [])
+            tc = e.get("tests", [])
             prob = e["problem"][:60].replace("\n", " ")
             print(f"    #{e['number']}: {tc} — {prob}...")
     else:

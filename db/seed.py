@@ -299,16 +299,21 @@ def seed_sections(tx, data: TextbookChapter, chapter_id: str):
                     section_id=section_id,
                 )
             else:
-                # Section prerequisite — link REQUIRES (target may not exist yet)
-                tx.run(
+                # Section prerequisite — link REQUIRES only if target exists.
+                # Use MATCH (not MERGE) to avoid creating phantom Section nodes
+                # for cross-chapter refs that don't match real section IDs.
+                result = tx.run(
                     """
                     MATCH (sec:Section {id: $section_id})
-                    MERGE (prereq:Section {id: $prereq_id})
+                    MATCH (prereq:Section {id: $prereq_id})
                     MERGE (sec)-[:REQUIRES]->(prereq)
+                    RETURN prereq.id AS matched
                     """,
                     section_id=section_id,
                     prereq_id=prereq.ref,
                 )
+                if not result.single():
+                    print(f"  ⚠️  Skipping prerequisite: section '{prereq.ref}' not found in DB")
 
 
 def seed_exercises(tx, data: TextbookChapter, chapter_id: str):
@@ -358,8 +363,8 @@ def seed_exercises(tx, data: TextbookChapter, chapter_id: str):
         )
 
         # Link exercise to concepts/sections it tests
-        for concept_ref in item.tests_concepts:
-            if concept_ref.startswith("concept:"):
+        for concept_ref in item.tests:
+            if concept_ref.startswith("concept:") and not concept_ref.startswith("concept:ncert_"):
                 tx.run(
                     """
                     MERGE (c:Concept {id: $concept_id})
