@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Meiosis: Gametogenesis</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        :root {
+            --mem: #4A90D9;
+            --cyto: #E8F4FD;
+            --nuc: #2C3E50;
+            --mat: #FF6B6B;
+            --pat: #3498DB;
+            --spin: #98D8C8;
+        }
+
+        /* Static Styles */
+        .cell { fill: var(--cyto); stroke: var(--mem); stroke-width: 4; }
+        .nucleus { fill: none; stroke: var(--nuc); stroke-width: 2; stroke-dasharray: 6,4; }
+        .mat-str { fill: none; stroke: var(--mat); stroke-width: 8; stroke-linecap: round; }
+        .pat-str { fill: none; stroke: var(--pat); stroke-width: 8; stroke-linecap: round; }
+        .sf { fill: none; stroke: var(--spin); stroke-width: 2; stroke-dasharray: 4,4; }
+        
+        .title { font-size: 24px; font-weight: 700; fill: #2C3E50; text-anchor: middle; }
+        .stage-label { font-size: 18px; font-weight: 600; fill: #E74C3C; text-anchor: middle; }
+        .ploidy { font-family: 'Roboto Mono', monospace; font-size: 14px; fill: #2C3E50; font-weight: 500; text-anchor: middle; }
+        .legend-text { font-size: 12px; fill: #2C3E50; }
+        .annotation { font-size: 12px; fill: #7f8c8d; font-style: italic; }
+
+        /* Animations */
+        .anim { animation-duration: 20s; animation-iteration-count: infinite; animation-timing-function: linear; }
+
+        /* Cell & Nucleus Animations */
+        @keyframes cell-1-anim {
+            0%, 35% { rx: 120px; ry: 120px; opacity: 1; }
+            40% { rx: 160px; ry: 90px; opacity: 1; }
+            45%, 100% { rx: 180px; ry: 60px; opacity: 0; }
+        }
+        @keyframes cell-2-anim {
+            0%, 40% { opacity: 0; transform: scale(0.8); transform-origin: 250px 250px; }
+            45%, 75% { opacity: 1; transform: scale(1); rx: 100px; ry: 100px; transform-origin: 250px 250px; }
+            80% { opacity: 1; transform: scale(1); rx: 90px; ry: 140px; transform-origin: 250px 250px; }
+            85%, 100% { opacity: 0; transform: scale(1); rx: 60px; ry: 160px; transform-origin: 250px 250px; }
+        }
+        @keyframes cell-3-anim {
+            0%, 40% { opacity: 0; transform: scale(0.8); transform-origin: 550px 250px; }
+            45%, 75% { opacity: 1; transform: scale(1); rx: 100px; ry: 100px; transform-origin: 550px 250px; }
+            80% { opacity: 1; transform: scale(1); rx: 90px; ry: 140px; transform-origin: 550px 250px; }
+            85%, 100% { opacity: 0; transform: scale(1); rx: 60px; ry: 160px; transform-origin: 550px 250px; }
+        }
+        @keyframes cell-gamete-anim {
+            0%, 80% { opacity: 0; transform: scale(0.8); }
+            85%, 100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes nuc-1-anim { 0%, 5% { opacity: 1; } 10%, 100% { opacity: 0; } }
+        @keyframes nuc-23-anim { 0%, 45% { opacity: 0; } 50%, 55% { opacity: 1; } 60%, 100% { opacity: 0; } }
+        @keyframes nuc-gamete-anim { 0%, 85% { opacity: 0; } 90%, 100% { opacity: 1; } }
+
+        /* Chromosome Movements */
+        @keyframes move-LM {
+            0%, 5% { transform: translate(360px, 220px) rotate(20deg); animation-timing-function: ease-in-out; }
+            10%, 15% { transform: translate(390px, 250px) rotate(0deg); animation-timing-function: ease-in-out; }
+            20%, 35% { transform: translate(380px, 250px) rotate(0deg); animation-timing-function: ease-in-out; }
+            40%, 55% { transform: translate(250px, 250px) rotate(0deg); animation-timing-function: ease-in-out; }
+            60%, 65% { transform: translate(230px, 250px) rotate(90deg); animation-timing-function: ease-in-out; }
+            70%, 100% { transform: translate(230px, 250px) rotate(90deg); }
+        }
+        @keyframes move-LP {
+            0%, 5% { transform: translate(440px, 280px) rotate(-10deg); animation-timing-function: ease-in-out; }
+            10%, 15% { transform: translate(410px, 250px) rotate(0deg); animation-timing-function: ease-in-out; }
+            20%, 35% { transform: translate(420px, 250px) rotate(0deg); animation-timing-function: ease-in-out; }
+            40%, 55% { transform: translate(550px, 250px) rotate(0deg); animation-timing-function: ease-in-out; }
+            60%, 65% { transform: translate(530px, 250px) rotate(90deg); animation-timing-function: ease-in-out; }
+            70%, 100% { transform: translate(530px, 250px) rotate(90deg); }
+        }
+        @keyframes move-SM {
+            0%, 5% { transform: translate(370px, 280px) rotate(45deg); animation-timing-function: ease-in-out; }
+            10%, 15% { transform: translate(410px, 190px) rotate(0deg); animation-timing-function: ease-in-out; }
+            20%, 35% { transform: translate(420px, 190px) rotate(0deg); animation-timing-function: ease-in-out; }
+            40%, 55% { transform: translate(550px, 190px) rotate(0deg); animation-timing-function: ease-in-out; }
+            60%, 65% { transform: translate(570px, 250px) rotate(90deg); animation-timing-function: ease-in-out; }
+            70%, 100% { transform: translate(570px, 250px) rotate(90deg); }
+        }
+        @keyframes move-SP {
+            0%, 5% { transform: translate(430px, 220px) rotate(-30deg); animation-timing-function: ease-in-out; }
+            10%, 15% { transform: translate(390px, 190px) rotate(0deg); animation-timing-function: ease-in-out; }
+            20%, 35% { transform: translate(380px, 190px) rotate(0deg); animation-timing-function: ease-in-out; }
+            40%, 55% { transform: translate(250px, 190px) rotate(0deg); animation-timing-function: ease-in-out; }
+            60%, 65% { transform: translate(270px, 250px) rotate(90deg); animation-timing-function: ease-in-out; }
+            70%, 100% { transform: translate(270px, 250px) rotate(90deg); }
+        }
+
+        /* Sister Chromatid Separation (Meiosis II) */
+        @keyframes split-up {
+            0%, 65% { transform: translate(0, 0); animation-timing-function: ease-in-out; }
+            75%, 100% { transform: translate(-120px, 0); }
+        }
+        @keyframes split-down {
+            0%, 65% { transform: translate(0, 0); animation-timing-function: ease-in-out; }
+            75%, 100% { transform: translate(120px, 0); }
+        }
+
+        /* Crossing Over Animation */
+        @keyframes cross-over-anim { 0%, 5% { opacity: 0; } 10%, 100% { opacity: 1; } }
+
+        /* Centrioles & Spindle Fibers */
+        @keyframes cent-MI-L {
+            0%, 5% { transform: translate(380px, 140px); opacity: 1; animation-timing-function: ease-in-out; }
+            15%, 45% { transform: translate(250px, 250px); opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        @keyframes cent-MI-R {
+            0%, 5% { transform: translate(420px, 140px); opacity: 1; animation-timing-function: ease-in-out; }
+            15%, 45% { transform: translate(550px, 250px); opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        @keyframes cent-MII { 0%, 55% { opacity: 0; } 60%, 85% { opacity: 1; } 90%, 100% { opacity: 0; } }
+        
+        @keyframes sf-MI-anim {
+            0%, 15% { opacity: 0; transform: scale(0); }
+            20%, 35% { opacity: 1; transform: scale(1); animation-timing-function: ease-in-out; }
+            40% { opacity: 1; transform: scale(0.1); }
+            45%, 100% { opacity: 0; transform: scale(0); }
+        }
+        @keyframes sf-MII-anim {
+            0%, 55% { opacity: 0; transform: scale(0); }
+            60%, 65% { opacity: 1; transform: scale(1); animation-timing-function: ease-in-out; }
+            75% { opacity: 1; transform: scale(0.1); }
+            80%, 100% { opacity: 0; transform: scale(0); }
+        }
+
+        /* Text Animations */
+        @keyframes text-1 { 0%, 15% { opacity: 1; } 16%, 100% { opacity: 0; } }
+        @keyframes text-2 { 0%, 15% { opacity: 0; } 16%, 35% { opacity: 1; } 36%, 100% { opacity: 0; } }
+        @keyframes text-3 { 0%, 35% { opacity: 0; } 36%, 45% { opacity: 1; } 46%, 100% { opacity: 0; } }
+        @keyframes text-4 { 0%, 45% { opacity: 0; } 46%, 55% { opacity: 1; } 56%, 100% { opacity: 0; } }
+        @keyframes text-5 { 0%, 55% { opacity: 0; } 56%, 85% { opacity: 1; } 86%, 100% { opacity: 0; } }
+        @keyframes text-6 { 0%, 85% { opacity: 0; } 86%, 100% { opacity: 1; } }
+        
+        @keyframes ploidy-2n { 0%, 45% { opacity: 1; } 46%, 100% { opacity: 0; } }
+        @keyframes ploidy-n { 0%, 85% { opacity: 0; } 86%, 100% { opacity: 1; } }
+        @keyframes label-chiasma { 0%, 9% { opacity: 0; } 10%, 15% { opacity: 1; } 16%, 100% { opacity: 0; } }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-labelledby="svg-title" aria-describedby="svg-desc">
+        <title id="svg-title">Animated Meiosis Diagram</title>
+        <desc id="svg-desc">An animated biological diagram showing the stages of Meiosis I and II, including crossing over, independent assortment, and the formation of four haploid gametes from a single diploid cell.</desc>
+
+        <!-- Definitions -->
+        <defs>
+            <clipPath id="tip-clip"><rect x="-20" y="10" width="40" height="20" /></clipPath>
+            <g id="centriole-pair">
+                <rect x="-4" y="-4" width="8" height="8" fill="var(--spin)" />
+                <rect x="-2" y="-8" width="4" height="16" fill="var(--spin)" />
+            </g>
+        </defs>
+
+        <!-- Static UI / Legend -->
+        <text x="400" y="40" class="title">Meiosis: The Basis of Gametogenesis</text>
+        
+        <g transform="translate(630, 20)">
+            <rect x="0" y="0" width="150" height="70" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" />
+            <line x1="10" y1="15" x2="30" y2="15" class="mat-str" stroke-width="4" />
+            <text x="40" y="19" class="legend-text">Maternal DNA</text>
+            <line x1="10" y1="35" x2="30" y2="35" class="pat-str" stroke-width="4" />
+            <text x="40" y="39" class="legend-text">Paternal DNA</text>
+            <line x1="10" y1="55" x2="30" y2="55" class="sf" />
+            <text x="40" y="59" class="legend-text">Spindle Fiber</text>
+        </g>
+
+        <!-- Cell Membranes -->
+        <ellipse cx="400" cy="250" class="cell anim" style="animation-name: cell-1-anim;" />
+        <ellipse cx="250" cy="250" class="cell anim" style="animation-name: cell-2-anim;" />
+        <ellipse cx="550" cy="250" class="cell anim" style="animation-name: cell-3-anim;" />
+        <circle cx="250" cy="130" class="cell anim" style="animation-name: cell-gamete-anim;" />
+        <circle cx="250" cy="370" class="cell anim" style="animation-name: cell-gamete-anim;" />
+        <circle cx="550" cy="130" class="cell anim" style="animation-name: cell-gamete-anim;" />
+        <circle cx="550" cy="370" class="cell anim" style="animation-name: cell-gamete-anim;" />
+
+        <!-- Nuclei -->
+        <circle cx="400" cy="250" r="70" class="nucleus anim" style="animation-name: nuc-1-anim;" />
+        <circle cx="250" cy="250" r="60" class="nucleus anim" style="animation-name: nuc-23-anim;" />
+        <circle cx="550" cy="250" r="60" class="nucleus anim" style="animation-name: nuc-23-anim;" />
+        <circle cx="250" cy="130" r="40" class="nucleus anim" style="animation-name: nuc-gamete-anim;" />
+        <circle cx="250" cy="370" r="40" class="nucleus anim" style="animation-name: nuc-gamete-anim;" />
+        <circle cx="550" cy="130" r="40" class="nucleus anim" style="animation-name: nuc-gamete-anim;" />
+        <circle cx="550" cy="370" r="40" class="nucleus anim" style="animation-name: nuc-gamete-anim;" />
+
+        <!-- Spindle Fibers (Meiosis I) -->
+        <line x1="250" y1="250" x2="380" y2="250" class="sf anim" style="animation-name: sf-MI-anim; transform-origin: 250px 250px;" />
+        <line x1="250" y1="250" x2="380" y2="190" class="sf anim" style="animation-name: sf-MI-anim; transform-origin: 250px 250px;" />
+        <line x1="550" y1="250" x2="420" y2="250" class="sf anim" style="animation-name: sf-MI-anim; transform-origin: 550px 250px;" />
+        <line x1="550" y1="250" x2="420" y2="190" class="sf anim" style="animation-name: sf-MI-anim; transform-origin: 550px 250px;" />
+
+        <!-- Spindle Fibers (Meiosis II) -->
+        <line x1="250" y1="130" x2="230" y2="250" class="sf anim" style="animation-name: sf-MII-anim; transform-origin: 250px 130px;" />
+        <line x1="250" y1="130" x2="270" y2="250" class="sf anim" style="animation-name: sf-MII-anim; transform-origin: 250px 130px;" />
+        <line x1="250" y1="370" x2="230" y2="250" class="sf anim" style="animation-name: sf-MII-anim; transform-origin: 250px 370px;" />
+        <line x1="250" y1="370" x2="270" y2="250" class="sf anim" style="animation-name: sf-MII-anim; transform-origin: 250px 370px;" />
+        <line x1="550" y1="130" x2="530" y2="250" class="sf anim" style="animation-name: sf-MII-anim; transform-origin: 550px 130px;" />
+        <line x1="550" y1="130" x2="570" y2="250" class="sf anim" style="animation-name: sf-MII-anim; transform-origin: 550px 130px;" />
+        <line x1="550" y1="370" x2="530" y2="250" class="sf anim" style="animation-name: sf-MII-anim; transform-origin: 550px 370px;" />
+        <line x1="550" y1="370" x2="570" y2="250" class="sf anim" style="animation-name: sf-MII-anim; transform-origin: 550px 370px;" />
+
+        <!-- Centrioles -->
+        <use href="#centriole-pair" class="anim" style="animation-name: cent-MI-L;" />
+        <use href="#centriole-pair" class="anim" style="animation-name: cent-MI-R;" />
+        <use href="#centriole-pair" x="250" y="130" class="anim" style="animation-name: cent-MII;" />
+        <use href="#centriole-pair" x="250" y="370" class="anim" style="animation-name: cent-MII;" />
+        <use href="#centriole-pair" x="550" y="130" class="anim" style="animation-name: cent-MII;" />
+        <use href="#centriole-pair" x="550" y="370" class="anim" style="animation-name: cent-MII;" />
+
+        <!-- Chromosomes -->
+        <!-- Large Maternal (LM) -->
+        <g class="anim" style="animation-name: move-LM;">
+            <g class="anim" style="animation-name: split-up;">
+                <path d="M -12,-25 C -2,-10 -2,10 -12,25" class="mat-str" />
+                <circle cx="-2" cy="0" r="3" fill="var(--nuc)" />
+            </g>
+            <g class="anim" style="animation-name: split-down;">
+                <path d="M 12,-25 C 2,-10 2,10 12,25" class="mat-str" />
+                <path d="M 12,-25 C 2,-10 2,10 12,25" class="pat-str anim" style="animation-name: cross-over-anim;" clip-path="url(#tip-clip)" />
+                <circle cx="2" cy="0" r="3" fill="var(--nuc)" />
+            </g>
+        </g>
+
+        <!-- Large Paternal (LP) -->
+        <g class="anim" style="animation-name: move-LP;">
+            <g class="anim" style="animation-name: split-up;">
+                <path d="M -12,-25 C -2,-10 -2,10 -12,25" class="pat-str" />
+                <path d="M -12,-25 C -2,-10 -2,10 -12,25" class="mat-str anim" style="animation-name: cross-over-anim;" clip-path="url(#tip-clip)" />
+                <circle cx="-2" cy="0" r="3" fill="var(--nuc)" />
+            </g>
+            <g class="anim" style="animation-name: split-down;">
+                <path d="M 12,-25 C 2,-10 2,10 12,25" class="pat-str" />
+                <circle cx="2" cy="0" r="3" fill="var(--nuc)" />
+            </g>
+        </g>
+
+        <!-- Small Maternal (SM) -->
+        <g class="anim" style="animation-name: move-SM;">
+            <g class="anim" style="animation-name: split-up;">
+                <path d="M -10,-15 C -2,-5 -2,5 -10,15" class="mat-str" />
+                <circle cx="-1.5" cy="0" r="2.5" fill="var(--nuc)" />
+            </g>
+            <g class="anim" style="animation-name: split-down;">
+                <path d="M 10,-15 C 2,-5 2,5 10,15" class="mat-str" />
+                <circle cx="1.5" cy="0" r="2.5" fill="var(--nuc)" />
+            </g>
+        </g>
+
+        <!-- Small Paternal (SP) -->
+        <g class="anim" style="animation-name: move-SP;">
+            <g class="anim" style="animation-name: split-up;">
+                <path d="M -10,-15 C -2,-5 -2,5 -10,15" class="pat-str" />
+                <circle cx="-1.5" cy="0" r="2.5" fill="var(--nuc)" />
+            </g>
+            <g class="anim" style="animation-name: split-down;">
+                <path d="M 10,-15 C 2,-5 2,5 10,15" class="pat-str" />
+                <circle cx="1.5" cy="0" r="2.5" fill="var(--nuc)" />
+            </g>
+        </g>
+
+        <!-- Dynamic Stage Labels -->
+        <text x="400" y="470" class="stage-label anim" style="animation-name: text-1;">Prophase I: Synapsis & Crossing Over</text>
+        <text x="400" y="470" class="stage-label anim" style="animation-name: text-2;">Metaphase I: Independent Assortment</text>
+        <text x="400" y="470" class="stage-label anim" style="animation-name: text-3;">Anaphase I: Homologous Chromosomes Separate</text>
+        <text x="400" y="470" class="stage-label anim" style="animation-name: text-4;">Telophase I & Cytokinesis</text>
+        <text x="400" y="470" class="stage-label anim" style="animation-name: text-5;">Meiosis II: Sister Chromatids Separate</text>
+        <text x="400" y="470" class="stage-label anim" style="animation-name: text-6;">Result: 4 Haploid Gametes (n)</text>
+
+        <!-- Ploidy Markers -->
+        <text x="400" y="390" class="ploidy anim" style="animation-name: ploidy-2n;">2n = 4</text>
+        <text x="250" y="220" class="ploidy anim" style="animation-name: ploidy-n;">n = 2</text>
+        <text x="250" y="460" class="ploidy anim" style="animation-name: ploidy-n;">n = 2</text>
+        <text x="550" y="220" class="ploidy anim" style="animation-name: ploidy-n;">n = 2</text>
+        <text x="550" y="460" class="ploidy anim" style="animation-name: ploidy-n;">n = 2</text>
+
+        <!-- Annotations -->
+        <g class="anim" style="animation-name: label-chiasma;">
+            <line x1="400" y1="265" x2="440" y2="300" stroke="#7f8c8d" stroke-width="1" />
+            <text x="445" y="305" class="annotation">Chiasma (Crossing Over)</text>
+        </g>
+    </svg>
+</body>
+</html>

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Coordination: The Synaptic Flash</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: #2C3E50;
+            margin: 0 0 8px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #7F8C8D;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(44, 62, 80, 0.08);
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- CSS Animations --- */
+        
+        /* 1. Action Potential (0-15%) */
+        .ap-signal {
+            stroke-dasharray: 250;
+            stroke-dashoffset: 250;
+            animation: ap-pulse 6s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes ap-pulse {
+            0% { stroke-dashoffset: 250; opacity: 1; }
+            12% { stroke-dashoffset: 0; opacity: 1; }
+            18% { stroke-dashoffset: 0; opacity: 0; }
+            100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        /* 2. Vesicle Docking (15-40%) */
+        .vesicle-anim {
+            animation: vesicle-move 6s infinite ease-in-out;
+        }
+
+        @keyframes vesicle-move {
+            0%, 15% { transform: translateY(0); opacity: 1; }
+            35%, 40% { transform: translateY(105px); opacity: 1; } /* Docked */
+            41%, 100% { transform: translateY(105px); opacity: 0; } /* Fused/Hidden */
+        }
+
+        /* 3. Exocytosis / Fused Membrane (41-55%) */
+        .fused-vesicle {
+            opacity: 0;
+            animation: fused-show 6s infinite ease-in-out;
+        }
+
+        @keyframes fused-show {
+            0%, 40% { opacity: 0; }
+            41%, 50% { opacity: 1; }
+            55%, 100% { opacity: 0; }
+        }
+
+        /* 4. Neurotransmitter Diffusion (41-75%) */
+        .nt {
+            opacity: 0;
+            animation: nt-fly 6s infinite ease-out;
+        }
+
+        @keyframes nt-fly {
+            0%, 40% { opacity: 0; transform: translate(0, 0); }
+            41% { opacity: 1; transform: translate(0, 0); }
+            55% { opacity: 1; transform: translate(var(--dx), var(--dy)); } /* Bound to receptor */
+            65% { opacity: 1; transform: translate(var(--dx), var(--dy)); } /* Stay bound briefly */
+            75%, 100% { opacity: 0; transform: translate(var(--dx), var(--dy)); } /* Cleared */
+        }
+
+        /* 5. Receptor Activation (55-70%) */
+        .receptor-glow {
+            animation: receptor-activate 6s infinite ease-in-out;
+        }
+
+        @keyframes receptor-activate {
+            0%, 50% { filter: none; }
+            55%, 65% { filter: drop-shadow(0 0 6px #FFD700); }
+            70%, 100% { filter: none; }
+        }
+
+        /* 6. Postsynaptic Response (60-75%) */
+        .post-flash {
+            opacity: 0;
+            animation: post-flash-anim 6s infinite ease-in-out;
+        }
+
+        @keyframes post-flash-anim {
+            0%, 55% { opacity: 0; }
+            60%, 65% { opacity: 1; }
+            75%, 100% { opacity: 0; }
+        }
+
+        /* Floating animation for static vesicles */
+        .float {
+            animation: floating 4s infinite ease-in-out alternate;
+        }
+        .float-delay {
+            animation: floating 5s infinite ease-in-out alternate-reverse;
+        }
+
+        @keyframes floating {
+            0% { transform: translateY(-3px); }
+            100% { transform: translateY(3px); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Neural Coordination: Point-to-Point Signaling</h1>
+        <p>The Synaptic Flash: Rapid transmission, precise targeting, and short-lived response.</p>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Animated Diagram of a Chemical Synapse</title>
+            <desc>An animation showing an action potential triggering synaptic vesicles to release neurotransmitters into the synaptic cleft, which bind to receptors on the postsynaptic membrane, causing a brief signal before being cleared.</desc>
+
+            <defs>
+                <!-- Glow Filter for Action Potential -->
+                <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+
+                <!-- Mitochondrion Symbol -->
+                <g id="mitochondrion">
+                    <ellipse cx="0" cy="0" rx="22" ry="12" fill="#FADBD8" stroke="#E74C3C" stroke-width="2"/>
+                    <path d="M -14,-2 Q -9,6 -4,-2 T 6,-2 T 14,-2" stroke="#E74C3C" stroke-width="2" fill="none" stroke-linejoin="round"/>
+                </g>
+
+                <!-- Vesicle Symbol (Static) -->
+                <g id="vesicle">
+                    <circle cx="0" cy="0" r="12" fill="#E8F4FD" stroke="#98D8C8" stroke-width="2"/>
+                    <circle cx="-4" cy="-4" r="2" fill="#98D8C8"/>
+                    <circle cx="4" cy="-2" r="2" fill="#98D8C8"/>
+                    <circle cx="0" cy="4" r="2" fill="#98D8C8"/>
+                    <circle cx="-3" cy="3" r="2" fill="#98D8C8"/>
+                    <circle cx="3" cy="2" r="2" fill="#98D8C8"/>
+                </g>
+
+                <!-- Receptor Symbol -->
+                <g id="receptor">
+                    <path d="M 0,0 L 0,-12 M 0,-12 L -10,-22 M 0,-12 L 10,-22" stroke="#E74C3C" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+
+                <!-- Fused Vesicle Symbol -->
+                <g id="fused-arc">
+                    <path d="M -11,0 A 11,11 0 0,0 11,0" fill="none" stroke="#98D8C8" stroke-width="2"/>
+                </g>
+            </defs>
+
+            <!-- ================= BACKGROUND & STATIC STRUCTURES ================= -->
+            
+            <!-- Postsynaptic Neuron (Bottom) -->
+            <path d="M 150 440 C 300 460, 500 460, 650 440 L 650 520 L 150 520 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" stroke-linejoin="round"/>
+            
+            <!-- Presynaptic Neuron / Axon Terminal (Top) -->
+            <path d="M 360 -10 L 360 120 C 360 160, 240 200, 240 290 C 240 350, 290 380, 400 380 C 510 380, 560 350, 560 290 C 560 200, 440 160, 440 120 L 440 -10 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3" stroke-linejoin="round"/>
+
+            <!-- Mitochondria in Axon Terminal -->
+            <use href="#mitochondrion" x="290" y="220" transform="rotate(30 290 220)"/>
+            <use href="#mitochondrion" x="510" y="240" transform="rotate(-45 510 240)"/>
+
+            <!-- Reserve Pool Vesicles (Static with slight float) -->
+            <g class="float">
+                <use href="#vesicle" x="350" y="180"/>
+                <use href="#vesicle" x="450" y="190"/>
+            </g>
+            <g class="float-delay">
+                <use href="#vesicle" x="400" y="150"/>
+                <use href="#vesicle" x="310" y="280"/>
+                <use href="#vesicle" x="490" y="290"/>
+            </g>
+
+
+            <!-- ================= ANIMATED ELEMENTS ================= -->
+
+            <!-- 1. Action Potential -->
+            <path class="ap-signal" d="M 400 -10 L 380 30 L 420 70 L 380 110 L 410 150 L 400 190" fill="none" stroke="#FFD700" stroke-width="4" stroke-linejoin="round" filter="url(#glow)"/>
+
+            <!-- 2. Docking Vesicles -->
+            <g class="vesicle-anim">
+                <use href="#vesicle" x="340" y="260"/>
+                <use href="#vesicle" x="400" y="270"/>
+                <use href="#vesicle" x="460" y="260"/>
+            </g>
+
+            <!-- 3. Fused Vesicle Membranes (Exocytosis) -->
+            <use href="#fused-arc" x="340" y="378" class="fused-vesicle"/>
+            <use href="#fused-arc" x="400" y="380" class="fused-vesicle"/>
+            <use href="#fused-arc" x="460" y="378" class="fused-vesicle"/>
+
+            <!-- 4. Receptors on Postsynaptic Membrane -->
+            <g class="receptor-glow">
+                <use href="#receptor" x="340" y="448"/>
+                <use href="#receptor" x="400" y="452"/>
+                <use href="#receptor" x="460" y="448"/>
+            </g>
+
+            <!-- 5. Neurotransmitters (Bursting out) -->
+            <!-- From Vesicle 1 (Left) -->
+            <circle class="nt" cx="340" cy="378" r="2.5" fill="#98D8C8" style="--dx: -12px; --dy: 48px;"/>
+            <circle class="nt" cx="340" cy="378" r="2.5" fill="#98D8C8" style="--dx: 0px; --dy: 52px;"/>
+            <circle class="nt" cx="340" cy="378" r="2.5" fill="#98D8C8" style="--dx: 12px; --dy: 46px;"/>
+            <circle class="nt" cx="340" cy="378" r="2.5" fill="#98D8C8" style="--dx: -5px; --dy: 55px;"/>
+            <circle class="nt" cx="340" cy="378" r="2.5" fill="#98D8C8" style="--dx: 8px; --dy: 50px;"/>
+
+            <!-- From Vesicle 2 (Center) -->
+            <circle class="nt" cx="400" cy="380" r="2.5" fill="#98D8C8" style="--dx: -15px; --dy: 52px;"/>
+            <circle class="nt" cx="400" cy="380" r="2.5" fill="#98D8C8" style="--dx: 0px; --dy: 56px;"/>
+            <circle class="nt" cx="400" cy="380" r="2.5" fill="#98D8C8" style="--dx: 15px; --dy: 52px;"/>
+            <circle class="nt" cx="400" cy="380" r="2.5" fill="#98D8C8" style="--dx: -6px; --dy: 58px;"/>
+            <circle class="nt" cx="400" cy="380" r="2.5" fill="#98D8C8" style="--dx: 6px; --dy: 58px;"/>
+
+            <!-- From Vesicle 3 (Right) -->
+            <circle class="nt" cx="460" cy="378" r="2.5" fill="#98D8C8" style="--dx: -12px; --dy: 46px;"/>
+            <circle class="nt" cx="460" cy="378" r="2.5" fill="#98D8C8" style="--dx: 0px; --dy: 52px;"/>
+            <circle class="nt" cx="460" cy="378" r="2.5" fill="#98D8C8" style="--dx: 12px; --dy: 48px;"/>
+            <circle class="nt" cx="460" cy="378" r="2.5" fill="#98D8C8" style="--dx: -8px; --dy: 50px;"/>
+            <circle class="nt" cx="460" cy="378" r="2.5" fill="#98D8C8" style="--dx: 5px; --dy: 55px;"/>
+
+            <!-- 6. Postsynaptic Flash (Signal Passed) -->
+            <path class="post-flash" d="M 300 445 C 360 452, 440 452, 500 445" fill="none" stroke="#FFD700" stroke-width="6" stroke-linecap="round" filter="url(#glow)"/>
+
+
+            <!-- ================= LABELS & ANNOTATIONS ================= -->
+
+            <!-- Axon Terminal Label -->
+            <text x="160" y="140" font-family="Inter" font-size="14" font-weight="600" fill="#2C3E50">Axon Terminal</text>
+            <path d="M 160 145 L 280 180" stroke="#7F8C8D" stroke-width="1.5" fill="none" stroke-dasharray="3 3"/>
+            <circle cx="280" cy="180" r="3" fill="#7F8C8D"/>
+
+            <!-- Synaptic Cleft Label -->
+            <text x="640" y="415" font-family="Inter" font-size="14" font-weight="600" fill="#2C3E50">Synaptic Cleft</text>
+            <path d="M 635 410 L 520 410" stroke="#7F8C8D" stroke-width="1.5" fill="none" stroke-dasharray="3 3"/>
+            <circle cx="520" cy="410" r="3" fill="#7F8C8D"/>
+
+            <!-- Post-synaptic Membrane Label -->
+            <text x="640" y="480" font-family="Inter" font-size="14" font-weight="600" fill="#2C3E50">Post-synaptic Membrane</text>
+            <path d="M 635 475 L 530 455" stroke="#7F8C8D" stroke-width="1.5" fill="none" stroke-dasharray="3 3"/>
+            <circle cx="530" cy="455" r="3" fill="#7F8C8D"/>
+
+            <!-- Neurotransmitter Label -->
+            <text x="160" y="390" font-family="Inter" font-size="14" font-weight="600" fill="#2C3E50">Neurotransmitters</text>
+            <path d="M 160 395 L 320 405" stroke="#7F8C8D" stroke-width="1.5" fill="none" stroke-dasharray="3 3"/>
+            <circle cx="320" cy="405" r="3" fill="#7F8C8D"/>
+
+            <!-- Feature Callouts (Roboto Mono) -->
+            <rect x="440" y="65" width="200" height="24" rx="4" fill="#FFF9E6" stroke="#FFD700" stroke-width="1"/>
+            <text x="450" y="82" font-family="'Roboto Mono'" font-size="12" font-weight="700" fill="#B8860B">FAST: Electrical Impulse</text>
+
+            <rect x="70" y="408" width="220" height="24" rx="4" fill="#E8F8F5" stroke="#98D8C8" stroke-width="1"/>
+            <text x="80" y="425" font-family="'Roboto Mono'" font-size="12" font-weight="700" fill="#16A085">SHORT-LIVED: Rapid Clearance</text>
+
+
+            <!-- ================= LEGEND ================= -->
+            <g transform="translate(620, 20)">
+                <rect x="0" y="0" width="160" height="115" rx="6" fill="#ffffff" stroke="#E0E0E0" stroke-width="1" opacity="0.95"/>
+                <text x="15" y="22" font-family="Inter" font-size="13" font-weight="700" fill="#2C3E50">Key</text>
+                
+                <!-- Legend Items -->
+                <line x1="15" y1="40" x2="35" y2="40" stroke="#FFD700" stroke-width="3"/>
+                <text x="45" y="44" font-family="Inter" font-size="12" fill="#2C3E50">Action Potential</text>
+
+                <circle cx="25" cy="60" r="5" fill="#98D8C8"/>
+                <text x="45" y="64" font-family="Inter" font-size="12" fill="#2C3E50">Neurotransmitter</text>
+
+                <path d="M 25,76 L 25,84 M 25,76 L 20,70 M 25,76 L 30,70" stroke="#E74C3C" stroke-width="2" fill="none"/>
+                <text x="45" y="84" font-family="Inter" font-size="12" fill="#2C3E50">Receptor Protein</text>
+
+                <ellipse cx="25" cy="100" rx="8" ry="4" fill="#FADBD8" stroke="#E74C3C" stroke-width="1.5"/>
+                <text x="45" y="104" font-family="Inter" font-size="12" fill="#2C3E50">Mitochondrion</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated Coordination: Neural and Endocrine Control</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* Typography */
+        .title { font-size: 24px; font-weight: 700; fill: #2C3E50; }
+        .label-title { font-size: 14px; font-weight: 700; }
+        .label-sub { font-family: 'Roboto Mono', monospace; font-size: 10px; fill: #7F8C8D; }
+        .process-label { font-family: 'Roboto Mono', monospace; font-size: 12px; font-weight: 700; fill: #2C3E50; }
+        .status-text { font-family: 'Roboto Mono', monospace; font-size: 13px; font-weight: 700; fill: #2C3E50; }
+        .legend-text { font-size: 11px; fill: #2C3E50; }
+
+        /* Animations */
+        .spark {
+            offset-path: path('M 180 180 Q 200 280, 360 280');
+            animation: spark-move 12s linear infinite;
+            fill: #FFFF00;
+            filter: drop-shadow(0 0 5px #FFFF00);
+            opacity: 0;
+        }
+
+        @keyframes spark-move {
+            0% { offset-distance: 0%; opacity: 0; transform: scale(0.5); }
+            0.5% { opacity: 1; transform: scale(1.2); }
+            3.5% { opacity: 1; transform: scale(1.2); }
+            4.16% { offset-distance: 100%; opacity: 0; transform: scale(0.5); }
+            100% { offset-distance: 100%; opacity: 0; }
+        }
+
+        .hormone {
+            offset-path: path('M 640 140 Q 600 280, 450 280');
+            animation: hormone-move 12s linear infinite;
+            fill: #98D8C8;
+            stroke: #2C3E50;
+            stroke-width: 1;
+            opacity: 0;
+        }
+
+        @keyframes hormone-move {
+            0% { offset-distance: 0%; opacity: 0; transform: scale(0) rotate(0deg); }
+            1% { opacity: 1; transform: scale(1) rotate(45deg); }
+            24% { opacity: 1; transform: scale(1) rotate(315deg); }
+            25% { offset-distance: 100%; opacity: 0; transform: scale(0) rotate(360deg); }
+            100% { offset-distance: 100%; opacity: 0; }
+        }
+
+        .feedback-pulse {
+            offset-path: path('M 380 320 Q 250 380, 140 180');
+            animation: feedback-move 12s linear infinite;
+            fill: #3498DB;
+            filter: drop-shadow(0 0 4px #3498DB);
+            opacity: 0;
+        }
+
+        @keyframes feedback-move {
+            0% { offset-distance: 0%; opacity: 0; transform: scale(0.5); }
+            1% { opacity: 0.8; transform: scale(1); }
+            15% { opacity: 0.8; transform: scale(1); }
+            16.66% { offset-distance: 100%; opacity: 0; transform: scale(0.5); }
+            100% { offset-distance: 100%; opacity: 0; }
+        }
+
+        .heart {
+            transform-origin: 410px 330px;
+            animation: heartbeat 12s linear infinite;
+        }
+
+        @keyframes heartbeat {
+            /* Phase 0: Rest (0-1s) */
+            0% { transform: scale(1); }
+            1.5% { transform: scale(1.15); }
+            3.0% { transform: scale(1); }
+            8.3% { transform: scale(1); }
+            9.8% { transform: scale(1.15); }
+            11.3% { transform: scale(1); }
+
+            /* Phase 1: Neural Fast Beating (1.5s - 4.0s) */
+            12.5% { transform: scale(1); } 14.0% { transform: scale(1.15); } 15.5% { transform: scale(1); }
+            16.6% { transform: scale(1); } 18.1% { transform: scale(1.15); } 19.6% { transform: scale(1); }
+            20.8% { transform: scale(1); } 22.3% { transform: scale(1.15); } 23.8% { transform: scale(1); }
+            25.0% { transform: scale(1); } 26.5% { transform: scale(1.15); } 28.0% { transform: scale(1); }
+            29.1% { transform: scale(1); } 30.6% { transform: scale(1.15); } 32.1% { transform: scale(1); }
+            33.3% { transform: scale(1); } 34.8% { transform: scale(1.15); } 36.3% { transform: scale(1); }
+
+            /* Phase 2: Endocrine Elevated Beating (4.6s - 8.0s) */
+            38.3% { transform: scale(1); } 39.8% { transform: scale(1.15); } 41.3% { transform: scale(1); }
+            43.3% { transform: scale(1); } 44.8% { transform: scale(1.15); } 46.3% { transform: scale(1); }
+            48.3% { transform: scale(1); } 49.8% { transform: scale(1.15); } 51.3% { transform: scale(1); }
+            53.3% { transform: scale(1); } 54.8% { transform: scale(1.15); } 56.3% { transform: scale(1); }
+            58.3% { transform: scale(1); } 59.8% { transform: scale(1.15); } 61.3% { transform: scale(1); }
+            63.3% { transform: scale(1); } 64.8% { transform: scale(1.15); } 66.3% { transform: scale(1); }
+
+            /* Phase 3 & 4: Recovery (8.5s - 12s) */
+            70.8% { transform: scale(1); } 72.3% { transform: scale(1.15); } 73.8% { transform: scale(1); }
+            79.1% { transform: scale(1); } 80.6% { transform: scale(1.15); } 82.1% { transform: scale(1); }
+            87.5% { transform: scale(1); } 89.0% { transform: scale(1.15); } 90.5% { transform: scale(1); }
+            95.8% { transform: scale(1); } 97.3% { transform: scale(1.15); } 98.8% { transform: scale(1); }
+            100% { transform: scale(1); }
+        }
+
+        .needle {
+            transform-origin: 0px 0px;
+            animation: gauge-move 12s ease-in-out infinite;
+        }
+
+        @keyframes gauge-move {
+            0%, 5% { transform: rotate(-40deg); }
+            15%, 65% { transform: rotate(40deg); }
+            80%, 100% { transform: rotate(-40deg); }
+        }
+
+        .status-1 { animation: stat1 12s infinite; }
+        .status-2 { animation: stat2 12s infinite; }
+        .status-3 { animation: stat3 12s infinite; }
+
+        @keyframes stat1 { 0%, 15% { opacity: 1; } 16%, 100% { opacity: 0; } }
+        @keyframes stat2 { 0%, 15% { opacity: 0; } 16%, 65% { opacity: 1; } 66%, 100% { opacity: 0; } }
+        @keyframes stat3 { 0%, 65% { opacity: 0; } 66%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" aria-label="Animated diagram of Neural and Endocrine Coordination in Homeostasis">
+    <title>Integrated Coordination: Neural and Endocrine Control of Homeostasis</title>
+    <desc>An animation showing the brain sending rapid neural signals and the adrenal gland sending slower hormonal signals to the heart to regulate heartbeat during exercise, followed by a feedback loop.</desc>
+
+    <defs>
+        <!-- Drop Shadow Filter -->
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.15"/>
+        </filter>
+        
+        <!-- Blood Vessel Gradient -->
+        <linearGradient id="vesselGrad" gradientUnits="userSpaceOnUse" x1="640" y1="140" x2="450" y2="280">
+            <stop offset="0%" stop-color="#E74C3C"/>
+            <stop offset="100%" stop-color="#3498DB"/>
+        </linearGradient>
+    </defs>
+
+    <!-- Title -->
+    <text x="400" y="40" text-anchor="middle" class="title">Neural &amp; Endocrine Coordination in Homeostasis</text>
+
+    <!-- Status Box -->
+    <g transform="translate(300, 60)">
+        <rect x="0" y="0" width="200" height="30" rx="6" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+        <text x="100" y="20" text-anchor="middle" class="status-text status-1" fill="#E74C3C">STIMULUS: EXERCISE</text>
+        <text x="100" y="20" text-anchor="middle" class="status-text status-2" fill="#F39C12">COORDINATED RESPONSE</text>
+        <text x="100" y="20" text-anchor="middle" class="status-text status-3" fill="#27AE60">HOMEOSTASIS REACHED</text>
+    </g>
+
+    <!-- PATHWAYS -->
+    <g id="pathways">
+        <!-- Endocrine Pathway (Blood Vessel) -->
+        <path d="M 640 140 Q 600 280, 450 280" fill="none" stroke="url(#vesselGrad)" stroke-width="18" stroke-linecap="round" opacity="0.8"/>
+        <path d="M 640 140 Q 600 280, 450 280" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="10,15" opacity="0.4"/>
+        
+        <!-- Neural Pathway (Axon) -->
+        <path d="M 180 180 Q 200 280, 360 280" fill="none" stroke="#2C3E50" stroke-width="3" stroke-dasharray="8,5" stroke-linecap="round"/>
+        <!-- Synapse branches -->
+        <path d="M 360 280 L 370 270 M 360 280 L 375 285 M 360 280 L 368 295" fill="none" stroke="#2C3E50" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- Feedback Pathway -->
+        <path d="M 380 320 Q 250 380, 140 180" fill="none" stroke="#3498DB" stroke-width="2" stroke-dasharray="4,4" opacity="0.6"/>
+    </g>
+
+    <!-- ORGANS -->
+    <g id="organs">
+        <!-- Brain (Neural Control Center) -->
+        <g id="brain" filter="url(#shadow)">
+            <path d="M 120 140 C 100 100, 140 60, 180 80 C 220 60, 250 100, 230 140 C 240 170, 210 190, 180 180 C 150 190, 110 170, 120 140 Z" fill="#2C3E50"/>
+            <path d="M 160 170 L 160 205 C 160 215, 180 215, 180 205 L 180 170 Z" fill="#1A252F"/>
+            <circle cx="205" cy="175" r="16" fill="#34495E"/>
+            <path d="M 140 100 Q 160 120, 150 150 M 180 85 Q 180 130, 200 140 M 130 120 Q 150 130, 140 160 M 210 100 Q 190 120, 215 130" fill="none" stroke="#1A252F" stroke-width="2.5" stroke-linecap="round"/>
+        </g>
+        <text x="175" y="240" text-anchor="middle" fill="#2C3E50" class="label-title">Neural System</text>
+        <text x="175" y="255" text-anchor="middle" class="label-sub">(Point-to-Point, Rapid)</text>
+
+        <!-- Adrenal Gland (Endocrine Control Center) -->
+        <g id="gland" filter="url(#shadow)">
+            <!-- Kidney -->
+            <path d="M 640 120 C 600 110, 590 160, 610 190 C 630 230, 680 220, 690 180 C 700 140, 670 130, 640 120 Z" fill="#D2B48C"/>
+            <!-- Adrenal -->
+            <path d="M 620 115 C 640 80, 670 90, 680 125 C 660 135, 630 130, 620 115 Z" fill="#F39C12"/>
+            <path d="M 635 105 Q 650 115, 665 110" fill="none" stroke="#D68910" stroke-width="2" stroke-linecap="round"/>
+        </g>
+        <text x="645" y="250" text-anchor="middle" fill="#F39C12" class="label-title">Endocrine System</text>
+        <text x="645" y="265" text-anchor="middle" class="label-sub">(Chemical, Sustained)</text>
+
+        <!-- Heart (Target Organ) -->
+        <g id="heart" class="heart">
+            <!-- Aorta & Vessels -->
+            <path d="M 390 260 C 390 220, 430 220, 430 260" fill="none" stroke="#E74C3C" stroke-width="14" stroke-linecap="round"/>
+            <path d="M 430 260 C 430 230, 450 230, 450 260" fill="none" stroke="#3498DB" stroke-width="10" stroke-linecap="round"/>
+            <!-- Main Heart Body -->
+            <path d="M 400 260 C 360 250, 330 280, 350 330 C 360 360, 390 390, 410 410 C 430 390, 460 360, 470 330 C 490 280, 460 250, 420 260 Z" fill="#E74C3C" filter="url(#shadow)"/>
+            <!-- Surface Details (LAD Artery) -->
+            <path d="M 410 270 Q 420 330, 400 380" fill="none" stroke="#C0392B" stroke-width="3" stroke-linecap="round"/>
+            <path d="M 415 300 Q 440 320, 450 340" fill="none" stroke="#C0392B" stroke-width="2" stroke-linecap="round"/>
+            <path d="M 410 340 Q 380 350, 370 370" fill="none" stroke="#C0392B" stroke-width="2" stroke-linecap="round"/>
+        </g>
+        <text x="410" y="445" text-anchor="middle" fill="#E74C3C" class="label-title">Target Organ: Heart</text>
+    </g>
+
+    <!-- Process Annotations -->
+    <text x="250" y="210" transform="rotate(25, 250, 210)" class="process-label">Neurotransmitters</text>
+    <text x="560" y="210" transform="rotate(-30, 560, 210)" class="process-label">Hormones (Adrenaline)</text>
+    <text x="230" y="320" transform="rotate(-25, 230, 320)" class="process-label" fill="#3498DB" style="font-size: 10px;">Feedback Loop</text>
+
+    <!-- ANIMATED SIGNALS -->
+    <g id="signals">
+        <!-- Neural Sparks (0-4s window) -->
+        <circle class="spark" r="4" style="animation-delay: 0.0s;"/>
+        <circle class="spark" r="4" style="animation-delay: 0.4s;"/>
+        <circle class="spark" r="4" style="animation-delay: 0.8s;"/>
+        <circle class="spark" r="4" style="animation-delay: 1.2s;"/>
+        <circle class="spark" r="4" style="animation-delay: 1.6s;"/>
+        <circle class="spark" r="4" style="animation-delay: 2.0s;"/>
+        <circle class="spark" r="4" style="animation-delay: 2.4s;"/>
+        <circle class="spark" r="4" style="animation-delay: 2.8s;"/>
+        <circle class="spark" r="4" style="animation-delay: 3.2s;"/>
+        <circle class="spark" r="4" style="animation-delay: 3.6s;"/>
+
+        <!-- Endocrine Hormones (2-8s window) -->
+        <polygon class="hormone" points="0,-6 5.2,-3 5.2,3 0,6 -5.2,3 -5.2,-3" style="animation-delay: 2.0s;"/>
+        <polygon class="hormone" points="0,-6 5.2,-3 5.2,3 0,6 -5.2,3 -5.2,-3" style="animation-delay: 2.6s;"/>
+        <polygon class="hormone" points="0,-6 5.2,-3 5.2,3 0,6 -5.2,3 -5.2,-3" style="animation-delay: 3.2s;"/>
+        <polygon class="hormone" points="0,-6 5.2,-3 5.2,3 0,6 -5.2,3 -5.2,-3" style="animation-delay: 3.8s;"/>
+        <polygon class="hormone" points="0,-6 5.2,-3 5.2,3 0,6 -5.2,3 -5.2,-3" style="animation-delay: 4.4s;"/>
+        <polygon class="hormone" points="0,-6 5.2,-3 5.2,3 0,6 -5.2,3 -5.2,-3" style="animation-delay: 5.0s;"/>
+
+        <!-- Feedback Pulses (8-12s window) -->
+        <circle class="feedback-pulse" r="5" style="animation-delay: 8.0s;"/>
+        <circle class="feedback-pulse" r="5" style="animation-delay: 8.6s;"/>
+        <circle class="feedback-pulse" r="5" style="animation-delay: 9.2s;"/>
+        <circle class="feedback-pulse" r="5" style="animation-delay: 9.8s;"/>
+    </g>
+
+    <!-- Homeostasis Gauge -->
+    <g id="gauge" transform="translate(410, 485)">
+        <!-- Arc Backgrounds -->
+        <path d="M -50 0 A 50 50 0 0 1 50 0" fill="none" stroke="#BDC3C7" stroke-width="8"/>
+        <path d="M -50 0 A 50 50 0 0 1 0 -50" fill="none" stroke="#2ECC71" stroke-width="8"/>
+        <path d="M 0 -50 A 50 50 0 0 1 50 0" fill="none" stroke="#E74C3C" stroke-width="8"/>
+        
+        <!-- Labels -->
+        <text x="-65" y="5" font-family="Inter" font-size="10" font-weight="700" fill="#7F8C8D" text-anchor="middle">REST</text>
+        <text x="65" y="5" font-family="Inter" font-size="10" font-weight="700" fill="#7F8C8D" text-anchor="middle">STRESS</text>
+        
+        <!-- Needle -->
+        <line x1="0" y1="0" x2="0" y2="-40" stroke="#2C3E50" stroke-width="3" stroke-linecap="round" class="needle"/>
+        <circle cx="0" cy="0" r="5" fill="#2C3E50"/>
+    </g>
+
+    <!-- Legend -->
+    <g id="legend" transform="translate(620, 370)">
+        <rect x="0" y="0" width="160" height="110" rx="6" fill="#ffffff" stroke="#E8F4FD" stroke-width="2" filter="url(#shadow)"/>
+        <text x="80" y="20" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#2C3E50">Legend</text>
+        
+        <circle cx="20" cy="40" r="4" fill="#FFFF00" filter="drop-shadow(0 0 2px #FFFF00)"/>
+        <text x="35" y="44" class="legend-text">Neural Signal (Fast)</text>
+        
+        <polygon points="20,-33 24.3,-30.5 24.3,-25.5 20,-23 15.7,-25.5 15.7,-30.5" fill="#98D8C8" stroke="#2C3E50" stroke-width="1" transform="translate(0, 90)"/>
+        <text x="35" y="64" class="legend-text">Hormone (Slow)</text>
+        
+        <line x1="15" y1="80" x2="25" y2="80" stroke="#3498DB" stroke-width="2" stroke-dasharray="2,2"/>
+        <text x="35" y="84" class="legend-text">Feedback Loop</text>
+        
+        <rect x="15" y="96" width="10" height="4" fill="url(#vesselGrad)"/>
+        <text x="35" y="101" class="legend-text">Bloodstream</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

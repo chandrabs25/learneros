@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hormonal Control of Male Puberty (HPG Axis)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;1,400&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            color: #2C3E50;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-align: center;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+        }
+        svg {
+            width: 100%;
+            height: 100%;
+            max-height: 85vh;
+        }
+        
+        /* Animations */
+        .hypo {
+            animation: hypo-pulse 12s infinite;
+        }
+        @keyframes hypo-pulse {
+            0%, 16% { filter: drop-shadow(0 0 10px rgba(255, 107, 107, 0.6)); }
+            18%, 100% { filter: none; }
+        }
+
+        .ant-pit {
+            animation: pit-pulse 12s infinite;
+        }
+        @keyframes pit-pulse {
+            0%, 16% { filter: none; }
+            18%, 41% { filter: drop-shadow(0 0 10px rgba(243, 156, 18, 0.6)); }
+            43%, 100% { filter: none; }
+        }
+
+        .sertoli-cell {
+            animation: sertoli-glow 12s infinite;
+            transform-origin: 400px 650px;
+        }
+        @keyframes sertoli-glow {
+            0%, 38% { fill: #4A90D9; }
+            41%, 66% { fill: #5DADE2; filter: drop-shadow(0 0 6px rgba(93, 173, 226, 0.8)); }
+            83%, 100% { fill: #4A90D9; }
+        }
+
+        .leydig-cell {
+            animation: leydig-glow 12s infinite;
+        }
+        @keyframes leydig-glow {
+            0%, 38% { fill: #98D8C8; }
+            41%, 66% { fill: #A3E4D7; filter: drop-shadow(0 0 6px rgba(152, 216, 200, 0.8)); }
+            83%, 100% { fill: #98D8C8; }
+        }
+
+        .sperm-tail {
+            stroke-dasharray: 30;
+            stroke-dashoffset: 30;
+            animation: sperm-grow 12s infinite ease-in-out;
+        }
+        @keyframes sperm-grow {
+            0%, 41% { stroke-dashoffset: 30; opacity: 0; }
+            45% { opacity: 1; }
+            55%, 83% { stroke-dashoffset: 0; opacity: 1; }
+            90%, 100% { stroke-dashoffset: 30; opacity: 0; }
+        }
+
+        /* Hormone Particles */
+        .gnrh {
+            animation: gnrh-flow 12s infinite linear;
+            opacity: 0;
+        }
+        @keyframes gnrh-flow {
+            0% { transform: translateY(0); opacity: 0; }
+            2% { opacity: 1; }
+            14% { transform: translateY(60px); opacity: 1; }
+            16% { transform: translateY(60px); opacity: 0; }
+            83% { transform: translateY(0); opacity: 0; }
+            85% { opacity: 0.3; }
+            97% { transform: translateY(60px); opacity: 0.3; }
+            99%, 100% { transform: translateY(60px); opacity: 0; }
+        }
+        .gnrh.d1 { animation-delay: 0s; }
+        .gnrh.d2 { animation-delay: 0.4s; }
+        .gnrh.d3 { animation-delay: 0.8s; }
+
+        .lh-left { animation: lh-flow-left 12s infinite linear; opacity: 0; }
+        @keyframes lh-flow-left {
+            0%, 16% { transform: translate(0, 0); opacity: 0; }
+            18% { opacity: 1; }
+            38% { transform: translate(-210px, 300px); opacity: 1; }
+            41%, 100% { transform: translate(-210px, 300px); opacity: 0; }
+        }
+        .lh-right { animation: lh-flow-right 12s infinite linear; opacity: 0; }
+        @keyframes lh-flow-right {
+            0%, 16% { transform: translate(0, 0); opacity: 0; }
+            18% { opacity: 1; }
+            38% { transform: translate(250px, 300px); opacity: 1; }
+            41%, 100% { transform: translate(250px, 300px); opacity: 0; }
+        }
+
+        .fsh-left { animation: fsh-flow-left 12s infinite linear; opacity: 0; }
+        @keyframes fsh-flow-left {
+            0%, 16% { transform: translate(0, 0); opacity: 0; }
+            18% { opacity: 1; }
+            38% { transform: translate(-100px, 310px); opacity: 1; }
+            41%, 100% { transform: translate(-100px, 310px); opacity: 0; }
+        }
+        .fsh-right { animation: fsh-flow-right 12s infinite linear; opacity: 0; }
+        @keyframes fsh-flow-right {
+            0%, 16% { transform: translate(0, 0); opacity: 0; }
+            18% { opacity: 1; }
+            38% { transform: translate(140px, 310px); opacity: 1; }
+            41%, 100% { transform: translate(140px, 310px); opacity: 0; }
+        }
+        
+        .pit-d1 { animation-delay: 0s; }
+        .pit-d2 { animation-delay: 0.3s; }
+        .pit-d3 { animation-delay: 0.6s; }
+
+        .test-local {
+            animation: test-local-anim 12s infinite ease-in-out;
+            opacity: 0;
+            transform-origin: center;
+        }
+        @keyframes test-local-anim {
+            0%, 41% { opacity: 0; transform: scale(0.5); }
+            45% { opacity: 1; transform: scale(1.2); }
+            60% { opacity: 1; transform: scale(1); }
+            66%, 100% { opacity: 0; }
+        }
+        .tl-d1 { animation-delay: 0s; }
+        .tl-d2 { animation-delay: 0.5s; }
+        .tl-d3 { animation-delay: 1s; }
+
+        .test-feed-left { animation: test-feed-left-anim 12s infinite linear; opacity: 0; }
+        @keyframes test-feed-left-anim {
+            0%, 66% { transform: translate(0, 0); opacity: 0; }
+            68% { opacity: 1; }
+            78% { transform: translate(0, -410px); opacity: 1; }
+            83% { transform: translate(190px, -410px); opacity: 1; }
+            85%, 100% { transform: translate(190px, -410px); opacity: 0; }
+        }
+
+        .test-feed-right { animation: test-feed-right-anim 12s infinite linear; opacity: 0; }
+        @keyframes test-feed-right-anim {
+            0%, 66% { transform: translate(0, 0); opacity: 0; }
+            68% { opacity: 1; }
+            78% { transform: translate(0, -330px); opacity: 1; }
+            83% { transform: translate(-240px, -330px); opacity: 1; }
+            85%, 100% { transform: translate(-240px, -330px); opacity: 0; }
+        }
+        
+        .tf-d1 { animation-delay: 0s; }
+        .tf-d2 { animation-delay: 0.2s; }
+        .tf-d3 { animation-delay: 0.4s; }
+
+        .feedback-line {
+            animation: feedback-pulse 12s infinite;
+            opacity: 0.2;
+        }
+        @keyframes feedback-pulse {
+            0%, 66% { opacity: 0.2; }
+            68%, 85% { opacity: 1; }
+            86%, 100% { opacity: 0.2; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Hormonal Control of Male Puberty (HPG Axis)</h1>
+    
+    <div class="svg-container">
+        <svg viewBox="0 0 800 700" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of the Hypothalamic-Pituitary-Gonadal Axis in males">
+            <title>HPG Axis Animation</title>
+            <desc>Animation showing GnRH from the hypothalamus stimulating LH and FSH from the anterior pituitary, which in turn stimulate testosterone production and spermatogenesis in the testis, followed by negative feedback.</desc>
+            
+            <defs>
+                <!-- Gradients -->
+                <linearGradient id="hypoGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#34495E" />
+                    <stop offset="100%" stop-color="#2C3E50" />
+                </linearGradient>
+                <linearGradient id="antPitGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#F39C12" />
+                    <stop offset="100%" stop-color="#E67E22" />
+                </linearGradient>
+                <linearGradient id="postPitGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#BDC3C7" />
+                    <stop offset="100%" stop-color="#95A5A6" />
+                </linearGradient>
+                
+                <!-- Inhibition Marker -->
+                <marker id="inhibit" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+                    <line x1="10" y1="0" x2="10" y2="12" stroke="#E74C3C" stroke-width="3"/>
+                </marker>
+            </defs>
+
+            <!-- Background -->
+            <rect width="800" height="700" fill="#f8f9fa" />
+
+            <!-- Feedback Lines (Drawn first so they are behind) -->
+            <g class="feedback-line">
+                <!-- Left Feedback to Hypothalamus -->
+                <path d="M 140 490 L 140 100 Q 140 80 160 80 L 330 80" fill="none" stroke="#E74C3C" stroke-width="2" stroke-dasharray="6,6" marker-end="url(#inhibit)"/>
+                <!-- Right Feedback to Anterior Pituitary -->
+                <path d="M 660 490 L 660 180 Q 660 160 640 160 L 420 160" fill="none" stroke="#E74C3C" stroke-width="2" stroke-dasharray="6,6" marker-end="url(#inhibit)"/>
+            </g>
+
+            <!-- Testis Section (Bottom) -->
+            <g id="testis">
+                <!-- Basement Membrane -->
+                <path d="M 150 650 A 250 250 0 0 1 650 650" fill="#E8F4FD" stroke="#34495E" stroke-width="4"/>
+                <!-- Lumen -->
+                <path d="M 300 650 A 100 100 0 0 1 500 650" fill="#FFFFFF" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5,5"/>
+                
+                <!-- Sertoli Cells -->
+                <g transform="translate(400, 650)">
+                    <path d="M -30 -250 L 30 -250 L 15 -100 L -15 -100 Z" class="sertoli-cell"/>
+                    <path d="M -30 -250 L 30 -250 L 15 -100 L -15 -100 Z" class="sertoli-cell" transform="rotate(-35)"/>
+                    <path d="M -30 -250 L 30 -250 L 15 -100 L -15 -100 Z" class="sertoli-cell" transform="rotate(35)"/>
+                    <path d="M -30 -250 L 30 -250 L 15 -100 L -15 -100 Z" class="sertoli-cell" transform="rotate(-70)"/>
+                    <path d="M -30 -250 L 30 -250 L 15 -100 L -15 -100 Z" class="sertoli-cell" transform="rotate(70)"/>
+                </g>
+
+                <!-- Developing Sperm -->
+                <g transform="translate(400, 650)">
+                    <!-- Between 0 and -35 -->
+                    <g transform="rotate(-17.5) translate(0, -120)">
+                        <path d="M 0 7 Q 5 20 0 30 T 0 50" fill="none" stroke="#2C3E50" stroke-width="1.5" class="sperm-tail"/>
+                        <ellipse cx="0" cy="0" rx="4" ry="7" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1.5"/>
+                    </g>
+                    <!-- Between 0 and 35 -->
+                    <g transform="rotate(17.5) translate(0, -120)">
+                        <path d="M 0 7 Q -5 20 0 30 T 0 50" fill="none" stroke="#2C3E50" stroke-width="1.5" class="sperm-tail"/>
+                        <ellipse cx="0" cy="0" rx="4" ry="7" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1.5"/>
+                    </g>
+                    <!-- Between -35 and -70 -->
+                    <g transform="rotate(-52.5) translate(0, -120)">
+                        <path d="M 0 7 Q 5 20 0 30 T 0 50" fill="none" stroke="#2C3E50" stroke-width="1.5" class="sperm-tail"/>
+                        <ellipse cx="0" cy="0" rx="4" ry="7" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1.5"/>
+                    </g>
+                    <!-- Between 35 and 70 -->
+                    <g transform="rotate(52.5) translate(0, -120)">
+                        <path d="M 0 7 Q -5 20 0 30 T 0 50" fill="none" stroke="#2C3E50" stroke-width="1.5" class="sperm-tail"/>
+                        <ellipse cx="0" cy="0" rx="4" ry="7" fill="#E8F4FD" stroke="#2C3E50" stroke-width="1.5"/>
+                    </g>
+                </g>
+
+                <!-- Leydig Cells (Interstitial) -->
+                <g transform="translate(400, 650)">
+                    <!-- Left Cluster -->
+                    <g transform="rotate(-60) translate(0, -280)">
+                        <polygon points="0,-15 15,-5 10,15 -10,15 -15,-5" class="leydig-cell"/>
+                        <polygon points="15,-25 30,-15 25,5 5,5 0,-15" class="leydig-cell"/>
+                        <polygon points="-15,-25 0,-15 -5,5 -25,5 -30,-15" class="leydig-cell"/>
+                    </g>
+                    <!-- Right Cluster -->
+                    <g transform="rotate(60) translate(0, -280)">
+                        <polygon points="0,-15 15,-5 10,15 -10,15 -15,-5" class="leydig-cell"/>
+                        <polygon points="15,-25 30,-15 25,5 5,5 0,-15" class="leydig-cell"/>
+                        <polygon points="-15,-25 0,-15 -5,5 -25,5 -30,-15" class="leydig-cell"/>
+                    </g>
+                </g>
+            </g>
+
+            <!-- Pituitary Gland (Middle) -->
+            <g id="pituitary">
+                <!-- Stalk -->
+                <path d="M 395 120 L 405 120 L 405 150 L 395 150 Z" fill="#2C3E50"/>
+                <!-- Anterior Lobe (Left) -->
+                <path d="M 400 150 C 350 150 340 210 390 220 C 400 220 400 180 400 150 Z" fill="url(#antPitGrad)" class="ant-pit"/>
+                <!-- Posterior Lobe (Right) -->
+                <path d="M 400 150 C 450 150 460 210 410 220 C 400 220 400 180 400 150 Z" fill="url(#postPitGrad)"/>
+            </g>
+
+            <!-- Hypothalamus (Top) -->
+            <g id="hypothalamus" class="hypo">
+                <path d="M 350 80 Q 400 30 450 80 Q 430 120 400 120 Q 370 120 350 80 Z" fill="url(#hypoGrad)"/>
+            </g>
+
+            <!-- Labels -->
+            <g font-family="Inter" fill="#2C3E50">
+                <text x="480" y="80" font-size="16" font-weight="bold">Hypothalamus</text>
+                <text x="210" y="190" font-size="16" font-weight="bold" fill="#D68910">Anterior Pituitary</text>
+                <text x="460" y="190" font-size="14" fill="#7F8C8D">Posterior Pituitary</text>
+                <text x="680" y="630" font-size="18" font-weight="bold">Testis</text>
+                
+                <text x="80" y="550" font-size="14" font-weight="600" fill="#16A085">Leydig Cells</text>
+                <text x="260" y="580" font-size="14" font-weight="600" fill="#2980B9">Sertoli Cells</text>
+                <text x="400" y="680" font-size="14" font-style="italic" text-anchor="middle">Spermatogenesis (Lumen)</text>
+            </g>
+
+            <g font-family="Roboto Mono" font-size="14" fill="#E74C3C" font-weight="bold">
+                <text x="130" y="280" text-anchor="end">(-) Feedback</text>
+                <text x="670" y="320" text-anchor="start">(-) Feedback</text>
+            </g>
+
+            <!-- Legend -->
+            <g id="legend" transform="translate(20, 40)">
+                <rect x="0" y="0" width="170" height="150" fill="#FFFFFF" stroke="#BDC3C7" rx="5" opacity="0.9"/>
+                <text x="85" y="20" font-family="Inter" font-size="14" font-weight="bold" fill="#2C3E50" text-anchor="middle">Key</text>
+                
+                <circle cx="20" cy="40" r="5" fill="#FF6B6B"/>
+                <text x="35" y="45" font-family="Roboto Mono" font-size="12" fill="#2C3E50">GnRH</text>
+                
+                <circle cx="20" cy="65" r="5" fill="#98D8C8"/>
+                <text x="35" y="70" font-family="Roboto Mono" font-size="12" fill="#2C3E50">LH</text>
+                
+                <circle cx="20" cy="90" r="5" fill="#FFA07A"/>
+                <text x="35" y="95" font-family="Roboto Mono" font-size="12" fill="#2C3E50">FSH</text>
+                
+                <polygon points="20,110 25,115 20,120 15,115" fill="#E74C3C"/>
+                <text x="35" y="120" font-family="Roboto Mono" font-size="12" fill="#2C3E50">Testosterone</text>
+                
+                <line x1="10" y1="140" x2="25" y2="140" stroke="#E74C3C" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#inhibit)"/>
+                <text x="35" y="144" font-family="Roboto Mono" font-size="12" fill="#2C3E50">Inhibition</text>
+            </g>
+
+            <!-- Animated Particles -->
+            <g id="particles">
+                <!-- GnRH Pulses -->
+                <circle cx="400" cy="100" r="4" fill="#FF6B6B" class="gnrh d1"/>
+                <circle cx="400" cy="100" r="4" fill="#FF6B6B" class="gnrh d2"/>
+                <circle cx="400" cy="100" r="4" fill="#FF6B6B" class="gnrh d3"/>
+
+                <!-- LH (Mint) to Leydig -->
+                <!-- Left -->
+                <circle cx="380" cy="190" r="4" fill="#98D8C8" class="lh-left pit-d1"/>
+                <circle cx="380" cy="190" r="4" fill="#98D8C8" class="lh-left pit-d2"/>
+                <circle cx="380" cy="190" r="4" fill="#98D8C8" class="lh-left pit-d3"/>
+                <!-- Right -->
+                <circle cx="380" cy="190" r="4" fill="#98D8C8" class="lh-right pit-d1"/>
+                <circle cx="380" cy="190" r="4" fill="#98D8C8" class="lh-right pit-d2"/>
+                <circle cx="380" cy="190" r="4" fill="#98D8C8" class="lh-right pit-d3"/>
+
+                <!-- FSH (Orange) to Sertoli -->
+                <!-- Left -->
+                <circle cx="380" cy="190" r="4" fill="#FFA07A" class="fsh-left pit-d1"/>
+                <circle cx="380" cy="190" r="4" fill="#FFA07A" class="fsh-left pit-d2"/>
+                <circle cx="380" cy="190" r="4" fill="#FFA07A" class="fsh-left pit-d3"/>
+                <!-- Right -->
+                <circle cx="380" cy="190" r="4" fill="#FFA07A" class="fsh-right pit-d1"/>
+                <circle cx="380" cy="190" r="4" fill="#FFA07A" class="fsh-right pit-d2"/>
+                <circle cx="380" cy="190" r="4" fill="#FFA07A" class="fsh-right pit-d3"/>
+
+                <!-- Local Testosterone Production (Leydig area) -->
+                <!-- Left Leydig -->
+                <g transform="translate(160, 510)">
+                    <polygon points="0,-5 5,0 0,5 -5,0" fill="#E74C3C" class="test-local tl-d1" transform="translate(-15, -20)"/>
+                    <polygon points="0,-5 5,0 0,5 -5,0" fill="#E74C3C" class="test-local tl-d2" transform="translate(20, -10)"/>
+                    <polygon points="0,-5 5,0 0,5 -5,0" fill="#E74C3C" class="test-local tl-d3" transform="translate(-5, 15)"/>
+                </g>
+                <!-- Right Leydig -->
+                <g transform="translate(640, 510)">
+                    <polygon points="0,-5 5,0 0,5 -5,0" fill="#E74C3C" class="test-local tl-d1" transform="translate(-20, -10)"/>
+                    <polygon points="0,-5 5,0 0,5 -5,0" fill="#E74C3C" class="test-local tl-d2" transform="translate(15, -20)"/>
+                    <polygon points="0,-5 5,0 0,5 -5,0" fill="#E74C3C" class="test-local tl-d3" transform="translate(5, 15)"/>
+                </g>
+
+                <!-- Testosterone Feedback Flow -->
+                <!-- Left to Hypothalamus -->
+                <polygon points="140,-5 145,0 140,5 135,0" fill="#E74C3C" class="test-feed-left tf-d1" transform="translate(0, 490)"/>
+                <polygon points="140,-5 145,0 140,5 135,0" fill="#E74C3C" class="test-feed-left tf-d2" transform="translate(0, 490)"/>
+                <polygon points="140,-5 145,0 140,5 135,0" fill="#E74C3C" class="test-feed-left tf-d3" transform="translate(0, 490)"/>
+                
+                <!-- Right to Anterior Pituitary -->
+                <polygon points="660,-5 665,0 660,5 655,0" fill="#E74C3C" class="test-feed-right tf-d1" transform="translate(0, 490)"/>
+                <polygon points="660,-5 665,0 660,5 655,0" fill="#E74C3C" class="test-feed-right tf-d2" transform="translate(0, 490)"/>
+                <polygon points="660,-5 665,0 660,5 655,0" fill="#E74C3C" class="test-feed-right tf-d3" transform="translate(0, 490)"/>
+            </g>
+        </svg>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maturation of Human Insulin</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Animations */
+        #proinsulin-complex {
+            animation: float 6s infinite ease-in-out;
+        }
+
+        #c-peptide-group {
+            animation: cPeptideAnim 12s infinite ease-in-out;
+        }
+
+        #a-chain-group {
+            animation: aChainAnim 12s infinite ease-in-out;
+        }
+
+        #b-chain-group {
+            animation: bChainAnim 12s infinite ease-in-out;
+        }
+
+        #inter1 {
+            transform-origin: 280px 359px;
+            animation: ssBondAnim 12s infinite ease-in-out;
+        }
+
+        #inter2 {
+            transform-origin: 520px 359px;
+            animation: ssBondAnim 12s infinite ease-in-out;
+        }
+
+        .enzyme {
+            opacity: 0;
+            animation: enzymeAnim 12s infinite ease-in-out;
+        }
+
+        #enzyme1 { transform-origin: 220px 320px; }
+        #enzyme2 { transform-origin: 660px 380px; }
+
+        .mature-label {
+            opacity: 0;
+            animation: matureLabelAnim 12s infinite ease-in-out;
+        }
+
+        .c-peptide-label {
+            opacity: 0;
+            animation: cLabelAnim 12s infinite ease-in-out;
+        }
+
+        #global-wrapper {
+            animation: globalReset 12s infinite ease-in-out;
+        }
+
+        /* Keyframes */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes globalReset {
+            0%, 83% { opacity: 1; }
+            86%, 92% { opacity: 0; }
+            96%, 100% { opacity: 1; }
+        }
+
+        @keyframes cPeptideAnim {
+            0%, 35% { transform: translateY(0); opacity: 1; }
+            50%, 83% { transform: translateY(-120px); opacity: 0; }
+            88%, 100% { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes aChainAnim {
+            0%, 35% { transform: translateY(0); }
+            50%, 83% { transform: translateY(12px); }
+            88%, 100% { transform: translateY(0); }
+        }
+
+        @keyframes bChainAnim {
+            0%, 35% { transform: translateY(0); }
+            50%, 83% { transform: translateY(-12px); }
+            88%, 100% { transform: translateY(0); }
+        }
+
+        @keyframes ssBondAnim {
+            0%, 35% { transform: scaleY(1); stroke-width: 4px; stroke: #F1C40F; filter: none; }
+            50%, 83% { transform: scaleY(0.636); stroke-width: 7px; stroke: #F39C12; filter: drop-shadow(0 0 5px rgba(241, 196, 15, 0.8)); }
+            88%, 100% { transform: scaleY(1); stroke-width: 4px; stroke: #F1C40F; filter: none; }
+        }
+
+        @keyframes enzymeAnim {
+            0%, 20% { opacity: 0; transform: scale(0.5) rotate(-20deg); }
+            25%, 32% { opacity: 1; transform: scale(1.2) rotate(0deg); }
+            36%, 100% { opacity: 0; transform: scale(0.5) rotate(20deg); }
+        }
+
+        @keyframes matureLabelAnim {
+            0%, 45% { opacity: 0; transform: translateY(10px); }
+            55%, 83% { opacity: 1; transform: translateY(0); }
+            88%, 100% { opacity: 0; transform: translateY(10px); }
+        }
+
+        @keyframes cLabelAnim {
+            0%, 38% { opacity: 0; }
+            45%, 65% { opacity: 1; }
+            75%, 100% { opacity: 0; }
+        }
+
+        /* SVG Element Styles */
+        .text-title { font-family: 'Inter', sans-serif; font-size: 24px; font-weight: 700; fill: #2C3E50; text-anchor: middle; }
+        .text-subtitle { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 400; fill: #7f8c8d; text-anchor: middle; }
+        .text-label { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; fill: #2C3E50; }
+        .text-mono { font-family: 'Roboto Mono', monospace; font-size: 13px; fill: #2C3E50; text-anchor: middle; }
+        
+        .backbone { stroke: #bdc3c7; stroke-width: 3px; fill: none; }
+        .beads { stroke-width: 14px; stroke-linecap: round; stroke-dasharray: 0 18; fill: none; filter: url(#shadow); }
+        
+        .achain-color { stroke: #98D8C8; }
+        .bchain-color { stroke: #4A90D9; }
+        .cpeptide-color { stroke: #FF6B6B; }
+        .ss-bond { stroke: #F1C40F; stroke-linecap: round; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 550" xmlns="http://www.w3.org/2000/svg">
+        <title>Processing of Pro-insulin to Mature Insulin</title>
+        <desc>Animation showing the cleavage of C-peptide from pro-insulin to form mature insulin, connected by disulfide bonds.</desc>
+
+        <!-- Definitions for Filters -->
+        <defs>
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#2C3E50" flood-opacity="0.25"/>
+            </filter>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+            <filter id="subtle-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="15" result="blur"/>
+                <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+            </filter>
+        </defs>
+
+        <!-- Background / Environment -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+        <circle cx="400" cy="350" r="220" fill="#E8F4FD" opacity="0.6" filter="url(#subtle-glow)" />
+
+        <!-- Titles -->
+        <text x="400" y="45" class="text-title">Maturation of Human Insulin</text>
+        <text x="400" y="70" class="text-subtitle">(Processing of Pro-hormone to Active Hormone)</text>
+
+        <!-- Global Animation Wrapper -->
+        <g id="global-wrapper">
+            
+            <!-- Floating Complex -->
+            <g id="proinsulin-complex">
+                
+                <!-- Disulfide Bonds (Inter-chain) -->
+                <g id="inter-ss-bonds">
+                    <!-- Inter 1: A7 to B7 -->
+                    <line id="inter1" x1="280" y1="326" x2="280" y2="392" class="ss-bond" />
+                    <!-- Inter 2: A20 to B19 -->
+                    <line id="inter2" x1="520" y1="326" x2="520" y2="392" class="ss-bond" />
+                </g>
+
+                <!-- C-Peptide Group (Detaches and floats away) -->
+                <g id="c-peptide-group">
+                    <!-- Backbone -->
+                    <path d="M 660 380 C 780 340, 750 120, 400 120 C 50 120, 20 340, 220 320" class="backbone" />
+                    <!-- Beads -->
+                    <path d="M 660 380 C 780 340, 750 120, 400 120 C 50 120, 20 340, 220 320" class="beads cpeptide-color" />
+                    
+                    <!-- Label that appears when detached -->
+                    <text x="400" y="90" class="text-label c-peptide-label" text-anchor="middle" fill="#E74C3C">Free C-peptide</text>
+                </g>
+
+                <!-- A-Chain Group (Moves down slightly) -->
+                <g id="a-chain-group">
+                    <!-- Backbone -->
+                    <path d="M 220 320 Q 400 340 580 320" class="backbone" />
+                    <!-- Beads -->
+                    <path d="M 220 320 Q 400 340 580 320" class="beads achain-color" />
+                    
+                    <!-- Intra-chain Disulfide Bond (A6 to A11) -->
+                    <path d="M 310 328 Q 340 285 370 332" class="ss-bond" fill="none" stroke-width="4" />
+                    
+                    <!-- Label -->
+                    <text x="595" y="325" class="text-label">A-chain</text>
+                </g>
+
+                <!-- B-Chain Group (Moves up slightly) -->
+                <g id="b-chain-group">
+                    <!-- Backbone -->
+                    <path d="M 140 380 Q 400 410 660 380" class="backbone" />
+                    <!-- Beads -->
+                    <path d="M 140 380 Q 400 410 660 380" class="beads bchain-color" />
+                    
+                    <!-- Label -->
+                    <text x="675" y="385" class="text-label">B-chain</text>
+                </g>
+
+                <!-- Proteolytic Enzymes (Appear to cleave the C-peptide) -->
+                <!-- Enzyme 1 (Left Junction) -->
+                <g id="enzyme1" class="enzyme">
+                    <circle cx="220" cy="320" r="18" fill="#E74C3C" filter="url(#glow)" />
+                    <circle cx="220" cy="320" r="12" fill="#C0392B" />
+                    <text x="220" y="326" font-size="16" fill="white" text-anchor="middle">✂</text>
+                </g>
+
+                <!-- Enzyme 2 (Right Junction) -->
+                <g id="enzyme2" class="enzyme">
+                    <circle cx="660" cy="380" r="18" fill="#E74C3C" filter="url(#glow)" />
+                    <circle cx="660" cy="380" r="12" fill="#C0392B" />
+                    <text x="660" y="386" font-size="16" fill="white" text-anchor="middle">✂</text>
+                </g>
+
+                <!-- Mature Insulin Label -->
+                <g class="mature-label">
+                    <rect x="300" y="420" width="200" height="36" rx="18" fill="#27AE60" filter="url(#shadow)" />
+                    <text x="400" y="444" font-family="Inter" font-size="15" font-weight="700" fill="white" text-anchor="middle">Functional Hormone</text>
+                </g>
+
+            </g> <!-- End Floating Complex -->
+
+        </g> <!-- End Global Wrapper -->
+
+        <!-- Annotations & Legend (Static) -->
+        
+        <!-- Disulfide Bridge Annotation -->
+        <path d="M 260 410 L 280 380" stroke="#7f8c8d" stroke-width="2" fill="none" />
+        <text x="250" y="425" class="text-label" font-size="12" fill="#7f8c8d" text-anchor="middle">Disulfide bridges (S-S)</text>
+
+        <!-- Legend -->
+        <g transform="translate(610, 420)">
+            <rect x="0" y="0" width="160" height="105" rx="8" fill="#ffffff" stroke="#bdc3c7" stroke-width="1" filter="url(#shadow)" />
+            
+            <circle cx="20" cy="25" r="7" fill="#98D8C8" />
+            <text x="35" y="29" class="text-label" font-size="12">A Chain (21 aa)</text>
+            
+            <circle cx="20" cy="50" r="7" fill="#4A90D9" />
+            <text x="35" y="54" class="text-label" font-size="12">B Chain (30 aa)</text>
+            
+            <circle cx="20" cy="75" r="7" fill="#FF6B6B" />
+            <text x="35" y="79" class="text-label" font-size="12">C Peptide (31 aa)</text>
+            
+            <line x1="13" y1="95" x2="27" y2="95" stroke="#F1C40F" stroke-width="4" stroke-linecap="round" />
+            <text x="35" y="99" class="text-label" font-size="12">Disulfide Bond</text>
+        </g>
+
+        <!-- Footer Technical Note -->
+        <text x="400" y="535" class="text-mono">Note: C-peptide is removed during maturation to form active insulin.</text>
+
+    </svg>
+</div>
+
+</body>
+</html>

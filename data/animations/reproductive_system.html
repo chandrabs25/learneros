@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Mechanism of Viral STI Pathogenesis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --dur: 15s;
+            --membrane: #4A90D9;
+            --nucleus: #2C3E50;
+            --cytoplasm: #E8F4FD;
+            --dna: #FF6B6B;
+            --rna: #FFA07A;
+            --protein: #98D8C8;
+            --coreceptor: #27AE60;
+            --blood: #E74C3C;
+            --tissue: #F39C12;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+            padding: 2vh 2vw;
+            color: #333;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--nucleus);
+            margin: 0 0 8px 0;
+            font-size: 1.8rem;
+        }
+
+        p.subtitle {
+            color: #555;
+            margin: 0;
+            font-size: 1rem;
+            max-width: 800px;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography inside SVG */
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #333;
+            font-size: 14px;
+        }
+        .label-bold { font-weight: 600; }
+        .label-sci { font-family: 'Roboto Mono', monospace; font-size: 12px; fill: #555; }
+        .label-white { fill: #fff; font-size: 12px; font-weight: 600; }
+
+        /* Animations */
+        .anim-virion { animation: move-virion var(--dur) linear infinite; }
+        .anim-envelope { animation: fade-envelope var(--dur) linear infinite; }
+        .anim-capsid { animation: move-capsid var(--dur) linear infinite; }
+        .anim-rna { animation: move-rna var(--dur) linear infinite; }
+        .anim-rna path { animation: rna-to-dna var(--dur) linear infinite; }
+        .rt-text { animation: fade-rt var(--dur) linear infinite; font-weight: 600; fill: var(--dna); }
+        .int-text { animation: fade-int var(--dur) linear infinite; font-weight: 600; fill: var(--nucleus); }
+        
+        .bud-1 { animation: bud-1 var(--dur) linear infinite; }
+        .bud-2 { animation: bud-2 var(--dur) linear infinite; }
+        .drift-1 { animation: drift-1 var(--dur) linear infinite; }
+        .drift-2 { animation: drift-2 var(--dur) linear infinite; }
+
+        /* Keyframes */
+        @keyframes move-virion {
+            0% { transform: translate(30px, 220px); }
+            15% { transform: translate(150px, 220px); }
+            30% { transform: translate(315px, 230px); }
+            100% { transform: translate(315px, 230px); }
+        }
+
+        @keyframes fade-envelope {
+            0%, 28% { opacity: 1; transform: scale(1); }
+            33% { opacity: 0; transform: scale(1.4); }
+            100% { opacity: 0; }
+        }
+
+        @keyframes move-capsid {
+            0%, 30% { transform: translate(0, 0); opacity: 1; }
+            38% { transform: translate(40px, 0); opacity: 1; }
+            45% { transform: translate(60px, 0); opacity: 1; }
+            50% { transform: translate(60px, 0); opacity: 0; }
+            100% { transform: translate(60px, 0); opacity: 0; }
+        }
+
+        @keyframes move-rna {
+            0%, 30% { transform: translate(0, 0); opacity: 1; }
+            38% { transform: translate(40px, 0); opacity: 1; }
+            45% { transform: translate(60px, 0); opacity: 1; }
+            60% { transform: translate(120px, 0); opacity: 1; }
+            70% { transform: translate(180px, 0); opacity: 1; }
+            75%, 100% { transform: translate(180px, 0); opacity: 0; }
+        }
+
+        @keyframes rna-to-dna {
+            0%, 50% { stroke: var(--rna); }
+            60%, 100% { stroke: var(--dna); }
+        }
+
+        @keyframes fade-rt {
+            0%, 45% { opacity: 0; transform: translate(430px, 210px); }
+            50%, 65% { opacity: 1; transform: translate(430px, 200px); }
+            70%, 100% { opacity: 0; transform: translate(430px, 190px); }
+        }
+
+        @keyframes fade-int {
+            0%, 65% { opacity: 0; transform: translate(500px, 210px); }
+            70%, 80% { opacity: 1; transform: translate(500px, 200px); }
+            85%, 100% { opacity: 0; transform: translate(500px, 190px); }
+        }
+
+        @keyframes bud-1 {
+            0%, 75% { opacity: 0; transform: translate(450px, 360px) scale(0.5); }
+            85% { opacity: 1; transform: translate(450px, 390px) scale(1); }
+            100% { opacity: 1; transform: translate(450px, 470px) scale(1); }
+        }
+
+        @keyframes bud-2 {
+            0%, 80% { opacity: 0; transform: translate(520px, 350px) scale(0.5); }
+            90% { opacity: 1; transform: translate(520px, 390px) scale(1); }
+            100% { opacity: 1; transform: translate(520px, 470px) scale(1); }
+        }
+
+        @keyframes drift-1 {
+            0% { transform: translate(20px, 190px); opacity: 0; }
+            10% { opacity: 1; }
+            30% { transform: translate(180px, 150px); opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes drift-2 {
+            0%, 20% { opacity: 0; transform: translate(20px, 250px); }
+            30% { opacity: 1; }
+            50% { transform: translate(160px, 290px); opacity: 0; }
+            100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Molecular Mechanism of Viral STI Pathogenesis</h1>
+        <p class="subtitle">Continuous 15-second loop demonstrating HIV transmission across a mucosal barrier, CD4 receptor docking, direct membrane fusion, reverse transcription, and systemic spread.</p>
+    </header>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-labelledby="svg-title svg-desc">
+            <title id="svg-title">HIV Infection Cycle Diagram</title>
+            <desc id="svg-desc">Animated diagram showing an HIV virion crossing the mucosal epithelium, binding to a CD4+ T-cell, fusing with the membrane, releasing RNA which converts to DNA, and budding new virions into the bloodstream.</desc>
+
+            <!-- Definitions for reusable elements -->
+            <defs>
+                <!-- Static Virion for Budding/Drifting -->
+                <g id="virion-static">
+                    <!-- Spikes (gp120) -->
+                    <path d="M0,-12 L0,-18 M8,-8 L13,-13 M-8,-8 L-13,-13 M12,0 L18,0 M-12,0 L-18,0 M8,8 L13,13 M-8,8 L-13,13 M0,12 L0,18" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round"/>
+                    <!-- Envelope -->
+                    <circle cx="0" cy="0" r="12" fill="#FF6B6B"/>
+                    <!-- Capsid -->
+                    <polygon points="-6,-4 6,-4 9,6 -9,6" fill="#2C3E50" stroke="#fff" stroke-width="1" stroke-dasharray="2,1"/>
+                    <!-- RNA -->
+                    <path d="M-4,-1 Q-2,-3 0,-1 T4,-1" stroke="#FFA07A" stroke-width="1.5" fill="none"/>
+                    <path d="M-4,2 Q-2,0 0,2 T4,2" stroke="#FFA07A" stroke-width="1.5" fill="none"/>
+                </g>
+
+                <!-- Epithelial Cell Pattern -->
+                <g id="epi-cell">
+                    <rect x="0" y="0" width="50" height="38" rx="6" fill="#F39C12" stroke="#D68910" stroke-width="2"/>
+                    <circle cx="25" cy="19" r="6" fill="#A04000" opacity="0.6"/>
+                </g>
+
+                <!-- Red Blood Cell -->
+                <g id="rbc">
+                    <circle cx="0" cy="0" r="8" fill="#E74C3C" stroke="#C0392B" stroke-width="1"/>
+                    <circle cx="0" cy="0" r="4" fill="#C0392B" opacity="0.5"/>
+                </g>
+            </defs>
+
+            <!-- BACKGROUND ELEMENTS -->
+            
+            <!-- Blood Vessel (Bottom) -->
+            <rect x="0" y="440" width="800" height="60" fill="#E74C3C" opacity="0.15"/>
+            <line x1="0" y1="440" x2="800" y2="440" stroke="#E74C3C" stroke-width="3"/>
+            <use href="#rbc" x="100" y="470" />
+            <use href="#rbc" x="250" y="460" />
+            <use href="#rbc" x="400" y="480" />
+            <use href="#rbc" x="650" y="465" />
+            <use href="#rbc" x="750" y="475" />
+
+            <!-- Mucosal Epithelium (Left) -->
+            <g id="epithelium">
+                <!-- Top section -->
+                <use href="#epi-cell" x="20" y="10" />
+                <use href="#epi-cell" x="20" y="50" />
+                <use href="#epi-cell" x="20" y="90" />
+                <use href="#epi-cell" x="20" y="130" />
+                <use href="#epi-cell" x="20" y="170" />
+                <!-- Micro-tear gap between 208 and 260 -->
+                <!-- Bottom section -->
+                <use href="#epi-cell" x="20" y="260" />
+                <use href="#epi-cell" x="20" y="300" />
+                <use href="#epi-cell" x="20" y="340" />
+                <use href="#epi-cell" x="20" y="380" />
+            </g>
+
+            <!-- T-Helper Cell (Center Right) -->
+            <g id="t-cell">
+                <!-- Cell Membrane & Cytoplasm -->
+                <circle cx="480" cy="230" r="140" fill="#E8F4FD" stroke="#4A90D9" stroke-width="4"/>
+                
+                <!-- Mitochondria (Detail) -->
+                <g fill="#E74C3C">
+                    <ellipse cx="400" cy="140" rx="14" ry="7" transform="rotate(30 400 140)"/>
+                    <path d="M390,140 Q400,130 410,140" stroke="#fff" fill="none" transform="rotate(30 400 140)"/>
+                    
+                    <ellipse cx="550" cy="330" rx="14" ry="7" transform="rotate(-45 550 330)"/>
+                    <path d="M540,330 Q550,320 560,330" stroke="#fff" fill="none" transform="rotate(-45 550 330)"/>
+                </g>
+
+                <!-- Nucleus -->
+                <circle cx="530" cy="230" r="55" fill="#2C3E50" stroke="#E8F4FD" stroke-width="2" stroke-dasharray="8, 4"/>
+                <text x="530" y="235" class="label-white" text-anchor="middle">Nucleus</text>
+
+                <!-- Receptors -->
+                <!-- CD4 Receptor (Y-shape) -->
+                <path d="M 340 230 L 320 230 L 310 218 M 320 230 L 310 242" stroke="#98D8C8" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <!-- CCR5 Co-receptor -->
+                <rect x="334" y="244" width="10" height="18" fill="#27AE60" rx="3"/>
+            </g>
+
+            <!-- ANIMATED ELEMENTS -->
+
+            <!-- Drifting Background Virions -->
+            <use href="#virion-static" class="drift-1" />
+            <use href="#virion-static" class="drift-2" />
+
+            <!-- Main Infecting Virion -->
+            <g class="anim-virion">
+                <!-- Envelope & Spikes -->
+                <g class="anim-envelope">
+                    <path d="M0,-12 L0,-18 M8,-8 L13,-13 M-8,-8 L-13,-13 M12,0 L18,0 M-12,0 L-18,0 M8,8 L13,13 M-8,8 L-13,13 M0,12 L0,18" stroke="#FF6B6B" stroke-width="2" stroke-linecap="round"/>
+                    <circle cx="0" cy="0" r="12" fill="#FF6B6B"/>
+                </g>
+                
+                <!-- Capsid -->
+                <g class="anim-capsid">
+                    <polygon points="-6,-4 6,-4 9,6 -9,6" fill="#2C3E50" stroke="#fff" stroke-width="1" stroke-dasharray="2,1"/>
+                </g>
+
+                <!-- Viral RNA (Converts to DNA) -->
+                <g class="anim-rna">
+                    <path d="M-4,-2 Q-2,-5 0,-2 T4,-2" stroke="#FFA07A" stroke-width="2" fill="none"/>
+                    <path d="M-4,2 Q-2,-1 0,2 T4,2" stroke="#FFA07A" stroke-width="2" fill="none"/>
+                </g>
+            </g>
+
+            <!-- Dynamic Text Labels -->
+            <text class="rt-text" font-size="12">Reverse Transcription</text>
+            <text class="int-text" font-size="12">Integration</text>
+
+            <!-- Budding Virions (Systemic Spread) -->
+            <use href="#virion-static" class="bud-1" />
+            <use href="#virion-static" class="bud-2" />
+
+            <!-- STATIC LABELS & ANNOTATIONS -->
+            
+            <!-- Mucosa Label -->
+            <text x="45" y="415" class="label-bold" text-anchor="middle">Mucosal</text>
+            <text x="45" y="430" class="label-bold" text-anchor="middle">Epithelium</text>
+            
+            <!-- Micro-tear Label -->
+            <line x1="80" y1="230" x2="120" y2="230" stroke="#555" stroke-width="1" stroke-dasharray="3,3"/>
+            <text x="125" y="234" class="label-sci">Micro-tear</text>
+
+            <!-- T-Cell Label -->
+            <text x="480" y="105" class="label-bold" text-anchor="middle">CD4+ T-Helper Cell</text>
+            <line x1="480" y1="110" x2="480" y2="130" stroke="#555" stroke-width="1"/>
+
+            <!-- Receptors Label -->
+            <line x1="260" y1="180" x2="315" y2="220" stroke="#555" stroke-width="1"/>
+            <text x="255" y="175" class="label-sci" text-anchor="end">CD4 Receptor</text>
+            
+            <line x1="260" y1="280" x2="335" y2="255" stroke="#555" stroke-width="1"/>
+            <text x="255" y="285" class="label-sci" text-anchor="end">CCR5 Co-receptor</text>
+
+            <!-- Bloodstream Label -->
+            <text x="20" y="485" class="label-bold" fill="#C0392B">Bloodstream (Systemic Spread)</text>
+
+            <!-- LEGEND -->
+            <g transform="translate(620, 20)">
+                <rect x="0" y="0" width="160" height="150" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" rx="6" opacity="0.9"/>
+                <text x="10" y="20" class="label-bold" font-size="12">Legend / Key</text>
+                
+                <!-- HIV Virion -->
+                <circle cx="20" cy="40" r="6" fill="#FF6B6B"/>
+                <text x="35" y="44" font-size="12">HIV Virion</text>
+
+                <!-- T-Cell Membrane -->
+                <circle cx="20" cy="60" r="6" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+                <text x="35" y="64" font-size="12">Target Cell</text>
+
+                <!-- Viral RNA -->
+                <path d="M14,80 Q17,77 20,80 T26,80" stroke="#FFA07A" stroke-width="2" fill="none"/>
+                <text x="35" y="84" font-size="12">Viral RNA</text>
+
+                <!-- Viral DNA -->
+                <path d="M14,100 Q17,97 20,100 T26,100" stroke="#FF6B6B" stroke-width="2" fill="none"/>
+                <text x="35" y="104" font-size="12">Viral DNA</text>
+
+                <!-- CD4 Receptor -->
+                <path d="M20,125 L20,118 L16,114 M20,118 L24,114" stroke="#98D8C8" stroke-width="2" fill="none"/>
+                <text x="35" y="124" font-size="12">CD4 Receptor</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

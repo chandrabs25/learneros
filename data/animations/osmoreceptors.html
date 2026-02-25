@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Osmoregulation: ADH Feedback Loop</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+
+        .chem {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Animations */
+        #osmoreceptors {
+            transform-origin: 180px 115px;
+            animation: osmo-shrink 12s ease-in-out infinite;
+        }
+
+        .solute-extra {
+            animation: solute-fade 12s ease-in-out infinite;
+        }
+
+        .neural-pulse {
+            offset-path: path('M 180 140 L 180 320');
+            animation: neural-pulse 12s linear infinite;
+            opacity: 0;
+        }
+        .pulse1 { animation-delay: 0s; }
+        .pulse2 { animation-delay: 0.2s; }
+        .pulse3 { animation-delay: 0.4s; }
+
+        .adh {
+            offset-path: path('M 180 320 C 180 460, 520 460, 520 380 L 520 250');
+            animation: adh-travel 12s linear infinite;
+            opacity: 0;
+        }
+        .adh1 { animation-delay: 0s; }
+        .adh2 { animation-delay: 0.3s; }
+        .adh3 { animation-delay: 0.6s; }
+
+        .aquaporin {
+            animation: aqua-appear 12s ease-in-out infinite;
+            opacity: 0;
+        }
+
+        .water {
+            animation: water-flow 12s ease-in-out infinite;
+            opacity: 0;
+        }
+        .water1 { animation-delay: 0s; }
+        .water2 { animation-delay: 0.4s; }
+        .water3 { animation-delay: 0.8s; }
+
+        .status-stimulus {
+            animation: status-stim 12s ease-in-out infinite;
+        }
+
+        .status-response {
+            animation: status-resp 12s ease-in-out infinite;
+        }
+
+        /* Keyframes */
+        @keyframes osmo-shrink {
+            0%, 100% { transform: scale(1); }
+            20%, 85% { transform: scale(0.75); }
+        }
+
+        @keyframes solute-fade {
+            0%, 100% { opacity: 0; }
+            20%, 85% { opacity: 1; }
+        }
+
+        @keyframes neural-pulse {
+            0%, 24.9% { opacity: 0; offset-distance: 0%; }
+            25% { opacity: 1; offset-distance: 0%; }
+            40% { opacity: 1; offset-distance: 100%; }
+            40.1%, 100% { opacity: 0; offset-distance: 100%; }
+        }
+
+        @keyframes adh-travel {
+            0%, 41.5% { opacity: 0; offset-distance: 0%; }
+            41.6% { opacity: 1; offset-distance: 0%; }
+            66.6% { opacity: 1; offset-distance: 100%; }
+            66.7%, 100% { opacity: 0; offset-distance: 100%; }
+        }
+
+        @keyframes aqua-appear {
+            0%, 66.5% { opacity: 0; }
+            66.6%, 85% { opacity: 1; }
+            85.1%, 100% { opacity: 0; }
+        }
+
+        @keyframes water-flow {
+            0%, 66.5% { opacity: 0; transform: translateX(0); }
+            66.6% { opacity: 0; transform: translateX(0); }
+            68% { opacity: 1; transform: translateX(0); }
+            80% { opacity: 1; transform: translateX(-55px); }
+            83.3%, 100% { opacity: 0; transform: translateX(-55px); }
+        }
+
+        @keyframes status-stim {
+            0%, 41.5% { opacity: 1; }
+            41.6%, 94.9% { opacity: 0; }
+            95%, 100% { opacity: 1; }
+        }
+
+        @keyframes status-resp {
+            0%, 41.5% { opacity: 0; }
+            41.6%, 94.9% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 800 500" aria-labelledby="svg-title svg-desc" role="img">
+        <title id="svg-title">Osmoregulation: ADH Feedback Mechanism</title>
+        <desc id="svg-desc">Animated diagram showing the physiological feedback loop of Antidiuretic Hormone (ADH) in response to high blood osmolarity, involving the hypothalamus, posterior pituitary, and kidney collecting duct.</desc>
+
+        <!-- Definitions for Filters and Markers -->
+        <defs>
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.15"/>
+            </filter>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#7F8C8D"/>
+            </marker>
+            <marker id="blood-arrow" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                <polygon points="0 0, 10 3.5, 0 7" fill="#E74C3C"/>
+            </marker>
+        </defs>
+
+        <!-- Background Elements -->
+        <rect width="100%" height="100%" fill="#f8f9fa"/>
+
+        <!-- Title -->
+        <text x="400" y="35" text-anchor="middle" font-size="22" font-weight="700" fill="#2C3E50">Osmoregulation: ADH Feedback Mechanism</text>
+        <text x="400" y="55" text-anchor="middle" font-size="13" font-weight="400" fill="#7F8C8D">Physiological response to increased blood osmolarity (dehydration)</text>
+
+        <!-- Status Indicator Box -->
+        <g transform="translate(540, 20)">
+            <rect width="240" height="40" rx="6" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" filter="url(#shadow)"/>
+            <text class="status-stimulus" x="120" y="25" text-anchor="middle" font-size="13" font-weight="700" fill="#E74C3C">STIMULUS: High Osmolarity</text>
+            <text class="status-response" x="120" y="25" text-anchor="middle" font-size="13" font-weight="700" fill="#27AE60">RESPONSE: Water Retention</text>
+        </g>
+
+        <!-- ==================== ANATOMY ==================== -->
+
+        <!-- Systemic Circulation (Blood Vessels) -->
+        <g id="bloodstream">
+            <!-- Connection path (dashed) -->
+            <path d="M 180 380 C 180 460, 520 460, 520 380" stroke="#E74C3C" stroke-width="6" stroke-dasharray="8 8" fill="none"/>
+            <text x="350" y="445" text-anchor="middle" font-size="12" font-weight="600" fill="#E74C3C">Systemic Circulation</text>
+            
+            <!-- Pituitary Capillary -->
+            <path d="M 180 120 L 180 380" stroke="#E74C3C" stroke-width="24" stroke-linecap="round" filter="url(#shadow)"/>
+            <!-- Kidney Capillary -->
+            <path d="M 520 380 L 520 120" stroke="#E74C3C" stroke-width="24" stroke-linecap="round" filter="url(#shadow)"/>
+            
+            <!-- Flow Arrows -->
+            <path d="M 180 100 L 180 110" stroke="#E74C3C" stroke-width="4" marker-end="url(#blood-arrow)"/>
+            <path d="M 520 110 L 520 100" stroke="#E74C3C" stroke-width="4" marker-end="url(#blood-arrow)"/>
+        </g>
+
+        <!-- Hypothalamus & Posterior Pituitary -->
+        <g id="brain-tissue" filter="url(#shadow)">
+            <!-- Hypothalamus Bulb -->
+            <path d="M 120 140 C 120 70, 240 70, 240 140 C 240 180, 210 200, 200 230 L 200 290 C 230 300, 230 360, 180 360 C 130 360, 130 300, 160 290 L 160 230 C 150 200, 120 180, 120 140 Z" fill="#FAD7A1" stroke="#F39C12" stroke-width="2" opacity="0.9"/>
+        </g>
+
+        <!-- Kidney Collecting Duct -->
+        <g id="collecting-duct" filter="url(#shadow)">
+            <!-- Left Wall (Cells) -->
+            <rect x="540" y="120" width="15" height="260" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+            <!-- Cell divisions -->
+            <line x1="540" y1="160" x2="555" y2="160" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="540" y1="200" x2="555" y2="200" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="540" y1="240" x2="555" y2="240" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="540" y1="280" x2="555" y2="280" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="540" y1="320" x2="555" y2="320" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="540" y1="360" x2="555" y2="360" stroke="#4A90D9" stroke-width="2"/>
+            <!-- Nuclei -->
+            <circle cx="547.5" cy="140" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="547.5" cy="180" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="547.5" cy="220" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="547.5" cy="260" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="547.5" cy="300" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="547.5" cy="340" r="3" fill="#2C3E50" opacity="0.7"/>
+
+            <!-- Right Wall (Cells) -->
+            <rect x="595" y="120" width="15" height="260" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="595" y1="160" x2="610" y2="160" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="595" y1="200" x2="610" y2="200" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="595" y1="240" x2="610" y2="240" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="595" y1="280" x2="610" y2="280" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="595" y1="320" x2="610" y2="320" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="595" y1="360" x2="610" y2="360" stroke="#4A90D9" stroke-width="2"/>
+            <circle cx="602.5" cy="140" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="602.5" cy="180" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="602.5" cy="220" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="602.5" cy="260" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="602.5" cy="300" r="3" fill="#2C3E50" opacity="0.7"/>
+            <circle cx="602.5" cy="340" r="3" fill="#2C3E50" opacity="0.7"/>
+
+            <!-- Lumen Background -->
+            <rect x="555" y="120" width="40" height="260" fill="#E8F4FD" opacity="0.3"/>
+            
+            <!-- ADH Receptor (Basolateral membrane) -->
+            <path d="M 540 245 C 533 245, 533 255, 540 255" fill="none" stroke="#2C3E50" stroke-width="2"/>
+        </g>
+
+        <!-- ==================== ANIMATED ELEMENTS ==================== -->
+
+        <!-- Solutes (Na+) -->
+        <g id="solutes-base" fill="#F1C40F">
+            <!-- Pituitary side -->
+            <circle cx="175" cy="140" r="2.5" opacity="0.5"/>
+            <circle cx="185" cy="170" r="2.5" opacity="0.5"/>
+            <circle cx="172" cy="210" r="2.5" opacity="0.5"/>
+            <circle cx="188" cy="250" r="2.5" opacity="0.5"/>
+            <circle cx="176" cy="290" r="2.5" opacity="0.5"/>
+            <circle cx="184" cy="330" r="2.5" opacity="0.5"/>
+            <circle cx="175" cy="360" r="2.5" opacity="0.5"/>
+            <!-- Kidney side -->
+            <circle cx="515" cy="150" r="2.5" opacity="0.5"/>
+            <circle cx="525" cy="190" r="2.5" opacity="0.5"/>
+            <circle cx="512" cy="230" r="2.5" opacity="0.5"/>
+            <circle cx="528" cy="270" r="2.5" opacity="0.5"/>
+            <circle cx="516" cy="310" r="2.5" opacity="0.5"/>
+            <circle cx="524" cy="350" r="2.5" opacity="0.5"/>
+        </g>
+
+        <g id="solutes-extra" class="solute-extra" fill="#F1C40F">
+            <!-- Pituitary side extra -->
+            <circle cx="182" cy="130" r="2.5"/>
+            <circle cx="170" cy="155" r="2.5"/>
+            <circle cx="188" cy="190" r="2.5"/>
+            <circle cx="175" cy="230" r="2.5"/>
+            <circle cx="185" cy="270" r="2.5"/>
+            <circle cx="172" cy="310" r="2.5"/>
+            <circle cx="188" cy="345" r="2.5"/>
+            <circle cx="178" cy="375" r="2.5"/>
+            <!-- Kidney side extra -->
+            <circle cx="522" cy="135" r="2.5"/>
+            <circle cx="510" cy="170" r="2.5"/>
+            <circle cx="528" cy="210" r="2.5"/>
+            <circle cx="515" cy="250" r="2.5"/>
+            <circle cx="525" cy="290" r="2.5"/>
+            <circle cx="512" cy="330" r="2.5"/>
+            <circle cx="528" cy="365" r="2.5"/>
+        </g>
+
+        <!-- Neural Axons -->
+        <path d="M 180 140 L 180 320" stroke="#FFD700" stroke-width="3" stroke-dasharray="4 4" fill="none"/>
+        <circle cx="180" cy="320" r="5" fill="#FFD700"/>
+
+        <!-- Neural Pulses -->
+        <circle class="neural-pulse pulse1" r="6" fill="#ffffff" filter="url(#glow)"/>
+        <circle class="neural-pulse pulse2" r="6" fill="#ffffff" filter="url(#glow)"/>
+        <circle class="neural-pulse pulse3" r="6" fill="#ffffff" filter="url(#glow)"/>
+
+        <!-- Osmoreceptors (Cells) -->
+        <g id="osmoreceptors">
+            <!-- Cell 1 -->
+            <circle cx="165" cy="120" r="12" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+            <circle cx="165" cy="120" r="4" fill="#2C3E50"/>
+            <!-- Cell 2 -->
+            <circle cx="195" cy="120" r="12" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+            <circle cx="195" cy="120" r="4" fill="#2C3E50"/>
+            <!-- Cell 3 -->
+            <circle cx="180" cy="105" r="12" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+            <circle cx="180" cy="105" r="4" fill="#2C3E50"/>
+        </g>
+
+        <!-- ADH Molecules -->
+        <circle class="adh adh1" r="5" fill="#98D8C8" stroke="#2C3E50" stroke-width="1"/>
+        <circle class="adh adh2" r="5" fill="#98D8C8" stroke="#2C3E50" stroke-width="1"/>
+        <circle class="adh adh3" r="5" fill="#98D8C8" stroke="#2C3E50" stroke-width="1"/>
+
+        <!-- Aquaporins (Apical Membrane) -->
+        <g class="aquaporin">
+            <rect x="553" y="210" width="4" height="12" fill="#98D8C8" rx="1" stroke="#2C3E50" stroke-width="0.5"/>
+            <rect x="553" y="250" width="4" height="12" fill="#98D8C8" rx="1" stroke="#2C3E50" stroke-width="0.5"/>
+            <rect x="553" y="290" width="4" height="12" fill="#98D8C8" rx="1" stroke="#2C3E50" stroke-width="0.5"/>
+        </g>
+
+        <!-- Water Droplets -->
+        <g transform="translate(575, 216)">
+            <path class="water water1" d="M 0 -5 C 3 -5, 5 -2, 5 1 C 5 4, 0 8, 0 8 C 0 8, -5 4, -5 1 C -5 -2, -3 -5, 0 -5 Z" fill="#3498DB"/>
+        </g>
+        <g transform="translate(575, 256)">
+            <path class="water water2" d="M 0 -5 C 3 -5, 5 -2, 5 1 C 5 4, 0 8, 0 8 C 0 8, -5 4, -5 1 C -5 -2, -3 -5, 0 -5 Z" fill="#3498DB"/>
+        </g>
+        <g transform="translate(575, 296)">
+            <path class="water water3" d="M 0 -5 C 3 -5, 5 -2, 5 1 C 5 4, 0 8, 0 8 C 0 8, -5 4, -5 1 C -5 -2, -3 -5, 0 -5 Z" fill="#3498DB"/>
+        </g>
+
+        <!-- ==================== LABELS & ANNOTATIONS ==================== -->
+
+        <!-- Hypothalamus Label -->
+        <polyline points="80,90 100,90 140,110" fill="none" stroke="#7F8C8D" stroke-width="1.5"/>
+        <text x="75" y="94" text-anchor="end" font-size="13" font-weight="600" fill="#2C3E50">Hypothalamus</text>
+
+        <!-- Osmoreceptors Label -->
+        <polyline points="80,130 100,130 150,120" fill="none" stroke="#7F8C8D" stroke-width="1.5"/>
+        <text x="75" y="134" text-anchor="end" font-size="12" font-weight="600" fill="#2C3E50">Osmoreceptors</text>
+
+        <!-- Posterior Pituitary Label -->
+        <polyline points="80,340 100,340 140,320" fill="none" stroke="#7F8C8D" stroke-width="1.5"/>
+        <text x="75" y="344" text-anchor="end" font-size="13" font-weight="600" fill="#2C3E50">Posterior Pituitary</text>
+
+        <!-- Collecting Duct Label -->
+        <polyline points="720,100 700,100 620,130" fill="none" stroke="#7F8C8D" stroke-width="1.5"/>
+        <text x="725" y="104" text-anchor="start" font-size="13" font-weight="600" fill="#2C3E50">Collecting Duct</text>
+        <text x="725" y="120" text-anchor="start" font-size="11" font-weight="400" fill="#7F8C8D">(Kidney Nephron)</text>
+
+        <!-- Water Reabsorption Label -->
+        <polyline points="720,256 680,256 600,256" fill="none" stroke="#3498DB" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="725" y="260" text-anchor="start" font-size="12" font-weight="600" fill="#3498DB">H₂O Reabsorption</text>
+
+        <!-- Legend -->
+        <g transform="translate(620, 360)">
+            <rect width="160" height="110" rx="6" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" filter="url(#shadow)"/>
+            <text x="80" y="20" text-anchor="middle" font-size="11" font-weight="700" fill="#7F8C8D">LEGEND</text>
+            
+            <circle cx="20" cy="40" r="4" fill="#F1C40F"/>
+            <text x="35" y="44" font-size="12" fill="#2C3E50">Solutes (<tspan class="chem">Na⁺</tspan>)</text>
+            
+            <circle cx="20" cy="60" r="5" fill="#98D8C8" stroke="#2C3E50" stroke-width="1"/>
+            <text x="35" y="64" font-size="12" fill="#2C3E50">ADH Hormone</text>
+            
+            <path d="M 20 75 C 23 75, 25 78, 25 81 C 25 84, 20 88, 20 88 C 20 88, 15 84, 15 81 C 15 78, 17 75, 20 75 Z" fill="#3498DB"/>
+            <text x="35" y="84" font-size="12" fill="#2C3E50">Water (<tspan class="chem">H₂O</tspan>)</text>
+            
+            <rect x="18" y="95" width="4" height="10" fill="#98D8C8" rx="1" stroke="#2C3E50" stroke-width="0.5"/>
+            <text x="35" y="104" font-size="12" fill="#2C3E50">Aquaporin Channel</text>
+        </g>
+
+    </svg>
+</body>
+</html>

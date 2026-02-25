@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Evolution of Multicellularity: From Aggregates to Tissues</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --panel-bg: #ffffff;
+            --membrane: #4A90D9;
+            --cytoplasm: #E8F4FD;
+            --nucleus: #2C3E50;
+            --protein: #98D8C8;
+            --animal-tissue: #F39C12;
+            --spicule: #BDC3C7;
+            --tight-junction: #E74C3C;
+            --text-main: #2C3E50;
+            --text-muted: #596a7b;
+        }
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            max-width: 900px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            color: var(--text-main);
+        }
+
+        p.subtitle {
+            font-size: 16px;
+            color: var(--text-muted);
+            margin: 0 0 15px 0;
+            line-height: 1.5;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+        }
+
+        button {
+            background-color: var(--membrane);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background-color: #357ABD;
+        }
+
+        .svg-container {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+            padding: 20px;
+            max-width: 1000px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .sci-name {
+            font-family: 'Roboto Mono', monospace;
+            font-style: italic;
+            font-size: 14px;
+        }
+
+        /* --- ANIMATIONS --- */
+        body.paused * {
+            animation-play-state: paused !important;
+        }
+
+        /* Panel A: Cell Movement (Aggregation) */
+        .cell-move {
+            animation: cellMove 12s ease-in-out infinite;
+        }
+        @keyframes cellMove {
+            0% { transform: translate(var(--startX), var(--startY)); opacity: 0; }
+            10% { opacity: 1; }
+            25% { transform: translate(var(--endX), var(--endY)); opacity: 1; }
+            83% { transform: translate(var(--endX), var(--endY)); opacity: 1; }
+            95% { opacity: 0; }
+            100% { transform: translate(var(--startX), var(--startY)); opacity: 0; }
+        }
+
+        /* Panel A: Flagellum Beat */
+        .flagellum-beat {
+            transform-origin: 0px -20px;
+            animation: flagellumBeat 12s ease-in-out infinite;
+        }
+        @keyframes flagellumBeat {
+            0%, 25% { transform: rotate(0deg); }
+            28%, 36%, 44%, 52%, 60%, 68%, 76% { transform: rotate(18deg); }
+            32%, 40%, 48%, 56%, 64%, 72%, 80% { transform: rotate(-18deg); }
+            83%, 100% { transform: rotate(0deg); }
+        }
+
+        /* Panel A: Amoebocyte Crawl */
+        .amoebocyte-crawl {
+            animation: amoebocyteCrawl 12s ease-in-out infinite;
+        }
+        @keyframes amoebocyteCrawl {
+            0%, 25% { transform: scale(1); }
+            35%, 55%, 75% { transform: scale(1.05, 0.95); }
+            45%, 65% { transform: scale(0.95, 1.05); }
+            83%, 100% { transform: scale(1); }
+        }
+
+        /* Panel B: Tissue Alignment */
+        .tissue-align {
+            animation: tissueAlign 12s ease-in-out infinite;
+        }
+        @keyframes tissueAlign {
+            0% { transform: translate(var(--startX), var(--startY)); opacity: 0; }
+            10% { opacity: 1; }
+            25% { transform: translate(var(--midX), var(--midY)); opacity: 1; }
+            35% { transform: translate(var(--endX), var(--endY)); opacity: 1; }
+            83% { transform: translate(var(--endX), var(--endY)); opacity: 1; }
+            95% { opacity: 0; }
+            100% { transform: translate(var(--startX), var(--startY)); opacity: 0; }
+        }
+
+        /* Panel B: Crossfade Loose to Tight Cell */
+        .loose-cell { animation: fadeLoose 12s ease-in-out infinite; }
+        .tight-cell { animation: fadeTight 12s ease-in-out infinite; }
+        @keyframes fadeLoose {
+            0%, 25% { opacity: 1; }
+            35%, 83% { opacity: 0; }
+            90%, 100% { opacity: 1; }
+        }
+        @keyframes fadeTight {
+            0%, 25% { opacity: 0; }
+            35%, 83% { opacity: 1; }
+            90%, 100% { opacity: 0; }
+        }
+
+        /* Panel B: Basement Membrane & Tight Junctions Fade */
+        .fade-in-element {
+            animation: fadeInElement 12s ease-in-out infinite;
+        }
+        @keyframes fadeInElement {
+            0%, 30% { opacity: 0; }
+            35%, 83% { opacity: 1; }
+            88%, 100% { opacity: 0; }
+        }
+
+        /* Panel B: Coordinated Signaling */
+        .signal-b {
+            animation: signalB 12s linear infinite;
+            opacity: 0;
+        }
+        @keyframes signalB {
+            0%, 58% { opacity: 0; transform: translate(490px, 240px); }
+            60% { opacity: 1; transform: translate(490px, 240px); }
+            78% { opacity: 1; transform: translate(750px, 240px); }
+            80%, 100% { opacity: 0; transform: translate(750px, 240px); }
+        }
+
+        /* Panel A: Random Signaling */
+        .signal-a {
+            animation: signalA 12s ease-in-out infinite;
+            opacity: 0;
+        }
+        @keyframes signalA {
+            0%, 58% { opacity: 0; transform: translate(var(--startX), var(--startY)); }
+            62% { opacity: 1; transform: translate(var(--startX), var(--startY)); }
+            74% { opacity: 1; transform: translate(var(--endX), var(--endY)); }
+            78%, 100% { opacity: 0; transform: translate(var(--endX), var(--endY)); }
+        }
+
+        /* Labels and Pointers */
+        .fade-label {
+            animation: fadeLabel 12s ease-in-out infinite;
+        }
+        @keyframes fadeLabel {
+            0%, 35% { opacity: 0; transform: translateY(5px); }
+            40%, 80% { opacity: 1; transform: translateY(0); }
+            85%, 100% { opacity: 0; transform: translateY(5px); }
+        }
+
+        /* Legend */
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            font-size: 13px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .color-box {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>The Evolution of Multicellularity</h1>
+        <p class="subtitle">From loose cell aggregates in sponges to highly coordinated tissues in higher animals.<br>Observe the transition from independent cellular functions to synchronized division of labour.</p>
+    </div>
+
+    <div class="controls">
+        <button onclick="document.body.classList.toggle('paused')">Play / Pause Animation</button>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 900 550" xmlns="http://www.w3.org/2000/svg">
+            <title>Diagram showing the difference between loose cell aggregates and organized tissues</title>
+            <desc>Panel A shows Porifera with independent choanocytes and amoebocytes. Panel B shows Eumetazoa with tightly packed epithelial cells and coordinated signaling.</desc>
+
+            <defs>
+                <!-- Arrowhead for pointers -->
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#7F8C8D" />
+                </marker>
+
+                <!-- Spicule -->
+                <g id="spicule">
+                    <path d="M -12 0 L 12 0 M 0 -12 L 0 12 M -8 -8 L 8 8" stroke="var(--spicule)" stroke-width="2" stroke-linecap="round"/>
+                </g>
+
+                <!-- Choanocyte Definition -->
+                <g id="choanocyte">
+                    <!-- Collar -->
+                    <path d="M -8 -18 L -14 -35 L 14 -35 L 8 -18 Z" fill="rgba(74, 144, 217, 0.25)" stroke="var(--membrane)" stroke-width="1.5" stroke-linejoin="round"/>
+                    <!-- Flagellum -->
+                    <path d="M 0 -20 Q 15 -45 0 -70 T 0 -95" fill="none" stroke="var(--nucleus)" stroke-width="1.5" class="flagellum-beat" stroke-linecap="round"/>
+                    <!-- Cell Body -->
+                    <ellipse cx="0" cy="0" rx="16" ry="22" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="2"/>
+                    <!-- Nucleus -->
+                    <circle cx="0" cy="8" r="5" fill="var(--nucleus)"/>
+                </g>
+
+                <!-- Amoebocyte Definition -->
+                <g id="amoebocyte">
+                    <g class="amoebocyte-crawl">
+                        <path d="M 0 -16 C 18 -22 28 -5 22 12 C 16 28 -6 22 -18 16 C -30 10 -22 -10 0 -16 Z" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="2" stroke-linejoin="round"/>
+                        <circle cx="2" cy="2" r="5" fill="var(--nucleus)"/>
+                    </g>
+                </g>
+
+                <!-- Tissue Cell Group (Crossfading) -->
+                <g id="tissue-cell-group">
+                    <!-- Loose State (Circle) -->
+                    <circle class="loose-cell" cx="20" cy="60" r="22" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="2"/>
+                    <!-- Tight State (Rectangle) -->
+                    <rect class="tight-cell" x="0" y="0" width="40" height="120" rx="4" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="2"/>
+                    <!-- Nucleus (Static relative to group center) -->
+                    <circle cx="20" cy="60" r="6" fill="var(--nucleus)"/>
+                </g>
+            </defs>
+
+            <!-- ================= BACKGROUND PANELS ================= -->
+            <!-- Panel A Background -->
+            <rect x="30" y="60" width="390" height="460" rx="12" fill="#ffffff" stroke="#DEE2E6" stroke-width="2"/>
+            <rect x="40" y="110" width="370" height="400" rx="8" fill="rgba(243, 156, 18, 0.05)"/> <!-- Mesohyl -->
+            
+            <!-- Panel B Background -->
+            <rect x="480" y="60" width="390" height="460" rx="12" fill="#ffffff" stroke="#DEE2E6" stroke-width="2"/>
+
+            <!-- Panel Titles -->
+            <text x="225" y="90" text-anchor="middle" font-weight="600" font-size="16" fill="var(--text-main)">Panel A: Cellular Level</text>
+            <text x="225" y="108" text-anchor="middle" font-size="13" fill="var(--text-muted)">e.g., <tspan class="sci-name">Porifera</tspan> (Sponges)</text>
+
+            <text x="675" y="90" text-anchor="middle" font-weight="600" font-size="16" fill="var(--text-main)">Panel B: Tissue Level</text>
+            <text x="675" y="108" text-anchor="middle" font-size="13" fill="var(--text-muted)">e.g., <tspan class="sci-name">Coelenterata</tspan> onwards</text>
+
+            <!-- ================= PANEL A: PORIFERA ================= -->
+            <g id="panel-a-content">
+                <!-- Spicules (Static background structure) -->
+                <use href="#spicule" x="80" y="150" opacity="0.6"/>
+                <use href="#spicule" x="350" y="220" opacity="0.6" transform="rotate(45 350 220)"/>
+                <use href="#spicule" x="120" y="420" opacity="0.6" transform="rotate(20 120 420)"/>
+                <use href="#spicule" x="320" y="380" opacity="0.6" transform="rotate(-30 320 380)"/>
+
+                <!-- Choanocytes (Aggregating to form a loose cavity) -->
+                <g class="cell-move" style="--startX: 60px; --startY: 120px; --endX: 160px; --endY: 260px;">
+                    <use href="#choanocyte" transform="rotate(45)"/>
+                </g>
+                <g class="cell-move" style="--startX: 220px; --startY: 80px; --endX: 225px; --endY: 280px;">
+                    <use href="#choanocyte" transform="rotate(0)"/>
+                </g>
+                <g class="cell-move" style="--startX: 380px; --startY: 150px; --endX: 290px; --endY: 260px;">
+                    <use href="#choanocyte" transform="rotate(-45)"/>
+                </g>
+
+                <!-- Amoebocytes (Wandering in mesohyl) -->
+                <g class="cell-move" style="--startX: 100px; --startY: 450px; --endX: 150px; --endY: 360px;">
+                    <use href="#amoebocyte"/>
+                </g>
+                <g class="cell-move" style="--startX: 350px; --startY: 400px; --endX: 280px; --endY: 340px;">
+                    <use href="#amoebocyte"/>
+                </g>
+
+                <!-- Random Localized Signaling (Panel A) -->
+                <circle cx="0" cy="0" r="4" fill="var(--protein)" class="signal-a" style="--startX: 180px; --startY: 320px; --endX: 150px; --endY: 340px;"/>
+                <circle cx="0" cy="0" r="4" fill="var(--protein)" class="signal-a" style="--startX: 260px; --startY: 290px; --endX: 290px; --endY: 320px; animation-delay: 0.2s;"/>
+            </g>
+
+            <!-- ================= PANEL B: EUMETAZOA ================= -->
+            <g id="panel-b-content">
+                <!-- Basement Membrane (Fades in when tissue forms) -->
+                <line x1="510" y1="300" x2="840" y2="300" stroke="var(--animal-tissue)" stroke-width="6" stroke-linecap="round" class="fade-in-element"/>
+                
+                <!-- Tissue Cells (Aggregating, then aligning and morphing) -->
+                <!-- Cell 1 -->
+                <g class="tissue-align" style="--startX: 520px; --startY: 130px; --midX: 530px; --midY: 200px; --endX: 550px; --endY: 180px;">
+                    <use href="#tissue-cell-group"/>
+                </g>
+                <!-- Cell 2 -->
+                <g class="tissue-align" style="--startX: 650px; --startY: 380px; --midX: 570px; --midY: 170px; --endX: 590px; --endY: 180px;">
+                    <use href="#tissue-cell-group"/>
+                </g>
+                <!-- Cell 3 -->
+                <g class="tissue-align" style="--startX: 800px; --startY: 150px; --midX: 620px; --midY: 210px; --endX: 630px; --endY: 180px;">
+                    <use href="#tissue-cell-group"/>
+                </g>
+                <!-- Cell 4 -->
+                <g class="tissue-align" style="--startX: 550px; --startY: 420px; --midX: 670px; --midY: 180px; --endX: 670px; --endY: 180px;">
+                    <use href="#tissue-cell-group"/>
+                </g>
+                <!-- Cell 5 -->
+                <g class="tissue-align" style="--startX: 750px; --startY: 350px; --midX: 710px; --midY: 220px; --endX: 710px; --endY: 180px;">
+                    <use href="#tissue-cell-group"/>
+                </g>
+                <!-- Cell 6 -->
+                <g class="tissue-align" style="--startX: 820px; --startY: 250px; --midX: 760px; --midY: 190px; --endX: 750px; --endY: 180px;">
+                    <use href="#tissue-cell-group"/>
+                </g>
+
+                <!-- Tight Junctions (Red lines between cells, fade in) -->
+                <g class="fade-in-element" stroke="var(--tight-junction)" stroke-width="3" stroke-linecap="round">
+                    <line x1="590" y1="210" x2="590" y2="230"/>
+                    <line x1="630" y1="210" x2="630" y2="230"/>
+                    <line x1="670" y1="210" x2="670" y2="230"/>
+                    <line x1="710" y1="210" x2="710" y2="230"/>
+                    <line x1="750" y1="210" x2="750" y2="230"/>
+                </g>
+
+                <!-- Coordinated Signaling (Proteins moving through gap junctions) -->
+                <circle cx="0" cy="0" r="5" fill="var(--protein)" class="signal-b"/>
+                <circle cx="0" cy="0" r="5" fill="var(--protein)" class="signal-b" style="animation-delay: 0.3s;"/>
+                <circle cx="0" cy="0" r="5" fill="var(--protein)" class="signal-b" style="animation-delay: 0.6s;"/>
+            </g>
+
+            <!-- ================= ANNOTATIONS & LABELS ================= -->
+            <g class="fade-label">
+                <!-- Panel A Labels -->
+                <path d="M 120 180 L 160 220" stroke="#7F8C8D" stroke-width="1.5" fill="none" marker-start="url(#arrow)"/>
+                <text x="115" y="175" text-anchor="end" font-size="13" font-weight="600" fill="var(--text-main)">Flagellated Choanocyte</text>
+                <text x="115" y="190" text-anchor="end" font-size="11" fill="var(--text-muted)">(Creates water current)</text>
+
+                <path d="M 100 320 L 135 350" stroke="#7F8C8D" stroke-width="1.5" fill="none" marker-start="url(#arrow)"/>
+                <text x="95" y="315" text-anchor="end" font-size="13" font-weight="600" fill="var(--text-main)">Amoebocyte</text>
+                <text x="95" y="330" text-anchor="end" font-size="11" fill="var(--text-muted)">(Independent movement)</text>
+
+                <text x="225" y="450" text-anchor="middle" font-size="14" font-weight="700" fill="var(--tight-junction)">Loose Cell Aggregate</text>
+                <text x="225" y="468" text-anchor="middle" font-size="12" fill="var(--text-muted)">Cells function independently</text>
+                <text x="225" y="484" text-anchor="middle" font-size="12" fill="var(--text-muted)">with minimal coordination.</text>
+
+                <!-- Panel B Labels -->
+                <path d="M 830 220 L 795 220" stroke="#7F8C8D" stroke-width="1.5" fill="none" marker-start="url(#arrow)"/>
+                <text x="835" y="215" text-anchor="start" font-size="13" font-weight="600" fill="var(--text-main)">Tight Junctions</text>
+                <text x="835" y="230" text-anchor="start" font-size="11" fill="var(--text-muted)">(Cell-to-cell adhesion)</text>
+
+                <path d="M 830 300 L 790 300" stroke="#7F8C8D" stroke-width="1.5" fill="none" marker-start="url(#arrow)"/>
+                <text x="835" y="304" text-anchor="start" font-size="13" font-weight="600" fill="var(--text-main)">Basement Membrane</text>
+
+                <text x="675" y="450" text-anchor="middle" font-size="14" font-weight="700" fill="var(--tight-junction)">True Tissue Layer</text>
+                <text x="675" y="468" text-anchor="middle" font-size="12" fill="var(--text-muted)">Cells are physically joined and</text>
+                <text x="675" y="484" text-anchor="middle" font-size="12" fill="var(--text-muted)">communicate via gap junctions.</text>
+
+                <!-- Central Theme Label -->
+                <rect x="380" y="250" width="140" height="40" rx="20" fill="var(--membrane)" opacity="0.9"/>
+                <text x="450" y="275" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Division of Labour</text>
+                <path d="M 370 270 L 330 270" stroke="var(--membrane)" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+                <path d="M 530 270 L 570 270" stroke="var(--membrane)" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+            </g>
+
+        </svg>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <div class="color-box" style="background-color: var(--membrane);"></div>
+            <span>Cell Membrane</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: var(--nucleus);"></div>
+            <span>Nucleus</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: var(--cytoplasm); border: 1px solid var(--membrane);"></div>
+            <span>Cytoplasm</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: var(--protein); border-radius: 50%;"></div>
+            <span>Signaling Proteins</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: var(--animal-tissue);"></div>
+            <span>Basement Membrane</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background-color: var(--tight-junction);"></div>
+            <span>Tight Junctions</span>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Termination of Pregnancy (MTP) Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* --- Animations --- */
+        
+        /* 1. Progesterone Spheres (0-12s) */
+        @keyframes prog-fade {
+            0%, 20% { opacity: 1; transform: scale(1); }
+            10% { transform: scale(1.3); } /* Pulse */
+            25%, 91.6% { opacity: 0; transform: scale(0.5); }
+            95%, 100% { opacity: 1; transform: scale(1); }
+        }
+        .prog-sphere {
+            animation: prog-fade 12s infinite ease-in-out;
+            transform-origin: center;
+        }
+
+        /* 2. Endometrium Vibration & Breakdown (3-5s) */
+        @keyframes endo-breakdown {
+            0%, 25% { transform: translate(0, 0); fill: url(#endoGrad); opacity: 1; }
+            26%, 30% { transform: translate(1px, -1px); }
+            31%, 35% { transform: translate(-1px, 1px); }
+            36%, 40% { transform: translate(1px, 1px); }
+            41.6%, 91.6% { transform: translate(0, 0); fill: #A93226; opacity: 0.85; }
+            95%, 100% { transform: translate(0, 0); fill: url(#endoGrad); opacity: 1; }
+        }
+        #endometrium {
+            animation: endo-breakdown 12s infinite ease-in-out;
+        }
+
+        /* 3. Detachment & Expulsion of Conceptus (5-11s) */
+        @keyframes detach-expel {
+            0%, 41.6% { transform: translate(0, 0); opacity: 1; }
+            45%, 66.6% { transform: translate(28px, 20px); opacity: 1; } /* Detaches and centers */
+            66.7%, 91.6% { transform: translate(35px, 260px) scale(0.55); opacity: 1; } /* Slides out */
+            92%, 100% { transform: translate(35px, 260px) scale(0.55); opacity: 0; } /* Hidden for reset */
+        }
+        #conceptus {
+            animation: detach-expel 12s infinite ease-in-out;
+        }
+
+        /* 4. Uterine Contractions (8-11s) */
+        @keyframes myo-contract {
+            0%, 66.6% { transform: scale(1); }
+            70%, 75% { transform: scaleX(0.94) scaleY(0.98); }
+            75%, 80% { transform: scaleX(0.97) scaleY(0.96); }
+            80%, 85% { transform: scaleX(0.93) scaleY(0.99); }
+            85%, 91.6% { transform: scaleX(0.96) scaleY(0.97); }
+            95%, 100% { transform: scale(1); }
+        }
+        #uterus-tissues {
+            animation: myo-contract 12s infinite ease-in-out;
+            transform-origin: 300px 250px;
+        }
+
+        /* Contraction Waves */
+        @keyframes wave-pulse {
+            0%, 66.6% { opacity: 0; transform: scale(0.9); }
+            70%, 90% { opacity: 0.6; transform: scale(1.05); }
+            91.6%, 100% { opacity: 0; transform: scale(0.9); }
+        }
+        .contraction-wave {
+            animation: wave-pulse 12s infinite ease-in-out;
+            transform-origin: 300px 250px;
+        }
+
+        /* 5. Cervix Dilation (8-11s) */
+        @keyframes dilate {
+            0%, 66.6% { transform: scaleX(1); }
+            75%, 91.6% { transform: scaleX(10); } /* Widens the background-colored gap */
+            95%, 100% { transform: scaleX(1); }
+        }
+        #cervix-opening {
+            animation: dilate 12s infinite ease-in-out;
+            transform-origin: 300px 400px;
+        }
+
+        /* 6. Dynamic Labels */
+        @keyframes label1-anim {
+            0%, 25% { opacity: 1; transform: translateY(0); }
+            28%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+        #label-phase1 { animation: label1-anim 12s infinite ease-in-out; }
+
+        @keyframes label2-anim {
+            0%, 40% { opacity: 0; transform: translateY(10px); }
+            43%, 65% { opacity: 1; transform: translateY(0); }
+            68%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+        #label-phase2 { animation: label2-anim 12s infinite ease-in-out; }
+
+        @keyframes label3-anim {
+            0%, 65% { opacity: 0; transform: translateY(10px); }
+            68%, 90% { opacity: 1; transform: translateY(0); }
+            93%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+        #label-phase3 { animation: label3-anim 12s infinite ease-in-out; }
+
+        /* 7. Reset Flash */
+        @keyframes flash {
+            0%, 91.6% { opacity: 0; }
+            93%, 96% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        #reset-flash {
+            animation: flash 12s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" width="100%" height="100%" aria-label="Animation showing the process of Medical Termination of Pregnancy in the first trimester" role="img">
+            <title>Medical Termination of Pregnancy (MTP) - First Trimester</title>
+            <desc>An educational animation demonstrating the physiological process of MTP. It shows the withdrawal of progesterone, detachment of the chorionic villi, uterine contractions, and expulsion of the conceptus.</desc>
+
+            <defs>
+                <!-- Background Grid Pattern -->
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e0e5ec" stroke-width="1" opacity="0.5"/>
+                </pattern>
+
+                <!-- Gradients -->
+                <linearGradient id="myoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#C06080" />
+                    <stop offset="50%" stop-color="#D87093" />
+                    <stop offset="100%" stop-color="#C06080" />
+                </linearGradient>
+
+                <linearGradient id="endoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#A93226" />
+                    <stop offset="50%" stop-color="#C0392B" />
+                    <stop offset="100%" stop-color="#A93226" />
+                </linearGradient>
+
+                <radialGradient id="progGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#F7DC6F" />
+                    <stop offset="100%" stop-color="#F1C40F" />
+                </radialGradient>
+
+                <!-- Drop Shadow for Uterus -->
+                <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity="0.1"/>
+                </filter>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#f8f9fa" />
+            <rect width="100%" height="100%" fill="url(#grid)" />
+
+            <!-- Header Title -->
+            <text x="400" y="40" text-anchor="middle" font-family="Inter" font-weight="700" font-size="22" fill="#2C3E50">Medical Termination of Pregnancy (MTP) - First Trimester</text>
+            <text x="400" y="62" text-anchor="middle" font-family="Inter" font-weight="400" font-size="14" fill="#7F8C8D">Pharmacological mechanism (Progesterone withdrawal & Expulsion)</text>
+
+            <!-- ================= MAIN ANATOMY ================= -->
+            
+            <g id="uterus-system" filter="url(#shadow)">
+                
+                <g id="uterus-tissues">
+                    <!-- Myometrium (Outer Muscular Wall) -->
+                    <path id="myometrium" d="M 200 150 C 200 50, 400 50, 400 150 C 400 250, 340 300, 340 380 L 350 440 L 250 440 L 260 380 C 260 300, 200 250, 200 150 Z" fill="url(#myoGrad)" stroke="#A04060" stroke-width="2"/>
+                    
+                    <!-- Contraction Waves (Hidden initially) -->
+                    <path d="M 190 150 Q 170 220 230 300" fill="none" stroke="#FFF" stroke-width="4" class="contraction-wave" />
+                    <path d="M 410 150 Q 430 220 370 300" fill="none" stroke="#FFF" stroke-width="4" class="contraction-wave" />
+
+                    <!-- Endometrium (Inner Lining) -->
+                    <path id="endometrium" d="M 220 160 C 220 80, 380 80, 380 160 C 380 240, 320 290, 320 380 L 310 380 L 310 440 L 290 440 L 290 380 L 280 380 C 280 290, 220 240, 220 160 Z" fill="url(#endoGrad)" />
+
+                    <!-- Uterine Cavity (Empty Space) -->
+                    <path id="cavity" d="M 235 170 C 235 100, 365 100, 365 170 C 365 230, 302 280, 302 380 L 302 440 L 298 440 L 298 380 C 298 280, 235 230, 235 170 Z" fill="#f8f9fa" />
+                </g>
+
+                <!-- Cervix Opening Mechanism (Expands to dilate) -->
+                <rect id="cervix-opening" x="298" y="370" width="4" height="80" fill="#f8f9fa" />
+
+            </g>
+
+            <!-- ================= CONCEPTUS (Embryo, Sac, Villi) ================= -->
+            <g id="conceptus">
+                <!-- Chorionic Villi (Placental connection) -->
+                <path d="M 240 180 L 225 175 L 235 185 L 220 190 L 235 195 L 225 205 L 240 200 Z" fill="#943126" stroke="#7B241C" stroke-width="1"/>
+                
+                <!-- Amniotic Sac -->
+                <circle cx="265" cy="190" r="25" fill="#AED6F1" opacity="0.6" stroke="#4A90D9" stroke-width="2"/>
+                
+                <!-- Embryo (8-10 weeks) -->
+                <g id="embryo">
+                    <!-- Head -->
+                    <circle cx="265" cy="180" r="9" fill="#FAD7A0" />
+                    <!-- Body -->
+                    <path d="M 260 187 C 245 190, 245 208, 270 203 C 278 200, 275 190, 270 187 Z" fill="#FAD7A0" />
+                    <!-- Eye -->
+                    <circle cx="262" cy="178" r="1.5" fill="#2C3E50" />
+                    <!-- Limb Bud -->
+                    <ellipse cx="265" cy="195" rx="3" ry="1.5" transform="rotate(30 265 195)" fill="#F5CBA7" />
+                    <!-- Umbilical Cord -->
+                    <path d="M 255 195 Q 245 200 238 190" fill="none" stroke="#E74C3C" stroke-width="1.5" />
+                </g>
+            </g>
+
+            <!-- ================= PROGESTERONE SPHERES ================= -->
+            <g id="progesterone-group">
+                <circle cx="210" cy="150" r="4.5" fill="url(#progGrad)" class="prog-sphere" style="animation-delay: 0.1s;" />
+                <circle cx="205" cy="170" r="4.5" fill="url(#progGrad)" class="prog-sphere" style="animation-delay: 0.3s;" />
+                <circle cx="208" cy="190" r="4.5" fill="url(#progGrad)" class="prog-sphere" style="animation-delay: 0.5s;" />
+                <circle cx="215" cy="210" r="4.5" fill="url(#progGrad)" class="prog-sphere" style="animation-delay: 0.2s;" />
+                <circle cx="225" cy="230" r="4.5" fill="url(#progGrad)" class="prog-sphere" style="animation-delay: 0.4s;" />
+                <circle cx="240" cy="250" r="4.5" fill="url(#progGrad)" class="prog-sphere" style="animation-delay: 0.6s;" />
+            </g>
+
+            <!-- ================= STATIC LABELS (Right Side) ================= -->
+            <g id="static-labels" font-family="Inter" font-size="13" fill="#2C3E50">
+                <!-- Myometrium -->
+                <polyline points="395,180 480,140 520,140" fill="none" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4,2"/>
+                <circle cx="395" cy="180" r="3" fill="#7F8C8D" />
+                <text x="530" y="144" font-weight="600">Myometrium</text>
+                <text x="530" y="158" font-size="11" fill="#7F8C8D">Thick muscular wall</text>
+
+                <!-- Endometrium -->
+                <polyline points="375,220 480,220 520,220" fill="none" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4,2"/>
+                <circle cx="375" cy="220" r="3" fill="#7F8C8D" />
+                <text x="530" y="224" font-weight="600">Endometrium</text>
+                <text x="530" y="238" font-size="11" fill="#7F8C8D">Vascular inner lining</text>
+
+                <!-- Cervix -->
+                <polyline points="345,410 480,410 520,410" fill="none" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4,2"/>
+                <circle cx="345" cy="410" r="3" fill="#7F8C8D" />
+                <text x="530" y="414" font-weight="600">Cervix</text>
+                <text x="530" y="428" font-size="11" fill="#7F8C8D">Uterine opening</text>
+            </g>
+
+            <!-- ================= DYNAMIC PROCESS LABELS (Left Side) ================= -->
+            
+            <!-- Phase 1: Hormonal Support -->
+            <g id="label-phase1" class="dyn-label">
+                <polyline points="200,170 150,130 130,130" fill="none" stroke="#F1C40F" stroke-width="2" />
+                <rect x="20" y="115" width="230" height="30" rx="15" fill="#FFF" stroke="#F1C40F" stroke-width="2" filter="url(#shadow)"/>
+                <text x="135" y="135" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#2C3E50">1. Hormonal Support (Progesterone)</text>
+            </g>
+
+            <!-- Phase 3: Detachment -->
+            <g id="label-phase2" class="dyn-label">
+                <polyline points="230,190 150,230 130,230" fill="none" stroke="#943126" stroke-width="2" />
+                <rect x="20" y="215" width="230" height="30" rx="15" fill="#FFF" stroke="#943126" stroke-width="2" filter="url(#shadow)"/>
+                <text x="135" y="235" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#2C3E50">2. Detachment of Chorionic Villi</text>
+            </g>
+
+            <!-- Phase 4: Contractions -->
+            <g id="label-phase3" class="dyn-label">
+                <polyline points="200,300 150,330 130,330" fill="none" stroke="#D87093" stroke-width="2" />
+                <rect x="20" y="315" width="230" height="30" rx="15" fill="#FFF" stroke="#D87093" stroke-width="2" filter="url(#shadow)"/>
+                <text x="135" y="335" text-anchor="middle" font-family="Inter" font-size="12" font-weight="700" fill="#2C3E50">3. Uterine Contractions &amp; Expulsion</text>
+            </g>
+
+            <!-- ================= LEGEND & FOOTER ================= -->
+            <g id="legend" transform="translate(530, 300)" font-family="Inter" font-size="11" fill="#2C3E50">
+                <rect x="0" y="0" width="180" height="85" rx="8" fill="#FFF" stroke="#e0e5ec" stroke-width="1" filter="url(#shadow)"/>
+                <text x="10" y="20" font-weight="700" font-size="12">Legend</text>
+                
+                <circle cx="15" cy="35" r="5" fill="#FAD7A0" stroke="#E67E22" stroke-width="1"/>
+                <text x="28" y="39">Embryo (8-10 weeks)</text>
+                
+                <rect x="10" y="47" width="10" height="10" rx="2" fill="#943126" />
+                <text x="28" y="56">Chorionic Villi</text>
+                
+                <circle cx="15" cy="69" r="5" fill="#F1C40F" />
+                <text x="28" y="73">Progesterone</text>
+            </g>
+
+            <!-- Scientific Note Footer -->
+            <text x="400" y="485" text-anchor="middle" font-family="Inter" font-size="12" fill="#7F8C8D" font-style="italic">
+                Scientific Note: MTP is considered relatively safe up to 12 weeks of pregnancy. Animation loops every 12 seconds.
+            </text>
+
+            <!-- Reset Flash Overlay -->
+            <rect id="reset-flash" width="100%" height="100%" fill="#f8f9fa" />
+
+        </svg>
+    </div>
+
+</body>
+</html>

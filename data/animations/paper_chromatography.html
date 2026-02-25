@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Chromatography: Separation of Leaf Pigments</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            display: block;
+        }
+
+        /* --- Animations --- */
+        /* Total Loop: 13s (10s animation + 3s pause) */
+        
+        /* Wet Paper rising via scaleY */
+        .wet-paper {
+            transform-origin: 400px 440px;
+            animation: wet-paper-anim 13s ease-in-out infinite;
+        }
+        @keyframes wet-paper-anim {
+            0% { transform: scaleY(1); } /* Base height 30px (y=410 to 440) */
+            15.38% { transform: scaleY(1.666); } /* Height 50px (y=390 to 440) */
+            61.54%, 100% { transform: scaleY(11); } /* Height 330px (y=110 to 440) */
+        }
+
+        /* Solvent Front Line */
+        .solvent-front-line {
+            animation: solvent-front-anim 13s ease-in-out infinite;
+        }
+        @keyframes solvent-front-anim {
+            0% { transform: translateY(410px); opacity: 0; }
+            1% { opacity: 1; }
+            15.38% { transform: translateY(390px); opacity: 1; }
+            61.54%, 100% { transform: translateY(110px); opacity: 1; }
+        }
+
+        /* Loading Spot (Fades out as it dissolves) */
+        .loading-spot {
+            transform-origin: 400px 390px;
+            animation: loading-spot-anim 13s ease-in-out infinite;
+        }
+        @keyframes loading-spot-anim {
+            0%, 15.38% { opacity: 1; transform: scale(1); }
+            23.08% { opacity: 0; transform: scale(1.5); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+
+        /* Pigment Bands */
+        .band-carotenoids {
+            transform-origin: 400px 0px;
+            animation: carot-anim 13s ease-in-out infinite;
+        }
+        @keyframes carot-anim {
+            0%, 15.38% { transform: translateY(390px) scaleX(0.2); opacity: 0; }
+            23.08% { transform: translateY(380px) scaleX(0.5); opacity: 1; }
+            61.54%, 100% { transform: translateY(125px) scaleX(1); opacity: 1; }
+        }
+
+        .band-xanthophylls {
+            transform-origin: 400px 0px;
+            animation: xantho-anim 13s ease-in-out infinite;
+        }
+        @keyframes xantho-anim {
+            0%, 15.38% { transform: translateY(390px) scaleX(0.2); opacity: 0; }
+            23.08% { transform: translateY(385px) scaleX(0.5); opacity: 1; }
+            61.54%, 100% { transform: translateY(190px) scaleX(1); opacity: 1; }
+        }
+
+        .band-chla {
+            transform-origin: 400px 0px;
+            animation: chla-anim 13s ease-in-out infinite;
+        }
+        @keyframes chla-anim {
+            0%, 15.38% { transform: translateY(390px) scaleX(0.2); opacity: 0; }
+            23.08% { transform: translateY(388px) scaleX(0.5); opacity: 1; }
+            61.54%, 100% { transform: translateY(225px) scaleX(1); opacity: 1; }
+        }
+
+        .band-chlb {
+            transform-origin: 400px 0px;
+            animation: chlb-anim 13s ease-in-out infinite;
+        }
+        @keyframes chlb-anim {
+            0%, 15.38% { transform: translateY(390px) scaleX(0.2); opacity: 0; }
+            23.08% { transform: translateY(390px) scaleX(0.5); opacity: 1; }
+            61.54%, 100% { transform: translateY(265px) scaleX(1); opacity: 1; }
+        }
+
+        /* Dynamic Labels appearing at the end */
+        .dynamic-label {
+            animation: label-anim 13s ease-in-out infinite;
+        }
+        @keyframes label-anim {
+            0%, 61.54% { opacity: 0; transform: translateX(-15px); }
+            69.23%, 100% { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Connecting lines for dynamic labels */
+        .dynamic-line {
+            animation: line-anim 13s ease-in-out infinite;
+        }
+        @keyframes line-anim {
+            0%, 61.54% { opacity: 0; stroke-dasharray: 0, 50; }
+            69.23%, 100% { opacity: 1; stroke-dasharray: 50, 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated diagram of Paper Chromatography separating leaf pigments">
+        <title>Paper Chromatography: Separation of Leaf Pigments</title>
+        <desc>An animated diagram showing the separation of leaf pigments (Carotenoids, Xanthophylls, Chlorophyll a, and Chlorophyll b) on chromatography paper based on their Rf values.</desc>
+
+        <defs>
+            <!-- Blur filter for realistic pigment bands -->
+            <filter id="band-blur" x="-20%" y="-50%" width="140%" height="200%">
+                <feGaussianBlur stdDeviation="1.5" />
+            </filter>
+
+            <!-- Gradient for the glass jar to give it a 3D cylindrical/chamber feel -->
+            <linearGradient id="jar-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="rgba(255,255,255,0.8)" />
+                <stop offset="15%" stop-color="rgba(255,255,255,0.2)" />
+                <stop offset="85%" stop-color="rgba(255,255,255,0.2)" />
+                <stop offset="100%" stop-color="rgba(255,255,255,0.6)" />
+            </linearGradient>
+
+            <!-- Gradient for the solvent pool -->
+            <linearGradient id="solvent-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#D1EAF0" stop-opacity="0.6" />
+                <stop offset="100%" stop-color="#A9DCE8" stop-opacity="0.9" />
+            </linearGradient>
+        </defs>
+
+        <!-- TITLE -->
+        <text x="400" y="35" font-family="Inter" font-size="22" font-weight="700" text-anchor="middle" fill="#2C3E50">Paper Chromatography: Separation of Leaf Pigments</text>
+
+        <!-- ================= BACKGROUND ELEMENTS ================= -->
+        
+        <!-- Chromatography Chamber (Back Wall) -->
+        <rect x="280" y="60" width="240" height="400" rx="15" fill="#F4F6F7" stroke="#BDC3C7" stroke-width="2"/>
+
+        <!-- Chromatography Paper (Stationary Phase) -->
+        <rect x="350" y="80" width="100" height="360" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="1"/>
+        
+        <!-- Origin Line (Pencil line) -->
+        <line x1="350" y1="390" x2="450" y2="390" stroke="#95A5A6" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+        <!-- ================= ANIMATED ELEMENTS ================= -->
+
+        <!-- Wet Paper (Solvent rising via capillary action) -->
+        <!-- Base rect is at the bottom, scales UP via CSS -->
+        <rect class="wet-paper" x="351" y="410" width="98" height="30" fill="#D1EAF0" opacity="0.6"/>
+
+        <!-- Pigment Bands (Start at origin, move up) -->
+        <ellipse class="band-carotenoids" cx="400" cy="0" rx="35" ry="6" fill="#E67E22" filter="url(#band-blur)"/>
+        <ellipse class="band-xanthophylls" cx="400" cy="0" rx="35" ry="6" fill="#F1C40F" filter="url(#band-blur)"/>
+        <ellipse class="band-chla" cx="400" cy="0" rx="35" ry="6" fill="#2ECC71" filter="url(#band-blur)"/>
+        <ellipse class="band-chlb" cx="400" cy="0" rx="35" ry="6" fill="#A2D149" filter="url(#band-blur)"/>
+
+        <!-- Loading Spot (Origin spot that dissolves) -->
+        <circle class="loading-spot" cx="400" cy="390" r="7" fill="#1B5E20"/>
+
+        <!-- Solvent Front Line -->
+        <line class="solvent-front-line" x1="340" y1="0" x2="460" y2="0" stroke="#3498DB" stroke-width="2" stroke-dasharray="6,4"/>
+
+        <!-- ================= FOREGROUND ELEMENTS ================= -->
+
+        <!-- Solvent Pool (Mobile Phase) -->
+        <!-- Placed over the paper to show it's submerged -->
+        <rect x="282" y="410" width="236" height="48" rx="12" fill="url(#solvent-grad)"/>
+        <!-- Solvent Meniscus Line -->
+        <line x1="282" y1="410" x2="518" y2="410" stroke="#85C1E9" stroke-width="2"/>
+
+        <!-- Chromatography Chamber (Front Glass Reflection) -->
+        <rect x="280" y="60" width="240" height="400" rx="15" fill="url(#jar-grad)" pointer-events="none"/>
+        <!-- Glass Highlight -->
+        <rect x="288" y="70" width="15" height="380" rx="7.5" fill="#FFFFFF" opacity="0.5" pointer-events="none"/>
+
+        <!-- Chamber Lid -->
+        <rect x="270" y="45" width="260" height="18" rx="4" fill="#7F8C8D" stroke="#2C3E50" stroke-width="2"/>
+        <rect x="370" y="35" width="60" height="10" rx="2" fill="#95A5A6" stroke="#2C3E50" stroke-width="2"/>
+
+        <!-- ================= LABELS & ANNOTATIONS ================= -->
+
+        <!-- Static Labels (Left Side) -->
+        <g font-family="Inter" font-size="13" font-weight="600" text-anchor="end" fill="#2C3E50">
+            <text x="260" y="114" fill="#3498DB">Solvent Front</text>
+            <line x1="270" y1="110" x2="330" y2="110" stroke="#3498DB" stroke-width="1" stroke-dasharray="2,2"/>
+
+            <text x="260" y="250">Stationary Phase</text>
+            <text x="260" y="266" font-size="11" font-weight="400" fill="#7F8C8D">(Chromatography Paper)</text>
+            <line x1="270" y1="246" x2="345" y2="246" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2"/>
+
+            <text x="260" y="394">Loading Spot (Origin)</text>
+            <line x1="270" y1="390" x2="340" y2="390" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2"/>
+
+            <text x="260" y="434">Mobile Phase (Solvent)</text>
+            <line x1="270" y1="430" x2="300" y2="430" stroke="#7F8C8D" stroke-width="1" stroke-dasharray="2,2"/>
+        </g>
+
+        <!-- Dynamic Labels (Right Side - Appear at end of animation) -->
+        <g class="dynamic-label">
+            <!-- Carotenoids -->
+            <line class="dynamic-line" x1="440" y1="125" x2="475" y2="125" stroke="#E67E22" stroke-width="1.5"/>
+            <text x="480" y="129" font-family="Inter" font-size="14" font-weight="700" fill="#E67E22">Carotenoids</text>
+            <text x="480" y="145" font-family="Roboto Mono" font-size="11" fill="#7F8C8D">R<tspan baseline-shift="sub" font-size="8">f</tspan> ≈ 0.95</text>
+
+            <!-- Xanthophylls -->
+            <line class="dynamic-line" x1="440" y1="190" x2="475" y2="190" stroke="#F1C40F" stroke-width="1.5"/>
+            <text x="480" y="194" font-family="Inter" font-size="14" font-weight="700" fill="#D4AC0D">Xanthophylls</text>
+            <text x="480" y="210" font-family="Roboto Mono" font-size="11" fill="#7F8C8D">R<tspan baseline-shift="sub" font-size="8">f</tspan> ≈ 0.71</text>
+
+            <!-- Chlorophyll a -->
+            <line class="dynamic-line" x1="440" y1="225" x2="475" y2="225" stroke="#2ECC71" stroke-width="1.5"/>
+            <text x="480" y="229" font-family="Inter" font-size="14" font-weight="700" fill="#27AE60">Chlorophyll <tspan font-style="italic">a</tspan></text>
+            <text x="480" y="245" font-family="Roboto Mono" font-size="11" fill="#7F8C8D">R<tspan baseline-shift="sub" font-size="8">f</tspan> ≈ 0.60</text>
+
+            <!-- Chlorophyll b -->
+            <line class="dynamic-line" x1="440" y1="265" x2="475" y2="265" stroke="#A2D149" stroke-width="1.5"/>
+            <text x="480" y="269" font-family="Inter" font-size="14" font-weight="700" fill="#7CB342">Chlorophyll <tspan font-style="italic">b</tspan></text>
+            <text x="480" y="285" font-family="Roboto Mono" font-size="11" fill="#7F8C8D">R<tspan baseline-shift="sub" font-size="8">f</tspan> ≈ 0.45</text>
+        </g>
+
+        <!-- Rf Formula Legend Box -->
+        <g transform="translate(580, 400)">
+            <rect x="0" y="0" width="190" height="65" rx="6" fill="#FFFFFF" stroke="#BDC3C7" stroke-width="1" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.05))"/>
+            <text x="10" y="22" font-family="Roboto Mono" font-size="13" font-weight="700" fill="#2C3E50">R<tspan baseline-shift="sub" font-size="10">f</tspan> Value =</text>
+            
+            <text x="10" y="42" font-family="Roboto Mono" font-size="10" fill="#566573">Distance by Pigment</text>
+            <line x1="10" y1="48" x2="135" y2="48" stroke="#566573" stroke-width="1"/>
+            <text x="10" y="59" font-family="Roboto Mono" font-size="10" fill="#566573">Distance by Solvent</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

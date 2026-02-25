@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mendelian Variation: Monohybrid Cross</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        text {
+            fill: #2C3E50;
+        }
+
+        .genotype {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        /* --- Animations --- */
+        
+        /* P Generation */
+        .p-gen {
+            animation: fade-in-out 15s infinite;
+        }
+
+        /* P Gametes */
+        .p-gamete-t {
+            animation: p-gamete-t-anim 15s infinite;
+        }
+        .p-gamete-t-rec {
+            animation: p-gamete-t-rec-anim 15s infinite;
+        }
+
+        /* F1 Plant */
+        .f1-plant {
+            transform-origin: 0 0;
+            animation: grow-plant 15s infinite;
+        }
+
+        /* F1 Gametes */
+        .f1-gamete-top-t { animation: f1-gamete-top-t-anim 15s infinite; }
+        .f1-gamete-top-t-rec { animation: f1-gamete-top-t-rec-anim 15s infinite; }
+        .f1-gamete-left-t { animation: f1-gamete-left-t-anim 15s infinite; }
+        .f1-gamete-left-t-rec { animation: f1-gamete-left-t-rec-anim 15s infinite; }
+
+        /* Punnett Square */
+        .punnett-grid {
+            animation: punnett-anim 15s infinite;
+        }
+
+        /* F2 Genotypes */
+        .f2-cells {
+            animation: f2-cells-anim 15s infinite;
+        }
+
+        /* F2 Plants */
+        .f2-plant {
+            transform-origin: 0 0;
+            animation: f2-grow-plant 15s infinite;
+        }
+
+        /* Ratio Label */
+        .ratio-label {
+            animation: ratio-anim 15s infinite;
+        }
+
+        /* Paths */
+        .flow-path {
+            animation: path-anim 15s infinite;
+        }
+
+        /* --- Keyframes --- */
+
+        @keyframes fade-in-out {
+            0%, 3% { opacity: 0; }
+            5%, 92% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes path-anim {
+            0%, 8% { opacity: 0; }
+            10%, 92% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes p-gamete-t-anim {
+            0%, 8% { opacity: 0; transform: translate(250px, 80px); }
+            10% { opacity: 1; transform: translate(250px, 80px); }
+            15% { opacity: 1; transform: translate(390px, 190px); }
+            16%, 100% { opacity: 0; transform: translate(390px, 190px); }
+        }
+
+        @keyframes p-gamete-t-rec-anim {
+            0%, 8% { opacity: 0; transform: translate(550px, 100px); }
+            10% { opacity: 1; transform: translate(550px, 100px); }
+            15% { opacity: 1; transform: translate(410px, 190px); }
+            16%, 100% { opacity: 0; transform: translate(410px, 190px); }
+        }
+
+        @keyframes grow-plant {
+            0%, 15% { opacity: 0; transform: scaleY(0); }
+            16% { opacity: 1; transform: scaleY(0); }
+            25%, 92% { opacity: 1; transform: scaleY(1); }
+            95%, 100% { opacity: 0; transform: scaleY(1); }
+        }
+
+        @keyframes f1-gamete-top-t-anim {
+            0%, 31% { opacity: 0; transform: translate(400px, 220px); }
+            33% { opacity: 1; transform: translate(400px, 220px); }
+            42%, 92% { opacity: 1; transform: translate(360px, 340px); }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes f1-gamete-top-t-rec-anim {
+            0%, 31% { opacity: 0; transform: translate(400px, 220px); }
+            33% { opacity: 1; transform: translate(400px, 220px); }
+            42%, 92% { opacity: 1; transform: translate(440px, 340px); }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes f1-gamete-left-t-anim {
+            0%, 31% { opacity: 0; transform: translate(400px, 220px); }
+            33% { opacity: 1; transform: translate(400px, 220px); }
+            42%, 92% { opacity: 1; transform: translate(300px, 400px); }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes f1-gamete-left-t-rec-anim {
+            0%, 31% { opacity: 0; transform: translate(400px, 220px); }
+            33% { opacity: 1; transform: translate(400px, 220px); }
+            42%, 92% { opacity: 1; transform: translate(300px, 480px); }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes punnett-anim {
+            0%, 43% { opacity: 0; }
+            45%, 92% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes f2-cells-anim {
+            0%, 48% { opacity: 0; }
+            50%, 92% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes f2-grow-plant {
+            0%, 52% { opacity: 0; transform: scaleY(0); }
+            53% { opacity: 1; transform: scaleY(0); }
+            62%, 92% { opacity: 1; transform: scaleY(1); }
+            95%, 100% { opacity: 0; transform: scaleY(1); }
+        }
+
+        @keyframes ratio-anim {
+            0%, 66% { opacity: 0; transform: translateY(10px); }
+            68%, 92% { opacity: 1; transform: translateY(0); }
+            95%, 100% { opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 550" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">Mendelian Variation: The Law of Segregation</title>
+        <desc id="svg-desc">Animated diagram showing a monohybrid cross of pea plants. A tall and dwarf plant cross to produce all tall F1 hybrids. The F1 generation self-pollinates to produce an F2 generation with a 3:1 ratio of tall to dwarf plants, demonstrating the segregation of alleles.</desc>
+
+        <!-- Definitions for Reusable Elements -->
+        <defs>
+            <!-- Leaves -->
+            <g id="leaf-right">
+                <path d="M0,0 C10,-12 20,-5 20,0 C20,5 10,12 0,0" fill="currentColor"/>
+            </g>
+            <g id="leaf-left">
+                <path d="M0,0 C-10,-12 -20,-5 -20,0 C-20,5 -10,12 0,0" fill="currentColor"/>
+            </g>
+
+            <!-- Base Plant Structures (Colors applied via currentColor) -->
+            <g id="tall-plant-base">
+                <path d="M0,0 Q3,-20 0,-40 T0,-75" stroke="currentColor" stroke-width="3" fill="none"/>
+                <use href="#leaf-right" x="0" y="-15"/>
+                <use href="#leaf-left" x="0" y="-30"/>
+                <use href="#leaf-right" x="0" y="-45"/>
+                <use href="#leaf-left" x="0" y="-60"/>
+                <path d="M0,-75 C5,-85 0,-95 0,-95 C0,-95 -5,-85 0,-75" fill="currentColor"/>
+            </g>
+
+            <g id="dwarf-plant-base">
+                <path d="M0,0 Q-3,-15 0,-35" stroke="currentColor" stroke-width="3" fill="none"/>
+                <use href="#leaf-right" x="0" y="-10"/>
+                <use href="#leaf-left" x="0" y="-20"/>
+                <path d="M0,-35 C4,-42 0,-48 0,-48 C0,-48 -4,-42 0,-35" fill="currentColor"/>
+            </g>
+
+            <!-- Gametes -->
+            <g id="gamete-T">
+                <circle r="12" fill="#E8F4FD" stroke="#4A90D9" stroke-width="1.5" opacity="0.9"/>
+                <circle r="5" fill="#FF6B6B"/>
+                <text x="0" y="3.5" fill="#ffffff" font-family="Roboto Mono" font-size="10" font-weight="bold" text-anchor="middle">T</text>
+            </g>
+            <g id="gamete-t">
+                <circle r="12" fill="#E8F4FD" stroke="#4A90D9" stroke-width="1.5" opacity="0.9"/>
+                <circle r="5" fill="#FFA07A"/>
+                <text x="0" y="3.5" fill="#ffffff" font-family="Roboto Mono" font-size="10" font-weight="bold" text-anchor="middle">t</text>
+            </g>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" rx="12"/>
+
+        <!-- Title -->
+        <text x="400" y="35" font-size="22" font-weight="700" text-anchor="middle">Genetic Variation: Monohybrid Cross in <tspan font-style="italic">Pisum sativum</tspan></text>
+
+        <!-- Legend -->
+        <g transform="translate(610, 20)">
+            <rect width="170" height="85" rx="6" fill="#ffffff" stroke="#BDC3C7" stroke-width="1"/>
+            <circle cx="15" cy="20" r="6" fill="#FF6B6B"/>
+            <text x="30" y="24" font-size="12" font-weight="600">Dominant Allele (T)</text>
+            
+            <circle cx="15" cy="42" r="6" fill="#FFA07A"/>
+            <text x="30" y="46" font-size="12" font-weight="600">Recessive Allele (t)</text>
+            
+            <rect x="9" y="58" width="12" height="12" rx="2" fill="#2ECC71"/>
+            <text x="30" y="68" font-size="12" font-weight="600">Tall Phenotype</text>
+        </g>
+
+        <!-- Generation Labels -->
+        <text x="40" y="120" font-size="16" font-weight="700" fill="#2C3E50">P Generation</text>
+        <text x="40" y="270" font-size="16" font-weight="700" fill="#2C3E50">F₁ Generation</text>
+        <text x="40" y="440" font-size="16" font-weight="700" fill="#2C3E50">F₂ Generation</text>
+
+        <!-- ==================== PATHS & ARROWS ==================== -->
+        <g class="flow-path">
+            <!-- P to F1 -->
+            <path d="M 250 80 Q 250 150 390 190" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5"/>
+            <path d="M 550 100 Q 550 150 410 190" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5"/>
+            <text x="220" y="160" font-size="12" font-weight="600" fill="#7F8C8D">Meiosis</text>
+            <text x="580" y="160" font-size="12" font-weight="600" fill="#7F8C8D">Meiosis</text>
+            <text x="400" y="175" font-size="12" font-weight="600" fill="#7F8C8D" text-anchor="middle">Fertilization</text>
+
+            <!-- F1 to Punnett Square -->
+            <path d="M 400 220 Q 360 280 360 340" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5"/>
+            <path d="M 400 220 Q 440 280 440 340" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5"/>
+            <path d="M 400 220 Q 300 300 300 400" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5"/>
+            <path d="M 400 220 Q 250 350 300 480" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5"/>
+            <text x="480" y="280" font-size="12" font-weight="600" fill="#7F8C8D">Segregation</text>
+        </g>
+
+        <!-- ==================== P GENERATION ==================== -->
+        <g class="p-gen">
+            <!-- True-breeding Tall (TT) -->
+            <g transform="translate(250, 120)">
+                <g color="#2ECC71">
+                    <use href="#tall-plant-base"/>
+                </g>
+                <!-- Alleles in stem -->
+                <circle cx="1.5" cy="-22" r="4" fill="#FF6B6B"/>
+                <circle cx="-1.5" cy="-37" r="4" fill="#FF6B6B"/>
+                <text x="0" y="20" class="genotype" text-anchor="middle">TT</text>
+                <text x="0" y="35" font-size="12" text-anchor="middle">Tall</text>
+            </g>
+
+            <!-- True-breeding Dwarf (tt) -->
+            <g transform="translate(550, 120)">
+                <g color="#27AE60">
+                    <use href="#dwarf-plant-base"/>
+                </g>
+                <!-- Alleles in stem -->
+                <circle cx="-1.5" cy="-15" r="4" fill="#FFA07A"/>
+                <circle cx="1.5" cy="-25" r="4" fill="#FFA07A"/>
+                <text x="0" y="20" class="genotype" text-anchor="middle">tt</text>
+                <text x="0" y="35" font-size="12" text-anchor="middle">Dwarf</text>
+            </g>
+        </g>
+
+        <!-- ==================== P GAMETES ==================== -->
+        <g class="p-gamete-t">
+            <use href="#gamete-T"/>
+        </g>
+        <g class="p-gamete-t-rec">
+            <use href="#gamete-t"/>
+        </g>
+
+        <!-- ==================== F1 GENERATION ==================== -->
+        <g transform="translate(400, 270)">
+            <g class="f1-plant">
+                <g color="#2ECC71">
+                    <use href="#tall-plant-base"/>
+                </g>
+                <!-- Heterozygous Alleles in stem -->
+                <circle cx="1.5" cy="-22" r="4" fill="#FF6B6B"/>
+                <circle cx="-1.5" cy="-37" r="4" fill="#FFA07A"/>
+                <text x="0" y="20" class="genotype" text-anchor="middle">Tt</text>
+                <text x="0" y="35" font-size="12" text-anchor="middle">Tall (Hybrid)</text>
+            </g>
+        </g>
+
+        <!-- ==================== F1 GAMETES ==================== -->
+        <g class="f1-gamete-top-t">
+            <use href="#gamete-T"/>
+        </g>
+        <g class="f1-gamete-top-t-rec">
+            <use href="#gamete-t"/>
+        </g>
+        <g class="f1-gamete-left-t">
+            <use href="#gamete-T"/>
+        </g>
+        <g class="f1-gamete-left-t-rec">
+            <use href="#gamete-t"/>
+        </g>
+
+        <!-- ==================== PUNNETT SQUARE (F2) ==================== -->
+        <g class="punnett-grid">
+            <!-- Grid Background & Borders -->
+            <rect x="320" y="360" width="160" height="160" fill="#ffffff" stroke="#BDC3C7" stroke-width="2" rx="4"/>
+            <line x1="400" y1="360" x2="400" y2="520" stroke="#BDC3C7" stroke-width="2"/>
+            <line x1="320" y1="440" x2="480" y2="440" stroke="#BDC3C7" stroke-width="2"/>
+            
+            <!-- Header Labels (Gametes) -->
+            <!-- Top Headers -->
+            <g transform="translate(360, 340)">
+                <use href="#gamete-T"/>
+            </g>
+            <g transform="translate(440, 340)">
+                <use href="#gamete-t"/>
+            </g>
+            <!-- Left Headers -->
+            <g transform="translate(300, 400)">
+                <use href="#gamete-T"/>
+            </g>
+            <g transform="translate(300, 480)">
+                <use href="#gamete-t"/>
+            </g>
+        </g>
+
+        <!-- F2 Genotypes (Text in cells) -->
+        <g class="f2-cells">
+            <text x="360" y="435" class="genotype" text-anchor="middle">TT</text>
+            <text x="440" y="435" class="genotype" text-anchor="middle">Tt</text>
+            <text x="360" y="515" class="genotype" text-anchor="middle">Tt</text>
+            <text x="440" y="515" class="genotype" text-anchor="middle">tt</text>
+        </g>
+
+        <!-- F2 Plants (Growing in cells) -->
+        <!-- Cell 1: TT (Tall) -->
+        <g transform="translate(360, 420)">
+            <g class="f2-plant">
+                <g transform="scale(0.65)">
+                    <g color="#2ECC71"><use href="#tall-plant-base"/></g>
+                    <circle cx="1.5" cy="-22" r="4" fill="#FF6B6B"/>
+                    <circle cx="-1.5" cy="-37" r="4" fill="#FF6B6B"/>
+                </g>
+            </g>
+        </g>
+
+        <!-- Cell 2: Tt (Tall) -->
+        <g transform="translate(440, 420)">
+            <g class="f2-plant">
+                <g transform="scale(0.65)">
+                    <g color="#2ECC71"><use href="#tall-plant-base"/></g>
+                    <circle cx="1.5" cy="-22" r="4" fill="#FF6B6B"/>
+                    <circle cx="-1.5" cy="-37" r="4" fill="#FFA07A"/>
+                </g>
+            </g>
+        </g>
+
+        <!-- Cell 3: Tt (Tall) -->
+        <g transform="translate(360, 500)">
+            <g class="f2-plant">
+                <g transform="scale(0.65)">
+                    <g color="#2ECC71"><use href="#tall-plant-base"/></g>
+                    <circle cx="1.5" cy="-22" r="4" fill="#FF6B6B"/>
+                    <circle cx="-1.5" cy="-37" r="4" fill="#FFA07A"/>
+                </g>
+            </g>
+        </g>
+
+        <!-- Cell 4: tt (Dwarf) -->
+        <g transform="translate(440, 500)">
+            <g class="f2-plant">
+                <g transform="scale(0.65)">
+                    <g color="#27AE60"><use href="#dwarf-plant-base"/></g>
+                    <circle cx="-1.5" cy="-15" r="4" fill="#FFA07A"/>
+                    <circle cx="1.5" cy="-25" r="4" fill="#FFA07A"/>
+                </g>
+            </g>
+        </g>
+
+        <!-- ==================== RATIO LABEL ==================== -->
+        <g class="ratio-label" transform="translate(400, 540)">
+            <rect x="-120" y="-20" width="240" height="30" rx="15" fill="#2C3E50"/>
+            <text x="0" y="0" font-size="14" font-weight="700" fill="#ffffff" text-anchor="middle">Phenotypic Ratio: 3 Tall : 1 Dwarf</text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

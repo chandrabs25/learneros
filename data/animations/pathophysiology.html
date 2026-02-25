@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathophysiology: The Window of Detection</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #2C3E50;
+            font-size: 28px;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+        }
+        p.subtitle {
+            color: #7F8C8D;
+            font-size: 15px;
+            margin: 0;
+            max-width: 600px;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.08);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- Animations --- */
+        @keyframes reveal-clip {
+            0% { width: 0; }
+            95% { width: 600px; }
+            95.1% { width: 0; }
+            100% { width: 0; }
+        }
+        @keyframes move-dot {
+            0% { offset-distance: 0%; opacity: 0; }
+            1% { opacity: 1; }
+            95% { offset-distance: 100%; opacity: 1; }
+            95.1% { opacity: 0; offset-distance: 0%; }
+            100% { opacity: 0; }
+        }
+        @keyframes virus-enter {
+            0% { opacity: 0; transform: translate(100px, 187.5px) scale(0.5); }
+            2% { opacity: 1; transform: translate(100px, 187.5px) scale(1); }
+            13% { opacity: 1; transform: translate(435px, 187.5px) scale(1); }
+            95% { opacity: 1; transform: translate(435px, 187.5px) scale(1); }
+            95.1%, 100% { opacity: 0; transform: translate(435px, 187.5px) scale(0.5); }
+        }
+        
+        /* Virus Multiplication Phases */
+        @keyframes pop-1 {
+            0%, 14% { opacity: 0; transform: scale(0); }
+            16%, 95% { opacity: 1; transform: scale(1); }
+            95.1%, 100% { opacity: 0; transform: scale(0); }
+        }
+        @keyframes pop-2 {
+            0%, 24% { opacity: 0; transform: scale(0); }
+            26%, 95% { opacity: 1; transform: scale(1); }
+            95.1%, 100% { opacity: 0; transform: scale(0); }
+        }
+        @keyframes pop-3 {
+            0%, 34% { opacity: 0; transform: scale(0); }
+            36%, 95% { opacity: 1; transform: scale(1); }
+            95.1%, 100% { opacity: 0; transform: scale(0); }
+        }
+        @keyframes pop-4 {
+            0%, 44% { opacity: 0; transform: scale(0); }
+            46%, 95% { opacity: 1; transform: scale(1); }
+            95.1%, 100% { opacity: 0; transform: scale(0); }
+        }
+        @keyframes pop-5 {
+            0%, 54% { opacity: 0; transform: scale(0); }
+            56%, 95% { opacity: 1; transform: scale(1); }
+            95.1%, 100% { opacity: 0; transform: scale(0); }
+        }
+        @keyframes pop-6 {
+            0%, 64% { opacity: 0; transform: scale(0); }
+            66%, 95% { opacity: 1; transform: scale(1); }
+            95.1%, 100% { opacity: 0; transform: scale(0); }
+        }
+
+        /* Molecular Probes */
+        @keyframes probe-anim {
+            0%, 39% { opacity: 0; transform: translateY(-10px) scale(0.5); }
+            41%, 53% { opacity: 1; transform: translateY(0) scale(1); }
+            55%, 100% { opacity: 0; transform: translateY(-10px) scale(0.5); }
+        }
+
+        /* Host Cell Symptoms */
+        @keyframes cell-symptom {
+            0%, 75% { stroke: #4A90D9; stroke-width: 3px; filter: none; }
+            80%, 95% { stroke: #C0392B; stroke-width: 4px; filter: drop-shadow(0 0 6px rgba(231,76,60,0.6)); }
+            95.1%, 100% { stroke: #4A90D9; stroke-width: 3px; filter: none; }
+        }
+
+        /* Diagnostic Labels */
+        @keyframes flash-early {
+            0%, 39% { opacity: 0; transform: translateY(10px); }
+            41%, 53% { opacity: 1; transform: translateY(0); }
+            55%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+        @keyframes flash-late {
+            0%, 79% { opacity: 0; transform: translateY(10px); }
+            81%, 95% { opacity: 1; transform: translateY(0); }
+            95.1%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        /* CSS Classes */
+        .graph-line { animation: reveal-clip 15s linear infinite; }
+        .graph-dot {
+            offset-path: path("M 100 445 C 220 445, 260 440, 300 425 C 340 410, 360 400, 420 370 C 480 340, 520 330, 580 310 C 640 290, 660 290, 700 290");
+            animation: move-dot 15s linear infinite;
+        }
+        .v-enter { animation: virus-enter 15s linear infinite; }
+        .v-pop-1 { animation: pop-1 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .v-pop-2 { animation: pop-2 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .v-pop-3 { animation: pop-3 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .v-pop-4 { animation: pop-4 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .v-pop-5 { animation: pop-5 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .v-pop-6 { animation: pop-6 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .probe-pop { animation: probe-anim 15s cubic-bezier(0.175, 0.885, 0.32, 1.275) infinite; }
+        .host-cell { animation: cell-symptom 15s ease-in-out infinite; }
+        .label-early { animation: flash-early 15s ease-in-out infinite; }
+        .label-late { animation: flash-late 15s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Pathophysiology & Early Diagnosis</h1>
+        <p class="subtitle">Observe how molecular tools (PCR/ELISA) detect pathogens during the sub-clinical phase, long before conventional symptoms appear.</p>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 550" xmlns="http://www.w3.org/2000/svg">
+            <title>Pathophysiology and Molecular Diagnosis Timeline</title>
+            <desc>An animated diagram showing viral infection progression in host tissue, correlated with a graph demonstrating the early window for molecular detection versus late conventional diagnosis.</desc>
+
+            <!-- Definitions -->
+            <defs>
+                <!-- Host Cell (Hexagon) -->
+                <g id="hex-cell">
+                    <path d="M0,-35 L30.3,-17.5 L30.3,17.5 L0,35 L-30.3,17.5 L-30.3,-17.5 Z" fill="#E8F4FD" />
+                    <circle cx="0" cy="0" r="8" fill="#2C3E50" opacity="0.9"/>
+                </g>
+
+                <!-- Pathogen (Virus with RNA) -->
+                <g id="virus">
+                    <circle cx="0" cy="0" r="4.5" fill="#E74C3C"/>
+                    <!-- Viral RNA -->
+                    <path d="M-2,-1 Q0,2 2,-1" fill="none" stroke="#FFA07A" stroke-width="1"/>
+                    <!-- Spikes -->
+                    <path d="M0,-4.5 L0,-7 M0,4.5 L0,7 M-4.5,0 L-7,0 M4.5,0 L7,0 M-3.2,-3.2 L-5,-5 M3.2,3.2 L5,5 M-3.2,3.2 L-5,5 M3.2,-3.2 L5,-5" stroke="#E74C3C" stroke-width="1.5" stroke-linecap="round"/>
+                </g>
+
+                <!-- Molecular Probe (Antibody/Primer) -->
+                <g id="probe">
+                    <path d="M0,0 L0,8 M0,0 L-5,-5 M0,0 L5,-5" stroke="#98D8C8" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+
+                <!-- Graph Grid Pattern -->
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ecf0f1" stroke-width="1"/>
+                </pattern>
+
+                <!-- Graph Curve Gradient -->
+                <linearGradient id="curve-gradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#E74C3C" stop-opacity="0.25"/>
+                    <stop offset="100%" stop-color="#E74C3C" stop-opacity="0.0"/>
+                </linearGradient>
+
+                <!-- Graph Clip Path -->
+                <clipPath id="graph-clip">
+                    <rect x="100" y="250" height="200" class="graph-line"/>
+                </clipPath>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#ffffff"/>
+
+            <!-- ========================================== -->
+            <!-- TOP SECTION: BIOLOGICAL ENVIRONMENT        -->
+            <!-- ========================================== -->
+            
+            <!-- Animal Tissue Background Blob -->
+            <path d="M 400 150 C 420 80, 520 70, 600 90 C 680 110, 700 180, 660 240 C 600 300, 480 280, 420 240 C 370 200, 370 170, 400 150 Z" fill="#F39C12" opacity="0.1"/>
+            <text x="670" y="100" font-size="12" fill="#D68910" font-weight="600">Host Tissue</text>
+
+            <!-- Host Cells Cluster -->
+            <g id="tissue-cluster">
+                <use href="#hex-cell" x="500" y="150" class="host-cell" />
+                <use href="#hex-cell" x="565" y="112.5" class="host-cell" />
+                <use href="#hex-cell" x="565" y="187.5" class="host-cell" />
+                <use href="#hex-cell" x="500" y="225" class="host-cell" />
+                <use href="#hex-cell" x="435" y="187.5" class="host-cell" />
+                <use href="#hex-cell" x="435" y="112.5" class="host-cell" />
+                <use href="#hex-cell" x="630" y="150" class="host-cell" />
+            </g>
+
+            <!-- Viruses -->
+            <g id="virus-swarm">
+                <!-- Initial Infection -->
+                <use href="#virus" x="0" y="0" class="v-enter" />
+                
+                <!-- Phase 1: Replication in C4 -->
+                <use href="#virus" x="435" y="187.5" class="v-pop-1" style="transform-origin: 435px 187.5px;" />
+                <use href="#virus" x="420" y="175" class="v-pop-1" style="transform-origin: 420px 175px;" />
+                <use href="#virus" x="445" y="195" class="v-pop-1" style="transform-origin: 445px 195px;" />
+                
+                <!-- Phase 2: Spread to C0 -->
+                <use href="#virus" x="480" y="140" class="v-pop-2" style="transform-origin: 480px 140px;" />
+                <use href="#virus" x="510" y="155" class="v-pop-2" style="transform-origin: 510px 155px;" />
+                <use href="#virus" x="495" y="165" class="v-pop-2" style="transform-origin: 495px 165px;" />
+                
+                <!-- Phase 3: Spread to C5 & C3 -->
+                <use href="#virus" x="435" y="112.5" class="v-pop-3" style="transform-origin: 435px 112.5px;" />
+                <use href="#virus" x="425" y="100" class="v-pop-3" style="transform-origin: 425px 100px;" />
+                <use href="#virus" x="500" y="225" class="v-pop-3" style="transform-origin: 500px 225px;" />
+                <use href="#virus" x="485" y="235" class="v-pop-3" style="transform-origin: 485px 235px;" />
+                
+                <!-- Phase 4: Exponential 1 -->
+                <use href="#virus" x="565" y="112.5" class="v-pop-4" style="transform-origin: 565px 112.5px;" />
+                <use href="#virus" x="550" y="100" class="v-pop-4" style="transform-origin: 550px 100px;" />
+                <use href="#virus" x="565" y="187.5" class="v-pop-4" style="transform-origin: 565px 187.5px;" />
+                <use href="#virus" x="550" y="195" class="v-pop-4" style="transform-origin: 550px 195px;" />
+                
+                <!-- Phase 5: Exponential 2 -->
+                <use href="#virus" x="580" y="120" class="v-pop-5" style="transform-origin: 580px 120px;" />
+                <use href="#virus" x="580" y="175" class="v-pop-5" style="transform-origin: 580px 175px;" />
+                <use href="#virus" x="630" y="150" class="v-pop-5" style="transform-origin: 630px 150px;" />
+                <use href="#virus" x="615" y="140" class="v-pop-5" style="transform-origin: 615px 140px;" />
+                
+                <!-- Phase 6: Exponential 3 (Saturation) -->
+                <use href="#virus" x="645" y="160" class="v-pop-6" style="transform-origin: 645px 160px;" />
+                <use href="#virus" x="465" y="150" class="v-pop-6" style="transform-origin: 465px 150px;" />
+                <use href="#virus" x="535" y="150" class="v-pop-6" style="transform-origin: 535px 150px;" />
+                <use href="#virus" x="470" y="190" class="v-pop-6" style="transform-origin: 470px 190px;" />
+                <use href="#virus" x="530" y="190" class="v-pop-6" style="transform-origin: 530px 190px;" />
+                <use href="#virus" x="500" y="110" class="v-pop-6" style="transform-origin: 500px 110px;" />
+            </g>
+
+            <!-- Molecular Probes -->
+            <g id="probe-swarm">
+                <use href="#probe" x="480" y="130" class="probe-pop" style="transform-origin: 480px 130px; transform: rotate(45deg);" />
+                <use href="#probe" x="515" y="145" class="probe-pop" style="transform-origin: 515px 145px; transform: rotate(-30deg);" />
+                <use href="#probe" x="425" y="165" class="probe-pop" style="transform-origin: 425px 165px; transform: rotate(120deg);" />
+                <use href="#probe" x="450" y="205" class="probe-pop" style="transform-origin: 450px 205px; transform: rotate(-150deg);" />
+                <use href="#probe" x="440" y="100" class="probe-pop" style="transform-origin: 440px 100px; transform: rotate(15deg);" />
+            </g>
+
+            <!-- Flashing Diagnostic Labels -->
+            <g class="label-early" transform="translate(400, 50)">
+                <rect x="-115" y="-16" width="230" height="32" rx="16" fill="#E8F8F5" stroke="#16A085" stroke-width="2"/>
+                <text x="0" y="5" text-anchor="middle" font-size="13" font-weight="700" fill="#16A085">Early Detection (PCR/ELISA)</text>
+            </g>
+
+            <g class="label-late" transform="translate(400, 50)">
+                <rect x="-165" y="-16" width="330" height="32" rx="16" fill="#FDEDEC" stroke="#E74C3C" stroke-width="2"/>
+                <text x="0" y="5" text-anchor="middle" font-size="13" font-weight="700" fill="#C0392B">Symptoms Appear / Conventional Diagnosis</text>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(620, 15)">
+                <rect x="0" y="0" width="160" height="95" rx="6" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" opacity="0.9"/>
+                <text x="10" y="20" font-size="12" font-weight="700" fill="#2C3E50">Legend</text>
+                
+                <circle cx="15" cy="38" r="5" fill="#E8F4FD" stroke="#4A90D9" stroke-width="1.5"/>
+                <text x="28" y="42" font-size="11" fill="#2C3E50">Host Cell</text>
+                
+                <circle cx="15" cy="58" r="4.5" fill="#E74C3C"/>
+                <text x="28" y="62" font-size="11" fill="#2C3E50">Pathogen (Virus)</text>
+                
+                <path d="M15,72 L15,80 M15,72 L11,68 M15,72 L19,68" stroke="#98D8C8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <text x="28" y="82" font-size="11" fill="#2C3E50">Molecular Probe</text>
+            </g>
+
+            <!-- ========================================== -->
+            <!-- BOTTOM SECTION: DIAGNOSTIC GRAPH           -->
+            <!-- ========================================== -->
+            
+            <!-- Graph Background Grid -->
+            <rect x="100" y="260" width="600" height="185" fill="url(#grid)" />
+
+            <!-- Axes -->
+            <line x1="100" y1="445" x2="710" y2="445" stroke="#2C3E50" stroke-width="2.5"/>
+            <line x1="100" y1="445" x2="100" y2="250" stroke="#2C3E50" stroke-width="2.5"/>
+            
+            <!-- Axis Arrows -->
+            <polygon points="95,255 105,255 100,245" fill="#2C3E50"/>
+            <polygon points="705,440 705,450 715,445" fill="#2C3E50"/>
+
+            <!-- Axis Labels -->
+            <text x="400" y="490" text-anchor="middle" font-size="14" font-weight="600" fill="#2C3E50">Time (Infection Progress)</text>
+            <text x="65" y="347" text-anchor="middle" transform="rotate(-90 65 347)" font-size="14" font-weight="600" fill="#2C3E50">Pathogen Concentration</text>
+
+            <!-- Phase Labels -->
+            <text x="220" y="465" font-size="12" font-weight="600" fill="#7F8C8D" text-anchor="middle">Sub-clinical Phase</text>
+            <text x="580" y="465" font-size="12" font-weight="600" fill="#7F8C8D" text-anchor="middle">Clinical Phase</text>
+
+            <!-- Threshold Lines -->
+            <line x1="100" y1="410" x2="700" y2="410" stroke="#16A085" stroke-width="2" stroke-dasharray="6,4"/>
+            <line x1="100" y1="330" x2="700" y2="330" stroke="#D68910" stroke-width="2" stroke-dasharray="6,4"/>
+
+            <!-- Threshold Labels -->
+            <text x="110" y="404" font-family="'Roboto Mono', monospace" font-size="12" font-weight="500" fill="#16A085">Molecular Detection Limit</text>
+            <text x="110" y="324" font-family="'Roboto Mono', monospace" font-size="12" font-weight="500" fill="#D68910">Symptom Threshold</text>
+
+            <!-- Animated Graph Curve -->
+            <!-- Fill under curve -->
+            <path d="M 100 445 C 220 445, 260 440, 300 425 C 340 410, 360 400, 420 370 C 480 340, 520 330, 580 310 C 640 290, 660 290, 700 290 L 700 445 Z" fill="url(#curve-gradient)" clip-path="url(#graph-clip)"/>
+            
+            <!-- Stroke curve -->
+            <path d="M 100 445 C 220 445, 260 440, 300 425 C 340 410, 360 400, 420 370 C 480 340, 520 330, 580 310 C 640 290, 660 290, 700 290" fill="none" stroke="#E74C3C" stroke-width="4" stroke-linecap="round" clip-path="url(#graph-clip)"/>
+            
+            <!-- Leading Dot -->
+            <circle r="6" fill="#E74C3C" class="graph-dot"/>
+
+        </svg>
+    </div>
+
+</body>
+</html>

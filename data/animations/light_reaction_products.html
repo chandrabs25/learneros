@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Link Between Light Reactions and the Biosynthetic Phase</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #2C3E50;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        p.subtitle {
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #555;
+            text-align: center;
+            max-width: 800px;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- CSS Animations --- */
+        
+        /* Light Rays */
+        @keyframes light-ray-anim {
+            0% { stroke-dashoffset: 40; opacity: 0; }
+            5% { opacity: 1; }
+            15% { opacity: 1; }
+            20%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        .ray1 { animation: light-ray-anim 12s linear infinite; }
+        .ray2 { animation: light-ray-anim 12s linear infinite 0.2s; }
+        .ray3 { animation: light-ray-anim 12s linear infinite 0.4s; }
+
+        /* H2O Entry */
+        @keyframes h2o-enter {
+            0% { opacity: 0; transform: translate(20px, 350px); }
+            2% { opacity: 1; }
+            12% { opacity: 1; transform: translate(140px, 280px); }
+            15%, 100% { opacity: 0; transform: translate(140px, 280px); }
+        }
+        .anim-h2o { animation: h2o-enter 12s linear infinite; }
+
+        /* O2 Exit */
+        @keyframes o2-exit {
+            0%, 12% { opacity: 0; transform: translate(140px, 280px); }
+            15% { opacity: 1; }
+            25% { opacity: 1; transform: translate(20px, 180px); }
+            28%, 100% { opacity: 0; transform: translate(0px, 150px); }
+        }
+        .anim-o2 { animation: o2-exit 12s linear infinite; }
+
+        /* ATP Movement (Thylakoid -> Stroma) */
+        @keyframes atp-move {
+            0%, 22% { opacity: 0; transform: translate(260px, 200px); }
+            25% { opacity: 1; }
+            35% { transform: translate(370px, 140px); } /* Arc up */
+            45% { opacity: 1; transform: translate(480px, 200px); }
+            48%, 100% { opacity: 0; transform: translate(480px, 200px); }
+        }
+        .anim-atp1 { animation: atp-move 12s linear infinite; }
+        .anim-atp2 { animation: atp-move 12s linear infinite 0.4s; }
+        .anim-atp3 { animation: atp-move 12s linear infinite 0.8s; }
+
+        /* NADPH Movement (Thylakoid -> Stroma) */
+        @keyframes nadph-move {
+            0%, 22% { opacity: 0; transform: translate(260px, 240px); }
+            25% { opacity: 1; }
+            35% { transform: translate(370px, 180px); } /* Arc up */
+            45% { opacity: 1; transform: translate(480px, 240px); }
+            48%, 100% { opacity: 0; transform: translate(480px, 240px); }
+        }
+        .anim-nadph1 { animation: nadph-move 12s linear infinite 0.2s; }
+        .anim-nadph2 { animation: nadph-move 12s linear infinite 0.6s; }
+
+        /* CO2 Entry */
+        @keyframes co2-enter {
+            0%, 42% { opacity: 0; transform: translate(750px, 100px); }
+            45% { opacity: 1; }
+            55% { opacity: 1; transform: translate(600px, 200px); }
+            58%, 100% { opacity: 0; transform: translate(600px, 200px); }
+        }
+        .anim-co2-1 { animation: co2-enter 12s linear infinite; }
+        .anim-co2-2 { animation: co2-enter 12s linear infinite 0.4s; }
+        .anim-co2-3 { animation: co2-enter 12s linear infinite 0.8s; }
+
+        /* Sugar Exit */
+        @keyframes sugar-exit {
+            0%, 67% { opacity: 0; transform: translate(550px, 330px); }
+            70% { opacity: 1; }
+            85% { opacity: 1; transform: translate(720px, 420px); }
+            88%, 100% { opacity: 0; transform: translate(750px, 450px); }
+        }
+        .anim-sugar { animation: sugar-exit 12s linear infinite; }
+
+        /* ADP Return (Stroma -> Thylakoid) */
+        @keyframes adp-return {
+            0%, 77% { opacity: 0; transform: translate(480px, 320px); }
+            80% { opacity: 1; }
+            90% { transform: translate(370px, 380px); } /* Arc down */
+            100% { opacity: 1; transform: translate(260px, 320px); }
+        }
+        .anim-adp1 { animation: adp-return 12s linear infinite; }
+        .anim-adp2 { animation: adp-return 12s linear infinite 0.4s; }
+        .anim-adp3 { animation: adp-return 12s linear infinite 0.8s; }
+
+        /* NADP+ Return (Stroma -> Thylakoid) */
+        @keyframes nadp-return {
+            0%, 77% { opacity: 0; transform: translate(480px, 280px); }
+            80% { opacity: 1; }
+            90% { transform: translate(370px, 340px); } /* Arc down */
+            100% { opacity: 1; transform: translate(260px, 280px); }
+        }
+        .anim-nadp1 { animation: nadp-return 12s linear infinite 0.2s; }
+        .anim-nadp2 { animation: nadp-return 12s linear infinite 0.6s; }
+
+        /* Calvin Cycle Spin */
+        @keyframes cycle-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .calvin-gear {
+            animation: cycle-spin 12s linear infinite;
+            transform-origin: 550px 260px;
+        }
+
+        /* Thylakoid Pulse (Subtle) */
+        @keyframes thylakoid-pulse {
+            0%, 100% { filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.2)) brightness(1); }
+            10% { filter: drop-shadow(2px 4px 8px rgba(241, 196, 15, 0.4)) brightness(1.1); }
+            20% { filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.2)) brightness(1); }
+        }
+        .thylakoid-stack {
+            animation: thylakoid-pulse 12s linear infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Light Reaction Products & The Biosynthetic Phase</h1>
+    <p class="subtitle">Watch how ATP and NADPH produced in the Thylakoid drive the Calvin Cycle in the Stroma to fix CO₂ into Sugar.</p>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of a chloroplast showing light reactions and the Calvin cycle">
+            <title>Chloroplast Photosynthesis Animation</title>
+            <desc>An animation showing water and light entering the thylakoid to produce oxygen, ATP, and NADPH. The ATP and NADPH travel to the stroma where they power the Calvin cycle to convert carbon dioxide into sugar, returning ADP and NADP+ to the thylakoid.</desc>
+
+            <defs>
+                <!-- Filters -->
+                <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+                <filter id="shadow">
+                    <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.2"/>
+                </filter>
+
+                <!-- Markers -->
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#2C3E50"/>
+                </marker>
+                <marker id="arrow-path" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#95A5A6"/>
+                </marker>
+
+                <!-- Molecules (Symbols) -->
+                <g id="atp">
+                    <circle cx="0" cy="0" r="16" fill="#F1C40F" filter="url(#glow)"/>
+                    <text x="0" y="1" font-family="'Roboto Mono', monospace" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#2C3E50">ATP</text>
+                </g>
+                <g id="adp">
+                    <circle cx="0" cy="0" r="16" fill="#F1C40F" opacity="0.4"/>
+                    <text x="0" y="1" font-family="'Roboto Mono', monospace" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#2C3E50">ADP</text>
+                </g>
+                <g id="nadph">
+                    <polygon points="0,-16 14,-8 14,8 0,16 -14,8 -14,-8" fill="#3498DB" filter="url(#glow)"/>
+                    <text x="0" y="1" font-family="'Roboto Mono', monospace" font-size="8" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#FFF">NADPH</text>
+                </g>
+                <g id="nadp">
+                    <polygon points="0,-16 14,-8 14,8 0,16 -14,8 -14,-8" fill="#3498DB" opacity="0.4"/>
+                    <text x="0" y="1" font-family="'Roboto Mono', monospace" font-size="8" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#FFF">NADP⁺</text>
+                </g>
+                <g id="h2o">
+                    <circle cx="0" cy="0" r="14" fill="#AED6F1"/>
+                    <text x="0" y="1" font-family="'Roboto Mono', monospace" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#2C3E50">H₂O</text>
+                </g>
+                <g id="o2">
+                    <circle cx="0" cy="0" r="14" fill="#AED6F1"/>
+                    <text x="0" y="1" font-family="'Roboto Mono', monospace" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#2C3E50">O₂</text>
+                </g>
+                <g id="co2">
+                    <circle cx="0" cy="0" r="14" fill="#8E44AD"/>
+                    <text x="0" y="1" font-family="'Roboto Mono', monospace" font-size="10" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#FFF">CO₂</text>
+                </g>
+                <g id="sugar">
+                    <polygon points="0,-20 17,-10 17,10 0,20 -17,10 -17,-10" fill="#FFF9E3" stroke="#F39C12" stroke-width="2"/>
+                    <text x="0" y="1" font-family="'Roboto Mono', monospace" font-size="9" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#2C3E50">Sugar</text>
+                </g>
+            </defs>
+
+            <!-- Chloroplast Background -->
+            <!-- Outer Membrane -->
+            <rect x="40" y="40" width="720" height="420" rx="210" fill="#27AE60" stroke="#1E8449" stroke-width="4"/>
+            <!-- Inner Membrane & Stroma -->
+            <rect x="50" y="50" width="700" height="400" rx="200" fill="#E8F4FD" stroke="#27AE60" stroke-width="2"/>
+
+            <!-- Background Path Guides (Subtle) -->
+            <path d="M 260 200 Q 370 140 480 200" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow-path)"/>
+            <path d="M 260 240 Q 370 180 480 240" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow-path)"/>
+            <path d="M 480 280 Q 370 340 260 280" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow-path)"/>
+            <path d="M 480 320 Q 370 380 260 320" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="5 5" marker-end="url(#arrow-path)"/>
+
+            <!-- Thylakoid System -->
+            <g class="thylakoid-stack">
+                <!-- Stroma Lamellae (Connecting channels) -->
+                <line x1="140" y1="230" x2="260" y2="230" stroke="#1E8449" stroke-width="8"/>
+                <line x1="140" y1="260" x2="260" y2="260" stroke="#1E8449" stroke-width="8"/>
+                <line x1="140" y1="290" x2="260" y2="290" stroke="#1E8449" stroke-width="8"/>
+
+                <!-- Granum 1 -->
+                <g transform="translate(140, 260)">
+                    <rect x="-35" y="-45" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="-30" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="-15" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="0" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="15" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="30" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                </g>
+                <!-- Granum 2 -->
+                <g transform="translate(200, 260)">
+                    <rect x="-35" y="-45" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="-30" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="-15" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="0" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="15" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="30" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                </g>
+                <!-- Granum 3 -->
+                <g transform="translate(260, 260)">
+                    <rect x="-35" y="-45" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="-30" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="-15" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="0" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="15" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                    <rect x="-35" y="30" width="70" height="18" rx="9" fill="#1E8449" stroke="#145A32" stroke-width="2"/>
+                </g>
+            </g>
+
+            <!-- Calvin Cycle Gear -->
+            <g class="calvin-gear">
+                <!-- 3 Arcs forming a cycle -->
+                <path d="M 520 208 A 60 60 0 0 1 580 208" fill="none" stroke="#2C3E50" stroke-width="6" marker-end="url(#arrow)"/>
+                <path d="M 602 245 A 60 60 0 0 1 580 312" fill="none" stroke="#2C3E50" stroke-width="6" marker-end="url(#arrow)"/>
+                <path d="M 520 312 A 60 60 0 0 1 498 245" fill="none" stroke="#2C3E50" stroke-width="6" marker-end="url(#arrow)"/>
+            </g>
+
+            <!-- Light Rays -->
+            <g stroke="#F1C40F" stroke-width="5" stroke-dasharray="15 10" stroke-linecap="round">
+                <line x1="40" y1="40" x2="120" y2="120" class="ray1" />
+                <line x1="80" y1="20" x2="160" y2="100" class="ray2" />
+                <line x1="20" y1="80" x2="100" y2="160" class="ray3" />
+            </g>
+
+            <!-- Animated Molecules -->
+            <!-- Inputs/Outputs -->
+            <g class="anim-h2o"><use href="#h2o"/></g>
+            <g class="anim-o2"><use href="#o2"/></g>
+            
+            <g class="anim-co2-1"><use href="#co2"/></g>
+            <g class="anim-co2-2"><use href="#co2"/></g>
+            <g class="anim-co2-3"><use href="#co2"/></g>
+            
+            <g class="anim-sugar"><use href="#sugar"/></g>
+
+            <!-- Energy Carriers (T -> S) -->
+            <g class="anim-atp1"><use href="#atp"/></g>
+            <g class="anim-atp2"><use href="#atp"/></g>
+            <g class="anim-atp3"><use href="#atp"/></g>
+            
+            <g class="anim-nadph1"><use href="#nadph"/></g>
+            <g class="anim-nadph2"><use href="#nadph"/></g>
+
+            <!-- Spent Carriers (S -> T) -->
+            <g class="anim-adp1"><use href="#adp"/></g>
+            <g class="anim-adp2"><use href="#adp"/></g>
+            <g class="anim-adp3"><use href="#adp"/></g>
+            
+            <g class="anim-nadp1"><use href="#nadp"/></g>
+            <g class="anim-nadp2"><use href="#nadp"/></g>
+
+            <!-- Labels -->
+            <!-- Compartments -->
+            <text x="200" y="140" font-family="'Inter', sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#145A32">Thylakoid</text>
+            <text x="200" y="160" font-family="'Inter', sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#1E8449">(Light Reactions)</text>
+            
+            <text x="550" y="140" font-family="'Inter', sans-serif" font-size="16" font-weight="700" text-anchor="middle" fill="#2C3E50">Stroma</text>
+            <text x="550" y="160" font-family="'Inter', sans-serif" font-size="12" font-weight="600" text-anchor="middle" fill="#34495E">(Calvin Cycle)</text>
+
+            <!-- Processes -->
+            <text x="100" y="280" font-family="'Inter', sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="#2980B9" opacity="0.8">Photolysis</text>
+            <text x="650" y="260" font-family="'Inter', sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="#8E44AD" opacity="0.8">Carbon Fixation</text>
+
+            <!-- Legend -->
+            <g transform="translate(630, 30)">
+                <rect x="0" y="0" width="140" height="150" rx="8" fill="#FFFFFF" stroke="#BDC3C7" stroke-width="1" filter="url(#shadow)"/>
+                <text x="70" y="20" font-family="'Inter', sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="#2C3E50">Legend</text>
+                <line x1="10" y1="28" x2="130" y2="28" stroke="#ECF0F1" stroke-width="2"/>
+                
+                <!-- Legend Items -->
+                <g transform="translate(20, 45)">
+                    <circle cx="0" cy="0" r="8" fill="#F1C40F"/>
+                    <text x="15" y="4" font-family="'Roboto Mono', monospace" font-size="10" fill="#2C3E50">ATP / ADP</text>
+                </g>
+                <g transform="translate(20, 65)">
+                    <polygon points="0,-8 7,-4 7,4 0,8 -7,4 -7,-4" fill="#3498DB"/>
+                    <text x="15" y="4" font-family="'Roboto Mono', monospace" font-size="10" fill="#2C3E50">NADPH / NADP⁺</text>
+                </g>
+                <g transform="translate(20, 85)">
+                    <circle cx="0" cy="0" r="7" fill="#AED6F1"/>
+                    <text x="15" y="4" font-family="'Roboto Mono', monospace" font-size="10" fill="#2C3E50">H₂O / O₂</text>
+                </g>
+                <g transform="translate(20, 105)">
+                    <circle cx="0" cy="0" r="7" fill="#8E44AD"/>
+                    <text x="15" y="4" font-family="'Roboto Mono', monospace" font-size="10" fill="#2C3E50">CO₂</text>
+                </g>
+                <g transform="translate(20, 125)">
+                    <polygon points="0,-9 8,-4.5 8,4.5 0,9 -8,4.5 -8,-4.5" fill="#FFF9E3" stroke="#F39C12" stroke-width="1"/>
+                    <text x="15" y="4" font-family="'Roboto Mono', monospace" font-size="10" fill="#2C3E50">Sugar (CH₂O)ₙ</text>
+                </g>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

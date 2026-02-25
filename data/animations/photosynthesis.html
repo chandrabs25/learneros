@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photosynthesis: The Z-Scheme and Calvin Cycle Integration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #2C3E50;
+            text-align: center;
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+        p.subtitle {
+            color: #7F8C8D;
+            margin-bottom: 20px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1200px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* CSS Animations */
+        @keyframes photon-drop {
+            0% { transform: translate(-40px, -80px); opacity: 0; }
+            5% { opacity: 1; }
+            15% { transform: translate(0, 0); opacity: 1; }
+            16%, 100% { opacity: 0; }
+        }
+        @keyframes pulse-protein {
+            0%, 14% { filter: brightness(1); }
+            15%, 18% { filter: brightness(1.4) drop-shadow(0 0 8px #F1C40F); }
+            22%, 100% { filter: brightness(1); }
+        }
+        @keyframes h2o-split {
+            0%, 10% { opacity: 0; transform: translateY(20px); }
+            12% { opacity: 1; transform: translateY(0); }
+            16% { opacity: 1; transform: translateY(-30px); }
+            18%, 100% { opacity: 0; transform: translateY(-30px); }
+        }
+        @keyframes o2-float {
+            0%, 17% { opacity: 0; transform: translateY(0); }
+            18% { opacity: 1; transform: translateY(0); }
+            28% { opacity: 0; transform: translateY(-60px); }
+            100% { opacity: 0; }
+        }
+        @keyframes h-accumulate {
+            0%, 17% { opacity: 0; transform: translateY(0); }
+            18% { opacity: 1; transform: translateY(0); }
+            25% { opacity: 1; transform: translateY(40px); }
+            95% { opacity: 1; transform: translateY(40px); }
+            100% { opacity: 0; }
+        }
+        @keyframes electron-visibility {
+            0%, 15% { opacity: 0; }
+            16%, 48% { opacity: 1; }
+            49%, 100% { opacity: 0; }
+        }
+        @keyframes proton-pump {
+            0%, 25% { opacity: 0; transform: translateY(0); }
+            26% { opacity: 1; transform: translateY(0); }
+            35% { opacity: 1; transform: translateY(120px); }
+            95% { opacity: 1; transform: translateY(120px); }
+            100% { opacity: 0; }
+        }
+        @keyframes chemiosmosis {
+            0%, 45% { opacity: 0; transform: translateY(0); }
+            46% { opacity: 1; transform: translateY(0); }
+            55% { opacity: 1; transform: translateY(-130px); }
+            56%, 100% { opacity: 0; }
+        }
+        @keyframes spin-head {
+            0%, 50% { transform: rotate(0deg); }
+            65%, 100% { transform: rotate(360deg); }
+        }
+        @keyframes atp-move {
+            0%, 55% { opacity: 0; transform: translate(0, 0); }
+            56% { opacity: 1; transform: translate(0, 0); }
+            65% { opacity: 1; transform: translate(140px, -20px); }
+            75%, 100% { opacity: 0; transform: translate(140px, -20px); }
+        }
+        @keyframes nadph-move {
+            0%, 48% { opacity: 0; transform: translate(0, 0); }
+            49% { opacity: 1; transform: translate(0, 0); }
+            60% { opacity: 1; transform: translate(160px, 50px); }
+            75%, 100% { opacity: 0; transform: translate(160px, 50px); }
+        }
+        @keyframes co2-enter {
+            0%, 55% { opacity: 0; transform: translateY(-50px); }
+            56% { opacity: 1; transform: translateY(-50px); }
+            65% { opacity: 1; transform: translateY(0); }
+            75%, 100% { opacity: 0; transform: translateY(0); }
+        }
+        @keyframes spin-calvin {
+            0%, 65% { transform: rotate(0deg); }
+            85%, 100% { transform: rotate(360deg); }
+        }
+        @keyframes glucose-exit {
+            0%, 84% { opacity: 0; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(0); }
+            95% { opacity: 1; transform: translateY(60px); }
+            100% { opacity: 0; transform: translateY(60px); }
+        }
+        @keyframes carrier-return {
+            0%, 85% { opacity: 0; transform: translate(0, 0); }
+            86% { opacity: 1; transform: translate(0, 0); }
+            96% { opacity: 1; transform: translate(-150px, 0); }
+            100% { opacity: 0; transform: translate(-150px, 0); }
+        }
+
+        /* Applying Animations */
+        .anim-photon-1 { animation: photon-drop 12s linear infinite; }
+        .anim-photon-2 { animation: photon-drop 12s linear infinite; animation-delay: 0.2s; }
+        .anim-psii { animation: pulse-protein 12s linear infinite; }
+        .anim-psi { animation: pulse-protein 12s linear infinite; animation-delay: 2.4s; }
+        .anim-h2o { animation: h2o-split 12s linear infinite; }
+        .anim-o2 { animation: o2-float 12s linear infinite; }
+        .anim-h-acc { animation: h-accumulate 12s linear infinite; }
+        .anim-electron { animation: electron-visibility 12s linear infinite; }
+        .anim-proton-pump { animation: proton-pump 12s linear infinite; }
+        .anim-chemiosmosis { animation: chemiosmosis 12s linear infinite; }
+        .anim-synthase-head { animation: spin-head 12s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: 520px 295px; }
+        .anim-atp { animation: atp-move 12s linear infinite; }
+        .anim-nadph { animation: nadph-move 12s linear infinite; }
+        .anim-co2 { animation: co2-enter 12s linear infinite; }
+        .anim-calvin { animation: spin-calvin 12s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: 780px 300px; }
+        .anim-glucose { animation: glucose-exit 12s linear infinite; }
+        .anim-carrier { animation: carrier-return 12s linear infinite; }
+
+        .chem-font { font-family: 'Roboto Mono', monospace; font-weight: 700; }
+        .label-font { font-family: 'Inter', sans-serif; font-weight: 600; }
+    </style>
+</head>
+<body>
+
+    <h1>Photosynthesis: Energy Conversion & Carbon Fixation</h1>
+    <p class="subtitle">The continuous 12-second cycle of the Z-Scheme (Light Reactions) and Calvin Cycle (Dark Reactions)</p>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 1000 600" aria-label="Animated diagram of Photosynthesis showing the Z-Scheme and Calvin Cycle">
+            <defs>
+                <!-- Shadows and Glows -->
+                <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.15"/>
+                </filter>
+                <filter id="glow-yellow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+                <filter id="glow-purple" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComponentTransfer in="blur" result="glow">
+                        <feFuncR type="linear" slope="1.5"/>
+                        <feFuncB type="linear" slope="1.5"/>
+                    </feComponentTransfer>
+                    <feComposite in="SourceGraphic" in2="glow" operator="over"/>
+                </filter>
+                
+                <!-- Gradients -->
+                <linearGradient id="membrane-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#2ECC71" />
+                    <stop offset="100%" stop-color="#27AE60" />
+                </linearGradient>
+                <linearGradient id="stroma-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#E8F4FD" />
+                    <stop offset="100%" stop-color="#D6EAF8" />
+                </linearGradient>
+
+                <!-- Arrow Markers -->
+                <marker id="arrow-gray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 Z" fill="#BDC3C7"/>
+                </marker>
+                <marker id="arrow-axis" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 Z" fill="#2C3E50"/>
+                </marker>
+                
+                <!-- Electron Path -->
+                <path id="z-scheme-path" d="M 190 320 L 190 150 L 305 320 L 430 320 L 430 120 L 500 250" fill="none"/>
+            </defs>
+
+            <!-- Background Chloroplast -->
+            <rect x="10" y="10" width="980" height="580" rx="60" fill="url(#stroma-grad)" stroke="#27AE60" stroke-width="6"/>
+            <rect x="20" y="20" width="960" height="560" rx="50" fill="none" stroke="#27AE60" stroke-width="2" stroke-dasharray="10,5"/>
+
+            <!-- Section Titles -->
+            <text x="280" y="50" text-anchor="middle" class="label-font" font-size="18" fill="#27AE60">Light-Dependent Reactions (Grana)</text>
+            <text x="780" y="50" text-anchor="middle" class="label-font" font-size="18" fill="#27AE60">Light-Independent Reactions (Stroma)</text>
+            <line x1="550" y1="20" x2="550" y2="580" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="8,8"/>
+
+            <!-- ========================================== -->
+            <!-- LEFT SIDE: LIGHT-DEPENDENT REACTIONS       -->
+            <!-- ========================================== -->
+
+            <!-- Energy Axis -->
+            <line x1="40" y1="480" x2="40" y2="100" stroke="#2C3E50" stroke-width="2" marker-end="url(#arrow-axis)"/>
+            <text x="25" y="290" transform="rotate(-90 25 290)" text-anchor="middle" class="label-font" font-size="12" fill="#2C3E50">Energy Level (Redox Potential)</text>
+
+            <!-- Thylakoid Structure -->
+            <g id="thylakoid">
+                <!-- Grana Stack (Background) -->
+                <rect x="60" y="380" width="80" height="25" rx="12" fill="#2ECC71" stroke="#27AE60" stroke-width="3"/>
+                <rect x="60" y="410" width="80" height="25" rx="12" fill="#2ECC71" stroke="#27AE60" stroke-width="3"/>
+                <rect x="60" y="440" width="80" height="25" rx="12" fill="#2ECC71" stroke="#27AE60" stroke-width="3"/>
+                
+                <!-- Main Cross-Section (Lumen) -->
+                <path d="M 100 320 L 540 320 A 40 40 0 0 1 580 360 L 580 440 A 40 40 0 0 1 540 480 L 100 480 Z" fill="#D1F2EB" stroke="url(#membrane-grad)" stroke-width="8"/>
+                <text x="340" y="450" text-anchor="middle" class="label-font" font-size="16" fill="#16A085" opacity="0.6">Thylakoid Lumen (High H+)</text>
+                <text x="340" y="510" text-anchor="middle" class="label-font" font-size="16" fill="#7FB3D5" opacity="0.8">Stroma (Low H+)</text>
+            </g>
+
+            <!-- Z-Scheme Energy Path (Dashed Line) -->
+            <path d="M 190 320 L 190 150 L 305 320 L 430 320 L 430 120 L 500 250" fill="none" stroke="#BDC3C7" stroke-width="3" stroke-dasharray="6,6" marker-end="url(#arrow-gray)"/>
+
+            <!-- Static Protons in Lumen -->
+            <g fill="#E74C3C" class="chem-font" font-size="10">
+                <circle cx="220" cy="400" r="4"/><text x="226" y="404">H+</text>
+                <circle cx="350" cy="420" r="4"/><text x="356" y="424">H+</text>
+                <circle cx="420" cy="390" r="4"/><text x="426" y="394">H+</text>
+                <circle cx="480" cy="440" r="4"/><text x="486" y="444">H+</text>
+            </g>
+
+            <!-- Proteins Embedded in Membrane -->
+            <g filter="url(#drop-shadow)">
+                <!-- PSII (P680) -->
+                <rect x="160" y="290" width="60" height="60" rx="10" fill="#98D8C8" stroke="#2C3E50" stroke-width="2" class="anim-psii"/>
+                <text x="190" y="325" text-anchor="middle" class="label-font" font-size="14" fill="#2C3E50">PSII</text>
+                <text x="190" y="340" text-anchor="middle" class="label-font" font-size="10" fill="#2C3E50">P680</text>
+
+                <!-- Primary Acceptor 1 -->
+                <circle cx="190" cy="150" r="15" fill="#F39C12" stroke="#2C3E50" stroke-width="2"/>
+                <text x="190" y="154" text-anchor="middle" class="label-font" font-size="10" fill="#FFF">Pheo</text>
+
+                <!-- Cytochrome b6f -->
+                <rect x="280" y="295" width="50" height="50" rx="25" fill="#34495E" stroke="#2C3E50" stroke-width="2"/>
+                <text x="305" y="320" text-anchor="middle" class="label-font" font-size="11" fill="#FFF">Cyt</text>
+                <text x="305" y="332" text-anchor="middle" class="label-font" font-size="11" fill="#FFF">b6f</text>
+
+                <!-- PSI (P700) -->
+                <rect x="400" y="290" width="60" height="60" rx="10" fill="#98D8C8" stroke="#2C3E50" stroke-width="2" class="anim-psi"/>
+                <text x="430" y="325" text-anchor="middle" class="label-font" font-size="14" fill="#2C3E50">PSI</text>
+                <text x="430" y="340" text-anchor="middle" class="label-font" font-size="10" fill="#2C3E50">P700</text>
+
+                <!-- Primary Acceptor 2 -->
+                <circle cx="430" cy="120" r="15" fill="#F39C12" stroke="#2C3E50" stroke-width="2"/>
+                <text x="430" y="124" text-anchor="middle" class="label-font" font-size="10" fill="#FFF">Fd</text>
+
+                <!-- NADP+ Reductase -->
+                <path d="M 480 240 L 520 240 L 510 270 L 490 270 Z" fill="#8E44AD" stroke="#2C3E50" stroke-width="2"/>
+                <text x="500" y="258" text-anchor="middle" class="label-font" font-size="10" fill="#FFF">FNR</text>
+
+                <!-- ATP Synthase -->
+                <rect x="500" y="310" width="40" height="40" fill="#F1C40F" stroke="#2C3E50" stroke-width="2"/>
+                <g class="anim-synthase-head">
+                    <rect x="495" y="260" width="50" height="50" rx="25" fill="#F1C40F" stroke="#2C3E50" stroke-width="2"/>
+                    <path d="M 520 260 L 520 310 M 495 285 L 545 285" stroke="#2C3E50" stroke-width="2" opacity="0.3"/>
+                </g>
+                <text x="520" y="370" text-anchor="middle" class="label-font" font-size="11" fill="#2C3E50">ATP Synthase</text>
+            </g>
+
+            <!-- ========================================== -->
+            <!-- ANIMATED ELEMENTS (LEFT SIDE)              -->
+            <!-- ========================================== -->
+
+            <!-- Photons -->
+            <g fill="#F1C40F" filter="url(#glow-yellow)">
+                <circle cx="170" cy="270" r="6" class="anim-photon-1"/>
+                <circle cx="190" cy="260" r="5" class="anim-photon-2"/>
+                <circle cx="410" cy="270" r="6" class="anim-photon-1" style="animation-delay: 2.4s;"/>
+                <circle cx="430" cy="260" r="5" class="anim-photon-2" style="animation-delay: 2.6s;"/>
+            </g>
+
+            <!-- Photolysis (Water Splitting) -->
+            <g class="anim-h2o">
+                <circle cx="190" cy="420" r="10" fill="#3498DB"/>
+                <text x="190" y="424" text-anchor="middle" fill="#FFF" class="chem-font" font-size="10">H<tspan dy="3" font-size="7">2</tspan><tspan dy="-3">O</tspan></text>
+            </g>
+            <g class="anim-o2">
+                <circle cx="160" cy="380" r="8" fill="#AED6F1"/>
+                <text x="160" y="383" text-anchor="middle" fill="#2C3E50" class="chem-font" font-size="9">O<tspan dy="3" font-size="6">2</tspan></text>
+            </g>
+            <g class="anim-h-acc">
+                <circle cx="210" cy="380" r="5" fill="#E74C3C"/>
+                <text x="220" y="384" fill="#E74C3C" class="chem-font" font-size="10">H+</text>
+            </g>
+
+            <!-- The Electron (Z-Scheme Path) -->
+            <g class="anim-electron">
+                <circle r="6" fill="#FFF" filter="url(#glow-yellow)">
+                    <animateMotion dur="12s" repeatCount="infinite" keyTimes="0; 0.15; 0.20; 0.30; 0.35; 0.40; 0.48; 1" keyPoints="0; 0; 0.19; 0.49; 0.61; 0.81; 1; 1" calcMode="linear">
+                        <mpath href="#z-scheme-path"/>
+                    </animateMotion>
+                </circle>
+                <text y="-10" fill="#F39C12" class="chem-font" font-size="12" font-weight="bold">
+                    e-
+                    <animateMotion dur="12s" repeatCount="infinite" keyTimes="0; 0.15; 0.20; 0.30; 0.35; 0.40; 0.48; 1" keyPoints="0; 0; 0.19; 0.49; 0.61; 0.81; 1; 1" calcMode="linear">
+                        <mpath href="#z-scheme-path"/>
+                    </animateMotion>
+                </text>
+            </g>
+
+            <!-- Proton Pumping (Cyt b6f) -->
+            <g class="anim-proton-pump">
+                <circle cx="305" cy="260" r="5" fill="#E74C3C"/>
+                <text x="315" y="264" fill="#E74C3C" class="chem-font" font-size="10">H+</text>
+            </g>
+
+            <!-- Chemiosmosis (H+ through ATP Synthase) -->
+            <g class="anim-chemiosmosis">
+                <circle cx="520" cy="420" r="6" fill="#E74C3C"/>
+                <text x="530" y="424" fill="#E74C3C" class="chem-font" font-size="12">H+</text>
+            </g>
+
+            <!-- Energy Carriers Generated -->
+            <g class="anim-atp">
+                <rect x="500" y="220" width="40" height="20" rx="5" fill="#F1C40F" filter="url(#glow-yellow)"/>
+                <text x="520" y="234" text-anchor="middle" class="chem-font" font-size="11" fill="#2C3E50">ATP</text>
+            </g>
+            <g class="anim-nadph">
+                <rect x="470" y="200" width="50" height="20" rx="5" fill="#9B59B6" filter="url(#glow-purple)"/>
+                <text x="495" y="214" text-anchor="middle" class="chem-font" font-size="11" fill="#FFF">NADPH</text>
+            </g>
+
+            <!-- ========================================== -->
+            <!-- RIGHT SIDE: CALVIN CYCLE (STROMA)          -->
+            <!-- ========================================== -->
+
+            <!-- Calvin Cycle Path -->
+            <circle cx="780" cy="300" r="100" fill="none" stroke="#2C3E50" stroke-width="4" stroke-dasharray="12, 8"/>
+            <path d="M 880 300 A 100 100 0 0 1 780 400" fill="none" stroke="#E67E22" stroke-width="6"/> <!-- Highlight exit path -->
+
+            <!-- RuBisCO Enzyme -->
+            <g filter="url(#drop-shadow)">
+                <path d="M 740 180 C 760 160, 800 160, 820 180 C 830 200, 810 220, 780 220 C 750 220, 730 200, 740 180 Z" fill="#E74C3C" stroke="#C0392B" stroke-width="2"/>
+                <text x="780" y="195" text-anchor="middle" class="label-font" font-size="14" fill="#FFF">RuBisCO</text>
+            </g>
+
+            <!-- Cycle Intermediates (Static Labels) -->
+            <text x="895" y="305" text-anchor="start" class="chem-font" font-size="12" fill="#2C3E50">PGA</text>
+            <text x="665" y="305" text-anchor="end" class="chem-font" font-size="12" fill="#2C3E50">RuBP</text>
+            <text x="780" y="420" text-anchor="middle" class="chem-font" font-size="12" fill="#2C3E50">G3P</text>
+
+            <!-- Rotating Calvin Wheel (Visual indicator of cycle turning) -->
+            <g class="anim-calvin">
+                <circle cx="780" cy="200" r="6" fill="#2C3E50"/>
+                <circle cx="880" cy="300" r="6" fill="#2C3E50"/>
+                <circle cx="780" cy="400" r="6" fill="#2C3E50"/>
+                <circle cx="680" cy="300" r="6" fill="#2C3E50"/>
+            </g>
+
+            <!-- CO2 Entering -->
+            <g class="anim-co2">
+                <circle cx="780" cy="120" r="12" fill="#7F8C8D"/>
+                <text x="780" y="124" text-anchor="middle" fill="#FFF" class="chem-font" font-size="10">CO<tspan dy="3" font-size="7">2</tspan></text>
+            </g>
+
+            <!-- Glucose Exiting -->
+            <g class="anim-glucose">
+                <polygon points="780,430 800,440 800,465 780,475 760,465 760,440" fill="#E67E22" stroke="#D35400" stroke-width="2" filter="url(#drop-shadow)"/>
+                <text x="780" y="456" text-anchor="middle" fill="#FFF" class="chem-font" font-size="10">Glucose</text>
+                <text x="780" y="495" text-anchor="middle" fill="#E67E22" class="chem-font" font-size="12">C<tspan dy="3" font-size="8">6</tspan><tspan dy="-3">H</tspan><tspan dy="3" font-size="8">12</tspan><tspan dy="-3">O</tspan><tspan dy="3" font-size="8">6</tspan></text>
+            </g>
+
+            <!-- Returning Carriers (ADP & NADP+) -->
+            <g class="anim-carrier">
+                <rect x="660" y="220" width="40" height="20" rx="5" fill="#FFF" stroke="#F1C40F" stroke-width="2"/>
+                <text x="680" y="234" text-anchor="middle" class="chem-font" font-size="10" fill="#F1C40F">ADP</text>
+                
+                <rect x="650" y="250" width="50" height="20" rx="5" fill="#FFF" stroke="#9B59B6" stroke-width="2"/>
+                <text x="675" y="264" text-anchor="middle" class="chem-font" font-size="10" fill="#9B59B6">NADP+</text>
+            </g>
+
+            <!-- ========================================== -->
+            <!-- LEGEND & SIDEBAR                           -->
+            <!-- ========================================== -->
+
+            <!-- Law of Limiting Factors Box -->
+            <g transform="translate(30, 500)">
+                <rect x="0" y="0" width="260" height="70" rx="8" fill="#FFF" stroke="#2C3E50" stroke-width="2" filter="url(#drop-shadow)"/>
+                <text x="10" y="20" class="label-font" font-size="12" fill="#E74C3C" font-weight="bold">Law of Limiting Factors (Blackman):</text>
+                <text x="10" y="40" class="label-font" font-size="11" fill="#2C3E50">Rate is determined by the scarcest resource.</text>
+                <text x="10" y="58" class="label-font" font-size="11" fill="#2C3E50">Key Factors: <tspan fill="#F39C12">Light</tspan>, <tspan fill="#7F8C8D">CO2 Conc.</tspan>, <tspan fill="#3498DB">Temperature</tspan></text>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(820, 470)">
+                <rect x="0" y="0" width="140" height="100" rx="8" fill="#FFF" stroke="#BDC3C7" stroke-width="1"/>
+                <text x="70" y="18" text-anchor="middle" class="label-font" font-size="12" fill="#2C3E50" font-weight="bold">Legend</text>
+                
+                <circle cx="15" cy="35" r="5" fill="#F1C40F" filter="url(#glow-yellow)"/>
+                <text x="30" y="39" class="label-font" font-size="10" fill="#2C3E50">Photon / ATP</text>
+                
+                <circle cx="15" cy="55" r="5" fill="#9B59B6" filter="url(#glow-purple)"/>
+                <text x="30" y="59" class="label-font" font-size="10" fill="#2C3E50">NADPH</text>
+                
+                <circle cx="15" cy="75" r="4" fill="#E74C3C"/>
+                <text x="30" y="79" class="label-font" font-size="10" fill="#2C3E50">Proton (H+)</text>
+                
+                <circle cx="90" cy="75" r="4" fill="#FFF" stroke="#F39C12" stroke-width="1"/>
+                <text x="100" y="79" class="label-font" font-size="10" fill="#2C3E50">e-</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

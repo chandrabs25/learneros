@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central Nervous System (CNS) Organization</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-radius: 8px;
+        }
+
+        /* Animations */
+        .pulse-circle {
+            offset-path: path('M 170 130 Q 180 150 175 180 L 170 420');
+            animation: signalTravel 10s linear infinite;
+        }
+
+        @keyframes signalTravel {
+            0% { offset-distance: 0%; opacity: 0; }
+            2% { opacity: 1; filter: drop-shadow(0 0 4px #FFD700); }
+            28% { offset-distance: 100%; opacity: 1; filter: drop-shadow(0 0 4px #FFD700); }
+            30% { opacity: 0; }
+            100% { offset-distance: 100%; opacity: 0; }
+        }
+
+        .dura-layer {
+            animation: pulseDura 10s infinite;
+        }
+        @keyframes pulseDura {
+            0%, 30%, 40%, 100% { fill: #2C3E50; }
+            35% { fill: #4A90D9; }
+        }
+
+        .arachnoid-layer {
+            animation: pulseArachnoid 10s infinite;
+        }
+        @keyframes pulseArachnoid {
+            0%, 40%, 50%, 100% { stroke: #95A5A6; filter: none; }
+            45% { stroke: #ECF0F1; filter: drop-shadow(0 0 3px #ECF0F1); }
+        }
+
+        .pia-layer {
+            animation: pulsePia 10s infinite;
+        }
+        @keyframes pulsePia {
+            0%, 50%, 60%, 100% { stroke: #7F8C8D; filter: none; }
+            55% { stroke: #FFD700; filter: drop-shadow(0 0 3px #FFD700); }
+        }
+
+        .csf-particle {
+            animation: csfFlow 10s infinite ease-in-out;
+        }
+        @keyframes csfFlow {
+            0%, 60% { opacity: 0; transform: translate(-15px, 0); }
+            65% { opacity: 0.9; }
+            90% { opacity: 0.9; }
+            100% { opacity: 0; transform: translate(45px, 8px); }
+        }
+
+        /* Text Styles */
+        .title { font-size: 24px; font-weight: 700; fill: #2C3E50; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #7F8C8D; }
+        .label { font-size: 12px; font-weight: 600; fill: #2C3E50; }
+        .label-mono { font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: 500; fill: #2C3E50; }
+        .legend-text { font-size: 11px; font-weight: 600; fill: #34495E; }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 900 500" aria-label="Animated diagram of the Central Nervous System and Cranial Meninges" role="img">
+        <title>Central Nervous System (CNS) Organization</title>
+        <desc>Lateral view of the human brain and spinal cord, with a magnified cross-section showing the protective meninges layers: Dura mater, Arachnoid mater, and Pia mater.</desc>
+
+        <defs>
+            <!-- Gradients -->
+            <linearGradient id="brainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F5B041" />
+                <stop offset="100%" stop-color="#E67E22" />
+            </linearGradient>
+
+            <linearGradient id="cerebellumGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#E67E22" />
+                <stop offset="100%" stop-color="#D35400" />
+            </linearGradient>
+
+            <!-- Filters -->
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.15" />
+            </filter>
+            
+            <filter id="glow">
+                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+
+            <!-- Clip Path for Magnifying Glass -->
+            <clipPath id="zoom-clip">
+                <circle cx="500" cy="260" r="140" />
+            </clipPath>
+
+            <!-- Arrow Marker -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#E74C3C" />
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Header -->
+        <text x="30" y="40" class="title">Central Nervous System (CNS) Organization</text>
+        <text x="30" y="60" class="subtitle">Lateral view of the brain & spinal cord with cranial meninges cross-section</text>
+
+        <!-- ========================================== -->
+        <!-- LEFT SIDE: MAIN VIEW (SILHOUETTE & CNS)    -->
+        <!-- ========================================== -->
+        <g id="main-view">
+            <!-- Human Silhouette -->
+            <path d="M 100 450 C 130 350, 130 250, 95 220 C 110 200, 100 180, 110 160 C 90 150, 100 120, 120 80 C 140 50, 200 50, 230 80 C 260 110, 260 170, 220 220 C 210 250, 210 350, 230 450 Z" fill="#e9ecef" stroke="#ced4da" stroke-width="2" stroke-linejoin="round" />
+
+            <!-- Brainstem & Spinal Cord -->
+            <path d="M 165 210 L 185 210 L 180 450 L 160 450 Z" fill="url(#brainGrad)" stroke="#d68910" stroke-width="1.5" stroke-linejoin="round" />
+            
+            <!-- Cerebellum -->
+            <path d="M 195 170 C 220 160, 240 170, 235 195 C 230 210, 200 210, 195 190 Z" fill="url(#cerebellumGrad)" stroke="#d68910" stroke-width="1.5" stroke-linejoin="round" />
+            <!-- Cerebellum Folia (Texture) -->
+            <path d="M 205 180 Q 215 185 225 180 M 202 190 Q 215 195 228 190 M 205 200 Q 215 205 225 200" stroke="#a04000" stroke-width="1" fill="none" opacity="0.5" />
+
+            <!-- Cerebrum -->
+            <path d="M 130 150 C 120 100, 160 70, 200 80 C 230 90, 240 130, 230 160 C 220 180, 190 180, 170 170 C 150 180, 135 170, 130 150 Z" fill="url(#brainGrad)" stroke="#d68910" stroke-width="1.5" stroke-linejoin="round" />
+            <!-- Cerebrum Sulci (Texture) -->
+            <path d="M 150 110 Q 160 130 155 150 M 180 95 Q 185 120 175 140 M 210 105 Q 200 130 205 150" stroke="#d68910" stroke-width="1.5" fill="none" stroke-linecap="round" />
+
+            <!-- Efferent Signal Path (Invisible, used for offset-path) -->
+            <path id="efferent-path" d="M 170 130 Q 180 150 175 180 L 170 420" fill="none" stroke="none" />
+            
+            <!-- Neural Pulse Circle -->
+            <circle r="4" fill="#FFD700" class="pulse-circle" />
+
+            <!-- Main View Labels -->
+            <polyline points="30,120 120,120 150,130" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="30" y="115" class="label">Cerebrum</text>
+
+            <polyline points="320,240 260,240 225,200" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="265" y="255" class="label">Cerebellum</text>
+
+            <polyline points="320,190 240,190 185,190" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="265" y="185" class="label">Brainstem</text>
+
+            <polyline points="30,350 140,350 170,350" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="30" y="345" class="label">Spinal Cord</text>
+
+            <!-- Efferent Signal Direction -->
+            <line x1="140" y1="380" x2="140" y2="430" stroke="#E74C3C" stroke-width="2" marker-end="url(#arrow)" />
+            <text x="30" y="445" class="label" fill="#E74C3C">Direction of Efferent Signal</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- CONNECTING LINES                           -->
+        <!-- ========================================== -->
+        <g id="zoom-lines">
+            <path d="M 210 100 L 380 160" stroke="#bdc3c7" stroke-width="1.5" stroke-dasharray="4 4" />
+            <path d="M 210 160 L 380 360" stroke="#bdc3c7" stroke-width="1.5" stroke-dasharray="4 4" />
+        </g>
+
+        <!-- ========================================== -->
+        <!-- RIGHT SIDE: DETAIL VIEW (MENINGES)         -->
+        <!-- ========================================== -->
+        <g id="detail-view">
+            <!-- Magnifying Glass Frame -->
+            <circle cx="500" cy="260" r="142" fill="#ffffff" filter="url(#shadow)" />
+            
+            <!-- Clipped Content -->
+            <g clip-path="url(#zoom-clip)">
+                <!-- Skull (Cranium) -->
+                <path d="M 330 150 Q 500 100 670 150 L 670 180 Q 500 130 330 180 Z" fill="#ECF0F1" />
+                
+                <!-- Dura Mater -->
+                <path d="M 330 180 Q 500 130 670 180 L 670 195 Q 500 145 330 195 Z" class="dura-layer" />
+                
+                <!-- Arachnoid Mater -->
+                <path d="M 330 195 Q 500 145 670 195 L 670 200 Q 500 150 330 200 Z" fill="none" stroke-width="3" class="arachnoid-layer" />
+                
+                <!-- Subarachnoid Space (CSF) -->
+                <path d="M 330 200 Q 500 150 670 200 L 670 270 Q 500 220 330 270 Z" fill="#E8F4FD" />
+                
+                <!-- Arachnoid Trabeculae (Web-like structures) -->
+                <g stroke="#95A5A6" stroke-width="1" opacity="0.5">
+                    <path d="M 350 192 L 355 265" />
+                    <path d="M 370 188 L 375 260" />
+                    <path d="M 385 184 L 390 330" />
+                    <path d="M 410 178 L 415 255" />
+                    <path d="M 430 174 L 435 250" />
+                    <path d="M 450 170 L 460 250" />
+                    <path d="M 465 168 L 470 340" />
+                    <path d="M 490 164 L 495 245" />
+                    <path d="M 510 160 L 515 240" />
+                    <path d="M 530 158 L 535 240" />
+                    <path d="M 545 156 L 550 320" />
+                    <path d="M 570 156 L 575 235" />
+                    <path d="M 590 158 L 595 235" />
+                    <path d="M 610 162 L 615 240" />
+                    <path d="M 625 166 L 630 300" />
+                    <path d="M 645 172 L 650 255" />
+                </g>
+
+                <!-- CSF Particles (Animated) -->
+                <circle cx="370" cy="220" r="2.5" fill="#3498DB" class="csf-particle" />
+                <circle cx="410" cy="240" r="2.5" fill="#3498DB" class="csf-particle" />
+                <circle cx="450" cy="210" r="2.5" fill="#3498DB" class="csf-particle" />
+                <circle cx="490" cy="230" r="2.5" fill="#3498DB" class="csf-particle" />
+                <circle cx="530" cy="205" r="2.5" fill="#3498DB" class="csf-particle" />
+                <circle cx="570" cy="225" r="2.5" fill="#3498DB" class="csf-particle" />
+                <circle cx="610" cy="215" r="2.5" fill="#3498DB" class="csf-particle" />
+                <circle cx="650" cy="235" r="2.5" fill="#3498DB" class="csf-particle" />
+
+                <!-- Pia Mater (Follows Sulci) -->
+                <path d="M 330 270 Q 360 260 380 265 L 390 340 L 400 260 Q 430 250 460 255 L 470 350 L 480 250 Q 510 240 540 245 L 550 330 L 560 240 Q 590 235 620 245 L 630 310 L 640 250 Q 660 255 670 270" fill="none" stroke-width="3" stroke-linejoin="round" class="pia-layer" />
+                
+                <!-- Cerebral Cortex (Brain Tissue) -->
+                <path d="M 330 270 Q 360 260 380 265 L 390 340 L 400 260 Q 430 250 460 255 L 470 350 L 480 250 Q 510 240 540 245 L 550 330 L 560 240 Q 590 235 620 245 L 630 310 L 640 250 Q 660 255 670 270 L 670 450 L 330 450 Z" fill="url(#brainGrad)" />
+            </g>
+
+            <!-- Glass Border -->
+            <circle cx="500" cy="260" r="140" fill="none" stroke="#bdc3c7" stroke-width="4" />
+
+            <!-- Detail View Labels -->
+            <polyline points="550,140 660,125 710,125" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="715" y="129" class="label-mono">Cranium (Skull)</text>
+
+            <polyline points="570,165 660,160 710,160" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="715" y="164" class="label-mono">Dura mater</text>
+
+            <polyline points="590,185 660,195 710,195" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="715" y="199" class="label-mono">Arachnoid mater</text>
+
+            <polyline points="610,215 660,230 710,230" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="715" y="234" class="label-mono">Subarachnoid space</text>
+
+            <polyline points="600,240 660,265 710,265" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="715" y="269" class="label-mono">Pia mater</text>
+
+            <polyline points="580,290 660,315 710,315" stroke="#7F8C8D" stroke-width="1.5" fill="none" />
+            <text x="715" y="319" class="label-mono">Cerebral Cortex</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- ANIMATION LEGEND                           -->
+        <!-- ========================================== -->
+        <g transform="translate(30, 475)">
+            <text x="0" y="0" class="legend-text" fill="#7F8C8D">Animation Sequence (10s Loop):</text>
+            
+            <circle cx="190" cy="-4" r="5" fill="#FFD700" />
+            <text x="200" y="0" class="legend-text">0-3s: Efferent Signal</text>
+            
+            <circle cx="330" cy="-4" r="5" fill="#2C3E50" />
+            <text x="340" y="0" class="legend-text">3-6s: Meninges Highlight</text>
+            
+            <circle cx="490" cy="-4" r="5" fill="#3498DB" />
+            <text x="500" y="0" class="legend-text">6-10s: CSF Flow</text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

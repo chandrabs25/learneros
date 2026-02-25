@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Pollination (Autogamy) Animation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title { font-weight: 700; font-size: 24px; fill: #2C3E50; }
+        .subtitle { font-weight: 400; font-size: 16px; fill: #555555; }
+        .label { font-weight: 600; font-size: 14px; fill: #2C3E50; }
+        .sci-note { font-family: 'Roboto Mono', monospace; font-size: 12px; fill: #E74C3C; font-weight: 500; }
+        .legend-text { font-size: 12px; fill: #555555; }
+
+        /* Animation Classes */
+        .anther-burst {
+            transform-origin: 180px 120px;
+            animation: burst 12s infinite ease-in-out;
+        }
+
+        .pollen-1 { animation: movePollen1 12s infinite ease-in-out; opacity: 0; }
+        .pollen-2 { animation: movePollen2 12s infinite ease-in-out; opacity: 0; }
+        .pollen-3 { animation: movePollen3 12s infinite ease-in-out; opacity: 0; }
+        .pollen-4 { animation: hoverPollen 12s infinite ease-in-out; opacity: 0; }
+        .pollen-5 { animation: hoverPollen 12s infinite ease-in-out; animation-delay: 0.2s; opacity: 0; }
+
+        .pollen-tube {
+            stroke-dasharray: 180;
+            stroke-dashoffset: 180;
+            animation: growTube 12s infinite linear;
+        }
+
+        .fertilization-pulse {
+            transform-origin: 250px 315px;
+            animation: pulse 12s infinite ease-out;
+        }
+
+        /* Keyframes */
+        @keyframes burst {
+            0%, 5% { transform: scale(1) rotate(0deg); }
+            8% { transform: scale(1.15) rotate(3deg); }
+            11% { transform: scale(1.1) rotate(-3deg); }
+            14% { transform: scale(1.12) rotate(2deg); }
+            17%, 100% { transform: scale(1) rotate(0deg); }
+        }
+
+        @keyframes hoverPollen {
+            0%, 10% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+            15%, 83.3% { opacity: 1; transform: translate(0, 0) scale(1); }
+            85%, 100% { opacity: 0; transform: translate(0, 0) scale(1); }
+        }
+
+        @keyframes movePollen1 {
+            0%, 10% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+            15%, 25% { opacity: 1; transform: translate(0, 0) scale(1); }
+            33% { transform: translate(33px, -20px) scale(1); }
+            41.6%, 83.3% { transform: translate(66px, 28px) scale(1); opacity: 1; }
+            85%, 100% { transform: translate(66px, 28px) scale(1); opacity: 0; }
+        }
+
+        @keyframes movePollen2 {
+            0%, 10% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+            15%, 25% { opacity: 1; transform: translate(0, 0) scale(1); }
+            34% { transform: translate(37px, -25px) scale(1); }
+            41.6%, 83.3% { transform: translate(75px, 15px) scale(1); opacity: 1; }
+            85%, 100% { transform: translate(75px, 15px) scale(1); opacity: 0; }
+        }
+
+        @keyframes movePollen3 {
+            0%, 10% { opacity: 0; transform: translate(0, 0) scale(0.5); }
+            15%, 25% { opacity: 1; transform: translate(0, 0) scale(1); }
+            32% { transform: translate(35px, -15px) scale(1); }
+            41.6%, 83.3% { transform: translate(69px, 15px) scale(1); opacity: 1; }
+            85%, 100% { transform: translate(69px, 15px) scale(1); opacity: 0; }
+        }
+
+        @keyframes growTube {
+            0%, 41.6% { stroke-dashoffset: 180; opacity: 0; }
+            42% { opacity: 1; stroke-dashoffset: 180; }
+            66.6%, 83.3% { stroke-dashoffset: 0; opacity: 1; }
+            85%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes pulse {
+            0%, 66.6% { transform: scale(0); opacity: 0; }
+            68% { transform: scale(1); opacity: 1; }
+            75% { transform: scale(3); opacity: 0; }
+            76%, 100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Pointer Lines */
+        .pointer {
+            stroke: #95A5A6;
+            stroke-width: 1.5;
+            stroke-dasharray: 4,4;
+            fill: none;
+        }
+        .pointer-dot {
+            fill: #95A5A6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Self-Pollination (Autogamy) Animation</title>
+        <desc>Animated diagram showing pollen transferring from the anther to the stigma of the same flower, followed by pollen tube growth and fertilization.</desc>
+
+        <defs>
+            <!-- Gradients for realistic shading -->
+            <radialGradient id="petalGrad" cx="50%" cy="100%" r="100%">
+                <stop offset="0%" stop-color="#FF3366"/>
+                <stop offset="100%" stop-color="#FF85A2"/>
+            </radialGradient>
+            
+            <linearGradient id="receptacleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#27AE60"/>
+                <stop offset="100%" stop-color="#2ECC71"/>
+            </linearGradient>
+
+            <radialGradient id="pulseGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FFD700" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#FFD700" stop-opacity="0"/>
+            </radialGradient>
+
+            <linearGradient id="ovaryGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#A9DFBF"/>
+                <stop offset="100%" stop-color="#E8F4FD"/>
+            </linearGradient>
+
+            <!-- Drop shadow for depth -->
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.1"/>
+            </filter>
+        </defs>
+
+        <!-- Background (Handled by CSS, but added for safety) -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- TITLE & HEADINGS -->
+        <text x="400" y="40" text-anchor="middle" class="title">Self-Pollination: Autogamy</text>
+        <text x="400" y="65" text-anchor="middle" class="subtitle">Transfer of pollen from anther to stigma of the same flower.</text>
+
+        <!-- FLOWER STRUCTURE -->
+        <g transform="translate(20, 20)" filter="url(#shadow)">
+            
+            <!-- Back Petals -->
+            <path d="M 250 280 C 100 250, 80 100, 180 80 C 220 70, 240 150, 250 200 Z" fill="url(#petalGrad)" opacity="0.9"/>
+            <path d="M 250 280 C 400 250, 420 100, 320 80 C 280 70, 260 150, 250 200 Z" fill="url(#petalGrad)" opacity="0.9"/>
+            <path d="M 250 280 C 180 150, 200 50, 250 40 C 300 50, 320 150, 250 280 Z" fill="url(#petalGrad)" opacity="0.8"/>
+
+            <!-- Receptacle & Sepals -->
+            <path d="M 220 380 Q 250 400 280 380 L 260 430 L 240 430 Z" fill="url(#receptacleGrad)"/>
+            <path d="M 220 380 Q 200 350 190 320 Q 230 360 250 380 Z" fill="#27AE60"/>
+            <path d="M 280 380 Q 300 350 310 320 Q 270 360 250 380 Z" fill="#27AE60"/>
+
+            <!-- Stamens (Male Organs) -->
+            <!-- Right Stamen -->
+            <path d="M 265 340 Q 330 250 320 130" stroke="#A2D149" stroke-width="4" fill="none"/>
+            <path d="M 310 120 C 300 110, 320 100, 330 120 C 340 140, 310 140, 310 120" fill="#F1C40F"/>
+            <path d="M 330 120 C 340 110, 320 100, 310 120" fill="#D4AC0D"/> <!-- Anther detail -->
+
+            <!-- Left Stamen (Animated Dehiscence) -->
+            <path d="M 235 340 Q 170 250 180 130" stroke="#A2D149" stroke-width="4" fill="none"/>
+            <g class="anther-burst">
+                <path d="M 170 120 C 160 110, 180 100, 190 120 C 200 140, 170 140, 170 120" fill="#F1C40F"/>
+                <path d="M 190 120 C 200 110, 180 100, 170 120" fill="#D4AC0D"/> <!-- Anther detail -->
+                <!-- Dehiscence split line -->
+                <path d="M 175 115 Q 180 120 185 115" stroke="#B7950B" stroke-width="1.5" fill="none"/>
+            </g>
+
+            <!-- Pistil (Female Organs) - Cross Section -->
+            <!-- Ovary Outer Wall -->
+            <path d="M 220 350 C 220 290, 238 270, 242 250 L 242 140 L 258 140 L 258 250 C 262 270, 280 290, 280 350 Z" fill="#2ECC71" stroke="#1E8449" stroke-width="2"/>
+            
+            <!-- Ovary Inner Locule -->
+            <path d="M 228 345 C 228 300, 242 290, 250 290 C 258 290, 272 300, 272 345 Z" fill="url(#ovaryGrad)"/>
+            
+            <!-- Ovule -->
+            <path d="M 250 340 L 250 330" stroke="#2ECC71" stroke-width="3"/> <!-- Funiculus -->
+            <path d="M 245 330 C 230 330, 230 305, 248 305 C 248 312, 252 312, 252 305 C 270 305, 270 330, 255 330 Z" fill="#FFF9E3" stroke="#D4AC0D" stroke-width="1.5"/>
+            <!-- Embryo Sac -->
+            <ellipse cx="250" cy="320" rx="6" ry="8" fill="#Fcf3cf"/>
+
+            <!-- Stigma -->
+            <path d="M 235 140 C 225 125, 245 120, 250 135 C 255 120, 275 125, 265 140 Z" fill="#1E8449"/>
+            <path d="M 242 138 C 242 128, 258 128, 258 138 Z" fill="#145A32"/> <!-- Stigma detail -->
+
+            <!-- POLLEN TUBE (Animated) -->
+            <path d="M 250 135 L 250 300 Q 250 305 248 305" fill="none" stroke="#E67E22" stroke-width="3" stroke-linecap="round" class="pollen-tube"/>
+
+            <!-- FERTILIZATION PULSE (Animated) -->
+            <circle cx="250" cy="315" r="15" fill="url(#pulseGrad)" class="fertilization-pulse"/>
+
+            <!-- POLLEN GRAINS (Animated) -->
+            <!-- Moving Pollen -->
+            <circle cx="180" cy="110" r="3.5" fill="#FFD700" stroke="#D4AC0D" stroke-width="0.5" class="pollen-1"/>
+            <circle cx="175" cy="120" r="3.5" fill="#FFD700" stroke="#D4AC0D" stroke-width="0.5" class="pollen-2"/>
+            <circle cx="185" cy="125" r="3.5" fill="#FFD700" stroke="#D4AC0D" stroke-width="0.5" class="pollen-3"/>
+            
+            <!-- Hovering Pollen (Stay near anther) -->
+            <circle cx="170" cy="105" r="3" fill="#FFD700" stroke="#D4AC0D" stroke-width="0.5" class="pollen-4"/>
+            <circle cx="195" cy="115" r="3" fill="#FFD700" stroke="#D4AC0D" stroke-width="0.5" class="pollen-5"/>
+
+        </g>
+
+        <!-- LABELS AND POINTERS -->
+        <g transform="translate(20, 20)">
+            <!-- Anther -->
+            <polyline points="330,120 450,120" class="pointer"/>
+            <circle cx="330" cy="120" r="3" class="pointer-dot"/>
+            <text x="460" y="125" class="label">Anther (Male)</text>
+            <text x="460" y="140" class="legend-text">Produces pollen grains</text>
+
+            <!-- Stigma -->
+            <polyline points="265,135 450,170" class="pointer"/>
+            <circle cx="265" cy="135" r="3" class="pointer-dot"/>
+            <text x="460" y="175" class="label">Stigma (Female)</text>
+            <text x="460" y="190" class="legend-text">Sticky surface receives pollen</text>
+
+            <!-- Pollen Grain -->
+            <polyline points="250,110 450,220" class="pointer"/>
+            <text x="460" y="225" class="label">Pollen Grain</text>
+            <text x="460" y="240" class="legend-text">Carries male gametes</text>
+
+            <!-- Pollen Tube -->
+            <polyline points="250,240 450,270" class="pointer"/>
+            <circle cx="250" cy="240" r="3" class="pointer-dot"/>
+            <text x="460" y="275" class="label">Pollen Tube</text>
+            <text x="460" y="290" class="legend-text">Grows through style tissue</text>
+
+            <!-- Ovary -->
+            <polyline points="280,330 450,320" class="pointer"/>
+            <circle cx="280" cy="330" r="3" class="pointer-dot"/>
+            <text x="460" y="325" class="label">Ovary</text>
+            <text x="460" y="340" class="legend-text">Swollen base containing ovules</text>
+
+            <!-- Ovule -->
+            <polyline points="255,330 450,370" class="pointer"/>
+            <circle cx="255" cy="330" r="3" class="pointer-dot"/>
+            <text x="460" y="375" class="label">Ovule</text>
+            <text x="460" y="390" class="legend-text">Site of fertilization (Syngamy)</text>
+        </g>
+
+        <!-- SCIENTIFIC NOTE -->
+        <rect x="150" y="450" width="500" height="30" rx="15" fill="#FDEDEC" stroke="#F5B7B1" stroke-width="1"/>
+        <text x="400" y="470" text-anchor="middle" class="sci-note">Note: Continued autogamy over generations may lead to Inbreeding Depression.</text>
+
+        <!-- LEGEND -->
+        <g transform="translate(30, 420)">
+            <rect x="0" y="0" width="12" height="12" rx="2" fill="#F1C40F"/>
+            <text x="20" y="10" class="legend-text">Male Organs</text>
+            
+            <rect x="0" y="20" width="12" height="12" rx="2" fill="#1E8449"/>
+            <text x="20" y="30" class="legend-text">Female Organs</text>
+            
+            <rect x="0" y="40" width="12" height="12" rx="2" fill="#E67E22"/>
+            <text x="20" y="50" class="legend-text">Growth/Transfer</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

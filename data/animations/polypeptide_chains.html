@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From Polypeptide to Holoenzyme</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        :root {
+            --bg: #f8f9fa;
+            --protein: #98D8C8;
+            --protein-dark: #7ABCB0;
+            --heme: #B22222;
+            --oxygen: #FF6B6B;
+            --hydrogen: #FFFFFF;
+            --text-main: #2C3E50;
+            --active: #27AE60;
+        }
+
+        body {
+            margin: 0;
+            background-color: var(--bg);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--text-main);
+            font-size: 28px;
+            margin: 0 0 8px 0;
+            font-weight: 700;
+        }
+
+        p.subtitle {
+            color: #555;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Animations */
+        .poly-chain {
+            animation: polyChainAnim 15s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: 400px 250px;
+        }
+
+        .apoenzyme {
+            animation: apoAnim 15s infinite cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: 400px 280px;
+        }
+
+        .heme {
+            animation: hemeAnim 15s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .substrate {
+            animation: subAnim 15s infinite linear;
+        }
+
+        .prod-h2o-1 {
+            animation: prod1Anim 15s infinite cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .prod-h2o-2 {
+            animation: prod2Anim 15s infinite cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .prod-o2 {
+            animation: prod3Anim 15s infinite cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .flash {
+            animation: flashAnim 15s infinite ease-out;
+            transform-origin: 400px 200px;
+            pointer-events: none;
+        }
+
+        /* Label Animations */
+        .lbl-poly { animation: fadePoly 15s infinite; }
+        .lbl-apo { animation: fadeApo 15s infinite; }
+        .lbl-holo { animation: fadeHolo 15s infinite; }
+        .lbl-heme { animation: fadeHeme 15s infinite; }
+        .lbl-rxn { animation: fadeRxn 15s infinite; }
+
+        /* Keyframes */
+        @keyframes polyChainAnim {
+            0% { opacity: 0; transform: translateX(-50px) scale(1) rotate(0deg); }
+            5% { opacity: 1; transform: translateX(0) scale(1) rotate(0deg); }
+            10% { transform: translateX(10px) scale(1) rotate(5deg); }
+            15% { opacity: 1; transform: translateX(0) scale(1) rotate(0deg); }
+            22% { opacity: 0; transform: scale(0.2) rotate(180deg); }
+            100% { opacity: 0; transform: scale(0.2); }
+        }
+
+        @keyframes apoAnim {
+            0%, 15% { opacity: 0; transform: scale(0.8) translateY(0); }
+            22% { opacity: 1; transform: scale(1) translateY(0); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15)); }
+            35% { transform: scale(1) translateY(-6px); filter: drop-shadow(0 16px 20px rgba(0,0,0,0.1)); }
+            48% { transform: scale(1) translateY(0); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15)); }
+            50% { transform: scale(1.04) translateY(0); filter: drop-shadow(0 0 25px rgba(152,216,200,0.9)); }
+            53% { transform: scale(1) translateY(0); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15)); }
+            65% { transform: scale(1) translateY(-6px); filter: drop-shadow(0 16px 20px rgba(0,0,0,0.1)); }
+            85% { opacity: 1; transform: scale(1) translateY(0); filter: drop-shadow(0 10px 15px rgba(0,0,0,0.15)); }
+            90%, 100% { opacity: 0; transform: scale(0.8) translateY(0); }
+        }
+
+        @keyframes hemeAnim {
+            0%, 35% { opacity: 0; transform: translate(250px, -200px) rotate(45deg); }
+            40% { opacity: 1; transform: translate(250px, -200px) rotate(45deg); }
+            50%, 85% { opacity: 1; transform: translate(0, 0) rotate(0deg); }
+            90%, 100% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+        }
+
+        @keyframes subAnim {
+            0%, 60% { opacity: 0; transform: translate(-250px, -200px); }
+            63% { opacity: 1; transform: translate(-250px, -200px); }
+            70% { opacity: 1; transform: translate(0, 0); }
+            71% { transform: translate(-3px, 3px); }
+            72% { transform: translate(3px, -3px); }
+            73% { transform: translate(-3px, -3px); }
+            74% { transform: translate(3px, 3px); }
+            75% { opacity: 1; transform: translate(0, 0); }
+            76%, 100% { opacity: 0; transform: translate(0, 0); }
+        }
+
+        @keyframes prod1Anim {
+            0%, 75% { opacity: 0; transform: translate(0,0) scale(0.8); }
+            76% { opacity: 1; transform: translate(0,0) scale(1); }
+            85% { opacity: 0; transform: translate(-180px, -120px) scale(1.2); }
+            100% { opacity: 0; }
+        }
+
+        @keyframes prod2Anim {
+            0%, 75% { opacity: 0; transform: translate(0,0) scale(0.8); }
+            76% { opacity: 1; transform: translate(0,0) scale(1); }
+            85% { opacity: 0; transform: translate(180px, -120px) scale(1.2); }
+            100% { opacity: 0; }
+        }
+
+        @keyframes prod3Anim {
+            0%, 75% { opacity: 0; transform: translate(0,0) scale(0.8); }
+            76% { opacity: 1; transform: translate(0,0) scale(1); }
+            85% { opacity: 0; transform: translate(0, -200px) scale(1.2); }
+            100% { opacity: 0; }
+        }
+
+        @keyframes flashAnim {
+            0%, 74% { opacity: 0; transform: scale(0.5); }
+            75% { opacity: 0.9; transform: scale(1.5); }
+            78%, 100% { opacity: 0; transform: scale(2.5); }
+        }
+
+        @keyframes fadePoly { 0%, 5% {opacity:0;} 10%, 18% {opacity:1;} 22%, 100% {opacity:0;} }
+        @keyframes fadeApo { 0%, 20% {opacity:0;} 25%, 48% {opacity:1;} 50%, 100% {opacity:0;} }
+        @keyframes fadeHolo { 0%, 48% {opacity:0;} 52%, 85% {opacity:1;} 90%, 100% {opacity:0;} }
+        @keyframes fadeHeme { 0%, 38% {opacity:0;} 42%, 85% {opacity:1;} 90%, 100% {opacity:0;} }
+        @keyframes fadeRxn { 0%, 60% {opacity:0;} 65%, 85% {opacity:1;} 90%, 100% {opacity:0;} }
+
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Enzyme Activation: Polypeptide to Holoenzyme</h1>
+        <p class="subtitle">The role of prosthetic groups in forming a functional active site (e.g., Peroxidase/Catalase)</p>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Animated diagram showing a polypeptide chain folding into an apoenzyme, binding a heme prosthetic group to become a holoenzyme, and catalyzing the breakdown of hydrogen peroxide.">
+            
+            <defs>
+                <!-- Gradients -->
+                <radialGradient id="proteinGrad" cx="40%" cy="40%" r="60%">
+                    <stop offset="0%" stop-color="#B4E5D8"/>
+                    <stop offset="70%" stop-color="#7ABCB0"/>
+                    <stop offset="100%" stop-color="#5A9C90"/>
+                </radialGradient>
+                
+                <radialGradient id="oxygenGrad" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#FF8E8E"/>
+                    <stop offset="100%" stop-color="#E74C3C"/>
+                </radialGradient>
+
+                <radialGradient id="hydrogenGrad" cx="30%" cy="30%" r="70%">
+                    <stop offset="0%" stop-color="#FFFFFF"/>
+                    <stop offset="100%" stop-color="#E0E0E0"/>
+                </radialGradient>
+
+                <!-- Filters -->
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.1"/>
+                </filter>
+
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="8" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+            </defs>
+
+            <!-- Legend -->
+            <g transform="translate(20, 20)" font-family="Inter" font-size="12" fill="var(--text-main)">
+                <rect x="0" y="0" width="180" height="110" fill="#FFFFFF" rx="8" filter="url(#shadow)" opacity="0.95"/>
+                <text x="15" y="22" font-weight="700" font-size="13">Legend</text>
+                
+                <circle cx="20" cy="40" r="6" fill="#98D8C8" stroke="#5A9C90" stroke-width="1"/> 
+                <text x="35" y="44">Amino Acid / Protein</text>
+                
+                <rect x="14" y="54" width="12" height="12" fill="#B22222" rx="2"/> 
+                <text x="35" y="64">Heme (Prosthetic Grp)</text>
+                
+                <circle cx="20" cy="78" r="6" fill="url(#oxygenGrad)"/> 
+                <text x="35" y="82">Oxygen (O)</text>
+                
+                <circle cx="20" cy="96" r="5" fill="url(#hydrogenGrad)" stroke="#CCC"/> 
+                <text x="35" y="100">Hydrogen (H)</text>
+            </g>
+
+            <!-- Reaction Equation Label -->
+            <g class="lbl-rxn">
+                <rect x="275" y="20" width="250" height="46" fill="#FFFFFF" rx="23" filter="url(#shadow)"/>
+                <text x="400" y="49" font-family="'Roboto Mono', monospace" font-size="18" font-weight="700" fill="var(--text-main)" text-anchor="middle">2H₂O₂ → 2H₂O + O₂</text>
+            </g>
+
+            <!-- Polypeptide Chain -->
+            <g class="poly-chain">
+                <polyline points="150,250 170,230 195,225 220,240 240,265 265,275 290,260 310,235 335,220 360,230 380,255 405,270 430,265 450,240 475,225 500,235 520,260 545,275 570,260 590,235" fill="none" stroke="#7ABCB0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+                
+                <circle cx="150" cy="250" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="170" cy="230" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="195" cy="225" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="220" cy="240" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="240" cy="265" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="265" cy="275" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="290" cy="260" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="310" cy="235" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="335" cy="220" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="360" cy="230" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="380" cy="255" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="405" cy="270" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="430" cy="265" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="450" cy="240" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="475" cy="225" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="500" cy="235" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="520" cy="260" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="545" cy="275" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="570" cy="260" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+                <circle cx="590" cy="235" r="9" fill="#98D8C8" stroke="#5A9C90" stroke-width="2"/>
+            </g>
+
+            <!-- Apoenzyme / Holoenzyme Base -->
+            <path class="apoenzyme" d="M 400 400 
+                     C 480 400, 560 360, 560 280 
+                     C 560 200, 510 140, 450 140 
+                     C 430 140, 425 180, 420 200 
+                     L 400 235 
+                     L 380 200 
+                     C 375 180, 370 140, 350 140 
+                     C 290 140, 240 200, 240 280 
+                     C 240 360, 320 400, 400 400 Z" 
+                  fill="url(#proteinGrad)"/>
+
+            <!-- Catalytic Flash Effect -->
+            <circle class="flash" cx="400" cy="200" r="35" fill="#F1C40F" filter="url(#glow)"/>
+
+            <!-- Heme Prosthetic Group -->
+            <g class="heme">
+                <!-- Porphyrin Ring -->
+                <polygon points="400,190 430,220 400,250 370,220" fill="#B22222" stroke="#8B0000" stroke-width="2" stroke-linejoin="round"/>
+                <line x1="385" y1="205" x2="415" y2="235" stroke="#8B0000" stroke-width="1"/>
+                <line x1="415" y1="205" x2="385" y2="235" stroke="#8B0000" stroke-width="1"/>
+                <!-- Iron Atom -->
+                <circle cx="400" cy="220" r="12" fill="#E74C3C" filter="url(#shadow)"/>
+                <text x="400" y="224" font-family="Inter" font-size="10" font-weight="700" fill="#FFFFFF" text-anchor="middle">Fe²⁺</text>
+            </g>
+
+            <!-- Substrates (2 x H2O2) -->
+            <g class="substrate">
+                <!-- H2O2 Left -->
+                <g transform="translate(-18, -10)">
+                    <circle cx="400" cy="180" r="9" fill="url(#oxygenGrad)"/>
+                    <circle cx="416" cy="180" r="9" fill="url(#oxygenGrad)"/>
+                    <circle cx="390" cy="170" r="6" fill="url(#hydrogenGrad)" stroke="#B0B0B0" stroke-width="1"/>
+                    <circle cx="426" cy="170" r="6" fill="url(#hydrogenGrad)" stroke="#B0B0B0" stroke-width="1"/>
+                </g>
+                <!-- H2O2 Right -->
+                <g transform="translate(18, -25)">
+                    <circle cx="400" cy="180" r="9" fill="url(#oxygenGrad)"/>
+                    <circle cx="416" cy="180" r="9" fill="url(#oxygenGrad)"/>
+                    <circle cx="390" cy="170" r="6" fill="url(#hydrogenGrad)" stroke="#B0B0B0" stroke-width="1"/>
+                    <circle cx="426" cy="170" r="6" fill="url(#hydrogenGrad)" stroke="#B0B0B0" stroke-width="1"/>
+                </g>
+            </g>
+
+            <!-- Products -->
+            <!-- H2O Left -->
+            <g class="prod-h2o-1">
+                <circle cx="380" cy="180" r="9" fill="url(#oxygenGrad)"/>
+                <circle cx="370" cy="170" r="6" fill="url(#hydrogenGrad)" stroke="#B0B0B0" stroke-width="1"/>
+                <circle cx="390" cy="170" r="6" fill="url(#hydrogenGrad)" stroke="#B0B0B0" stroke-width="1"/>
+            </g>
+            <!-- H2O Right -->
+            <g class="prod-h2o-2">
+                <circle cx="420" cy="180" r="9" fill="url(#oxygenGrad)"/>
+                <circle cx="410" cy="170" r="6" fill="url(#hydrogenGrad)" stroke="#B0B0B0" stroke-width="1"/>
+                <circle cx="430" cy="170" r="6" fill="url(#hydrogenGrad)" stroke="#B0B0B0" stroke-width="1"/>
+            </g>
+            <!-- O2 Center/Up -->
+            <g class="prod-o2">
+                <circle cx="392" cy="160" r="9" fill="url(#oxygenGrad)"/>
+                <circle cx="408" cy="160" r="9" fill="url(#oxygenGrad)"/>
+                <line x1="392" y1="156" x2="408" y2="156" stroke="#C0392B" stroke-width="2"/>
+                <line x1="392" y1="164" x2="408" y2="164" stroke="#C0392B" stroke-width="2"/>
+            </g>
+
+            <!-- Dynamic Text Labels -->
+            <text class="lbl-poly" x="400" y="340" font-family="Inter" font-size="18" font-weight="700" fill="var(--text-main)" text-anchor="middle">Primary Structure: Polypeptide Chain</text>
+            
+            <text class="lbl-apo" x="400" y="445" font-family="Inter" font-size="20" font-weight="700" fill="var(--text-main)" text-anchor="middle">Apoenzyme (Inactive Protein Portion)</text>
+            
+            <text class="lbl-holo" x="400" y="445" font-family="Inter" font-size="20" font-weight="700" fill="var(--active)" text-anchor="middle">Holoenzyme (Active Complex)</text>
+            
+            <g class="lbl-heme">
+                <line x1="570" y1="130" x2="440" y2="210" stroke="var(--text-main)" stroke-width="2" stroke-dasharray="6,4"/>
+                <circle cx="440" cy="210" r="4" fill="var(--text-main)"/>
+                <rect x="560" y="105" width="210" height="50" fill="#FFFFFF" rx="6" filter="url(#shadow)"/>
+                <text x="575" y="125" font-family="Inter" font-size="14" font-weight="700" fill="var(--heme)">Prosthetic Group (Heme)</text>
+                <text x="575" y="143" font-family="Inter" font-size="12" fill="#555">Tightly bound co-factor</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

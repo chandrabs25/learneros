@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cellular Metabolism Dynamics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* --- CSS Animations --- */
+        
+        /* 12-second continuous loop for the metabolic cycle */
+        .glucose-group {
+            animation: anim-glucose 12s ease-in-out infinite;
+        }
+        .waste-group {
+            animation: anim-waste 12s ease-in-out infinite;
+        }
+        .atp-group {
+            animation: anim-atp 12s ease-in-out infinite;
+        }
+        .aa-group {
+            animation: anim-aa 12s ease-in-out infinite;
+        }
+        .protein-group {
+            animation: anim-protein 12s ease-in-out infinite;
+        }
+
+        /* Phase 1: Catabolism (0-4s / 0-33%) */
+        @keyframes anim-glucose {
+            0% { transform: translate(50px, 20px); opacity: 0; }
+            5% { opacity: 1; }
+            15% { transform: translate(150px, 240px); opacity: 1; }
+            16% { transform: translate(150px, 240px); opacity: 0; }
+            100% { transform: translate(150px, 240px); opacity: 0; }
+        }
+
+        @keyframes anim-waste {
+            0% { transform: translate(150px, 240px) scale(0.5); opacity: 0; }
+            15% { transform: translate(150px, 240px) scale(0.5); opacity: 0; }
+            16% { transform: translate(150px, 240px) scale(1); opacity: 1; }
+            25% { transform: translate(40px, 450px) scale(1.2); opacity: 1; }
+            33% { transform: translate(20px, 480px) scale(1.5); opacity: 0; }
+            100% { transform: translate(20px, 480px) scale(1); opacity: 0; }
+        }
+
+        /* Phase 2: Energy Transfer (4-6s / 33-50%) */
+        @keyframes anim-atp {
+            0% { transform: translate(150px, 240px) scale(0.5); opacity: 0; }
+            15% { transform: translate(150px, 240px) scale(0.5); opacity: 0; }
+            16% { transform: translate(150px, 240px) scale(1); opacity: 1; }
+            33% { transform: translate(150px, 240px) scale(1); opacity: 1; }
+            50% { transform: translate(600px, 240px) scale(1); opacity: 1; }
+            55% { transform: translate(600px, 240px) scale(1.3); opacity: 0; }
+            100% { transform: translate(600px, 240px) scale(0.5); opacity: 0; }
+        }
+
+        /* Phase 3: Anabolism (6-10s / 50-83%) */
+        @keyframes anim-aa {
+            0% { transform: translate(750px, 20px); opacity: 0; }
+            40% { transform: translate(750px, 20px); opacity: 0; }
+            42% { opacity: 1; }
+            50% { transform: translate(600px, 240px); opacity: 1; }
+            55% { transform: translate(600px, 240px) scale(0.8); opacity: 0; }
+            100% { transform: translate(600px, 240px); opacity: 0; }
+        }
+
+        @keyframes anim-protein {
+            0% { transform: translate(600px, 240px) scale(0.5); opacity: 0; }
+            50% { transform: translate(600px, 240px) scale(0.5); opacity: 0; }
+            55% { transform: translate(600px, 240px) scale(1); opacity: 1; }
+            70% { transform: translate(400px, 280px) scale(1); opacity: 1; }
+            80% { transform: translate(400px, 380px) scale(1); opacity: 1; }
+            85% { transform: translate(400px, 420px) scale(1); opacity: 0; }
+            100% { transform: translate(400px, 420px) scale(0.5); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">Cellular Metabolism: Anabolism and Catabolism</title>
+        <desc id="svg-desc">An animated diagram showing glucose entering a mitochondrion to produce ATP (catabolism), which then travels to a ribosome to power the synthesis of proteins from amino acids (anabolism).</desc>
+
+        <!-- Definitions for filters and markers -->
+        <defs>
+            <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feMerge>
+                    <feMergeNode in="blur" />
+                    <feMergeNode in="SourceGraphic" />
+                </feMerge>
+            </filter>
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.1"/>
+            </filter>
+        </defs>
+
+        <!-- Background / Extracellular Space -->
+        <rect width="100%" height="100%" fill="#ffffff" />
+
+        <!-- Plasma Membrane (Cell Boundary) -->
+        <rect x="40" y="70" width="720" height="400" rx="40" fill="#E8F4FD" stroke="#4A90D9" stroke-width="4" stroke-dasharray="12,6" />
+        <!-- Inner leaflet of lipid bilayer -->
+        <rect x="48" y="78" width="704" height="384" rx="32" fill="none" stroke="#4A90D9" stroke-width="2" stroke-dasharray="12,6" opacity="0.5" />
+
+        <!-- Title -->
+        <text x="400" y="40" font-family="Inter" font-size="24" font-weight="700" text-anchor="middle" fill="#2C3E50">Cellular Metabolism: Energy Coupling</text>
+
+        <!-- Nucleus (Top Center, partially visible) -->
+        <g transform="translate(400, 110)" filter="url(#shadow)">
+            <ellipse cx="0" cy="0" rx="90" ry="50" fill="#2C3E50" stroke="#1A252F" stroke-width="2"/>
+            <text x="0" y="5" font-family="Inter" font-size="14" font-weight="600" fill="#E8F4FD" text-anchor="middle" letter-spacing="2">NUCLEUS</text>
+        </g>
+
+        <!-- Organelle: Mitochondrion (Catabolic Hub) -->
+        <g transform="translate(150, 240)" filter="url(#shadow)">
+            <!-- Outer Membrane -->
+            <path d="M -35 -60 C 35 -80, 80 -30, 80 10 C 80 60, 35 80, -35 60 C -75 40, -75 -40, -35 -60 Z" fill="#E74C3C" stroke="#2C3E50" stroke-width="3"/>
+            <!-- Inner Membrane (Cristae) -->
+            <path d="M -40 -45 Q -10 -40 -20 -20 Q 15 -15 -10 0 Q 25 10 -15 25 Q 10 40 -25 45" fill="none" stroke="#FADBD8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+
+        <!-- Organelle: Ribosome / Rough ER (Anabolic Hub) -->
+        <g transform="translate(600, 240)" filter="url(#shadow)">
+            <!-- ER Membranes -->
+            <path d="M -45 -70 Q -15 -50 15 -70 Q 45 -90 75 -70" fill="none" stroke="#F39C12" stroke-width="8" stroke-linecap="round"/>
+            <path d="M -55 -40 Q -25 -20 5 -40 Q 35 -60 65 -40" fill="none" stroke="#F39C12" stroke-width="8" stroke-linecap="round"/>
+            <path d="M -65 -10 Q -35 10 -5 -10 Q 25 -30 55 -10" fill="none" stroke="#F39C12" stroke-width="8" stroke-linecap="round"/>
+            <path d="M -55 20 Q -25 40 5 20 Q 35 0 65 20" fill="none" stroke="#F39C12" stroke-width="8" stroke-linecap="round"/>
+            <path d="M -45 50 Q -15 70 15 50 Q 45 30 75 50" fill="none" stroke="#F39C12" stroke-width="8" stroke-linecap="round"/>
+            
+            <!-- Ribosomes (Dots) -->
+            <circle cx="-30" cy="-60" r="3" fill="#2C3E50"/>
+            <circle cx="0" cy="-62" r="3" fill="#2C3E50"/>
+            <circle cx="30" cy="-78" r="3" fill="#2C3E50"/>
+            <circle cx="-40" cy="-30" r="3" fill="#2C3E50"/>
+            <circle cx="-10" cy="-32" r="3" fill="#2C3E50"/>
+            <circle cx="20" cy="-48" r="3" fill="#2C3E50"/>
+            <circle cx="-50" cy="0" r="3" fill="#2C3E50"/>
+            <circle cx="-20" cy="-2" r="3" fill="#2C3E50"/>
+            <circle cx="10" cy="-18" r="3" fill="#2C3E50"/>
+            <circle cx="-40" cy="30" r="3" fill="#2C3E50"/>
+            <circle cx="-10" cy="28" r="3" fill="#2C3E50"/>
+            <circle cx="20" cy="12" r="3" fill="#2C3E50"/>
+            <circle cx="-30" cy="60" r="3" fill="#2C3E50"/>
+            <circle cx="0" cy="58" r="3" fill="#2C3E50"/>
+            <circle cx="30" cy="42" r="3" fill="#2C3E50"/>
+        </g>
+
+        <!-- Labels for Organelles and Processes -->
+        <g>
+            <!-- Mitochondrion Label -->
+            <rect x="70" y="335" width="160" height="45" rx="6" fill="#ffffff" opacity="0.85" stroke="#BDC3C7" stroke-width="1"/>
+            <text x="150" y="352" font-family="Inter" font-size="13" font-weight="700" text-anchor="middle" fill="#2C3E50">MITOCHONDRION</text>
+            <text x="150" y="370" font-family="Inter" font-size="11" font-weight="600" text-anchor="middle" fill="#C0392B">CATABOLISM (Exergonic)</text>
+
+            <!-- Ribosome Label -->
+            <rect x="520" y="335" width="160" height="45" rx="6" fill="#ffffff" opacity="0.85" stroke="#BDC3C7" stroke-width="1"/>
+            <text x="600" y="352" font-family="Inter" font-size="13" font-weight="700" text-anchor="middle" fill="#2C3E50">RIBOSOME / RER</text>
+            <text x="600" y="370" font-family="Inter" font-size="11" font-weight="600" text-anchor="middle" fill="#D35400">ANABOLISM (Endergonic)</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(620, 380)">
+            <rect x="0" y="0" width="130" height="95" rx="8" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" opacity="0.95" filter="url(#shadow)"/>
+            <text x="65" y="15" font-family="Inter" font-size="10" font-weight="700" fill="#2C3E50" text-anchor="middle">LEGEND</text>
+            
+            <!-- Legend: Glucose -->
+            <polygon points="15,25 20,28 20,33 15,36 10,33 10,28" fill="#2ECC71" stroke="#27AE60" stroke-width="1"/>
+            <text x="30" y="34" font-family="Inter" font-size="11" fill="#2C3E50">Glucose</text>
+            
+            <!-- Legend: ATP -->
+            <path d="M15,40 L17,44 L21,44 L18,47 L19,51 L15,49 L11,51 L12,47 L9,44 L13,44 Z" fill="#F1C40F" />
+            <text x="30" y="49" font-family="Inter" font-size="11" fill="#2C3E50">ATP (Energy)</text>
+            
+            <!-- Legend: Amino Acids -->
+            <circle cx="15" cy="61" r="4" fill="#9B59B6" />
+            <text x="30" y="65" font-family="Inter" font-size="11" fill="#2C3E50">Amino Acids</text>
+            
+            <!-- Legend: Protein -->
+            <path d="M 10 80 L 15 75 L 20 80" fill="none" stroke="#98D8C8" stroke-width="2"/>
+            <circle cx="10" cy="80" r="3" fill="#9B59B6"/>
+            <circle cx="15" cy="75" r="3" fill="#9B59B6"/>
+            <circle cx="20" cy="80" r="3" fill="#9B59B6"/>
+            <text x="30" y="80" font-family="Inter" font-size="11" fill="#2C3E50">Protein</text>
+        </g>
+
+        <!-- ================= ANIMATED ELEMENTS ================= -->
+
+        <!-- 1. Glucose Molecules (Catabolism Input) -->
+        <g class="glucose-group">
+            <polygon points="0,-8 7,-4 7,4 0,8 -7,4 -7,-4" fill="#2ECC71" stroke="#27AE60" stroke-width="1" transform="translate(0,0)"/>
+            <polygon points="0,-8 7,-4 7,4 0,8 -7,4 -7,-4" fill="#2ECC71" stroke="#27AE60" stroke-width="1" transform="translate(16,10)"/>
+            <polygon points="0,-8 7,-4 7,4 0,8 -7,4 -7,-4" fill="#2ECC71" stroke="#27AE60" stroke-width="1" transform="translate(-16,10)"/>
+            <text x="0" y="-15" font-family="Roboto Mono" font-size="12" font-weight="700" fill="#27AE60" text-anchor="middle">C₆H₁₂O₆</text>
+        </g>
+
+        <!-- 2. Waste Products (Catabolism Output) -->
+        <g class="waste-group">
+            <circle cx="-12" cy="-12" r="8" fill="#BDC3C7" opacity="0.7" stroke="#7F8C8D" stroke-width="1"/>
+            <text x="-12" y="-24" font-family="Roboto Mono" font-size="11" font-weight="700" fill="#7F8C8D" text-anchor="middle">CO₂</text>
+            
+            <circle cx="15" cy="5" r="6" fill="#BDC3C7" opacity="0.7" stroke="#7F8C8D" stroke-width="1"/>
+            <text x="15" y="-5" font-family="Roboto Mono" font-size="11" font-weight="700" fill="#7F8C8D" text-anchor="middle">H₂O</text>
+        </g>
+
+        <!-- 3. ATP Molecules (Energy Carrier) -->
+        <g class="atp-group">
+            <path d="M 0 -12 L 3 -4 L 11 -3 L 5 2 L 7 10 L 0 6 L -7 10 L -5 2 L -11 -3 L -3 -4 Z" fill="#F1C40F" filter="url(#glow)" transform="translate(0,0)"/>
+            <path d="M 0 -12 L 3 -4 L 11 -3 L 5 2 L 7 10 L 0 6 L -7 10 L -5 2 L -11 -3 L -3 -4 Z" fill="#F1C40F" filter="url(#glow)" transform="translate(22,-15) scale(0.8)"/>
+            <path d="M 0 -12 L 3 -4 L 11 -3 L 5 2 L 7 10 L 0 6 L -7 10 L -5 2 L -11 -3 L -3 -4 Z" fill="#F1C40F" filter="url(#glow)" transform="translate(-22,-10) scale(0.9)"/>
+            <text x="0" y="-22" font-family="Roboto Mono" font-size="14" font-weight="700" fill="#D68910" text-anchor="middle">ATP</text>
+        </g>
+
+        <!-- 4. Amino Acids (Anabolism Input) -->
+        <g class="aa-group">
+            <circle cx="0" cy="0" r="6" fill="#9B59B6" stroke="#8E44AD" stroke-width="1"/>
+            <circle cx="14" cy="10" r="6" fill="#9B59B6" stroke="#8E44AD" stroke-width="1"/>
+            <circle cx="-12" cy="14" r="6" fill="#9B59B6" stroke="#8E44AD" stroke-width="1"/>
+            <circle cx="6" cy="24" r="6" fill="#9B59B6" stroke="#8E44AD" stroke-width="1"/>
+            <text x="0" y="-12" font-family="Inter" font-size="11" font-weight="600" fill="#8E44AD" text-anchor="middle">Amino Acids</text>
+        </g>
+
+        <!-- 5. Protein Chain (Anabolism Output) -->
+        <g class="protein-group">
+            <!-- Polypeptide Backbone -->
+            <path d="M -25 12 L -12 -6 L 6 -6 L 18 12 L 36 18 L 48 0" fill="none" stroke="#98D8C8" stroke-width="4" stroke-linejoin="round"/>
+            <!-- Amino Acid Residues -->
+            <circle cx="-25" cy="12" r="6" fill="#9B59B6" stroke="#2C3E50" stroke-width="1"/>
+            <circle cx="-12" cy="-6" r="6" fill="#9B59B6" stroke="#2C3E50" stroke-width="1"/>
+            <circle cx="6" cy="-6" r="6" fill="#9B59B6" stroke="#2C3E50" stroke-width="1"/>
+            <circle cx="18" cy="12" r="6" fill="#9B59B6" stroke="#2C3E50" stroke-width="1"/>
+            <circle cx="36" cy="18" r="6" fill="#9B59B6" stroke="#2C3E50" stroke-width="1"/>
+            <circle cx="48" cy="0" r="6" fill="#9B59B6" stroke="#2C3E50" stroke-width="1"/>
+            <text x="12" y="-20" font-family="Inter" font-size="12" font-weight="700" fill="#16A085" text-anchor="middle">Protein</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

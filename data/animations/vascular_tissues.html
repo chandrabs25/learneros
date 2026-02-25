@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vascular Tissue Dynamics in Pteridophytes</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital@0;1&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* CSS Animations */
+        @keyframes flowUpXylem {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-260px); opacity: 0; }
+        }
+
+        @keyframes flowDownPhloem {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(260px); opacity: 0; }
+        }
+
+        @keyframes flowUpPhloem {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-260px); opacity: 0; }
+        }
+
+        @keyframes pulseGlow {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+
+        .flow-up-x {
+            animation: flowUpXylem 3s linear infinite;
+            will-change: transform, opacity;
+        }
+
+        .flow-down-p {
+            animation: flowDownPhloem 5s linear infinite;
+            will-change: transform, opacity;
+        }
+
+        .flow-up-p {
+            animation: flowUpPhloem 5s linear infinite;
+            will-change: transform, opacity;
+        }
+
+        .pulse {
+            animation: pulseGlow 3s ease-in-out infinite;
+            will-change: opacity;
+        }
+
+        /* Typography */
+        .title { font-size: 20px; font-weight: 700; fill: #2C3E50; text-anchor: middle; }
+        .subtitle { font-size: 16px; font-weight: 600; fill: #2C3E50; text-anchor: middle; }
+        .label { font-size: 14px; font-weight: 400; fill: #2C3E50; }
+        .label-end { font-size: 14px; font-weight: 400; fill: #2C3E50; text-anchor: end; }
+        .label-center { font-size: 14px; font-weight: 600; fill: #2C3E50; text-anchor: middle; }
+        .note { font-family: 'Roboto Mono', monospace; font-size: 12px; font-style: italic; fill: #2C3E50; text-anchor: middle; }
+        
+        .leader-line { stroke: #2C3E50; stroke-width: 1.5; fill: none; opacity: 0.6; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">Vascular Tissue Dynamics in Pteridophytes</title>
+        <desc id="svg-desc">Animated diagram showing the cross-section and longitudinal section of a pteridophyte stem, illustrating unidirectional water transport in xylem and bidirectional nutrient transport in phloem.</desc>
+
+        <defs>
+            <!-- Particles -->
+            <g id="water-molecule">
+                <circle cx="0" cy="0" r="4.5" fill="#3498DB" />
+            </g>
+            <g id="sucrose-molecule">
+                <polygon points="0,-5 4.33,-2.5 4.33,2.5 0,5 -4.33,2.5 -4.33,-2.5" fill="#F39C12" />
+            </g>
+
+            <!-- Patterns for Tissues -->
+            <pattern id="hex-cortex" width="30" height="51.96" patternUnits="userSpaceOnUse">
+                <path d="M15,0 L30,8.66 L30,25.98 L15,34.64 L0,25.98 L0,8.66 Z" fill="none" stroke="#2ECC71" stroke-width="1.5" opacity="0.4"/>
+                <path d="M-15,25.98 L0,34.64 L0,51.96 L-15,60.62 L-30,51.96 L-30,34.64 Z" fill="none" stroke="#2ECC71" stroke-width="1.5" opacity="0.4"/>
+                <path d="M15,51.96 L30,60.62 L30,77.94 L15,86.60 L0,77.94 L0,60.62 Z" fill="none" stroke="#2ECC71" stroke-width="1.5" opacity="0.4"/>
+                <path d="M45,25.98 L60,34.64 L60,51.96 L45,60.62 L30,51.96 L30,34.64 Z" fill="none" stroke="#2ECC71" stroke-width="1.5" opacity="0.4"/>
+            </pattern>
+
+            <pattern id="phloem-cells" width="12" height="12" patternUnits="userSpaceOnUse">
+                <circle cx="6" cy="6" r="4.5" fill="none" stroke="#4A90D9" stroke-width="1" opacity="0.6"/>
+            </pattern>
+
+            <pattern id="xylem-cells" width="16" height="16" patternUnits="userSpaceOnUse">
+                <circle cx="8" cy="8" r="6" fill="none" stroke="#1E8449" stroke-width="2" opacity="0.7"/>
+            </pattern>
+
+            <pattern id="lignin-spiral" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M -5 10 L 25 25 M -5 -5 L 25 10" stroke="#2C3E50" stroke-width="1.5" opacity="0.4" fill="none"/>
+            </pattern>
+
+            <!-- Arrow Marker -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50" opacity="0.7"/>
+            </marker>
+        </defs>
+
+        <!-- TITLE -->
+        <text x="400" y="40" class="title">Vascular Tissues in Pteridophytes: First Terrestrial Conducting Systems</text>
+
+        <!-- ========================================== -->
+        <!-- LEFT SIDE: CROSS SECTION (PROTOSTELE)      -->
+        <!-- ========================================== -->
+        <g transform="translate(0, 10)">
+            <text x="200" y="390" class="subtitle">Protostele (Stem X-Section)</text>
+
+            <!-- Epidermis & Ground Tissue (Cortex) -->
+            <circle cx="200" cy="220" r="120" fill="#E8F4FD" stroke="#2ECC71" stroke-width="3"/>
+            
+            <!-- Cortex Hexagon Pattern Donut -->
+            <path d="M 200 100 A 120 120 0 1 0 200 340 A 120 120 0 1 0 200 100 Z M 200 165 A 55 55 0 1 1 200 275 A 55 55 0 1 1 200 165 Z" fill="url(#hex-cortex)"/>
+
+            <!-- Phloem Ring -->
+            <g class="pulse">
+                <circle cx="200" cy="220" r="55" fill="#FEF9E7" stroke="#4A90D9" stroke-width="2"/>
+                <path d="M 200 165 A 55 55 0 1 0 200 275 A 55 55 0 1 0 200 165 Z M 200 185 A 35 35 0 1 1 200 255 A 35 35 0 1 1 200 185 Z" fill="url(#phloem-cells)"/>
+            </g>
+
+            <!-- Xylem Core -->
+            <g class="pulse">
+                <circle cx="200" cy="220" r="35" fill="#D4E6F1" stroke="#1E8449" stroke-width="3"/>
+                <circle cx="200" cy="220" r="35" fill="url(#xylem-cells)"/>
+            </g>
+
+            <!-- Cross Section Labels -->
+            <path d="M 45 160 L 80 220" class="leader-line"/>
+            <circle cx="80" cy="220" r="3" fill="#2C3E50"/>
+            <text x="40" y="155" class="label-end">Epidermis</text>
+
+            <path d="M 45 200 L 110 220" class="leader-line"/>
+            <circle cx="110" cy="220" r="3" fill="#2C3E50"/>
+            <text x="40" y="195" class="label-end">Cortex</text>
+
+            <path d="M 45 240 L 150 220" class="leader-line"/>
+            <circle cx="150" cy="220" r="3" fill="#2C3E50"/>
+            <text x="40" y="245" class="label-end">Phloem</text>
+
+            <path d="M 45 280 L 180 220" class="leader-line"/>
+            <circle cx="180" cy="220" r="3" fill="#2C3E50"/>
+            <text x="40" y="285" class="label-end">Xylem</text>
+        </g>
+
+
+        <!-- ========================================== -->
+        <!-- RIGHT SIDE: LONGITUDINAL SECTION           -->
+        <!-- ========================================== -->
+        <g transform="translate(0, 10)">
+            <text x="600" y="390" class="subtitle">Longitudinal Section</text>
+
+            <!-- Background Cortex representation -->
+            <rect x="510" y="70" width="180" height="280" fill="#E8F4FD" rx="10" opacity="0.5"/>
+
+            <!-- Phloem Left (Sieve Cells) -->
+            <rect x="530" y="70" width="30" height="280" fill="#FEF9E7" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="530" y1="140" x2="560" y2="150" stroke="#4A90D9" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="530" y1="210" x2="560" y2="220" stroke="#4A90D9" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="530" y1="280" x2="560" y2="290" stroke="#4A90D9" stroke-width="2" stroke-dasharray="4,3"/>
+
+            <!-- Phloem Right (Sieve Cells) -->
+            <rect x="640" y="70" width="30" height="280" fill="#FEF9E7" stroke="#4A90D9" stroke-width="2"/>
+            <line x1="640" y1="120" x2="670" y2="130" stroke="#4A90D9" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="640" y1="190" x2="670" y2="200" stroke="#4A90D9" stroke-width="2" stroke-dasharray="4,3"/>
+            <line x1="640" y1="260" x2="670" y2="270" stroke="#4A90D9" stroke-width="2" stroke-dasharray="4,3"/>
+
+            <!-- Xylem (Tracheids) -->
+            <!-- Tracheid 1 -->
+            <path d="M 565 90 L 565 330 L 577.5 360 L 590 330 L 590 90 L 577.5 60 Z" fill="#D4E6F1" stroke="#1E8449" stroke-width="2"/>
+            <path d="M 565 90 L 565 330 L 577.5 360 L 590 330 L 590 90 L 577.5 60 Z" fill="url(#lignin-spiral)"/>
+            
+            <!-- Tracheid 2 -->
+            <path d="M 587.5 110 L 587.5 350 L 600 380 L 612.5 350 L 612.5 110 L 600 80 Z" fill="#D4E6F1" stroke="#1E8449" stroke-width="2"/>
+            <path d="M 587.5 110 L 587.5 350 L 600 380 L 612.5 350 L 612.5 110 L 600 80 Z" fill="url(#lignin-spiral)"/>
+
+            <!-- Tracheid 3 -->
+            <path d="M 610 90 L 610 330 L 622.5 360 L 635 330 L 635 90 L 622.5 60 Z" fill="#D4E6F1" stroke="#1E8449" stroke-width="2"/>
+            <path d="M 610 90 L 610 330 L 622.5 360 L 635 330 L 635 90 L 622.5 60 Z" fill="url(#lignin-spiral)"/>
+
+            <!-- Animations: Xylem Flow (Upward) -->
+            <g>
+                <use href="#water-molecule" x="577.5" y="340" class="flow-up-x" style="animation-delay: 0s;"/>
+                <use href="#water-molecule" x="577.5" y="340" class="flow-up-x" style="animation-delay: 1s;"/>
+                <use href="#water-molecule" x="577.5" y="340" class="flow-up-x" style="animation-delay: 2s;"/>
+                
+                <use href="#water-molecule" x="600" y="360" class="flow-up-x" style="animation-delay: 0.5s;"/>
+                <use href="#water-molecule" x="600" y="360" class="flow-up-x" style="animation-delay: 1.5s;"/>
+                <use href="#water-molecule" x="600" y="360" class="flow-up-x" style="animation-delay: 2.5s;"/>
+                
+                <use href="#water-molecule" x="622.5" y="340" class="flow-up-x" style="animation-delay: 0.2s;"/>
+                <use href="#water-molecule" x="622.5" y="340" class="flow-up-x" style="animation-delay: 1.2s;"/>
+                <use href="#water-molecule" x="622.5" y="340" class="flow-up-x" style="animation-delay: 2.2s;"/>
+            </g>
+
+            <!-- Animations: Phloem Flow (Bidirectional) -->
+            <g>
+                <!-- Left Phloem: Flowing Down -->
+                <use href="#sucrose-molecule" x="545" y="80" class="flow-down-p" style="animation-delay: 0s;"/>
+                <use href="#sucrose-molecule" x="545" y="80" class="flow-down-p" style="animation-delay: 1.6s;"/>
+                <use href="#sucrose-molecule" x="545" y="80" class="flow-down-p" style="animation-delay: 3.2s;"/>
+
+                <!-- Right Phloem: Flowing Up -->
+                <use href="#sucrose-molecule" x="655" y="340" class="flow-up-p" style="animation-delay: 0.8s;"/>
+                <use href="#sucrose-molecule" x="655" y="340" class="flow-up-p" style="animation-delay: 2.4s;"/>
+                <use href="#sucrose-molecule" x="655" y="340" class="flow-up-p" style="animation-delay: 4.0s;"/>
+            </g>
+
+            <!-- Longitudinal Labels -->
+            <path d="M 620 130 L 700 130" class="leader-line"/>
+            <circle cx="620" cy="130" r="3" fill="#2C3E50"/>
+            <text x="705" y="134" class="label">Tracheids (Xylem)</text>
+
+            <path d="M 660 180 L 700 180" class="leader-line"/>
+            <circle cx="660" cy="180" r="3" fill="#2C3E50"/>
+            <text x="705" y="184" class="label">Sieve Cells (Phloem)</text>
+
+            <!-- Flow Direction Indicators -->
+            <line x1="510" y1="280" x2="510" y2="140" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.7"/>
+            <text x="500" y="210" transform="rotate(-90, 500, 210)" class="label-center" opacity="0.8">Unidirectional Flow</text>
+
+            <line x1="685" y1="180" x2="685" y2="130" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.7"/>
+            <line x1="685" y1="240" x2="685" y2="290" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.7"/>
+            <text x="695" y="210" transform="rotate(90, 695, 210)" class="label-center" opacity="0.8">Bidirectional Flow</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- LEGEND & FOOTER                            -->
+        <!-- ========================================== -->
+        <g transform="translate(20, 420)">
+            <rect x="0" y="0" width="210" height="60" fill="#ffffff" stroke="#2C3E50" stroke-width="1" rx="6" opacity="0.9"/>
+            
+            <circle cx="20" cy="20" r="5" fill="#3498DB"/>
+            <text x="35" y="24" class="label">Water/Minerals (Xylem)</text>
+            
+            <polygon points="15,35 25,35 29.33,40 25,45 15,45 10.67,40" fill="#F39C12"/>
+            <text x="35" y="44" class="label">Photosynthate (Phloem)</text>
+        </g>
+
+        <text x="400" y="485" class="note">Note: Pteridophytes primarily utilize tracheids rather than vessels for water conduction.</text>
+
+    </svg>
+</div>
+
+</body>
+</html>

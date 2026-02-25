@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mendel's Law of Segregation: Monohybrid Cross</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;1,400&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        /* Typography */
+        .title { font-family: 'Inter', sans-serif; font-size: 26px; font-weight: 700; fill: #2C3E50; text-anchor: middle; }
+        .subtitle { font-family: 'Inter', sans-serif; font-size: 16px; fill: #7f8c8d; text-anchor: middle; }
+        .label { font-family: 'Inter', sans-serif; font-size: 16px; font-weight: 600; fill: #2C3E50; text-anchor: middle; }
+        .geno { font-family: 'Roboto Mono', monospace; font-size: 18px; font-weight: 700; fill: #2C3E50; text-anchor: middle; }
+        .pheno { font-family: 'Inter', sans-serif; font-size: 14px; font-style: italic; fill: #27AE60; text-anchor: middle; }
+        .legend-text { font-family: 'Inter', sans-serif; font-size: 12px; fill: #2C3E50; }
+        .scientific { font-family: 'Inter', sans-serif; font-size: 14px; font-style: italic; fill: #7f8c8d; text-anchor: end; }
+
+        /* Floating Animation for Cells */
+        .float {
+            animation: float-anim 4s ease-in-out infinite;
+        }
+        @keyframes float-anim {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* --- Animation Timeline (20s Loop) --- */
+        
+        /* 1. Meiosis: Gametes move to center */
+        .move-T1 { animation: anim-T1 20s linear infinite; }
+        @keyframes anim-T1 {
+            0%, 14% { transform: translate(150px, 180px); opacity: 0; }
+            15% { transform: translate(150px, 180px); opacity: 1; }
+            24% { transform: translate(480px, 350px); opacity: 1; }
+            25%, 100% { transform: translate(480px, 350px); opacity: 0; }
+        }
+
+        .move-t1 { animation: anim-t1 20s linear infinite; }
+        @keyframes anim-t1 {
+            0%, 14% { transform: translate(850px, 180px); opacity: 0; }
+            15% { transform: translate(850px, 180px); opacity: 1; }
+            24% { transform: translate(520px, 350px); opacity: 1; }
+            25%, 100% { transform: translate(520px, 350px); opacity: 0; }
+        }
+
+        /* 2. Fertilization: Zygote forms and moves to F1 */
+        .move-zygote { animation: anim-zygote 20s linear infinite; }
+        @keyframes anim-zygote {
+            0%, 24% { transform: translate(500px, 350px) scale(0.8); opacity: 0; }
+            25% { transform: translate(500px, 350px) scale(1.2); opacity: 1; }
+            28% { transform: translate(500px, 350px) scale(1); opacity: 1; }
+            35% { transform: translate(200px, 480px) scale(1); opacity: 1; }
+            95% { transform: translate(200px, 480px) scale(1); opacity: 1; }
+            96%, 100% { transform: translate(200px, 480px) scale(1); opacity: 0; }
+        }
+
+        /* 3. F1 Plant Growth */
+        .grow-f1 {
+            transform-origin: 300px 550px;
+            animation: anim-f1-plant 20s ease-out infinite;
+        }
+        @keyframes anim-f1-plant {
+            0%, 35% { transform: scale(0); opacity: 0; }
+            36% { transform: scale(0); opacity: 1; }
+            45% { transform: scale(1); opacity: 1; }
+            95% { transform: scale(1); opacity: 1; }
+            96%, 100% { transform: scale(0); opacity: 0; }
+        }
+
+        .fade-f1-labels { animation: anim-f1-labels 20s linear infinite; }
+        @keyframes anim-f1-labels {
+            0%, 40% { opacity: 0; }
+            45%, 95% { opacity: 1; }
+            96%, 100% { opacity: 0; }
+        }
+
+        /* 4. F1 Gametes move to Punnett Square */
+        .f1-gam-top-T { animation: anim-f1-top-T 20s linear infinite; }
+        @keyframes anim-f1-top-T {
+            0%, 50% { transform: translate(200px, 480px); opacity: 0; }
+            51% { transform: translate(200px, 480px); opacity: 1; }
+            60% { transform: translate(640px, 380px); opacity: 1; }
+            95% { transform: translate(640px, 380px); opacity: 1; }
+            96%, 100% { transform: translate(640px, 380px); opacity: 0; }
+        }
+
+        .f1-gam-top-t { animation: anim-f1-top-t 20s linear infinite; }
+        @keyframes anim-f1-top-t {
+            0%, 50% { transform: translate(200px, 480px); opacity: 0; }
+            51% { transform: translate(200px, 480px); opacity: 1; }
+            60% { transform: translate(720px, 380px); opacity: 1; }
+            95% { transform: translate(720px, 380px); opacity: 1; }
+            96%, 100% { transform: translate(720px, 380px); opacity: 0; }
+        }
+
+        .f1-gam-left-T { animation: anim-f1-left-T 20s linear infinite; }
+        @keyframes anim-f1-left-T {
+            0%, 50% { transform: translate(200px, 480px); opacity: 0; }
+            51% { transform: translate(200px, 480px); opacity: 1; }
+            60% { transform: translate(560px, 460px); opacity: 1; }
+            95% { transform: translate(560px, 460px); opacity: 1; }
+            96%, 100% { transform: translate(560px, 460px); opacity: 0; }
+        }
+
+        .f1-gam-left-t { animation: anim-f1-left-t 20s linear infinite; }
+        @keyframes anim-f1-left-t {
+            0%, 50% { transform: translate(200px, 480px); opacity: 0; }
+            51% { transform: translate(200px, 480px); opacity: 1; }
+            60% { transform: translate(560px, 540px); opacity: 1; }
+            95% { transform: translate(560px, 540px); opacity: 1; }
+            96%, 100% { transform: translate(560px, 540px); opacity: 0; }
+        }
+
+        /* 5. Punnett Square Logic */
+        .punnett-grid { animation: anim-punnett-grid 20s linear infinite; }
+        @keyframes anim-punnett-grid {
+            0%, 60% { opacity: 0; }
+            65%, 95% { opacity: 1; }
+            96%, 100% { opacity: 0; }
+        }
+
+        .punnett-cell-1 { animation: anim-cell-1 20s linear infinite; }
+        @keyframes anim-cell-1 { 0%, 65% { opacity: 0; } 70%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+        .punnett-cell-2 { animation: anim-cell-2 20s linear infinite; }
+        @keyframes anim-cell-2 { 0%, 70% { opacity: 0; } 75%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+        .punnett-cell-3 { animation: anim-cell-3 20s linear infinite; }
+        @keyframes anim-cell-3 { 0%, 75% { opacity: 0; } 80%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+        .punnett-cell-4 { animation: anim-cell-4 20s linear infinite; }
+        @keyframes anim-cell-4 { 0%, 80% { opacity: 0; } 85%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+        /* Track Lines */
+        .track { stroke: #bdc3c7; stroke-width: 2; stroke-dasharray: 6 6; fill: none; opacity: 0.5; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg">
+    <title>Mendel's Law of Segregation: Monohybrid Cross</title>
+    <desc>An animated diagram showing the inheritance of plant height in peas, demonstrating the Law of Segregation and Dominance through P, F1, and F2 generations.</desc>
+
+    <defs>
+        <!-- Chromosomes & Alleles -->
+        <g id="chrom-T">
+            <rect x="-3" y="-15" width="6" height="30" rx="3" fill="#2C3E50"/>
+            <circle cx="0" cy="-5" r="4" fill="#FF6B6B"/>
+        </g>
+        <g id="chrom-t">
+            <rect x="-3" y="-15" width="6" height="30" rx="3" fill="#2C3E50"/>
+            <circle cx="0" cy="-5" r="4" fill="#FFA07A"/>
+        </g>
+
+        <!-- Diploid Nuclei -->
+        <g id="diploid-TT">
+            <g transform="translate(-6,0)"><use href="#chrom-T"/></g>
+            <g transform="translate(6,0)"><use href="#chrom-T"/></g>
+        </g>
+        <g id="diploid-tt">
+            <g transform="translate(-6,0)"><use href="#chrom-t"/></g>
+            <g transform="translate(6,0)"><use href="#chrom-t"/></g>
+        </g>
+        <g id="diploid-Tt">
+            <g transform="translate(-6,0)"><use href="#chrom-T"/></g>
+            <g transform="translate(6,0)"><use href="#chrom-t"/></g>
+        </g>
+
+        <!-- Cells -->
+        <g id="cell-bg">
+            <circle r="28" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+            <circle r="18" fill="none" stroke="#2C3E50" stroke-width="1" stroke-dasharray="2 2" opacity="0.5"/>
+        </g>
+        
+        <g id="cell-TT">
+            <use href="#cell-bg"/>
+            <use href="#diploid-TT"/>
+        </g>
+        <g id="cell-tt">
+            <use href="#cell-bg"/>
+            <use href="#diploid-tt"/>
+        </g>
+        <g id="cell-Tt">
+            <use href="#cell-bg"/>
+            <use href="#diploid-Tt"/>
+        </g>
+
+        <!-- Haploid Gametes -->
+        <g id="gamete-bg">
+            <circle r="20" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+        </g>
+        <g id="gamete-T">
+            <use href="#gamete-bg"/>
+            <use href="#chrom-T"/>
+        </g>
+        <g id="gamete-t">
+            <use href="#gamete-bg"/>
+            <use href="#chrom-t"/>
+        </g>
+
+        <!-- Plants -->
+        <g id="plant-tall">
+            <ellipse cx="0" cy="0" rx="25" ry="5" fill="rgba(0,0,0,0.08)"/>
+            <path d="M0,0 Q-10,-60 0,-120" stroke="#2ECC71" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <path d="M0,-20 Q-25,-30 -35,-10 Q-15,0 0,-20" fill="#2ECC71"/>
+            <path d="M0,-40 Q25,-50 35,-30 Q15,-20 0,-40" fill="#2ECC71"/>
+            <path d="M-2,-60 Q-30,-70 -40,-50 Q-20,-40 -2,-60" fill="#2ECC71"/>
+            <path d="M2,-80 Q30,-90 40,-70 Q20,-60 2,-80" fill="#2ECC71"/>
+            <path d="M0,-100 Q-20,-115 -25,-95 Q-10,-85 0,-100" fill="#2ECC71"/>
+            <path d="M0,-120 Q15,-135 20,-115 Q10,-105 0,-120" fill="#2ECC71"/>
+        </g>
+
+        <g id="plant-dwarf">
+            <ellipse cx="0" cy="0" rx="15" ry="4" fill="rgba(0,0,0,0.08)"/>
+            <path d="M0,0 Q5,-25 0,-50" stroke="#2ECC71" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M0,-15 Q-20,-20 -25,-5 Q-10,5 0,-15" fill="#2ECC71"/>
+            <path d="M0,-30 Q20,-35 25,-20 Q10,-10 0,-30" fill="#2ECC71"/>
+            <path d="M0,-45 Q-15,-55 -20,-40 Q-10,-30 0,-45" fill="#2ECC71"/>
+            <path d="M0,-50 Q15,-60 20,-45 Q10,-35 0,-50" fill="#2ECC71"/>
+        </g>
+    </defs>
+
+    <!-- Header -->
+    <text x="500" y="40" class="title">Mendel's Law of Segregation</text>
+    <text x="500" y="65" class="subtitle">Monohybrid Cross: Inheritance of Plant Height</text>
+
+    <!-- Legend -->
+    <g transform="translate(800, 20)">
+        <rect x="0" y="0" width="180" height="95" fill="#ffffff" stroke="#e0e0e0" rx="6" shadow="0 2px 5px rgba(0,0,0,0.1)"/>
+        <text x="90" y="20" class="label" style="font-size: 14px;">Legend</text>
+        <circle cx="20" cy="40" r="6" fill="#FF6B6B"/>
+        <text x="35" y="44" class="legend-text">Dominant Allele (T)</text>
+        <circle cx="20" cy="60" r="6" fill="#FFA07A"/>
+        <text x="35" y="64" class="legend-text">Recessive Allele (t)</text>
+        <rect x="14" y="74" width="12" height="12" fill="#2ECC71" rx="2"/>
+        <text x="35" y="84" class="legend-text">Plant Phenotype</text>
+    </g>
+
+    <!-- ================= P GENERATION ================= -->
+    <text x="500" y="110" class="label">Parental (P) Generation</text>
+    
+    <!-- Tall Parent (TT) -->
+    <g transform="translate(250, 250)">
+        <use href="#plant-tall"/>
+        <text x="0" y="25" class="geno">TT</text>
+        <text x="0" y="45" class="pheno">Homozygous Tall</text>
+    </g>
+    <g transform="translate(150, 180)" class="float">
+        <use href="#cell-TT"/>
+        <line x1="28" y1="28" x2="80" y2="50" stroke="#4A90D9" stroke-width="1" stroke-dasharray="2 2"/>
+    </g>
+
+    <!-- Dwarf Parent (tt) -->
+    <g transform="translate(750, 250)">
+        <use href="#plant-dwarf"/>
+        <text x="0" y="25" class="geno">tt</text>
+        <text x="0" y="45" class="pheno">Homozygous Dwarf</text>
+    </g>
+    <g transform="translate(850, 180)" class="float">
+        <use href="#cell-tt"/>
+        <line x1="-28" y1="28" x2="-80" y2="50" stroke="#4A90D9" stroke-width="1" stroke-dasharray="2 2"/>
+    </g>
+
+    <!-- Cross Symbol -->
+    <text x="500" y="220" class="title" style="fill: #7f8c8d;">×</text>
+
+    <!-- ================= GAMETOGENESIS & FERTILIZATION ================= -->
+    <!-- Tracks -->
+    <path d="M 150 210 Q 300 350 480 350" class="track"/>
+    <path d="M 850 210 Q 700 350 520 350" class="track"/>
+    <path d="M 500 350 Q 500 480 230 480" class="track"/>
+
+    <!-- Animated Gametes -->
+    <g class="move-T1">
+        <g class="float"><use href="#gamete-T"/></g>
+    </g>
+    <g class="move-t1">
+        <g class="float"><use href="#gamete-t"/></g>
+    </g>
+
+    <!-- Animated Zygote -->
+    <g class="move-zygote">
+        <g class="float"><use href="#cell-Tt"/></g>
+    </g>
+
+    <!-- ================= F1 GENERATION ================= -->
+    <g class="fade-f1-labels">
+        <text x="250" y="390" class="label">F1 Generation</text>
+        <text x="250" y="410" class="subtitle" style="font-size: 12px;">Law of Dominance</text>
+    </g>
+
+    <!-- F1 Plant -->
+    <g class="grow-f1">
+        <use href="#plant-tall"/>
+    </g>
+    <g class="fade-f1-labels">
+        <text x="300" y="580" class="geno">Tt</text>
+        <text x="300" y="600" class="pheno">Heterozygous Tall</text>
+    </g>
+
+    <!-- F1 Cell (Static after zygote arrives) -->
+    <g class="fade-f1-labels">
+        <g transform="translate(200, 480)" class="float">
+            <use href="#cell-Tt"/>
+            <line x1="28" y1="28" x2="80" y2="50" stroke="#4A90D9" stroke-width="1" stroke-dasharray="2 2"/>
+        </g>
+    </g>
+
+    <!-- ================= F2 GENERATION (PUNNETT SQUARE) ================= -->
+    <g class="punnett-grid">
+        <text x="680" y="330" class="label">F2 Generation</text>
+        <text x="680" y="350" class="subtitle" style="font-size: 12px;">3:1 Phenotypic Ratio</text>
+
+        <!-- Tracks to Punnett -->
+        <path d="M 200 480 Q 400 380 620 380" class="track"/>
+        <path d="M 200 480 Q 400 460 540 460" class="track"/>
+
+        <!-- Punnett Grid -->
+        <rect x="600" y="420" width="160" height="160" fill="#ffffff" stroke="#2C3E50" stroke-width="2" rx="4"/>
+        <line x1="600" y1="500" x2="760" y2="500" stroke="#2C3E50" stroke-width="2"/>
+        <line x1="680" y1="420" x2="680" y2="580" stroke="#2C3E50" stroke-width="2"/>
+        
+        <!-- Axis Labels (Static once grid appears) -->
+        <text x="640" y="405" class="geno">T</text>
+        <text x="720" y="405" class="geno">t</text>
+        <text x="580" y="465" class="geno">T</text>
+        <text x="580" y="545" class="geno">t</text>
+    </g>
+
+    <!-- Animated F1 Gametes to Punnett Axes -->
+    <g class="f1-gam-top-T"><use href="#gamete-T"/></g>
+    <g class="f1-gam-top-t"><use href="#gamete-t"/></g>
+    <g class="f1-gam-left-T"><use href="#gamete-T"/></g>
+    <g class="f1-gam-left-t"><use href="#gamete-t"/></g>
+
+    <!-- Punnett Cells Logic -->
+    <!-- Cell 1: TT -->
+    <g class="punnett-cell-1">
+        <rect x="601" y="421" width="78" height="78" fill="#E8F4FD" rx="2"/>
+        <text x="640" y="460" class="geno">TT</text>
+        <text x="640" y="480" class="pheno">Tall</text>
+    </g>
+    
+    <!-- Cell 2: Tt -->
+    <g class="punnett-cell-2">
+        <rect x="681" y="421" width="78" height="78" fill="#E8F4FD" rx="2"/>
+        <text x="720" y="460" class="geno">Tt</text>
+        <text x="720" y="480" class="pheno">Tall</text>
+    </g>
+
+    <!-- Cell 3: Tt -->
+    <g class="punnett-cell-3">
+        <rect x="601" y="501" width="78" height="78" fill="#E8F4FD" rx="2"/>
+        <text x="640" y="540" class="geno">Tt</text>
+        <text x="640" y="560" class="pheno">Tall</text>
+    </g>
+
+    <!-- Cell 4: tt -->
+    <g class="punnett-cell-4">
+        <rect x="681" y="501" width="78" height="78" fill="#fdf0e8" rx="2"/>
+        <text x="720" y="540" class="geno">tt</text>
+        <text x="720" y="560" class="pheno">Dwarf</text>
+    </g>
+
+    <!-- Footer -->
+    <text x="980" y="630" class="scientific">Model Organism: Pisum sativum</text>
+
+</svg>
+
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Species-Area Relationship</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Roboto+Mono:ital@0;1&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Typography */
+        .title { font-size: 22px; font-weight: 600; fill: #2C3E50; text-anchor: middle; }
+        .axis-label { font-size: 14px; font-weight: 600; fill: #2C3E50; text-anchor: middle; }
+        .math-text { font-family: 'Roboto Mono', monospace; font-style: italic; font-size: 16px; }
+        .legend-text { font-size: 12px; fill: #2C3E50; }
+        .annotation { font-size: 12px; fill: #7f8c8d; }
+
+        /* Animations */
+        .habitat-area {
+            transform-origin: 200px 250px;
+            animation: expandArea 15s infinite ease-in-out;
+        }
+
+        .species-trees { animation: fadeTrees 15s infinite ease-in-out; }
+        .species-birds { animation: fadeBirds 15s infinite ease-in-out; }
+        .species-insects { animation: fadeInsects 15s infinite ease-in-out; }
+        .species-mammals { animation: fadeMammals 15s infinite ease-in-out; }
+
+        .hyperbola-curve {
+            stroke-dasharray: 500;
+            stroke-dashoffset: 500;
+            animation: drawHyperbola 15s infinite ease-in-out;
+        }
+
+        .log-line {
+            stroke-dasharray: 500;
+            stroke-dashoffset: 500;
+            animation: drawLogLine 15s infinite ease-in-out;
+        }
+
+        .normal-labels { animation: fadeNormal 15s infinite ease-in-out; }
+        .log-labels { animation: fadeLog 15s infinite ease-in-out; }
+        .slope-indicator { animation: fadeLog 15s infinite ease-in-out; }
+
+        /* Keyframes */
+        @keyframes expandArea {
+            0%, 5% { transform: scale(0.25); }
+            26.6% { transform: scale(0.45); }
+            53.3%, 86.6% { transform: scale(1); }
+            95%, 100% { transform: scale(0.25); }
+        }
+
+        @keyframes fadeTrees {
+            0%, 2% { opacity: 0; transform: scale(0.8); }
+            5%, 86.6% { opacity: 1; transform: scale(1); }
+            92%, 100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        @keyframes fadeBirds {
+            0%, 26.6% { opacity: 0; transform: scale(0.8); }
+            32%, 86.6% { opacity: 1; transform: scale(1); }
+            92%, 100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        @keyframes fadeInsects {
+            0%, 40% { opacity: 0; transform: scale(0.8); }
+            46%, 86.6% { opacity: 1; transform: scale(1); }
+            92%, 100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        @keyframes fadeMammals {
+            0%, 53.3% { opacity: 0; transform: scale(0.8); }
+            59%, 86.6% { opacity: 1; transform: scale(1); }
+            92%, 100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        @keyframes drawHyperbola {
+            0%, 5% { stroke-dashoffset: 500; opacity: 1; }
+            53.3%, 66.6% { stroke-dashoffset: 0; opacity: 1; }
+            70%, 86.6% { opacity: 0; stroke-dashoffset: 0; }
+            92%, 100% { opacity: 0; stroke-dashoffset: 500; }
+        }
+
+        @keyframes drawLogLine {
+            0%, 66.6% { opacity: 0; stroke-dashoffset: 500; }
+            70% { opacity: 1; stroke-dashoffset: 500; }
+            80%, 86.6% { opacity: 1; stroke-dashoffset: 0; }
+            92%, 100% { opacity: 0; stroke-dashoffset: 500; }
+        }
+
+        @keyframes fadeNormal {
+            0%, 66.6% { opacity: 1; }
+            70%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeLog {
+            0%, 66.6% { opacity: 0; }
+            70%, 86.6% { opacity: 1; }
+            92%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" role="img" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">Species-Area Relationship Animation</title>
+        <desc id="svg-desc">An animated diagram showing how species richness increases with habitat area, transitioning from a rectangular hyperbola to a log-log straight line.</desc>
+
+        <!-- Definitions for Icons and Markers -->
+        <defs>
+            <!-- Arrowhead for axes -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50" />
+            </marker>
+
+            <!-- Species Icons -->
+            <g id="icon-tree" fill="#2ECC71">
+                <path d="M10,2 L18,14 L13,14 L20,24 L0,24 L7,14 L2,14 Z" />
+                <rect x="8" y="24" width="4" height="6" fill="#8B4513" />
+            </g>
+
+            <g id="icon-bird" fill="#F39C12">
+                <path d="M10,6 Q15,0 20,6 Q15,8 10,12 Q5,8 0,6 Q5,0 10,6 Z" />
+            </g>
+
+            <g id="icon-insect" fill="#98D8C8">
+                <circle cx="10" cy="10" r="3" fill="#2C3E50"/>
+                <path d="M10,10 Q15,0 20,5 Q15,12 10,10" fill="#98D8C8" stroke="#2C3E50" stroke-width="1"/>
+                <path d="M10,10 Q5,0 0,5 Q5,12 10,10" fill="#98D8C8" stroke="#2C3E50" stroke-width="1"/>
+            </g>
+
+            <g id="icon-mammal" fill="#E74C3C">
+                <circle cx="10" cy="12" r="6" />
+                <circle cx="4" cy="5" r="4" />
+                <circle cx="16" cy="5" r="4" />
+            </g>
+
+            <!-- Grid Pattern -->
+            <pattern id="grid" width="30" height="30" patternUnits="userSpaceOnUse">
+                <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#ecf0f1" stroke-width="1"/>
+            </pattern>
+        </defs>
+
+        <!-- Title -->
+        <text x="400" y="40" class="title">Species-Area Relationship (Alexander von Humboldt)</text>
+
+        <!-- ================= LEFT SIDE: ECOLOGICAL MAP ================= -->
+        
+        <!-- Habitat Area -->
+        <rect class="habitat-area" x="50" y="100" width="300" height="300" rx="30" fill="#E8F4FD" stroke="#4A90D9" stroke-width="4" />
+        
+        <!-- Species Groups -->
+        <g class="species-trees">
+            <use href="#icon-tree" x="180" y="230" />
+            <use href="#icon-tree" x="210" y="250" />
+            <use href="#icon-tree" x="190" y="270" />
+            <use href="#icon-tree" x="170" y="255" />
+        </g>
+
+        <g class="species-birds">
+            <use href="#icon-bird" x="120" y="150" />
+            <use href="#icon-bird" x="260" y="160" />
+            <use href="#icon-bird" x="240" y="300" />
+            <use href="#icon-bird" x="140" y="280" />
+            <use href="#icon-bird" x="200" y="180" />
+        </g>
+
+        <g class="species-insects">
+            <use href="#icon-insect" x="90" y="220" />
+            <use href="#icon-insect" x="290" y="240" />
+            <use href="#icon-insect" x="160" y="340" />
+            <use href="#icon-insect" x="230" y="120" />
+            <use href="#icon-insect" x="100" y="280" />
+            <use href="#icon-insect" x="280" y="320" />
+        </g>
+
+        <g class="species-mammals">
+            <use href="#icon-mammal" x="70" y="120" />
+            <use href="#icon-mammal" x="310" y="350" />
+            <use href="#icon-mammal" x="90" y="360" />
+            <use href="#icon-mammal" x="310" y="130" />
+            <use href="#icon-mammal" x="60" y="200" />
+        </g>
+
+        <!-- Map Label -->
+        <text x="200" y="430" class="axis-label">Habitat Area</text>
+
+        <!-- Legend -->
+        <rect x="40" y="440" width="320" height="40" rx="5" fill="#ffffff" stroke="#bdc3c7" stroke-width="1" />
+        <use href="#icon-tree" x="50" y="448" transform="scale(0.8) translate(12, 12)" />
+        <text x="75" y="465" class="legend-text">Angiosperms</text>
+        
+        <use href="#icon-bird" x="145" y="448" transform="scale(0.8) translate(36, 12)" />
+        <text x="170" y="465" class="legend-text">Avifauna</text>
+        
+        <use href="#icon-insect" x="225" y="448" transform="scale(0.8) translate(56, 12)" />
+        <text x="250" y="465" class="legend-text">Invertebrates</text>
+        
+        <use href="#icon-mammal" x="305" y="448" transform="scale(0.8) translate(76, 12)" />
+        <text x="330" y="465" class="legend-text">Mammals</text>
+
+
+        <!-- ================= RIGHT SIDE: MATHEMATICAL GRAPH ================= -->
+        
+        <g transform="translate(450, 100)">
+            <!-- Graph Grid -->
+            <rect x="0" y="0" width="300" height="300" fill="url(#grid)" />
+
+            <!-- Axes -->
+            <line x1="0" y1="300" x2="310" y2="300" stroke="#2C3E50" stroke-width="2" marker-end="url(#arrow)" />
+            <line x1="0" y1="300" x2="0" y2="-10" stroke="#2C3E50" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- Normal Scale Labels -->
+            <g class="normal-labels">
+                <text x="150" y="340" class="axis-label">Area (A)</text>
+                <text x="-150" y="-40" class="axis-label" transform="rotate(-90)">Species Richness (S)</text>
+                
+                <!-- Formula S = cA^z -->
+                <text x="120" y="80" class="math-text" fill="#2C3E50">
+                    S = CA<tspan dy="-8" font-size="12">z</tspan>
+                </text>
+            </g>
+
+            <!-- Log Scale Labels -->
+            <g class="log-labels">
+                <text x="150" y="340" class="axis-label">log(Area)</text>
+                <text x="-150" y="-40" class="axis-label" transform="rotate(-90)">log(Species)</text>
+                
+                <!-- Formula log S = log C + z log A -->
+                <text x="80" y="80" class="math-text" fill="#FF6B6B">
+                    log S = log C + z log A
+                </text>
+            </g>
+
+            <!-- Data Curves -->
+            <!-- Rectangular Hyperbola (Normal Scale) -->
+            <path class="hyperbola-curve" d="M 0 300 C 0 150, 100 50, 300 50" fill="none" stroke="#2C3E50" stroke-width="4" stroke-linecap="round" />
+            
+            <!-- Straight Line (Log-Log Scale) -->
+            <path class="log-line" d="M 0 300 L 300 50" fill="none" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" />
+
+            <!-- Slope Indicator (z) -->
+            <g class="slope-indicator">
+                <path d="M 180 150 L 240 150 L 240 100" fill="none" stroke="#7f8c8d" stroke-width="2" stroke-dasharray="4,4" />
+                <text x="250" y="130" class="math-text" fill="#FF6B6B">z</text>
+                <text x="265" y="128" class="annotation">(slope)</text>
+            </g>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

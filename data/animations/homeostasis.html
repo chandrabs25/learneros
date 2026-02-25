@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Homeostasis: Blood Glucose Regulation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            pointer-events: none;
+        }
+
+        .sci {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Organ Animations */
+        .blood-vessel {
+            transform-origin: 50% 250px;
+            animation: heartbeat 1.5s infinite ease-in-out;
+        }
+
+        .beta-cells {
+            transform-origin: 140px 65px;
+            animation: pulse-beta 16s infinite;
+        }
+
+        .alpha-cells {
+            transform-origin: 140px 65px;
+            animation: pulse-alpha 16s infinite;
+        }
+
+        .glycogen {
+            transform-origin: 120px 80px;
+            animation: glycogen-formation 16s infinite;
+        }
+
+        .hyper-glucose {
+            animation: hyper-glucose-anim 16s infinite;
+        }
+
+        /* Label Animations */
+        .label-high-bg { animation: label-high-bg 16s infinite; }
+        .label-insulin { animation: label-insulin 16s infinite; }
+        .label-glycogenesis { animation: label-glycogenesis 16s infinite; }
+        .label-low-bg { animation: label-low-bg 16s infinite; }
+        .label-glucagon { animation: label-glucagon 16s infinite; }
+        .label-glycogenolysis { animation: label-glycogenolysis 16s infinite; }
+
+        /* Keyframes */
+        @keyframes heartbeat {
+            0%, 100% { transform: scaleY(1); }
+            15% { transform: scaleY(1.04); }
+            30% { transform: scaleY(1); }
+            45% { transform: scaleY(1.02); }
+            60% { transform: scaleY(1); }
+        }
+
+        @keyframes pulse-beta {
+            0%, 25% { transform: scale(1); filter: brightness(1); }
+            5%, 15% { transform: scale(1.15); filter: brightness(1.2); }
+            26%, 100% { transform: scale(1); filter: brightness(1); }
+        }
+
+        @keyframes pulse-alpha {
+            0%, 50% { transform: scale(1); filter: brightness(1); }
+            55%, 65% { transform: scale(1.15); filter: brightness(1.2); }
+            75%, 100% { transform: scale(1); filter: brightness(1); }
+        }
+
+        @keyframes glycogen-formation {
+            0%, 25% { opacity: 0; transform: scale(0.6); }
+            35%, 75% { opacity: 1; transform: scale(1); }
+            85%, 100% { opacity: 0; transform: scale(0.6); }
+        }
+
+        @keyframes hyper-glucose-anim {
+            0%, 25% { opacity: 1; }
+            35%, 85% { opacity: 0; }
+            95%, 100% { opacity: 1; }
+        }
+
+        @keyframes label-high-bg {
+            0%, 20% { opacity: 1; transform: translateY(0); }
+            25%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes label-insulin {
+            5%, 25% { opacity: 1; transform: translateY(0); }
+            0%, 4%, 30%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes label-glycogenesis {
+            25%, 45% { opacity: 1; transform: translateY(0); }
+            0%, 20%, 50%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes label-low-bg {
+            50%, 70% { opacity: 1; transform: translateY(0); }
+            0%, 45%, 75%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes label-glucagon {
+            55%, 75% { opacity: 1; transform: translateY(0); }
+            0%, 50%, 80%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+        @keyframes label-glycogenolysis {
+            75%, 95% { opacity: 1; transform: translateY(0); }
+            0%, 70%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+        <title>Homeostasis: Blood Glucose Regulation</title>
+        <desc>Animated diagram showing how the pancreas and liver coordinate to maintain blood glucose homeostasis through negative feedback.</desc>
+
+        <defs>
+            <!-- Molecules -->
+            <polygon id="glucose" points="0,-5.5 4.8,-2.8 4.8,2.8 0,5.5 -4.8,2.8 -4.8,-2.8" fill="#F1C40F" stroke="#D4AC0D" stroke-width="1"/>
+            <circle id="insulin" r="4.5" fill="#98D8C8" filter="url(#glow)"/>
+            <polygon id="glucagon" points="0,-5 5,4 -5,4" fill="#FFA07A" filter="url(#glow)"/>
+            
+            <!-- Filters -->
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+            <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+                <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.15"/>
+            </filter>
+
+            <!-- Markers -->
+            <marker id="arrow-insulin" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 Z" fill="#98D8C8"/>
+            </marker>
+            <marker id="arrow-glucagon" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 Z" fill="#FFA07A"/>
+            </marker>
+            <marker id="arrow-glucose" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 Z" fill="#F1C40F"/>
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Title -->
+        <text x="400" y="35" text-anchor="middle" font-size="24" font-weight="bold" fill="#2C3E50">Homeostasis: Negative Feedback Loop (Blood Glucose)</text>
+
+        <!-- Bloodstream -->
+        <g class="blood-vessel">
+            <path d="M 0 210 L 800 210 L 800 290 L 0 290 Z" fill="#FADBD8" opacity="0.6"/>
+            <path d="M 0 210 L 800 210" stroke="#E74C3C" stroke-width="3" fill="none" />
+            <path d="M 0 290 L 800 290" stroke="#E74C3C" stroke-width="3" fill="none" />
+        </g>
+        <text x="15" y="280" font-size="14" font-weight="bold" fill="#C0392B">Bloodstream</text>
+
+        <!-- Flowing Glucose (Basal - Always present) -->
+        <g>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="5s" repeatCount="indefinite" begin="0s" path="M -50 230 L 850 230" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="5s" repeatCount="indefinite" begin="-1.2s" path="M -50 270 L 850 270" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="5s" repeatCount="indefinite" begin="-2.5s" path="M -50 245 L 850 245" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="5s" repeatCount="indefinite" begin="-3.8s" path="M -50 260 L 850 260" /></use>
+        </g>
+
+        <!-- Flowing Glucose (Hyperglycemia - Fades in and out) -->
+        <g class="hyper-glucose">
+            <use href="#glucose" x="0" y="0"><animateMotion dur="3s" repeatCount="indefinite" begin="0s" path="M -50 220 L 850 220" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="3s" repeatCount="indefinite" begin="-0.5s" path="M -50 280 L 850 280" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="3s" repeatCount="indefinite" begin="-1s" path="M -50 250 L 850 250" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="3s" repeatCount="indefinite" begin="-1.5s" path="M -50 235 L 850 235" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="3s" repeatCount="indefinite" begin="-2s" path="M -50 265 L 850 265" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="3s" repeatCount="indefinite" begin="-2.5s" path="M -50 240 L 850 240" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="3s" repeatCount="indefinite" begin="-0.8s" path="M -50 275 L 850 275" /></use>
+            <use href="#glucose" x="0" y="0"><animateMotion dur="3s" repeatCount="indefinite" begin="-1.8s" path="M -50 225 L 850 225" /></use>
+        </g>
+
+        <!-- Pancreas -->
+        <g id="pancreas" transform="translate(20, 50)" filter="url(#shadow)">
+            <!-- Lobulated body -->
+            <path d="M 40 70 C 40 30, 70 20, 100 20 C 130 20, 150 30, 170 20 C 200 10, 230 30, 240 60 C 250 90, 220 110, 190 110 C 160 110, 140 100, 110 110 C 80 120, 40 110, 40 70 Z" fill="#FDEBD0" stroke="#E67E22" stroke-width="2"/>
+            <text x="140" y="12" text-anchor="middle" font-size="14" font-weight="bold" fill="#D35400">Pancreas</text>
+            
+            <!-- Islet of Langerhans -->
+            <circle cx="140" cy="65" r="38" fill="#E8F4FD" stroke="#4A90D9" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <text x="140" y="128" text-anchor="middle" font-size="12" font-weight="bold" fill="#2C3E50">Islets of Langerhans</text>
+
+            <!-- Beta Cells -->
+            <g class="beta-cells">
+                <circle cx="140" cy="65" r="6" fill="#4A90D9"/>
+                <circle cx="128" cy="56" r="5" fill="#4A90D9"/>
+                <circle cx="152" cy="58" r="5.5" fill="#4A90D9"/>
+                <circle cx="135" cy="76" r="4.5" fill="#4A90D9"/>
+                <circle cx="148" cy="73" r="5" fill="#4A90D9"/>
+                <circle cx="125" cy="67" r="4" fill="#4A90D9"/>
+                <circle cx="155" cy="67" r="4.5" fill="#4A90D9"/>
+                <circle cx="142" cy="53" r="4" fill="#4A90D9"/>
+            </g>
+            <text x="75" y="68" font-size="12" font-weight="bold" fill="#4A90D9">β cells</text>
+
+            <!-- Alpha Cells -->
+            <g class="alpha-cells">
+                <circle cx="118" cy="45" r="4" fill="#F39C12"/>
+                <circle cx="162" cy="45" r="4.5" fill="#F39C12"/>
+                <circle cx="113" cy="75" r="4" fill="#F39C12"/>
+                <circle cx="165" cy="75" r="3.5" fill="#F39C12"/>
+                <circle cx="138" cy="35" r="4" fill="#F39C12"/>
+                <circle cx="140" cy="94" r="4" fill="#F39C12"/>
+                <circle cx="120" cy="88" r="3.5" fill="#F39C12"/>
+                <circle cx="160" cy="88" r="4" fill="#F39C12"/>
+            </g>
+            <text x="185" y="68" font-size="12" font-weight="bold" fill="#F39C12">α cells</text>
+        </g>
+
+        <!-- Liver -->
+        <g id="liver" transform="translate(500, 320)" filter="url(#shadow)">
+            <path d="M -20 30 C 50 0, 150 0, 250 30 C 280 40, 290 80, 270 130 C 230 180, 100 160, 20 130 C -20 110, -40 60, -20 30 Z" fill="#F39C12" stroke="#D35400" stroke-width="2"/>
+            <text x="120" y="165" text-anchor="middle" font-size="16" font-weight="bold" fill="#A04000">Liver</text>
+
+            <!-- Glycogen Cluster -->
+            <g class="glycogen">
+                <use href="#glucose" x="120" y="80" />
+                <use href="#glucose" x="129" y="75" />
+                <use href="#glucose" x="111" y="75" />
+                <use href="#glucose" x="120" y="69" />
+                <use href="#glucose" x="138" y="80" />
+                <use href="#glucose" x="102" y="80" />
+                <use href="#glucose" x="129" y="86" />
+                <use href="#glucose" x="111" y="86" />
+                <use href="#glucose" x="120" y="91" />
+                <use href="#glucose" x="138" y="91" />
+                <use href="#glucose" x="102" y="91" />
+                <use href="#glucose" x="129" y="97" />
+                <use href="#glucose" x="111" y="97" />
+                <use href="#glucose" x="147" y="86" />
+                <use href="#glucose" x="93" y="86" />
+            </g>
+        </g>
+
+        <!-- Legend -->
+        <g id="legend" transform="translate(620, 15)" filter="url(#shadow)">
+            <rect width="165" height="115" fill="#ffffff" stroke="#BDC3C7" rx="6" opacity="0.95"/>
+            <text x="82.5" y="22" text-anchor="middle" font-size="13" font-weight="bold" fill="#2C3E50">Key</text>
+            
+            <use href="#glucose" x="20" y="40" />
+            <text x="35" y="44" font-size="12" fill="#2C3E50">Glucose (<tspan class="sci">C₆H₁₂O₆</tspan>)</text>
+            
+            <use href="#insulin" x="20" y="62" />
+            <text x="35" y="66" font-size="12" fill="#2C3E50">Insulin</text>
+            
+            <use href="#glucagon" x="20" y="84" />
+            <text x="35" y="88" font-size="12" fill="#2C3E50">Glucagon</text>
+
+            <g transform="translate(20, 104)">
+                <use href="#glucose" x="-4.5" y="-2.5" transform="scale(0.6)"/>
+                <use href="#glucose" x="4.5" y="-2.5" transform="scale(0.6)"/>
+                <use href="#glucose" x="0" y="5" transform="scale(0.6)"/>
+            </g>
+            <text x="35" y="108" font-size="12" fill="#2C3E50">Glycogen</text>
+        </g>
+
+        <!-- Flow Paths (Dashed lines) -->
+        <path id="path-insulin" d="M 160 115 C 200 180, 400 200, 620 400" fill="none" stroke="#98D8C8" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#arrow-insulin)" opacity="0.4"/>
+        <path id="path-glucagon" d="M 160 115 C 300 80, 500 150, 620 400" fill="none" stroke="#FFA07A" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#arrow-glucagon)" opacity="0.4"/>
+        <path id="path-glucose-in" d="M 450 250 C 500 300, 550 350, 620 400" fill="none" stroke="#F1C40F" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#arrow-glucose)" opacity="0.4"/>
+        <path id="path-glucose-out" d="M 620 400 C 550 350, 500 300, 550 250" fill="none" stroke="#F1C40F" stroke-width="2" stroke-dasharray="6 6" marker-end="url(#arrow-glucose)" opacity="0.4"/>
+
+        <!-- Animated Molecules on Paths -->
+        
+        <!-- Insulin moving (Phase 1: 0-4s) -->
+        <g>
+            <use href="#insulin" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.0625; 0.25; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-insulin"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.0625; 0.24; 0.25; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+            <use href="#insulin" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.09375; 0.28125; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-insulin"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.09375; 0.27; 0.28125; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+            <use href="#insulin" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.125; 0.3125; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-insulin"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.125; 0.30; 0.3125; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+        </g>
+
+        <!-- Glucagon moving (Phase 3: 8-12s) -->
+        <g>
+            <use href="#glucagon" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.53125; 0.71875; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-glucagon"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.53125; 0.70; 0.71875; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+            <use href="#glucagon" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.5625; 0.75; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-glucagon"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.5625; 0.74; 0.75; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+            <use href="#glucagon" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.59375; 0.78125; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-glucagon"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.59375; 0.77; 0.78125; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+        </g>
+
+        <!-- Glucose entering liver (Phase 2: 4-8s) -->
+        <g>
+            <use href="#glucose" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.25; 0.375; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-glucose-in"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.25; 0.36; 0.375; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+            <use href="#glucose" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.28; 0.405; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-glucose-in"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.28; 0.39; 0.405; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+            <use href="#glucose" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.31; 0.435; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-glucose-in"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.31; 0.42; 0.435; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+        </g>
+
+        <!-- Glucose leaving liver (Phase 4: 12-16s) -->
+        <g>
+            <use href="#glucose" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.8125; 0.9375; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-glucose-out"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.8125; 0.92; 0.9375; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+            <use href="#glucose" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.84; 0.965; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-glucose-out"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.84; 0.95; 0.965; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+            <use href="#glucose" x="0" y="0">
+                <animateMotion dur="16s" repeatCount="indefinite" keyTimes="0; 0.87; 0.995; 1" keyPoints="0; 0; 1; 1" calcMode="linear"><mpath href="#path-glucose-out"/></animateMotion>
+                <animate attributeName="opacity" values="0; 0; 1; 0; 0" keyTimes="0; 0.87; 0.98; 0.995; 1" dur="16s" repeatCount="indefinite" />
+            </use>
+        </g>
+
+        <!-- Process Labels -->
+        <g font-size="15" font-weight="bold" text-anchor="middle">
+            <!-- Phase 1 Labels -->
+            <g class="label-high-bg">
+                <rect x="300" y="170" width="220" height="26" fill="#ffffff" rx="4" opacity="0.85"/>
+                <text x="410" y="188" fill="#C0392B">Stimulus: High Blood Glucose</text>
+            </g>
+            <g class="label-insulin">
+                <rect x="210" y="140" width="140" height="26" fill="#ffffff" rx="4" opacity="0.85"/>
+                <text x="280" y="158" fill="#16A085">Insulin Secretion</text>
+            </g>
+            
+            <!-- Phase 2 Labels -->
+            <g class="label-glycogenesis">
+                <rect x="500" y="290" width="240" height="26" fill="#ffffff" rx="4" opacity="0.85"/>
+                <text x="620" y="308" fill="#27AE60">Glucose → Glycogen (Storage)</text>
+            </g>
+            
+            <!-- Phase 3 Labels -->
+            <g class="label-low-bg">
+                <rect x="300" y="170" width="220" height="26" fill="#ffffff" rx="4" opacity="0.85"/>
+                <text x="410" y="188" fill="#8E44AD">Stimulus: Low Blood Glucose</text>
+            </g>
+            <g class="label-glucagon">
+                <rect x="270" y="110" width="160" height="26" fill="#ffffff" rx="4" opacity="0.85"/>
+                <text x="350" y="128" fill="#D35400">Glucagon Secretion</text>
+            </g>
+            
+            <!-- Phase 4 Labels -->
+            <g class="label-glycogenolysis">
+                <rect x="500" y="290" width="240" height="26" fill="#ffffff" rx="4" opacity="0.85"/>
+                <text x="620" y="308" fill="#E67E22">Glycogen → Glucose (Release)</text>
+            </g>
+        </g>
+    </svg>
+</div>
+
+</body>
+</html>

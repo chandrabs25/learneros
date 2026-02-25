@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pentamerous Radial Symmetry in Echinodermata</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,700;1,400&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            max-height: 100vh;
+            background-color: #f8f9fa;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+
+        /* Typography */
+        .title { font-size: 22px; font-weight: 700; fill: #2C3E50; }
+        .subtitle { font-size: 14px; font-weight: 400; fill: #555555; }
+        .sci-name { font-size: 16px; font-style: italic; fill: #2C3E50; font-weight: 600; }
+        .label-title { font-size: 13px; font-weight: 600; fill: #2C3E50; }
+        .label-desc { font-size: 11px; font-weight: 400; fill: #555555; }
+        .legend-text { font-size: 12px; font-weight: 400; fill: #2C3E50; }
+        .legend-title { font-size: 13px; font-weight: 700; fill: #2C3E50; }
+
+        /* Animations */
+        @keyframes revealMask {
+            0%, 5% { stroke-dashoffset: 300; }
+            20%, 85% { stroke-dashoffset: 0; }
+            95%, 100% { stroke-dashoffset: 300; }
+        }
+
+        @keyframes fadeSymmetryGroup {
+            0%, 5% { opacity: 0; }
+            10%, 90% { opacity: 0.5; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes pulseMadreporite {
+            0%, 25% { transform: scale(1); fill: #D35400; }
+            30%, 35% { transform: scale(1.3); fill: #F39C12; }
+            40%, 100% { transform: scale(1); fill: #D35400; }
+        }
+
+        @keyframes flowStone {
+            0%, 30% { stroke-dashoffset: 11; opacity: 0; }
+            32% { opacity: 1; }
+            38% { stroke-dashoffset: 0; opacity: 1; }
+            45%, 100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+
+        @keyframes flowRing {
+            0%, 35% { stroke-dashoffset: 158; opacity: 0; }
+            38% { opacity: 1; }
+            48% { stroke-dashoffset: 0; opacity: 1; }
+            60% { opacity: 1; }
+            70%, 100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+
+        @keyframes flowRadial {
+            0%, 45% { stroke-dashoffset: 155; opacity: 0; }
+            48% { opacity: 1; }
+            65% { stroke-dashoffset: 0; opacity: 1; }
+            80% { opacity: 1; }
+            85%, 100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+
+        @keyframes moveFeetLeft {
+            0%, 70% { transform: translateX(0); }
+            75% { transform: translateX(-3px); }
+            85% { transform: translateX(2px); }
+            95%, 100% { transform: translateX(0); }
+        }
+
+        @keyframes moveFeetRight {
+            0%, 70% { transform: translateX(0); }
+            75% { transform: translateX(3px); }
+            85% { transform: translateX(-2px); }
+            95%, 100% { transform: translateX(0); }
+        }
+
+        /* Label Fade Animations */
+        @keyframes fadeSymmetryLabel {
+            0%, 5% { opacity: 0; }
+            10%, 30% { opacity: 1; }
+            35%, 100% { opacity: 0; }
+        }
+        @keyframes fadeLabelMadre {
+            0%, 25% { opacity: 0; }
+            30%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes fadeLabelRing {
+            0%, 35% { opacity: 0; }
+            40%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes fadeLabelRadial {
+            0%, 50% { opacity: 0; }
+            55%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes fadeLabelFeet {
+            0%, 70% { opacity: 0; }
+            75%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Applying Animations */
+        .mask-line {
+            stroke-dasharray: 300;
+            animation: revealMask 10s infinite ease-in-out;
+        }
+        .symmetry-group {
+            animation: fadeSymmetryGroup 10s infinite ease-in-out;
+        }
+        .madreporite-anim {
+            transform-origin: 422px 222px;
+            animation: pulseMadreporite 10s infinite ease-in-out;
+        }
+        .stone-highlight {
+            stroke-dasharray: 11;
+            animation: flowStone 10s infinite ease-in-out;
+        }
+        .ring-highlight {
+            stroke-dasharray: 158;
+            animation: flowRing 10s infinite ease-in-out;
+        }
+        .radial-highlight {
+            stroke-dasharray: 155;
+            animation: flowRadial 10s infinite ease-in-out;
+        }
+        .feet-left {
+            animation: moveFeetLeft 10s infinite ease-in-out;
+        }
+        .feet-right {
+            animation: moveFeetRight 10s infinite ease-in-out;
+        }
+        .anim-label-symmetry { animation: fadeSymmetryLabel 10s infinite ease-in-out; }
+        .anim-label-madre { animation: fadeLabelMadre 10s infinite ease-in-out; }
+        .anim-label-ring { animation: fadeLabelRing 10s infinite ease-in-out; }
+        .anim-label-radial { animation: fadeLabelRadial 10s infinite ease-in-out; }
+        .anim-label-feet { animation: fadeLabelFeet 10s infinite ease-in-out; }
+
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Pentamerous Radial Symmetry and Water Vascular System in Echinodermata</title>
+        <desc>Animated diagram showing the five-fold radial symmetry of a starfish and the flow of water through its water vascular system, from the madreporite to the tube feet.</desc>
+
+        <defs>
+            <!-- Body Gradient -->
+            <radialGradient id="bodyGrad" cx="50%" cy="50%" r="50%">
+                <stop offset="60%" stop-color="#F5B041"/>
+                <stop offset="100%" stop-color="#E67E22"/>
+            </radialGradient>
+
+            <!-- Ossicles Pattern for one arm -->
+            <g id="arm-ossicles">
+                <circle cx="400" cy="80" r="1.5" fill="#ffffff" opacity="0.8"/>
+                <circle cx="392" cy="105" r="2" fill="#ffffff" opacity="0.6"/>
+                <circle cx="408" cy="125" r="1.5" fill="#ffffff" opacity="0.9"/>
+                <circle cx="388" cy="155" r="2" fill="#ffffff" opacity="0.5"/>
+                <circle cx="412" cy="170" r="1.5" fill="#ffffff" opacity="0.7"/>
+                <circle cx="398" cy="190" r="2.5" fill="#ffffff" opacity="0.6"/>
+                <circle cx="380" cy="210" r="1.5" fill="#ffffff" opacity="0.8"/>
+                <circle cx="420" cy="225" r="2" fill="#ffffff" opacity="0.5"/>
+            </g>
+
+            <!-- Radial Canal and Tube Feet for one arm -->
+            <g id="radial-system">
+                <!-- Base Radial Canal -->
+                <line x1="400" y1="225" x2="400" y2="70" stroke="#3498DB" stroke-width="3" stroke-linecap="round"/>
+                <!-- Highlight Radial Canal (Animated) -->
+                <line class="radial-highlight" x1="400" y1="225" x2="400" y2="70" stroke="#AED6F1" stroke-width="3" stroke-linecap="round"/>
+                
+                <!-- Tube Feet Left -->
+                <g class="feet-left">
+                    <ellipse cx="391" cy="205" rx="4" ry="3" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="391" cy="180" rx="4" ry="3" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="391" cy="155" rx="4" ry="3" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="392" cy="130" rx="3.5" ry="2.5" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="393" cy="105" rx="3" ry="2" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="394" cy="85" rx="2.5" ry="1.5" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                </g>
+                
+                <!-- Tube Feet Right -->
+                <g class="feet-right">
+                    <ellipse cx="409" cy="205" rx="4" ry="3" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="409" cy="180" rx="4" ry="3" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="409" cy="155" rx="4" ry="3" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="408" cy="130" rx="3.5" ry="2.5" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="407" cy="105" rx="3" ry="2" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                    <ellipse cx="406" cy="85" rx="2.5" ry="1.5" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+                </g>
+            </g>
+
+            <!-- Mask for Symmetry Lines Animation -->
+            <mask id="axis-mask">
+                <g stroke="#ffffff" stroke-width="8" stroke-linecap="round">
+                    <line x1="400" y1="250" x2="400" y2="-50" class="mask-line"/>
+                    <line x1="400" y1="250" x2="400" y2="550" class="mask-line"/>
+                    
+                    <line x1="400" y1="250" x2="400" y2="-50" class="mask-line" transform="rotate(72 400 250)"/>
+                    <line x1="400" y1="250" x2="400" y2="550" class="mask-line" transform="rotate(72 400 250)"/>
+                    
+                    <line x1="400" y1="250" x2="400" y2="-50" class="mask-line" transform="rotate(144 400 250)"/>
+                    <line x1="400" y1="250" x2="400" y2="550" class="mask-line" transform="rotate(144 400 250)"/>
+                    
+                    <line x1="400" y1="250" x2="400" y2="-50" class="mask-line" transform="rotate(216 400 250)"/>
+                    <line x1="400" y1="250" x2="400" y2="550" class="mask-line" transform="rotate(216 400 250)"/>
+                    
+                    <line x1="400" y1="250" x2="400" y2="-50" class="mask-line" transform="rotate(288 400 250)"/>
+                    <line x1="400" y1="250" x2="400" y2="550" class="mask-line" transform="rotate(288 400 250)"/>
+                </g>
+            </mask>
+        </defs>
+
+        <!-- Static Titles -->
+        <text x="25" y="40" class="title">Pentamerous Radial Symmetry</text>
+        <text x="25" y="62" class="subtitle">Water Vascular System of Phylum Echinodermata</text>
+        <text x="775" y="475" class="sci-name" text-anchor="end">Asterias sp. (Starfish)</text>
+
+        <!-- Starfish Organism Group -->
+        <g id="starfish">
+            <!-- Body Outline (Animal Tissue #F39C12) -->
+            <path d="M 400 60 Q 415 150 432.3 205.5 Q 500 195 580.7 191.3 Q 500 235 452.3 267 Q 480 330 511.7 403.7 Q 450 340 400 305 Q 350 340 288.3 403.7 Q 320 330 347.7 267 Q 300 235 219.3 191.3 Q 300 195 367.7 205.5 Q 385 150 400 60 Z" fill="url(#bodyGrad)" stroke="#D68910" stroke-width="2.5" stroke-linejoin="round"/>
+
+            <!-- Calcareous Ossicles -->
+            <use href="#arm-ossicles" />
+            <use href="#arm-ossicles" transform="rotate(72 400 250)" />
+            <use href="#arm-ossicles" transform="rotate(144 400 250)" />
+            <use href="#arm-ossicles" transform="rotate(216 400 250)" />
+            <use href="#arm-ossicles" transform="rotate(288 400 250)" />
+
+            <!-- Water Vascular System -->
+            <!-- Radial Canals & Tube Feet -->
+            <use href="#radial-system" />
+            <use href="#radial-system" transform="rotate(72 400 250)" />
+            <use href="#radial-system" transform="rotate(144 400 250)" />
+            <use href="#radial-system" transform="rotate(216 400 250)" />
+            <use href="#radial-system" transform="rotate(288 400 250)" />
+
+            <!-- Ring Canal -->
+            <circle cx="400" cy="250" r="25" fill="none" stroke="#3498DB" stroke-width="4"/>
+            <circle class="ring-highlight" cx="400" cy="250" r="25" fill="none" stroke="#AED6F1" stroke-width="4" transform="rotate(-54 400 250)"/>
+
+            <!-- Stone Canal -->
+            <line x1="422" y1="222" x2="415" y2="232" stroke="#3498DB" stroke-width="3.5" stroke-linecap="round"/>
+            <line class="stone-highlight" x1="422" y1="222" x2="415" y2="232" stroke="#AED6F1" stroke-width="3.5" stroke-linecap="round"/>
+
+            <!-- Madreporite -->
+            <g>
+                <circle class="madreporite-anim" cx="422" cy="222" r="7" fill="#D35400" stroke="#A04000" stroke-width="1"/>
+                <!-- Sieve plate texture -->
+                <circle cx="420" cy="220" r="0.8" fill="#ffffff" opacity="0.8"/>
+                <circle cx="424" cy="221" r="0.8" fill="#ffffff" opacity="0.8"/>
+                <circle cx="421" cy="224" r="0.8" fill="#ffffff" opacity="0.8"/>
+                <circle cx="423" cy="223" r="0.8" fill="#ffffff" opacity="0.8"/>
+                <circle cx="422" cy="219" r="0.6" fill="#ffffff" opacity="0.8"/>
+            </g>
+        </g>
+
+        <!-- Symmetry Axes (Animated Reveal) -->
+        <g class="symmetry-group" mask="url(#axis-mask)">
+            <line x1="400" y1="30" x2="400" y2="470" stroke="#2C3E50" stroke-width="2" stroke-dasharray="8,6"/>
+            <line x1="400" y1="30" x2="400" y2="470" stroke="#2C3E50" stroke-width="2" stroke-dasharray="8,6" transform="rotate(72 400 250)"/>
+            <line x1="400" y1="30" x2="400" y2="470" stroke="#2C3E50" stroke-width="2" stroke-dasharray="8,6" transform="rotate(144 400 250)"/>
+            <line x1="400" y1="30" x2="400" y2="470" stroke="#2C3E50" stroke-width="2" stroke-dasharray="8,6" transform="rotate(216 400 250)"/>
+            <line x1="400" y1="30" x2="400" y2="470" stroke="#2C3E50" stroke-width="2" stroke-dasharray="8,6" transform="rotate(288 400 250)"/>
+        </g>
+
+        <!-- Labels & Annotations -->
+        
+        <!-- Central Disc (Static) -->
+        <g>
+            <polyline points="370,250 240,250" fill="none" stroke="#2C3E50" stroke-width="1" stroke-dasharray="2,2"/>
+            <text x="232" y="254" class="label-title" text-anchor="end">Central Disc</text>
+        </g>
+
+        <!-- Symmetry Label -->
+        <g class="anim-label-symmetry">
+            <text x="400" y="470" font-size="16" font-weight="700" fill="#2C3E50" text-anchor="middle">5 Planes of Symmetry</text>
+            <text x="400" y="488" font-size="12" fill="#555555" text-anchor="middle">(Pentamerous Radial Symmetry)</text>
+        </g>
+
+        <!-- Madreporite Label -->
+        <g class="anim-label-madre">
+            <polyline points="426,218 460,160 560,160" fill="none" stroke="#2C3E50" stroke-width="1.5"/>
+            <circle cx="426" cy="218" r="2.5" fill="#2C3E50"/>
+            <text x="568" y="156" class="label-title">Madreporite</text>
+            <text x="568" y="172" class="label-desc">Water intake (sieve plate)</text>
+        </g>
+
+        <!-- Ring Canal Label -->
+        <g class="anim-label-ring">
+            <polyline points="418,268 460,320 560,320" fill="none" stroke="#2C3E50" stroke-width="1.5"/>
+            <circle cx="418" cy="268" r="2.5" fill="#2C3E50"/>
+            <text x="568" y="316" class="label-title">Ring Canal</text>
+            <text x="568" y="332" class="label-desc">Central distribution vessel</text>
+        </g>
+
+        <!-- Radial Canal Label -->
+        <g class="anim-label-radial">
+            <polyline points="341,331 280,331 240,331" fill="none" stroke="#2C3E50" stroke-width="1.5"/>
+            <circle cx="341" cy="331" r="2.5" fill="#2C3E50"/>
+            <text x="232" y="327" class="label-title" text-anchor="end">Radial Canal</text>
+            <text x="232" y="343" class="label-desc" text-anchor="end">Carries water to arms</text>
+        </g>
+
+        <!-- Tube Feet Label -->
+        <g class="anim-label-feet">
+            <polyline points="327,351 280,385 240,385" fill="none" stroke="#2C3E50" stroke-width="1.5"/>
+            <circle cx="327" cy="351" r="2.5" fill="#2C3E50"/>
+            <text x="232" y="381" class="label-title" text-anchor="end">Tube Feet (Ampullae)</text>
+            <text x="232" y="397" class="label-desc" text-anchor="end">Hydraulic locomotion & suction</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(25, 360)">
+            <rect x="0" y="0" width="165" height="115" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" opacity="0.95"/>
+            <text x="12" y="22" class="legend-title">Legend</text>
+            
+            <circle cx="18" cy="40" r="4.5" fill="#D35400"/>
+            <text x="32" y="44" class="legend-text">Madreporite</text>
+            
+            <line x1="12" y1="60" x2="24" y2="60" stroke="#3498DB" stroke-width="3.5" stroke-linecap="round"/>
+            <text x="32" y="64" class="legend-text">WVS Canals</text>
+            
+            <ellipse cx="18" cy="80" rx="5" ry="3.5" fill="#85C1E9" stroke="#2980B9" stroke-width="0.5"/>
+            <text x="32" y="84" class="legend-text">Tube Feet</text>
+            
+            <line x1="12" y1="100" x2="24" y2="100" stroke="#2C3E50" stroke-width="2" stroke-dasharray="3,2"/>
+            <text x="32" y="104" class="legend-text">Symmetry Axis</text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

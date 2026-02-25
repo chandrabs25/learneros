@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natural Selection: Adaptive Radiation</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital@0;1&display=swap');
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            max-height: 100vh;
+            background-color: #f8f9fa;
+        }
+
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #2C3E50;
+        }
+
+        .sciname {
+            font-family: 'Roboto Mono', monospace;
+            font-style: italic;
+            fill: #5D4037;
+        }
+
+        /* Animation Classes */
+        .fit, .unfit, .offspring, .selection-pulse {
+            transform-box: fill-box;
+            transform-origin: center;
+        }
+
+        .mainland-population {
+            animation: mainland-fade 15s infinite;
+        }
+
+        .move-island-1 {
+            animation: move-island-1 15s ease-in-out infinite;
+        }
+
+        .move-island-2 {
+            animation: move-island-2 15s ease-in-out infinite;
+        }
+
+        .move-island-3 {
+            animation: move-island-3 15s ease-in-out infinite;
+        }
+
+        .unfit {
+            animation: unfit-fade 15s infinite;
+        }
+
+        .fit {
+            animation: fit-thrive 15s infinite;
+        }
+
+        .offspring {
+            animation: offspring-appear 15s infinite;
+        }
+
+        .selection-pulse {
+            animation: pulse-filter 15s infinite;
+        }
+
+        .flow-arrow {
+            stroke-dasharray: 8, 8;
+            animation: dash-flow 1.5s linear infinite;
+        }
+
+        .flow-group {
+            animation: flow-fade 15s infinite;
+        }
+
+        /* Keyframes */
+        @keyframes mainland-fade {
+            0%, 5% { opacity: 0; }
+            10%, 90% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        @keyframes move-island-1 {
+            0%, 10% { transform: translate(0, 0); opacity: 0; }
+            15%, 20% { transform: translate(0, 0); opacity: 1; }
+            35%, 90% { transform: translate(650px, -200px); opacity: 1; }
+            95%, 100% { transform: translate(650px, -200px); opacity: 0; }
+        }
+
+        @keyframes move-island-2 {
+            0%, 10% { transform: translate(0, 0); opacity: 0; }
+            15%, 20% { transform: translate(0, 0); opacity: 1; }
+            35%, 90% { transform: translate(650px, 0px); opacity: 1; }
+            95%, 100% { transform: translate(650px, 0px); opacity: 0; }
+        }
+
+        @keyframes move-island-3 {
+            0%, 10% { transform: translate(0, 0); opacity: 0; }
+            15%, 20% { transform: translate(0, 0); opacity: 1; }
+            35%, 90% { transform: translate(650px, 200px); opacity: 1; }
+            95%, 100% { transform: translate(650px, 200px); opacity: 0; }
+        }
+
+        @keyframes unfit-fade {
+            0%, 40% { opacity: 1; transform: translateX(0) rotate(0); }
+            42% { transform: translateX(-3px) rotate(10deg); }
+            44% { transform: translateX(3px) rotate(-10deg); }
+            46% { transform: translateX(-3px) rotate(10deg); }
+            48% { transform: translateX(3px) rotate(-10deg); }
+            50% { opacity: 0.3; transform: translateX(0) rotate(0); }
+            55%, 100% { opacity: 0; }
+        }
+
+        @keyframes fit-thrive {
+            0%, 48% { transform: scale(1); }
+            52%, 60% { transform: scale(1.25); }
+            65% { transform: scale(1.15); }
+            70%, 85% { transform: scale(1.25); }
+            90%, 100% { transform: scale(1); }
+        }
+
+        @keyframes offspring-appear {
+            0%, 60% { opacity: 0; transform: scale(0); }
+            65%, 90% { opacity: 1; transform: scale(1); }
+            95%, 100% { opacity: 0; transform: scale(1); }
+        }
+
+        @keyframes pulse-filter {
+            0%, 38% { opacity: 0; transform: scale(0.8); stroke-width: 2px; }
+            40% { opacity: 0.8; transform: scale(1); stroke-width: 6px; }
+            45% { opacity: 0.2; transform: scale(1.05); stroke-width: 2px; }
+            50% { opacity: 0.8; transform: scale(1); stroke-width: 6px; }
+            55%, 100% { opacity: 0; transform: scale(1.1); stroke-width: 2px; }
+        }
+
+        @keyframes dash-flow {
+            to { stroke-dashoffset: -16; }
+        }
+
+        @keyframes flow-fade {
+            0%, 15% { opacity: 0; }
+            20%, 40% { opacity: 1; }
+            45%, 100% { opacity: 0.15; }
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 1000 650" xmlns="http://www.w3.org/2000/svg">
+        <title>Natural Selection and Adaptive Radiation in Darwin's Finches</title>
+        <desc>An animated diagram showing an ancestral population of finches with varying beak sizes migrating to three different islands. On each island, environmental pressures select for specific beak shapes. Unfit birds die out, while fit birds survive and reproduce.</desc>
+
+        <defs>
+            <!-- Ancestral Finch (Medium Beak) -->
+            <g id="finch-ancestral">
+                <ellipse cx="0" cy="0" rx="14" ry="10" fill="#5D4037" />
+                <path d="M -10,0 L -22,-6 L -18,6 Z" fill="#5D4037" />
+                <circle cx="6" cy="-3" r="1.5" fill="#f8f9fa" />
+                <circle cx="6.5" cy="-3" r="0.8" fill="#2C3E50" />
+                <path d="M -2,0 Q 5,6 -6,3" stroke="#3E2A25" stroke-width="1.5" fill="none" />
+                <polygon points="12,-3 20,0 12,3" fill="#8D6E63" />
+            </g>
+
+            <!-- Heavy Beak Finch (Seed Eater) -->
+            <g id="finch-heavy">
+                <ellipse cx="0" cy="0" rx="14" ry="10" fill="#5D4037" />
+                <path d="M -10,0 L -22,-6 L -18,6 Z" fill="#5D4037" />
+                <circle cx="6" cy="-3" r="1.5" fill="#f8f9fa" />
+                <circle cx="6.5" cy="-3" r="0.8" fill="#2C3E50" />
+                <path d="M -2,0 Q 5,6 -6,3" stroke="#3E2A25" stroke-width="1.5" fill="none" />
+                <polygon points="11,-5 22,1 11,5" fill="#8D6E63" />
+            </g>
+
+            <!-- Thin Beak Finch (Insect Eater) -->
+            <g id="finch-thin">
+                <ellipse cx="0" cy="0" rx="14" ry="10" fill="#5D4037" />
+                <path d="M -10,0 L -22,-6 L -18,6 Z" fill="#5D4037" />
+                <circle cx="6" cy="-3" r="1.5" fill="#f8f9fa" />
+                <circle cx="6.5" cy="-3" r="0.8" fill="#2C3E50" />
+                <path d="M -2,0 Q 5,6 -6,3" stroke="#3E2A25" stroke-width="1.5" fill="none" />
+                <polygon points="13,-2 26,0 13,2" fill="#8D6E63" />
+            </g>
+
+            <!-- Long Beak Finch (Cactus Eater) -->
+            <g id="finch-long">
+                <ellipse cx="0" cy="0" rx="14" ry="10" fill="#5D4037" />
+                <path d="M -10,0 L -22,-6 L -18,6 Z" fill="#5D4037" />
+                <circle cx="6" cy="-3" r="1.5" fill="#f8f9fa" />
+                <circle cx="6.5" cy="-3" r="0.8" fill="#2C3E50" />
+                <path d="M -2,0 Q 5,6 -6,3" stroke="#3E2A25" stroke-width="1.5" fill="none" />
+                <path d="M 12,-3 Q 22,-3 28,3 Q 18,1 12,3 Z" fill="#8D6E63" />
+            </g>
+
+            <!-- Food: Seed -->
+            <g id="food-seed">
+                <ellipse cx="0" cy="0" rx="4" ry="2.5" fill="#F39C12" stroke="#D68910" stroke-width="1"/>
+            </g>
+
+            <!-- Food: Insect -->
+            <g id="food-insect">
+                <circle cx="0" cy="0" r="2" fill="#E74C3C" />
+                <path d="M 0,0 Q 4,-4 6,-1 Q 3,2 0,0" fill="#FADBD8" />
+                <path d="M 0,0 Q -4,-4 -6,-1 Q -3,2 0,0" fill="#FADBD8" />
+            </g>
+
+            <!-- Food: Cactus -->
+            <g id="food-cactus">
+                <ellipse cx="0" cy="0" rx="8" ry="12" fill="#2ECC71" />
+                <circle cx="0" cy="-12" r="4" fill="#FF6B6B" />
+                <line x1="-8" y1="0" x2="-11" y2="-2" stroke="#27AE60" stroke-width="1" />
+                <line x1="8" y1="0" x2="11" y2="-2" stroke="#27AE60" stroke-width="1" />
+                <line x1="-6" y1="8" x2="-9" y2="10" stroke="#27AE60" stroke-width="1" />
+                <line x1="6" y1="8" x2="9" y2="10" stroke="#27AE60" stroke-width="1" />
+            </g>
+
+            <!-- Arrow Marker -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0,0 L 10,5 L 0,10 Z" fill="#2C3E50" />
+            </marker>
+        </defs>
+
+        <!-- Background Elements -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+
+        <!-- Title and Subtitle -->
+        <text x="30" y="40" font-size="24" font-weight="700" fill="#2C3E50">Natural Selection: Adaptive Radiation in Darwin's Finches</text>
+        <text x="30" y="65" font-size="14" fill="#7F8C8D">Observe how pre-existing variation allows specific traits to survive and reproduce in different environments.</text>
+
+        <!-- Flow Arrows -->
+        <g class="flow-group">
+            <path d="M 240,320 Q 500,150 690,150" fill="none" stroke="#2C3E50" stroke-width="2" class="flow-arrow" marker-end="url(#arrow)" />
+            <path d="M 240,350 L 690,350" fill="none" stroke="#2C3E50" stroke-width="2" class="flow-arrow" marker-end="url(#arrow)" />
+            <path d="M 240,380 Q 500,550 690,550" fill="none" stroke="#2C3E50" stroke-width="2" class="flow-arrow" marker-end="url(#arrow)" />
+        </g>
+
+        <!-- Mainland (Ancestral Island) -->
+        <circle cx="150" cy="350" r="90" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" stroke-dasharray="6,4" />
+        <text x="150" y="470" font-size="16" font-weight="600" text-anchor="middle" fill="#2C3E50">Ancestral Population</text>
+        <text x="150" y="490" font-size="12" text-anchor="middle" fill="#7F8C8D">High trait variation exists</text>
+
+        <!-- Island 1 (Seeds) -->
+        <path d="M 720,180 Q 800,230 880,180 Q 850,70 780,90 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" />
+        <circle cx="800" cy="150" r="90" class="selection-pulse" fill="none" stroke="#E74C3C" stroke-width="4" />
+        <text x="800" y="50" font-size="14" font-weight="600" text-anchor="middle" fill="#2C3E50">Environmental Pressure: Seed Scarcity</text>
+        <text x="800" y="68" font-size="12" class="sciname" text-anchor="middle">Geospiza magnirostris</text>
+        <!-- Food Scatter Island 1 -->
+        <use href="#food-seed" x="750" y="120" />
+        <use href="#food-seed" x="780" y="180" />
+        <use href="#food-seed" x="830" y="140" />
+        <use href="#food-seed" x="760" y="160" />
+        <use href="#food-seed" x="810" y="110" />
+        <use href="#food-seed" x="850" y="160" />
+        <use href="#food-seed" x="730" y="150" />
+        <use href="#food-seed" x="800" y="190" />
+
+        <!-- Island 2 (Insects) -->
+        <path d="M 720,380 Q 800,430 880,380 Q 850,270 780,290 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" />
+        <circle cx="800" cy="350" r="90" class="selection-pulse" fill="none" stroke="#E74C3C" stroke-width="4" />
+        <text x="800" y="250" font-size="14" font-weight="600" text-anchor="middle" fill="#2C3E50">Environmental Pressure: Insect Abundance</text>
+        <text x="800" y="268" font-size="12" class="sciname" text-anchor="middle">Certhidea olivacea</text>
+        <!-- Food Scatter Island 2 -->
+        <use href="#food-insect" x="750" y="320" />
+        <use href="#food-insect" x="830" y="340" />
+        <use href="#food-insect" x="780" y="380" />
+        <use href="#food-insect" x="850" y="310" />
+        <use href="#food-insect" x="730" y="360" />
+        <use href="#food-insect" x="810" y="390" />
+
+        <!-- Island 3 (Cactus) -->
+        <path d="M 720,580 Q 800,630 880,580 Q 850,470 780,490 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" />
+        <circle cx="800" cy="550" r="90" class="selection-pulse" fill="none" stroke="#E74C3C" stroke-width="4" />
+        <text x="800" y="450" font-size="14" font-weight="600" text-anchor="middle" fill="#2C3E50">Environmental Pressure: Cactus Abundance</text>
+        <text x="800" y="468" font-size="12" class="sciname" text-anchor="middle">Geospiza scandens</text>
+        <!-- Food Scatter Island 3 -->
+        <use href="#food-cactus" x="760" y="530" />
+        <use href="#food-cactus" x="830" y="560" />
+        <use href="#food-cactus" x="740" y="580" />
+        <use href="#food-cactus" x="850" y="520" />
+        <use href="#food-cactus" x="800" y="590" />
+
+        <!-- BIRDS ANIMATION -->
+
+        <!-- Mainland Ancestral Population (Stays on mainland) -->
+        <g class="mainland-population">
+            <use href="#finch-heavy" x="120" y="320" />
+            <use href="#finch-thin" x="170" y="310" />
+            <use href="#finch-long" x="140" y="350" />
+            <use href="#finch-ancestral" x="180" y="360" />
+            <use href="#finch-heavy" x="130" y="380" />
+            <use href="#finch-thin" x="160" y="390" />
+        </g>
+
+        <!-- Migrating Group 1 (To Island 1 - Seeds) -->
+        <g class="move-island-1">
+            <!-- Fit Bird (Heavy Beak) -->
+            <use href="#finch-heavy" x="140" y="330" class="fit" />
+            <!-- Unfit Birds -->
+            <use href="#finch-thin" x="160" y="320" class="unfit" />
+            <use href="#finch-long" x="150" y="350" class="unfit" />
+            
+            <!-- Offspring of Fit Bird -->
+            <use href="#finch-heavy" x="110" y="310" class="offspring" />
+            <use href="#finch-heavy" x="170" y="310" class="offspring" />
+            <use href="#finch-heavy" x="140" y="360" class="offspring" />
+        </g>
+
+        <!-- Migrating Group 2 (To Island 2 - Insects) -->
+        <g class="move-island-2">
+            <!-- Fit Bird (Thin Beak) -->
+            <use href="#finch-thin" x="160" y="350" class="fit" />
+            <!-- Unfit Birds -->
+            <use href="#finch-heavy" x="140" y="340" class="unfit" />
+            <use href="#finch-long" x="150" y="370" class="unfit" />
+            
+            <!-- Offspring of Fit Bird -->
+            <use href="#finch-thin" x="130" y="330" class="offspring" />
+            <use href="#finch-thin" x="190" y="330" class="offspring" />
+            <use href="#finch-thin" x="160" y="380" class="offspring" />
+        </g>
+
+        <!-- Migrating Group 3 (To Island 3 - Cactus) -->
+        <g class="move-island-3">
+            <!-- Fit Bird (Long Beak) -->
+            <use href="#finch-long" x="150" y="390" class="fit" />
+            <!-- Unfit Birds -->
+            <use href="#finch-heavy" x="140" y="370" class="unfit" />
+            <use href="#finch-thin" x="160" y="360" class="unfit" />
+            
+            <!-- Offspring of Fit Bird -->
+            <use href="#finch-long" x="120" y="370" class="offspring" />
+            <use href="#finch-long" x="180" y="370" class="offspring" />
+            <use href="#finch-long" x="150" y="420" class="offspring" />
+        </g>
+
+        <!-- Legend -->
+        <rect x="30" y="530" width="240" height="90" rx="8" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" />
+        <text x="45" y="555" font-size="14" font-weight="700" fill="#2C3E50">Legend</text>
+        
+        <circle cx="50" cy="575" r="5" fill="#5D4037" />
+        <text x="65" y="580" font-size="12" fill="#2C3E50">Survival & Reproduction (Fit)</text>
+        
+        <circle cx="50" cy="595" r="5" fill="#5D4037" opacity="0.3" stroke="#5D4037" stroke-dasharray="2,2" />
+        <text x="65" y="600" font-size="12" fill="#2C3E50">Elimination (Unfit Trait)</text>
+    </svg>
+</body>
+</html>

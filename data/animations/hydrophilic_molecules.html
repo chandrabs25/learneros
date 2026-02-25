@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA Transformation: Overcoming the Hydrophilic Barrier</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        #diagram-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            border: 1px solid #e0e0e0;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Global Phase Animations */
+        @keyframes fade-p1 {
+            0%, 28% { opacity: 1; }
+            30%, 100% { opacity: 0; }
+        }
+        @keyframes fade-p2 {
+            0%, 28% { opacity: 0; }
+            30%, 63% { opacity: 1; }
+            65%, 100% { opacity: 0; }
+        }
+        @keyframes fade-p3 {
+            0%, 63% { opacity: 0; }
+            65%, 98% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .phase-1 { animation: fade-p1 20s infinite; }
+        .phase-2 { animation: fade-p2 20s infinite; }
+        .phase-3 { animation: fade-p3 20s infinite; }
+
+        /* Phase 1: DNA Repulsion */
+        @keyframes dna-p1-anim {
+            0% { opacity: 0; transform: translate(400px, 40px); }
+            2% { opacity: 1; transform: translate(400px, 40px); }
+            10% { transform: translate(400px, 150px); }
+            12% { transform: translate(400px, 130px); }
+            14% { transform: translate(400px, 150px); }
+            20% { transform: translate(400px, 60px); opacity: 1; }
+            25%, 100% { opacity: 0; transform: translate(400px, 60px); }
+        }
+        #dna-p1 { animation: dna-p1-anim 20s infinite ease-in-out; }
+
+        @keyframes red-x-anim {
+            0%, 10% { opacity: 0; transform: translate(400px, 170px) scale(0.5); }
+            12% { opacity: 1; transform: translate(400px, 170px) scale(1.2); }
+            16%, 100% { opacity: 0; transform: translate(400px, 170px) scale(1.5); }
+        }
+        #red-x { animation: red-x-anim 20s infinite ease-out; transform-origin: center; }
+
+        /* Phase 2: Calcium & Heat Shock */
+        @keyframes calcium-anim {
+            0%, 28% { opacity: 0; transform: translateY(-20px); }
+            32%, 60% { opacity: 1; transform: translateY(0); }
+            65%, 100% { opacity: 0; transform: translateY(20px); }
+        }
+        #calcium-group { animation: calcium-anim 20s infinite ease-in-out; }
+
+        @keyframes heat-shock {
+            0%, 35% { transform: translateX(0); }
+            36%, 38%, 40%, 42%, 44% { transform: translateX(-3px); }
+            37%, 39%, 41%, 43%, 45% { transform: translateX(3px); }
+            46%, 100% { transform: translateX(0); }
+        }
+        #membrane-group { animation: heat-shock 20s infinite linear; }
+
+        @keyframes pore-left-anim {
+            0%, 40% { transform: translateX(0); }
+            45%, 55% { transform: translateX(-35px); }
+            60%, 100% { transform: translateX(0); }
+        }
+        @keyframes pore-right-anim {
+            0%, 40% { transform: translateX(0); }
+            45%, 55% { transform: translateX(35px); }
+            60%, 100% { transform: translateX(0); }
+        }
+        #pore-left { animation: pore-left-anim 20s infinite ease-in-out; }
+        #pore-right { animation: pore-right-anim 20s infinite ease-in-out; }
+
+        @keyframes dna-p2-anim {
+            0%, 30% { opacity: 0; transform: translate(400px, 40px); }
+            32% { opacity: 1; transform: translate(400px, 40px); }
+            42%, 46% { transform: translate(400px, 150px); }
+            52% { transform: translate(400px, 320px); opacity: 1;}
+            58% { transform: translate(400px, 380px); opacity: 0; }
+            100% { opacity: 0; transform: translate(400px, 380px); }
+        }
+        #dna-p2 { animation: dna-p2-anim 20s infinite ease-in-out; }
+
+        /* Phase 3: Micro-injection & Biolistics */
+        @keyframes needle-anim {
+            0%, 65% { opacity: 0; transform: translate(-50px, 100px) rotate(-20deg); }
+            68% { opacity: 1; transform: translate(180px, 220px) rotate(-20deg); }
+            75% { transform: translate(180px, 220px) rotate(-20deg); opacity: 1; }
+            80%, 100% { opacity: 0; transform: translate(-50px, 100px) rotate(-20deg); }
+        }
+        #needle-group { animation: needle-anim 20s infinite ease-in-out; }
+
+        @keyframes dna-p3-needle-anim {
+            0%, 70% { opacity: 0; transform: translate(180px, 220px) scale(0.5); }
+            71% { opacity: 1; transform: translate(180px, 220px) scale(0.5); }
+            78% { opacity: 1; transform: translate(250px, 350px) scale(1); }
+            85%, 100% { opacity: 0; transform: translate(280px, 400px) scale(1); }
+        }
+        #dna-p3-needle { animation: dna-p3-needle-anim 20s infinite ease-in-out; }
+
+        @keyframes biolistics-anim {
+            0%, 75% { opacity: 0; transform: translate(850px, 50px); }
+            78% { opacity: 1; transform: translate(850px, 50px); }
+            85% { opacity: 1; transform: translate(450px, 400px); }
+            88%, 100% { opacity: 0; transform: translate(350px, 480px); }
+        }
+        #biolistics-group { animation: biolistics-anim 20s infinite linear; }
+
+        /* Fluid Mosaic Bobbing */
+        @keyframes bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(4px); }
+        }
+        .lipid-bob-1 { animation: bob 4s infinite ease-in-out; }
+        .lipid-bob-2 { animation: bob 5s infinite ease-in-out reverse; }
+        .lipid-bob-3 { animation: bob 3.5s infinite ease-in-out 1s; }
+    </style>
+</head>
+<body>
+
+    <div id="diagram-container">
+        <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" aria-label="Diagram of DNA transformation methods">
+            <title>Animation showing why hydrophilic DNA cannot cross cell membranes and how transformation works.</title>
+            
+            <defs>
+                <!-- Background Grid -->
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                    <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E5E8E8" stroke-width="0.5"/>
+                </pattern>
+
+                <!-- Markers -->
+                <marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50" />
+                </marker>
+                <marker id="arrow-red" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#E74C3C" />
+                </marker>
+                <marker id="arrow-ca" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#F39C12" />
+                </marker>
+
+                <!-- Gradients -->
+                <radialGradient id="ca-glow">
+                    <stop offset="0%" stop-color="#F39C12" stop-opacity="0.8"/>
+                    <stop offset="100%" stop-color="#F39C12" stop-opacity="0"/>
+                </radialGradient>
+
+                <!-- Phospholipids -->
+                <g id="lipid-top">
+                    <path d="M -4 10 Q -10 20, -4 30 T -4 45" fill="none" stroke="#2C3E50" stroke-width="2"/>
+                    <path d="M 4 10 Q 10 20, 4 30 T 4 45" fill="none" stroke="#2C3E50" stroke-width="2"/>
+                    <circle cx="0" cy="0" r="10" fill="#4A90D9" />
+                </g>
+                <g id="lipid-bot">
+                    <path d="M -4 -10 Q -10 -20, -4 -30 T -4 -45" fill="none" stroke="#2C3E50" stroke-width="2"/>
+                    <path d="M 4 -10 Q 10 -20, 4 -30 T 4 -45" fill="none" stroke="#2C3E50" stroke-width="2"/>
+                    <circle cx="0" cy="0" r="10" fill="#4A90D9" />
+                </g>
+                <g id="lipid-pair">
+                    <use href="#lipid-top" y="200" />
+                    <use href="#lipid-bot" y="280" />
+                </g>
+                <g id="lipid-block-5">
+                    <use href="#lipid-pair" x="0" />
+                    <use href="#lipid-pair" x="20" />
+                    <use href="#lipid-pair" x="40" />
+                    <use href="#lipid-pair" x="60" />
+                    <use href="#lipid-pair" x="80" />
+                </g>
+
+                <!-- DNA Strand -->
+                <g id="dna-strand">
+                    <path d="M -10 -60 C -25 -40, -25 -20, -10 0 C 5 20, 5 40, -10 60 C -25 80, -25 100, -10 120" fill="none" stroke="#FF6B6B" stroke-width="4" />
+                    <path d="M 10 -60 C 25 -40, 25 -20, 10 0 C -5 20, -5 40, 10 60 C 25 80, 25 100, 10 120" fill="none" stroke="#FFA07A" stroke-width="4" />
+                    <line x1="-16" y1="-40" x2="16" y2="-40" stroke="#98D8C8" stroke-width="2"/>
+                    <line x1="-20" y1="-20" x2="20" y2="-20" stroke="#98D8C8" stroke-width="2"/>
+                    <line x1="-16" y1="0" x2="16" y2="0" stroke="#98D8C8" stroke-width="2"/>
+                    <line x1="16" y1="40" x2="-16" y2="40" stroke="#98D8C8" stroke-width="2"/>
+                    <line x1="20" y1="60" x2="-20" y2="60" stroke="#98D8C8" stroke-width="2"/>
+                    <line x1="16" y1="80" x2="-16" y2="80" stroke="#98D8C8" stroke-width="2"/>
+                    <line x1="-16" y1="120" x2="16" y2="120" stroke="#98D8C8" stroke-width="2"/>
+                    <!-- Negative Charges -->
+                    <circle cx="-25" cy="-30" r="8" fill="#E74C3C"/>
+                    <text x="-25" y="-25" fill="white" font-size="14" text-anchor="middle" font-weight="bold">-</text>
+                    <circle cx="25" cy="10" r="8" fill="#E74C3C"/>
+                    <text x="25" y="15" fill="white" font-size="14" text-anchor="middle" font-weight="bold">-</text>
+                    <circle cx="-25" cy="50" r="8" fill="#E74C3C"/>
+                    <text x="-25" y="55" fill="white" font-size="14" text-anchor="middle" font-weight="bold">-</text>
+                    <circle cx="25" cy="90" r="8" fill="#E74C3C"/>
+                    <text x="25" y="95" fill="white" font-size="14" text-anchor="middle" font-weight="bold">-</text>
+                </g>
+
+                <!-- Calcium Ion -->
+                <g id="calcium-ion">
+                    <circle cx="0" cy="0" r="14" fill="url(#ca-glow)" />
+                    <circle cx="0" cy="0" r="6" fill="#F39C12" />
+                    <text x="0" y="2" fill="white" font-family="'Roboto Mono', monospace" font-size="7" text-anchor="middle" font-weight="bold">Ca²⁺</text>
+                </g>
+
+                <!-- Gold Particle (Biolistics) -->
+                <g id="gold-particle">
+                    <circle cx="0" cy="0" r="5" fill="#D4AF37" />
+                    <circle cx="0" cy="0" r="7" fill="none" stroke="#D4AF37" stroke-width="1" stroke-dasharray="2 2" />
+                    <path d="M -6 -6 Q 0 0, 6 6" fill="none" stroke="#FF6B6B" stroke-width="1.5"/>
+                    <path d="M -6 6 Q 0 0, 6 -6" fill="none" stroke="#FFA07A" stroke-width="1.5"/>
+                </g>
+            </defs>
+
+            <!-- Backgrounds -->
+            <rect width="100%" height="100%" fill="url(#grid)" />
+            <rect x="0" y="0" width="800" height="240" fill="#FFFFFF" opacity="0.8" />
+            <rect x="0" y="240" width="800" height="260" fill="#E8F4FD" opacity="0.8" />
+
+            <!-- Environment Labels -->
+            <text x="20" y="110" font-size="16" font-weight="600" fill="#7F8C8D">Extracellular Environment</text>
+            <text x="20" y="470" font-size="16" font-weight="600" fill="#7F8C8D">Intracellular Environment (Cytoplasm)</text>
+
+            <!-- Title & Dynamic Phase Labels -->
+            <text x="400" y="35" font-size="22" font-weight="700" text-anchor="middle" fill="#2C3E50">DNA Transformation: Overcoming the Hydrophilic Barrier</text>
+            
+            <g font-size="18" font-weight="600" text-anchor="middle">
+                <text class="phase-1" x="400" y="70" fill="#E74C3C">Phase 1: Hydrophilic Repulsion</text>
+                <text class="phase-2" x="400" y="70" fill="#F39C12">Phase 2: Chemical Competence (CaCl₂ + Heat Shock)</text>
+                <text class="phase-3" x="400" y="70" fill="#27AE60">Phase 3: Physical Delivery (Micro-injection &amp; Biolistics)</text>
+            </g>
+
+            <!-- Membrane Annotations -->
+            <g font-size="14" fill="#2C3E50" font-weight="600">
+                <line x1="680" y1="170" x2="720" y2="195" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow)"/>
+                <text x="675" y="165" text-anchor="end">Hydrophilic Phosphate Heads</text>
+                
+                <line x1="680" y1="240" x2="720" y2="240" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow)"/>
+                <text x="675" y="245" text-anchor="end">Hydrophobic Fatty Acid Core</text>
+            </g>
+
+            <!-- Main Membrane Group -->
+            <g id="membrane-group">
+                <!-- Left Static -->
+                <use href="#lipid-block-5" x="0" class="lipid-bob-1"/>
+                <use href="#lipid-block-5" x="100" class="lipid-bob-2"/>
+                <use href="#lipid-block-5" x="200" class="lipid-bob-3"/>
+                <use href="#lipid-pair" x="300" class="lipid-bob-1"/>
+                <use href="#lipid-pair" x="320" class="lipid-bob-2"/>
+                <use href="#lipid-pair" x="340" class="lipid-bob-3"/>
+
+                <!-- Dynamic Pore -->
+                <g id="pore-left">
+                    <use href="#lipid-pair" x="360" class="lipid-bob-1"/>
+                    <use href="#lipid-pair" x="380" class="lipid-bob-2"/>
+                </g>
+                <g id="pore-right">
+                    <use href="#lipid-pair" x="400" class="lipid-bob-3"/>
+                    <use href="#lipid-pair" x="420" class="lipid-bob-1"/>
+                </g>
+
+                <!-- Right Static -->
+                <use href="#lipid-pair" x="440" class="lipid-bob-2"/>
+                <use href="#lipid-pair" x="460" class="lipid-bob-3"/>
+                <use href="#lipid-pair" x="480" class="lipid-bob-1"/>
+                <use href="#lipid-block-5" x="500" class="lipid-bob-2"/>
+                <use href="#lipid-block-5" x="600" class="lipid-bob-3"/>
+                <use href="#lipid-block-5" x="700" class="lipid-bob-1"/>
+            </g>
+
+            <!-- Phase 1: Repulsion Elements -->
+            <g id="dna-p1">
+                <g transform="scale(0.5)">
+                    <use href="#dna-strand" />
+                </g>
+            </g>
+            <g class="phase-1">
+                <text x="440" y="110" font-size="14" fill="#E74C3C" font-weight="700">Hydrophilic DNA</text>
+                <text x="440" y="125" font-size="12" fill="#E74C3C">(Negatively Charged)</text>
+                <line x1="435" y1="115" x2="415" y2="115" stroke="#E74C3C" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+            </g>
+            <g id="red-x" stroke="#E74C3C" stroke-width="6" stroke-linecap="round">
+                <line x1="-20" y1="-20" x2="20" y2="20" />
+                <line x1="20" y1="-20" x2="-20" y2="20" />
+                <circle cx="0" cy="0" r="30" fill="none" stroke="#E74C3C" stroke-width="4" opacity="0.5" />
+            </g>
+
+            <!-- Phase 2: Competence Elements -->
+            <g id="calcium-group">
+                <use href="#calcium-ion" x="360" y="160" />
+                <use href="#calcium-ion" x="440" y="150" />
+                <use href="#calcium-ion" x="390" y="180" />
+                <use href="#calcium-ion" x="410" y="170" />
+                <use href="#calcium-ion" x="370" y="190" />
+                <use href="#calcium-ion" x="430" y="190" />
+                <text x="500" y="170" font-size="14" fill="#F39C12" font-weight="700">Ca²⁺ neutralizes repulsion</text>
+                <line x1="490" y1="165" x2="450" y2="165" stroke="#F39C12" stroke-width="1.5" marker-end="url(#arrow-ca)"/>
+            </g>
+            <g id="dna-p2">
+                <g transform="scale(0.5)">
+                    <use href="#dna-strand" />
+                </g>
+            </g>
+
+            <!-- Phase 3: Physical Delivery Elements -->
+            <g id="needle-group">
+                <g id="needle-shape">
+                    <path d="M -250 -15 L 0 0 L -250 15 Z" fill="#BDC3C7" stroke="#95A5A6" stroke-width="2"/>
+                    <path d="M -250 -6 L -10 0 L -250 6 Z" fill="#ECF0F1" />
+                </g>
+                <text x="-150" y="-25" font-size="14" fill="#7F8C8D" font-weight="700" transform="rotate(-20)">Micro-injection</text>
+            </g>
+            <g id="dna-p3-needle">
+                <g transform="scale(0.5)">
+                    <use href="#dna-strand" />
+                </g>
+            </g>
+
+            <g id="biolistics-group">
+                <use href="#gold-particle" x="0" y="0" />
+                <use href="#gold-particle" x="30" y="-20" />
+                <use href="#gold-particle" x="60" y="-40" />
+                <use href="#gold-particle" x="15" y="-35" />
+                <line x1="5" y1="5" x2="40" y2="40" stroke="#D4AF37" stroke-width="1.5" opacity="0.6" stroke-dasharray="4 2"/>
+                <line x1="35" y1="-15" x2="70" y2="20" stroke="#D4AF37" stroke-width="1.5" opacity="0.6" stroke-dasharray="4 2"/>
+                <text x="70" y="-50" font-size="14" fill="#D4AF37" font-weight="700">Gene Gun (Biolistics)</text>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(610, 390)" font-size="12">
+                <rect x="0" y="0" width="170" height="90" fill="#ffffff" rx="6" opacity="0.95" stroke="#BDC3C7"/>
+                <text x="85" y="20" font-weight="700" text-anchor="middle" fill="#2C3E50">Legend</text>
+                <circle cx="15" cy="35" r="5" fill="#FF6B6B"/>
+                <text x="28" y="39" fill="#2C3E50">DNA Strand</text>
+                <circle cx="15" cy="55" r="5" fill="#F39C12"/>
+                <text x="28" y="59" fill="#2C3E50">Calcium Ion (Ca²⁺)</text>
+                <circle cx="15" cy="75" r="5" fill="#D4AF37"/>
+                <text x="28" y="79" fill="#2C3E50">Gold Particle</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

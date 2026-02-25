@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Regulation of Cardiac Activity and Opioid Interaction</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Heartbeat Animation (12s Loop) */
+        @keyframes heartbeat {
+            0%, 3.4% { transform: scale(1); }
+            /* Phase 1: Homeostasis (0-4s) - 72 BPM */
+            3.5% { transform: scale(1); } 4.1% { transform: scale(0.85); } 5.5% { transform: scale(1); }
+            11.9% { transform: scale(1); } 12.5% { transform: scale(0.85); } 13.9% { transform: scale(1); }
+            20.2% { transform: scale(1); } 20.8% { transform: scale(0.85); } 22.2% { transform: scale(1); }
+            28.5% { transform: scale(1); } 29.1% { transform: scale(0.85); } 30.5% { transform: scale(1); }
+            
+            /* Phase 2: Sympathetic Surge (4-8s) - Tachycardia */
+            36.9% { transform: scale(1); } 37.5% { transform: scale(0.85); } 38.9% { transform: scale(1); }
+            41.0% { transform: scale(1); } 41.6% { transform: scale(0.85); } 43.0% { transform: scale(1); }
+            45.2% { transform: scale(1); } 45.8% { transform: scale(0.85); } 47.2% { transform: scale(1); }
+            49.4% { transform: scale(1); } 50.0% { transform: scale(0.85); } 51.4% { transform: scale(1); }
+            53.5% { transform: scale(1); } 54.1% { transform: scale(0.85); } 55.5% { transform: scale(1); }
+            57.7% { transform: scale(1); } 58.3% { transform: scale(0.85); } 59.7% { transform: scale(1); }
+            61.9% { transform: scale(1); } 62.5% { transform: scale(0.85); } 63.9% { transform: scale(1); }
+            
+            /* Phase 3: Opioid Depression (8-12s) - Bradycardia */
+            74.4% { transform: scale(1); } 75.0% { transform: scale(0.85); } 76.4% { transform: scale(1); }
+            91.0% { transform: scale(1); } 91.6% { transform: scale(0.85); } 93.0% { transform: scale(1); }
+            100% { transform: scale(1); }
+        }
+
+        .heart {
+            transform-origin: 300px 340px;
+            animation: heartbeat 12s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        /* SA Node Firing */
+        @keyframes sa-fire {
+            0% { fill: #F1C40F; filter: none; }
+            3.6% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 4.6% { fill: #F1C40F; filter: none; }
+            12.0% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 13.0% { fill: #F1C40F; filter: none; }
+            20.3% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 21.3% { fill: #F1C40F; filter: none; }
+            28.6% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 29.6% { fill: #F1C40F; filter: none; }
+            37.0% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 38.0% { fill: #F1C40F; filter: none; }
+            41.1% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 42.1% { fill: #F1C40F; filter: none; }
+            45.3% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 46.3% { fill: #F1C40F; filter: none; }
+            49.5% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 50.5% { fill: #F1C40F; filter: none; }
+            53.6% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 54.6% { fill: #F1C40F; filter: none; }
+            57.8% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 58.8% { fill: #F1C40F; filter: none; }
+            62.0% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 63.0% { fill: #F1C40F; filter: none; }
+            74.5% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 75.5% { fill: #F1C40F; filter: none; }
+            91.1% { fill: #FFF; filter: drop-shadow(0 0 8px #F1C40F); } 92.1% { fill: #F1C40F; filter: none; }
+            100% { fill: #F1C40F; filter: none; }
+        }
+        .sa-node { animation: sa-fire 12s infinite; }
+
+        /* Nerve Signals */
+        @keyframes vagus-flow {
+            0% { stroke-dashoffset: 0; }
+            33.3% { stroke-dashoffset: -100; }
+            66.6% { stroke-dashoffset: -130; }
+            100% { stroke-dashoffset: -150; }
+        }
+        @keyframes symp-flow {
+            0% { stroke-dashoffset: 0; }
+            33.3% { stroke-dashoffset: -100; }
+            66.6% { stroke-dashoffset: -350; }
+            100% { stroke-dashoffset: -380; }
+        }
+        .vagus-signal { animation: vagus-flow 12s linear infinite; }
+        .symp-signal { animation: symp-flow 12s linear infinite; }
+
+        /* Sympathetic Glow */
+        @keyframes symp-glow {
+            0%, 33.3% { filter: drop-shadow(0 0 0px #F39C12); opacity: 0.7; }
+            35%, 65% { filter: drop-shadow(0 0 6px #F39C12); opacity: 1; stroke-width: 4px; }
+            66.6%, 100% { filter: drop-shadow(0 0 0px #F39C12); opacity: 0.4; }
+        }
+        .symp-base { animation: symp-glow 12s ease-in-out infinite; }
+
+        /* Phase Indicators */
+        @keyframes p1 { 0%, 32% { opacity: 1; } 33%, 100% { opacity: 0; } }
+        @keyframes p2 { 0%, 32% { opacity: 0; } 33%, 65% { opacity: 1; } 66%, 100% { opacity: 0; } }
+        @keyframes p3 { 0%, 65% { opacity: 0; } 66%, 100% { opacity: 1; } }
+        .phase-1 { animation: p1 12s infinite; }
+        .phase-2 { animation: p2 12s infinite; }
+        .phase-3 { animation: p3 12s infinite; }
+
+        /* Neurotransmitter Release */
+        @keyframes nt-drop {
+            0% { transform: translateY(-15px); opacity: 0; }
+            20% { opacity: 1; }
+            80% { transform: translateY(20px); opacity: 1; }
+            100% { transform: translateY(30px); opacity: 0; }
+        }
+        @keyframes nt-fade {
+            0%, 65% { opacity: 1; }
+            66%, 100% { opacity: 0.1; }
+        }
+        .nt-phase-fade { animation: nt-fade 12s infinite; }
+        .nt-drop-1 { animation: nt-drop 2s infinite; }
+        .nt-drop-2 { animation: nt-drop 2s 0.6s infinite; }
+        .nt-drop-3 { animation: nt-drop 2s 1.3s infinite; }
+
+        /* Opioid Binding */
+        @keyframes op-bind-left {
+            0%, 60% { transform: translate(-30px, -50px); opacity: 0; }
+            65%, 95% { transform: translate(0, 0); opacity: 1; }
+            100% { transform: translate(-30px, -50px); opacity: 0; }
+        }
+        @keyframes op-bind-right {
+            0%, 60% { transform: translate(30px, -50px); opacity: 0; }
+            65%, 95% { transform: translate(0, 0); opacity: 1; }
+            100% { transform: translate(30px, -50px); opacity: 0; }
+        }
+        @keyframes op-float {
+            0%, 60% { transform: translate(0, -60px); opacity: 0; }
+            65%, 95% { transform: translate(0, 0); opacity: 1; }
+            100% { transform: translate(0, -60px); opacity: 0; }
+        }
+        .opioid-left { animation: op-bind-left 12s ease-out infinite; }
+        .opioid-right { animation: op-bind-right 12s ease-out infinite; }
+        .opioid-center { animation: op-float 12s ease-out infinite; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 850 550" xmlns="http://www.w3.org/2000/svg">
+    <title>Neural Regulation of Cardiac Activity & Opioid Interaction</title>
+    <desc>Animated diagram showing the Medulla Oblongata regulating heart rate via Vagus and Sympathetic nerves, and how opioids cause CNS depression by inhibiting neurotransmitter release at the synapse.</desc>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#f8f9fa" rx="12"/>
+
+    <!-- Titles -->
+    <text x="425" y="40" text-anchor="middle" font-size="22" font-weight="bold" fill="#2C3E50">Neural Regulation of Cardiac Activity & Opioid Interaction</text>
+    
+    <g font-size="14" font-weight="bold">
+        <text x="425" y="65" text-anchor="middle" class="phase-1" fill="#27AE60">Phase 1: Homeostasis (Normal Rhythm)</text>
+        <text x="425" y="65" text-anchor="middle" class="phase-2" fill="#E74C3C">Phase 2: Sympathetic Surge (Tachycardia)</text>
+        <text x="425" y="65" text-anchor="middle" class="phase-3" fill="#9B59B6">Phase 3: Opioid Interaction (Bradycardia & CNS Depression)</text>
+    </g>
+
+    <!-- ================= LEFT SIDE: MACRO ANATOMY ================= -->
+    
+    <!-- Central Nervous System -->
+    <g id="cns">
+        <!-- Cerebrum -->
+        <path d="M 160 100 C 160 50 240 50 260 100 C 270 140 250 170 210 180 C 170 190 160 150 160 100 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+        <!-- Cerebellum -->
+        <path d="M 210 180 C 230 190 260 180 250 150 C 240 140 220 150 210 180 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+        <!-- Spinal Cord -->
+        <path d="M 180 160 L 180 420 L 200 420 L 200 160 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+        <!-- Medulla Oblongata Highlight -->
+        <path d="M 180 160 L 180 190 C 190 195 200 195 200 190 L 200 160 Z" fill="#2C3E50"/>
+    </g>
+
+    <!-- Nerves -->
+    <!-- Vagus Nerve (Parasympathetic) -->
+    <path d="M 190 175 C 230 180 250 230 275 280" fill="none" stroke="#3498DB" stroke-width="3"/>
+    <path class="vagus-signal" d="M 190 175 C 230 180 250 230 275 280" fill="none" stroke="#E8F4FD" stroke-width="3" stroke-dasharray="5 40"/>
+    
+    <!-- Sympathetic Nerve -->
+    <path class="symp-base" d="M 200 320 C 230 320 250 300 275 280" fill="none" stroke="#F39C12" stroke-width="3" stroke-dasharray="4 4"/>
+    <path class="symp-signal" d="M 200 320 C 230 320 250 300 275 280" fill="none" stroke="#FFF" stroke-width="3" stroke-dasharray="5 40"/>
+
+    <!-- Heart -->
+    <g id="heart-group" class="heart">
+        <!-- Vena Cava -->
+        <path d="M 280 240 L 280 290 L 300 290 L 300 240 Z" fill="#3498DB"/>
+        <!-- Aorta -->
+        <path d="M 295 250 C 295 220 335 220 335 250 L 335 280 L 315 280 L 315 250 C 315 240 295 240 295 250 Z" fill="#E74C3C"/>
+        <!-- Ventricles -->
+        <path d="M 290 280 C 270 330 300 380 320 390 C 350 380 370 330 350 280 Z" fill="#E74C3C" stroke="#2C3E50" stroke-width="2"/>
+        <!-- Right Atrium -->
+        <path d="M 290 280 C 280 270 300 250 315 265 Z" fill="#D63031" stroke="#2C3E50" stroke-width="1"/>
+        <!-- SA Node -->
+        <circle class="sa-node" cx="295" cy="270" r="5" fill="#F1C40F"/>
+    </g>
+
+    <!-- Macro Labels -->
+    <g font-size="12" fill="#2C3E50">
+        <line x1="185" y1="175" x2="100" y2="150" stroke="#2C3E50" stroke-width="1"/>
+        <text x="95" y="145" text-anchor="end" font-weight="bold">Medulla Oblongata</text>
+        
+        <line x1="190" y1="350" x2="100" y2="350" stroke="#2C3E50" stroke-width="1"/>
+        <text x="95" y="354" text-anchor="end">Spinal Cord (CNS)</text>
+        
+        <text x="235" y="210" fill="#3498DB" font-weight="bold" transform="rotate(25, 235, 210)">Vagus Nerve</text>
+        <text x="225" y="335" fill="#F39C12" font-weight="bold" transform="rotate(-30, 225, 335)">Sympathetic Chain</text>
+        
+        <line x1="295" y1="270" x2="380" y2="230" stroke="#2C3E50" stroke-width="1"/>
+        <text x="385" y="225" font-weight="bold">SA Node (Pacemaker)</text>
+    </g>
+
+    <!-- Connection Lines to Inset -->
+    <line x1="300" y1="270" x2="520" y2="180" stroke="#2C3E50" stroke-width="1" stroke-dasharray="4 4" opacity="0.3"/>
+    <line x1="300" y1="270" x2="520" y2="380" stroke="#2C3E50" stroke-width="1" stroke-dasharray="4 4" opacity="0.3"/>
+
+    <!-- ================= RIGHT SIDE: SYNAPTIC INSET ================= -->
+    
+    <clipPath id="synapse-clip">
+        <circle cx="650" cy="280" r="140"/>
+    </clipPath>
+    
+    <g clip-path="url(#synapse-clip)">
+        <!-- Inset Background -->
+        <rect x="500" y="100" width="300" height="400" fill="#E8F4FD"/>
+        
+        <!-- Pre-synaptic terminal -->
+        <path d="M 550 100 L 550 220 C 550 260 750 260 750 220 L 750 100 Z" fill="#4A90D9" opacity="0.8"/>
+        
+        <!-- Post-synaptic membrane -->
+        <path d="M 520 420 L 520 330 C 580 300 720 300 780 330 L 780 420 Z" fill="#4A90D9" opacity="0.8"/>
+        
+        <!-- Post-synaptic Receptors -->
+        <g stroke="#2C3E50" stroke-width="3" fill="none">
+            <path d="M 592,325 C 592,315 608,315 608,325"/>
+            <path d="M 642,315 C 642,305 658,305 658,315"/>
+            <path d="M 692,325 C 692,315 708,315 708,325"/>
+        </g>
+
+        <!-- Pre-synaptic Mu-Opioid Receptors -->
+        <g stroke="#9B59B6" stroke-width="3" fill="none">
+            <path d="M 552,235 C 552,245 568,245 568,235"/>
+            <path d="M 732,235 C 732,245 748,245 748,235"/>
+        </g>
+        
+        <!-- Static Neurotransmitter Vesicles -->
+        <g fill="none" stroke="#E8F4FD" stroke-width="2">
+            <circle cx="650" cy="160" r="18"/>
+            <circle cx="590" cy="180" r="15"/>
+            <circle cx="710" cy="180" r="15"/>
+            <!-- Fusing vesicle -->
+            <path d="M 632 245 C 632 220 668 220 668 245"/>
+        </g>
+        
+        <!-- Static Neurotransmitters inside vesicles -->
+        <g fill="#98D8C8">
+            <circle cx="645" cy="155" r="4"/> <circle cx="655" cy="162" r="4"/> <circle cx="648" cy="166" r="4"/>
+            <circle cx="585" cy="175" r="4"/> <circle cx="595" cy="182" r="4"/>
+            <circle cx="705" cy="175" r="4"/> <circle cx="715" cy="182" r="4"/>
+        </g>
+
+        <!-- Animated Neurotransmitters (Cleft) -->
+        <g class="nt-phase-fade">
+            <g transform="translate(640, 250)"><circle class="nt-drop-1" cx="0" cy="0" r="4" fill="#98D8C8"/></g>
+            <g transform="translate(660, 255)"><circle class="nt-drop-1" cx="0" cy="0" r="4" fill="#98D8C8"/></g>
+            
+            <g transform="translate(650, 245)"><circle class="nt-drop-2" cx="0" cy="0" r="4" fill="#98D8C8"/></g>
+            <g transform="translate(610, 260)"><circle class="nt-drop-2" cx="0" cy="0" r="4" fill="#98D8C8"/></g>
+            
+            <g transform="translate(690, 250)"><circle class="nt-drop-3" cx="0" cy="0" r="4" fill="#98D8C8"/></g>
+            <g transform="translate(630, 265)"><circle class="nt-drop-3" cx="0" cy="0" r="4" fill="#98D8C8"/></g>
+        </g>
+
+        <!-- Animated Opioid Molecules -->
+        <g transform="translate(560, 235)">
+            <polygon class="opioid-left" points="0,-6 5,-3 5,3 0,6 -5,3 -5,-3" fill="#9B59B6"/>
+        </g>
+        <g transform="translate(740, 235)">
+            <polygon class="opioid-right" points="0,-6 5,-3 5,3 0,6 -5,3 -5,-3" fill="#9B59B6"/>
+        </g>
+        <g transform="translate(650, 200)">
+            <polygon class="opioid-center" points="0,-6 5,-3 5,3 0,6 -5,3 -5,-3" fill="#9B59B6"/>
+        </g>
+
+        <!-- Phase 3 Text Overlay -->
+        <text class="phase-3" x="650" y="280" text-anchor="middle" font-size="12" font-weight="bold" fill="#E74C3C">Vesicle Fusion Inhibited</text>
+        <text class="phase-3 mono" x="650" y="130" text-anchor="middle" font-size="10" fill="#9B59B6">Diacetylmorphine</text>
+    </g>
+    
+    <!-- Inset Border -->
+    <circle cx="650" cy="280" r="140" fill="none" stroke="#2C3E50" stroke-width="4"/>
+
+    <!-- Synapse Labels -->
+    <g font-size="11" fill="#2C3E50" font-weight="bold">
+        <text x="650" y="115" text-anchor="middle" fill="#E8F4FD">Pre-synaptic Terminal</text>
+        <text x="650" y="405" text-anchor="middle" fill="#E8F4FD">Post-synaptic Membrane</text>
+        
+        <line x1="790" y1="235" x2="820" y2="210" stroke="#2C3E50" stroke-width="1"/>
+        <text x="820" y="205" text-anchor="end" class="mono" fill="#9B59B6">μ-Opioid Receptor</text>
+        
+        <text x="795" y="285">Synaptic Cleft</text>
+    </g>
+
+    <!-- ================= LEGEND ================= -->
+    <g transform="translate(20, 430)" font-size="12" fill="#2C3E50">
+        <rect x="0" y="0" width="230" height="100" fill="#FFF" stroke="#2C3E50" stroke-width="1" rx="5"/>
+        <text x="115" y="20" text-anchor="middle" font-weight="bold">Legend</text>
+        
+        <line x1="10" y1="35" x2="30" y2="35" stroke="#3498DB" stroke-width="3"/>
+        <text x="40" y="39">Parasympathetic (Vagus)</text>
+        
+        <line x1="10" y1="55" x2="30" y2="55" stroke="#F39C12" stroke-width="3" stroke-dasharray="4 2"/>
+        <text x="40" y="59">Sympathetic Nerve</text>
+        
+        <circle cx="20" cy="75" r="4" fill="#98D8C8"/>
+        <text x="40" y="79">Excitatory Neurotransmitter</text>
+        
+        <polygon points="20,89 24,91.5 24,96.5 20,99 16,96.5 16,91.5" fill="#9B59B6"/>
+        <text x="40" y="97">Opioid Molecule</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pleiotropy: Single Gene, Multiple Phenotypes</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 10px;
+            color: #2C3E50;
+        }
+
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .header p {
+            margin: 0;
+            font-size: 16px;
+            color: #555;
+            max-width: 800px;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+        }
+
+        /* --- CSS Animations (14s Loop) --- */
+        /* Phase 1: Normal (0-45%) | Phase 2: Transition (45-55%) | Phase 3: Mutated (55-95%) | Phase 4: Reset (95-100%) */
+
+        /* Status Text */
+        .status-normal { animation: fade-out-mutated 14s infinite; }
+        .status-mutated { animation: fade-in-mutated 14s infinite; }
+        
+        @keyframes fade-out-mutated {
+            0%, 45% { opacity: 1; }
+            50%, 95% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        @keyframes fade-in-mutated {
+            0%, 45% { opacity: 0; }
+            50%, 95% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Gene Mutation */
+        .dna-strand { animation: gene-mutate 14s infinite; color: #FF6B6B; }
+        @keyframes gene-mutate {
+            0%, 45% { color: #FF6B6B; filter: none; }
+            50%, 90% { color: #8B0000; filter: drop-shadow(0 0 6px rgba(231, 76, 60, 0.8)); }
+            95%, 100% { color: #FF6B6B; filter: none; }
+        }
+
+        /* Enzyme Breakage */
+        .enzyme { animation: enzyme-break 14s infinite; transform-origin: 450px 320px; }
+        @keyframes enzyme-break {
+            0%, 45% { opacity: 1; filter: none; transform: scale(1); }
+            22% { transform: scale(1.05); } /* Normal pulsing */
+            50%, 90% { opacity: 0.3; filter: grayscale(100%); transform: scale(0.95); stroke-dasharray: 4,4; }
+            95%, 100% { opacity: 1; filter: none; transform: scale(1); stroke-dasharray: none; }
+        }
+
+        /* Red X Block */
+        .red-x { animation: red-x-anim 14s infinite; transform-origin: 510px 320px; }
+        @keyframes red-x-anim {
+            0%, 45% { opacity: 0; transform: scale(0) rotate(-20deg); }
+            50%, 90% { opacity: 1; transform: scale(1) rotate(0deg); }
+            95%, 100% { opacity: 0; transform: scale(0) rotate(20deg); }
+        }
+
+        /* Toxic Phe Buildup */
+        .toxic-group { animation: toxic-buildup 14s infinite; transform-origin: 130px 320px; }
+        .shake-wrapper { animation: shake 14s infinite; }
+        
+        @keyframes toxic-buildup {
+            0%, 45% { opacity: 0; transform: scale(0.5); fill: #F39C12; }
+            55% { opacity: 1; transform: scale(1.2); fill: #F39C12; }
+            65%, 90% { opacity: 1; transform: scale(1.6); fill: #E74C3C; }
+            95%, 100% { opacity: 0; transform: scale(0.5); }
+        }
+        
+        @keyframes shake {
+            0%, 60% { transform: translateX(0); }
+            62%, 66%, 70%, 74%, 78%, 82%, 86%, 90% { transform: translateX(-3px) rotate(-2deg); }
+            64%, 68%, 72%, 76%, 80%, 84%, 88% { transform: translateX(3px) rotate(2deg); }
+            95%, 100% { transform: translateX(0); }
+        }
+
+        /* Phenotype 1: Brain Damage */
+        .brain-icon { animation: brain-damage 14s infinite; }
+        @keyframes brain-damage {
+            0%, 45% { fill: #2C3E50; filter: drop-shadow(0 0 8px #3498DB); }
+            55%, 90% { fill: #7F8C8D; filter: drop-shadow(0 0 15px #E74C3C); }
+            95%, 100% { fill: #2C3E50; filter: drop-shadow(0 0 8px #3498DB); }
+        }
+
+        /* Phenotype 2: Hair Pigment Loss */
+        .hair-icon { animation: hair-fade 14s infinite; }
+        @keyframes hair-fade {
+            0%, 45% { fill: #E74C3C; filter: drop-shadow(0 0 8px #E74C3C); }
+            55%, 90% { fill: #FADBD8; filter: none; }
+            95%, 100% { fill: #E74C3C; filter: drop-shadow(0 0 8px #E74C3C); }
+        }
+
+        /* Flowing Particles (Phe) */
+        @keyframes flow-phe-1 { 0% { opacity:0; transform:translateX(0); } 2% { opacity:1; } 13% { opacity:1; transform:translateX(210px); } 15%, 100% { opacity:0; transform:translateX(230px); } }
+        @keyframes flow-phe-2 { 0%, 6% { opacity:0; transform:translateX(0); } 8% { opacity:1; } 19% { opacity:1; transform:translateX(210px); } 21%, 100% { opacity:0; transform:translateX(230px); } }
+        @keyframes flow-phe-3 { 0%, 12% { opacity:0; transform:translateX(0); } 14% { opacity:1; } 25% { opacity:1; transform:translateX(210px); } 27%, 100% { opacity:0; transform:translateX(230px); } }
+        @keyframes flow-phe-4 { 0%, 18% { opacity:0; transform:translateX(0); } 20% { opacity:1; } 31% { opacity:1; transform:translateX(210px); } 33%, 100% { opacity:0; transform:translateX(230px); } }
+        @keyframes flow-phe-5 { 0%, 24% { opacity:0; transform:translateX(0); } 26% { opacity:1; } 37% { opacity:1; transform:translateX(210px); } 39%, 100% { opacity:0; transform:translateX(230px); } }
+        @keyframes flow-phe-6 { 0%, 30% { opacity:0; transform:translateX(0); } 32% { opacity:1; } 43% { opacity:1; transform:translateX(210px); } 45%, 100% { opacity:0; transform:translateX(230px); } }
+
+        .p-phe-1 { animation: flow-phe-1 14s infinite; }
+        .p-phe-2 { animation: flow-phe-2 14s infinite; }
+        .p-phe-3 { animation: flow-phe-3 14s infinite; }
+        .p-phe-4 { animation: flow-phe-4 14s infinite; }
+        .p-phe-5 { animation: flow-phe-5 14s infinite; }
+        .p-phe-6 { animation: flow-phe-6 14s infinite; }
+
+        /* Flowing Particles (Tyr to Brain) */
+        @keyframes flow-tyr-b-1 { 0% { opacity:0; transform:translate(0,0); } 2% { opacity:1; } 13% { opacity:1; transform:translate(160px, -100px); } 15%, 100% { opacity:0; transform:translate(180px, -110px); } }
+        @keyframes flow-tyr-b-2 { 0%, 6% { opacity:0; transform:translate(0,0); } 8% { opacity:1; } 19% { opacity:1; transform:translate(160px, -100px); } 21%, 100% { opacity:0; transform:translate(180px, -110px); } }
+        @keyframes flow-tyr-b-3 { 0%, 12% { opacity:0; transform:translate(0,0); } 14% { opacity:1; } 25% { opacity:1; transform:translate(160px, -100px); } 27%, 100% { opacity:0; transform:translate(180px, -110px); } }
+        @keyframes flow-tyr-b-4 { 0%, 18% { opacity:0; transform:translate(0,0); } 20% { opacity:1; } 31% { opacity:1; transform:translate(160px, -100px); } 33%, 100% { opacity:0; transform:translate(180px, -110px); } }
+        @keyframes flow-tyr-b-5 { 0%, 24% { opacity:0; transform:translate(0,0); } 26% { opacity:1; } 37% { opacity:1; transform:translate(160px, -100px); } 39%, 100% { opacity:0; transform:translate(180px, -110px); } }
+        @keyframes flow-tyr-b-6 { 0%, 30% { opacity:0; transform:translate(0,0); } 32% { opacity:1; } 43% { opacity:1; transform:translate(160px, -100px); } 45%, 100% { opacity:0; transform:translate(180px, -110px); } }
+
+        .p-tyr-b-1 { animation: flow-tyr-b-1 14s infinite; }
+        .p-tyr-b-2 { animation: flow-tyr-b-2 14s infinite; }
+        .p-tyr-b-3 { animation: flow-tyr-b-3 14s infinite; }
+        .p-tyr-b-4 { animation: flow-tyr-b-4 14s infinite; }
+        .p-tyr-b-5 { animation: flow-tyr-b-5 14s infinite; }
+        .p-tyr-b-6 { animation: flow-tyr-b-6 14s infinite; }
+
+        /* Flowing Particles (Tyr to Hair) */
+        @keyframes flow-tyr-h-1 { 0% { opacity:0; transform:translate(0,0); } 2% { opacity:1; } 13% { opacity:1; transform:translate(160px, 110px); } 15%, 100% { opacity:0; transform:translate(180px, 120px); } }
+        @keyframes flow-tyr-h-2 { 0%, 6% { opacity:0; transform:translate(0,0); } 8% { opacity:1; } 19% { opacity:1; transform:translate(160px, 110px); } 21%, 100% { opacity:0; transform:translate(180px, 120px); } }
+        @keyframes flow-tyr-h-3 { 0%, 12% { opacity:0; transform:translate(0,0); } 14% { opacity:1; } 25% { opacity:1; transform:translate(160px, 110px); } 27%, 100% { opacity:0; transform:translate(180px, 120px); } }
+        @keyframes flow-tyr-h-4 { 0%, 18% { opacity:0; transform:translate(0,0); } 20% { opacity:1; } 31% { opacity:1; transform:translate(160px, 110px); } 33%, 100% { opacity:0; transform:translate(180px, 120px); } }
+        @keyframes flow-tyr-h-5 { 0%, 24% { opacity:0; transform:translate(0,0); } 26% { opacity:1; } 37% { opacity:1; transform:translate(160px, 110px); } 39%, 100% { opacity:0; transform:translate(180px, 120px); } }
+        @keyframes flow-tyr-h-6 { 0%, 30% { opacity:0; transform:translate(0,0); } 32% { opacity:1; } 43% { opacity:1; transform:translate(160px, 110px); } 45%, 100% { opacity:0; transform:translate(180px, 120px); } }
+
+        .p-tyr-h-1 { animation: flow-tyr-h-1 14s infinite; }
+        .p-tyr-h-2 { animation: flow-tyr-h-2 14s infinite; }
+        .p-tyr-h-3 { animation: flow-tyr-h-3 14s infinite; }
+        .p-tyr-h-4 { animation: flow-tyr-h-4 14s infinite; }
+        .p-tyr-h-5 { animation: flow-tyr-h-5 14s infinite; }
+        .p-tyr-h-6 { animation: flow-tyr-h-6 14s infinite; }
+
+        /* Typography Classes */
+        .label-main { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; fill: #2C3E50; }
+        .label-sub { font-family: 'Inter', sans-serif; font-size: 12px; fill: #555; }
+        .label-sci { font-family: 'Roboto Mono', monospace; font-size: 13px; fill: #2C3E50; font-weight: 700; }
+        .label-warning { font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 700; fill: #E74C3C; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Pleiotropy: Single Gene, Multiple Phenotypes</h1>
+        <p>A single gene mutation in the <strong>PAH gene</strong> causes a defective enzyme, leading to both a toxic buildup of Phenylalanine (causing mental retardation) and a deficiency in Tyrosine (causing reduced melanin/pigmentation). This is the classic example of <strong>Phenylketonuria (PKU)</strong>.</p>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 900 600" aria-label="Animated diagram showing the metabolic pathway of Pleiotropy using the PKU example.">
+            <defs>
+                <!-- Arrowhead Marker -->
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#7F8C8D"/>
+                </marker>
+                <!-- Dashed Arrowhead Marker -->
+                <marker id="arrow-dashed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50"/>
+                </marker>
+            </defs>
+
+            <!-- Background Cytoplasm -->
+            <rect x="40" y="60" width="820" height="500" rx="20" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3"/>
+            <text x="60" y="85" class="label-sub" fill="#4A90D9" font-style="italic">Cellular Environment (Cytoplasm)</text>
+
+            <!-- Status Indicator -->
+            <g transform="translate(60, 110)">
+                <rect x="0" y="0" width="260" height="40" rx="6" fill="#ffffff" stroke="#ccc" stroke-width="1"/>
+                <text x="130" y="25" text-anchor="middle" class="label-main status-normal" fill="#27AE60">STATUS: NORMAL METABOLISM</text>
+                <text x="130" y="25" text-anchor="middle" class="label-warning status-mutated">MUTATION: PLEIOTROPIC EFFECT</text>
+            </g>
+
+            <!-- ================= STATIC PATHWAYS & ARROWS ================= -->
+            
+            <!-- Gene to Enzyme -->
+            <line x1="450" y1="180" x2="450" y2="260" stroke="#2C3E50" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-dashed)"/>
+            <text x="460" y="225" class="label-sub">Transcription / Translation</text>
+
+            <!-- Phe to Enzyme -->
+            <line x1="200" y1="320" x2="380" y2="320" stroke="#7F8C8D" stroke-width="3" marker-end="url(#arrow)"/>
+            
+            <!-- Enzyme to Tyr -->
+            <line x1="510" y1="320" x2="540" y2="320" stroke="#7F8C8D" stroke-width="3" marker-end="url(#arrow)"/>
+
+            <!-- Tyr to Brain -->
+            <line x1="570" y1="310" x2="730" y2="200" stroke="#7F8C8D" stroke-width="3" marker-end="url(#arrow)"/>
+            
+            <!-- Tyr to Hair -->
+            <line x1="570" y1="330" x2="730" y2="440" stroke="#7F8C8D" stroke-width="3" marker-end="url(#arrow)"/>
+
+
+            <!-- ================= BIOLOGICAL COMPONENTS ================= -->
+
+            <!-- 1. The Gene (Top Center) -->
+            <g transform="translate(450, 130)">
+                <!-- DNA Double Helix -->
+                <g class="dna-strand">
+                    <path d="M-50,-20 Q-25,-20 0,0 T50,20" fill="none" stroke="currentColor" stroke-width="5"/>
+                    <path d="M-50,20 Q-25,20 0,0 T50,-20" fill="none" stroke="currentColor" stroke-width="5"/>
+                    <line x1="-35" y1="-12" x2="-35" y2="12" stroke="currentColor" stroke-width="2"/>
+                    <line x1="-15" y1="-5" x2="-15" y2="5" stroke="currentColor" stroke-width="2"/>
+                    <line x1="15" y1="-5" x2="15" y2="5" stroke="currentColor" stroke-width="2"/>
+                    <line x1="35" y1="-12" x2="35" y2="12" stroke="currentColor" stroke-width="2"/>
+                </g>
+                <text x="0" y="-35" text-anchor="middle" class="label-sci">PAH Gene</text>
+                <text x="0" y="45" text-anchor="middle" class="label-sub">(DNA Sequence)</text>
+            </g>
+
+            <!-- 2. The Enzyme (Center) -->
+            <g transform="translate(450, 320)">
+                <path class="enzyme" d="M -40,-20 C -40,-50 -10,-40 0,-20 C 10,-40 40,-50 40,-20 C 50,10 20,30 0,40 C -20,30 -50,10 -40,-20 Z" fill="#98D8C8" stroke="#2C3E50" stroke-width="2"/>
+                <text x="0" y="65" text-anchor="middle" class="label-sci">Phenylalanine hydroxylase</text>
+                <text x="0" y="80" text-anchor="middle" class="label-sub">(Enzyme)</text>
+            </g>
+
+            <!-- 3. Substrate: Phenylalanine (Left) -->
+            <g transform="translate(150, 320)">
+                <circle cx="0" cy="0" r="15" fill="#F39C12" stroke="#D68910" stroke-width="2"/>
+                <text x="0" y="40" text-anchor="middle" class="label-sci">Phenylalanine</text>
+                <text x="0" y="55" text-anchor="middle" class="label-sub">(Substrate)</text>
+            </g>
+
+            <!-- 4. Product: Tyrosine (Right) -->
+            <g transform="translate(550, 320)">
+                <circle cx="0" cy="0" r="15" fill="#3498DB" stroke="#2980B9" stroke-width="2"/>
+                <text x="0" y="40" text-anchor="middle" class="label-sci">Tyrosine</text>
+                <text x="0" y="55" text-anchor="middle" class="label-sub">(Product)</text>
+            </g>
+
+            <!-- 5. Phenotype 1: Brain (Top Right) -->
+            <g transform="translate(770, 180)">
+                <path class="brain-icon" d="M-30,20 C-50,20 -55,-10 -35,-25 C-40,-50 -15,-60 5,-50 C30,-60 55,-40 40,-15 C60,-5 45,25 25,20 C15,35 -5,35 -15,20 Z"/>
+                <text x="0" y="50" text-anchor="middle" class="label-main">Phenotype 1:</text>
+                <text x="0" y="65" text-anchor="middle" class="label-sub">Brain Development</text>
+                <text x="0" y="80" text-anchor="middle" class="label-warning status-mutated">Mental Retardation</text>
+            </g>
+
+            <!-- 6. Phenotype 2: Hair/Skin (Bottom Right) -->
+            <g transform="translate(770, 420)">
+                <!-- Skin layer -->
+                <path d="M-30,15 L30,15 L30,30 L-30,30 Z" fill="#F5CBA7" stroke="#E59866" stroke-width="1"/>
+                <!-- Hair Shaft & Bulb -->
+                <path class="hair-icon" d="M-8,15 L-8,-40 C-8,-50 8,-50 8,-40 L8,15 Z"/>
+                <circle class="hair-icon" cx="0" cy="10" r="12"/>
+                
+                <text x="0" y="55" text-anchor="middle" class="label-main">Phenotype 2:</text>
+                <text x="0" y="70" text-anchor="middle" class="label-sub">Melanin Synthesis</text>
+                <text x="0" y="85" text-anchor="middle" class="label-warning status-mutated">Hypopigmentation</text>
+            </g>
+
+
+            <!-- ================= ANIMATED ELEMENTS ================= -->
+
+            <!-- Flowing Phe Particles -->
+            <circle class="p-phe-1" cx="170" cy="320" r="6" fill="#F39C12" />
+            <circle class="p-phe-2" cx="170" cy="320" r="6" fill="#F39C12" />
+            <circle class="p-phe-3" cx="170" cy="320" r="6" fill="#F39C12" />
+            <circle class="p-phe-4" cx="170" cy="320" r="6" fill="#F39C12" />
+            <circle class="p-phe-5" cx="170" cy="320" r="6" fill="#F39C12" />
+            <circle class="p-phe-6" cx="170" cy="320" r="6" fill="#F39C12" />
+
+            <!-- Flowing Tyr Particles to Brain -->
+            <circle class="p-tyr-b-1" cx="550" cy="310" r="6" fill="#3498DB" />
+            <circle class="p-tyr-b-2" cx="550" cy="310" r="6" fill="#3498DB" />
+            <circle class="p-tyr-b-3" cx="550" cy="310" r="6" fill="#3498DB" />
+            <circle class="p-tyr-b-4" cx="550" cy="310" r="6" fill="#3498DB" />
+            <circle class="p-tyr-b-5" cx="550" cy="310" r="6" fill="#3498DB" />
+            <circle class="p-tyr-b-6" cx="550" cy="310" r="6" fill="#3498DB" />
+
+            <!-- Flowing Tyr Particles to Hair -->
+            <circle class="p-tyr-h-1" cx="550" cy="330" r="6" fill="#3498DB" />
+            <circle class="p-tyr-h-2" cx="550" cy="330" r="6" fill="#3498DB" />
+            <circle class="p-tyr-h-3" cx="550" cy="330" r="6" fill="#3498DB" />
+            <circle class="p-tyr-h-4" cx="550" cy="330" r="6" fill="#3498DB" />
+            <circle class="p-tyr-h-5" cx="550" cy="330" r="6" fill="#3498DB" />
+            <circle class="p-tyr-h-6" cx="550" cy="330" r="6" fill="#3498DB" />
+
+            <!-- Mutated State: Red X Block -->
+            <g class="red-x" stroke="#E74C3C" stroke-width="8" stroke-linecap="round">
+                <line x1="495" y1="305" x2="525" y2="335"/>
+                <line x1="525" y1="305" x2="495" y2="335"/>
+            </g>
+
+            <!-- Mutated State: Toxic Phe Buildup -->
+            <g class="shake-wrapper">
+                <g class="toxic-group">
+                    <circle cx="120" cy="320" r="14" />
+                    <circle cx="100" cy="295" r="12" />
+                    <circle cx="145" cy="290" r="16" />
+                    <circle cx="90" cy="335" r="15" />
+                    <circle cx="135" cy="350" r="13" />
+                    <circle cx="165" cy="310" r="14" />
+                    <circle cx="115" cy="360" r="11" />
+                    <text x="130" y="260" text-anchor="middle" class="label-warning" font-size="16px">TOXIC BUILDUP</text>
+                </g>
+            </g>
+
+            <!-- ================= LEGEND ================= -->
+            <g transform="translate(60, 470)">
+                <rect x="0" y="0" width="380" height="70" rx="8" fill="#ffffff" stroke="#BDC3C7" stroke-width="1"/>
+                <text x="10" y="20" class="label-main" font-size="12px">Legend:</text>
+                
+                <!-- Legend Items Row 1 -->
+                <circle cx="20" cy="35" r="6" fill="#F39C12"/>
+                <text x="35" y="40" class="label-sub">Phenylalanine</text>
+
+                <circle cx="130" cy="35" r="6" fill="#3498DB"/>
+                <text x="145" y="40" class="label-sub">Tyrosine</text>
+
+                <path d="M 220,35 C 220,30 225,32 228,35 C 230,38 225,40 220,35 Z" fill="#98D8C8" stroke="#2C3E50" stroke-width="1"/>
+                <text x="240" y="40" class="label-sub">PAH Enzyme</text>
+
+                <!-- Legend Items Row 2 -->
+                <path d="M 15,55 Q 20,50 25,55" fill="none" stroke="#FF6B6B" stroke-width="2"/>
+                <path d="M 15,55 Q 20,60 25,55" fill="none" stroke="#FF6B6B" stroke-width="2"/>
+                <text x="35" y="58" class="label-sub">Normal Gene</text>
+
+                <path d="M 125,55 Q 130,50 135,55" fill="none" stroke="#8B0000" stroke-width="2"/>
+                <path d="M 125,55 Q 130,60 135,55" fill="none" stroke="#8B0000" stroke-width="2"/>
+                <text x="145" y="58" class="label-sub">Mutated Gene</text>
+
+                <g stroke="#E74C3C" stroke-width="3" stroke-linecap="round">
+                    <line x1="220" y1="52" x2="228" y2="60"/>
+                    <line x1="228" y1="52" x2="220" y2="60"/>
+                </g>
+                <text x="240" y="58" class="label-sub">Metabolic Block</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

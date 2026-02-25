@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fluid Mosaic Model & Cell Wall Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #e9ecef;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* Typography */
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: #2C3E50;
+        }
+        .title { font-size: 22px; font-weight: 700; }
+        .subtitle { font-size: 14px; font-weight: 600; fill: #7F8C8D; }
+        .label { font-size: 12px; font-weight: 600; }
+        .process-label { font-family: 'Roboto Mono', monospace; font-size: 11px; fill: #E74C3C; font-weight: 700; }
+        .legend-text { font-size: 11px; font-weight: 400; }
+        
+        /* Lines */
+        .label-line {
+            stroke: #2C3E50;
+            stroke-width: 1.5;
+            fill: none;
+            stroke-dasharray: 3,3;
+        }
+
+        /* Animations */
+        @keyframes lipid-jiggle-1 {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(2px); }
+        }
+        @keyframes lipid-jiggle-2 {
+            0% { transform: translateY(2px); }
+            100% { transform: translateY(0px); }
+        }
+        @keyframes protein-drift {
+            0% { transform: translateX(-6px); }
+            100% { transform: translateX(6px); }
+        }
+        @keyframes transport-o2 {
+            0% { transform: translate(150px, 40px); opacity: 0; }
+            15% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { transform: translate(150px, 420px); opacity: 0; }
+        }
+        @keyframes transport-h2o {
+            0% { transform: translate(250px, 40px); opacity: 0; }
+            15% { opacity: 1; }
+            85% { opacity: 1; }
+            100% { transform: translate(250px, 420px); opacity: 0; }
+        }
+        @keyframes float-ion {
+            0% { transform: translate(0, 0); }
+            50% { transform: translate(10px, -10px); }
+            100% { transform: translate(0, 0); }
+        }
+
+        /* Animation Classes */
+        .lipid-group-1 { animation: lipid-jiggle-1 0.8s ease-in-out infinite alternate; }
+        .lipid-group-2 { animation: lipid-jiggle-2 0.8s ease-in-out infinite alternate; }
+        .protein-drift { animation: protein-drift 8s ease-in-out infinite alternate; }
+        .o2-anim-1 { animation: transport-o2 5s linear infinite; }
+        .o2-anim-2 { animation: transport-o2 5s linear infinite 1.6s; }
+        .o2-anim-3 { animation: transport-o2 5s linear infinite 3.2s; }
+        .h2o-anim-1 { animation: transport-h2o 4.5s linear infinite 0.5s; }
+        .h2o-anim-2 { animation: transport-h2o 4.5s linear infinite 2.0s; }
+        .h2o-anim-3 { animation: transport-h2o 4.5s linear infinite 3.5s; }
+        .ion-float { animation: float-ion 6s ease-in-out infinite; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">The Fluid Mosaic Model and the Cell Wall Interface</title>
+        <desc id="svg-desc">Animated diagram showing the fluid mosaic model of the plasma membrane situated beneath a rigid porous cellulose cell wall, demonstrating selective permeability.</desc>
+
+        <!-- Definitions -->
+        <defs>
+            <!-- Drop Shadow for 2.5D effect -->
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.25" />
+            </filter>
+            
+            <filter id="light-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="1" dy="2" stdDeviation="2" flood-opacity="0.15" />
+            </filter>
+
+            <!-- Phospholipid Top Layer -->
+            <g id="lipid-top">
+                <path d="M -4 8 Q -7 20 -3 35" fill="none" stroke="#3A80C9" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M 4 8 Q 7 20 3 35" fill="none" stroke="#3A80C9" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="0" cy="0" r="7.5" fill="#4A90D9" />
+                <circle cx="-2" cy="-2" r="2" fill="#ffffff" opacity="0.4" /> <!-- Highlight -->
+            </g>
+
+            <!-- Phospholipid Bottom Layer -->
+            <g id="lipid-bottom">
+                <path d="M -4 -8 Q -7 -20 -3 -35" fill="none" stroke="#3A80C9" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M 4 -8 Q 7 -20 3 -35" fill="none" stroke="#3A80C9" stroke-width="2.5" stroke-linecap="round"/>
+                <circle cx="0" cy="0" r="7.5" fill="#4A90D9" />
+                <circle cx="-2" cy="2" r="2" fill="#ffffff" opacity="0.4" /> <!-- Highlight -->
+            </g>
+
+            <!-- Cellulose Microfibril Pattern -->
+            <pattern id="cellulose" width="80" height="80" patternUnits="userSpaceOnUse">
+                <path d="M -10 20 Q 40 35 90 20 M -10 60 Q 40 45 90 60" stroke="#2ECC71" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.85"/>
+                <path d="M 20 -10 Q 35 40 20 90 M 60 -10 Q 45 40 60 90" stroke="#27AE60" stroke-width="5" fill="none" stroke-linecap="round" opacity="0.85"/>
+                <!-- Crosslinks -->
+                <line x1="20" y1="20" x2="60" y2="60" stroke="#2ECC71" stroke-width="2" opacity="0.6" />
+                <line x1="60" y1="20" x2="20" y2="60" stroke="#27AE60" stroke-width="2" opacity="0.6" />
+            </pattern>
+
+            <!-- O2 Molecule -->
+            <g id="o2-mol">
+                <circle cx="-4" cy="0" r="5" fill="#E74C3C" />
+                <circle cx="4" cy="0" r="5" fill="#E74C3C" />
+                <circle cx="-5" cy="-2" r="1.5" fill="#fff" opacity="0.5"/>
+                <circle cx="3" cy="-2" r="1.5" fill="#fff" opacity="0.5"/>
+            </g>
+
+            <!-- H2O Molecule -->
+            <g id="h2o-mol">
+                <circle cx="0" cy="0" r="6" fill="#E74C3C" /> <!-- Oxygen -->
+                <circle cx="-5" cy="5" r="3.5" fill="#f8f9fa" stroke="#bdc3c7" stroke-width="1"/> <!-- Hydrogen -->
+                <circle cx="5" cy="5" r="3.5" fill="#f8f9fa" stroke="#bdc3c7" stroke-width="1"/> <!-- Hydrogen -->
+                <circle cx="-1" cy="-2" r="1.5" fill="#fff" opacity="0.5"/>
+            </g>
+        </defs>
+
+        <!-- Backgrounds -->
+        <rect width="100%" height="100%" fill="#f8f9fa" />
+        
+        <!-- Cytoplasm Background -->
+        <rect x="0" y="285" width="800" height="215" fill="#E8F4FD" />
+        
+        <!-- Cytoskeleton / Cytoplasm details -->
+        <g stroke="#D4E6F1" stroke-width="2" opacity="0.6">
+            <path d="M -20 350 Q 200 380 400 340 T 820 360" />
+            <path d="M -20 420 Q 200 390 400 430 T 820 410" />
+            <path d="M 100 285 L 150 500 M 650 285 L 600 500" stroke-dasharray="5,5" />
+        </g>
+        
+        <!-- Floating Ions in Cytoplasm -->
+        <g class="ion-float">
+            <circle cx="80" cy="380" r="3" fill="#98D8C8" opacity="0.7" />
+            <circle cx="350" cy="450" r="4" fill="#FFA07A" opacity="0.7" />
+            <circle cx="720" cy="340" r="2.5" fill="#4A90D9" opacity="0.7" />
+            <circle cx="500" cy="390" r="3" fill="#2ECC71" opacity="0.7" />
+        </g>
+
+        <!-- Cell Wall (Rigid, Static) -->
+        <rect x="0" y="100" width="800" height="80" fill="url(#cellulose)" />
+        
+        <!-- Plasma Membrane (Fluid, Animated) -->
+        <g>
+            <!-- Group 1 (Odd Lipids) -->
+            <g class="lipid-group-1">
+                <!-- Top Layer -->
+                <use href="#lipid-top" x="10" y="215"/><use href="#lipid-top" x="50" y="215"/><use href="#lipid-top" x="90" y="215"/>
+                <use href="#lipid-top" x="130" y="215"/><use href="#lipid-top" x="170" y="215"/><use href="#lipid-top" x="210" y="215"/>
+                <!-- Skip 230-270 for Aquaporin -->
+                <use href="#lipid-top" x="290" y="215"/><use href="#lipid-top" x="330" y="215"/><use href="#lipid-top" x="370" y="215"/>
+                <use href="#lipid-top" x="410" y="215"/><use href="#lipid-top" x="450" y="215"/><use href="#lipid-top" x="490" y="215"/>
+                <!-- Skip 530-570 for Integral Protein -->
+                <use href="#lipid-top" x="590" y="215"/><use href="#lipid-top" x="630" y="215"/><use href="#lipid-top" x="670" y="215"/>
+                <use href="#lipid-top" x="710" y="215"/><use href="#lipid-top" x="750" y="215"/><use href="#lipid-top" x="790" y="215"/>
+                
+                <!-- Bottom Layer -->
+                <use href="#lipid-bottom" x="10" y="285"/><use href="#lipid-bottom" x="50" y="285"/><use href="#lipid-bottom" x="90" y="285"/>
+                <use href="#lipid-bottom" x="130" y="285"/><use href="#lipid-bottom" x="170" y="285"/><use href="#lipid-bottom" x="210" y="285"/>
+                <!-- Skip 230-270 -->
+                <use href="#lipid-bottom" x="290" y="285"/><use href="#lipid-bottom" x="330" y="285"/><use href="#lipid-bottom" x="370" y="285"/>
+                <use href="#lipid-bottom" x="410" y="285"/><use href="#lipid-bottom" x="450" y="285"/><use href="#lipid-bottom" x="490" y="285"/>
+                <!-- Skip 530-570 -->
+                <use href="#lipid-bottom" x="590" y="285"/><use href="#lipid-bottom" x="630" y="285"/><use href="#lipid-bottom" x="670" y="285"/>
+                <use href="#lipid-bottom" x="710" y="285"/><use href="#lipid-bottom" x="750" y="285"/><use href="#lipid-bottom" x="790" y="285"/>
+            </g>
+
+            <!-- Group 2 (Even Lipids) -->
+            <g class="lipid-group-2">
+                <!-- Top Layer -->
+                <use href="#lipid-top" x="30" y="215"/><use href="#lipid-top" x="70" y="215"/><use href="#lipid-top" x="110" y="215"/>
+                <use href="#lipid-top" x="150" y="215"/><use href="#lipid-top" x="190" y="215"/>
+                <!-- Skip 230-270 -->
+                <use href="#lipid-top" x="310" y="215"/><use href="#lipid-top" x="350" y="215"/><use href="#lipid-top" x="390" y="215"/>
+                <use href="#lipid-top" x="430" y="215"/><use href="#lipid-top" x="470" y="215"/><use href="#lipid-top" x="510" y="215"/>
+                <!-- Skip 530-570 -->
+                <use href="#lipid-top" x="610" y="215"/><use href="#lipid-top" x="650" y="215"/><use href="#lipid-top" x="690" y="215"/>
+                <use href="#lipid-top" x="730" y="215"/><use href="#lipid-top" x="770" y="215"/>
+
+                <!-- Bottom Layer -->
+                <use href="#lipid-bottom" x="30" y="285"/><use href="#lipid-bottom" x="70" y="285"/><use href="#lipid-bottom" x="110" y="285"/>
+                <use href="#lipid-bottom" x="150" y="285"/><use href="#lipid-bottom" x="190" y="285"/>
+                <!-- Skip 230-270 -->
+                <use href="#lipid-bottom" x="310" y="285"/><use href="#lipid-bottom" x="350" y="285"/><use href="#lipid-bottom" x="390" y="285"/>
+                <use href="#lipid-bottom" x="430" y="285"/><use href="#lipid-bottom" x="470" y="285"/><use href="#lipid-bottom" x="510" y="285"/>
+                <!-- Skip 530-570 -->
+                <use href="#lipid-bottom" x="610" y="285"/><use href="#lipid-bottom" x="650" y="285"/><use href="#lipid-bottom" x="690" y="285"/>
+                <use href="#lipid-bottom" x="730" y="285"/><use href="#lipid-bottom" x="770" y="285"/>
+            </g>
+        </g>
+
+        <!-- Proteins (Drifting) -->
+        <g class="protein-drift">
+            <!-- Aquaporin (Integral Protein 1) -->
+            <g>
+                <!-- Left Subunit -->
+                <path d="M 220 195 C 220 175, 245 175, 245 195 L 245 305 C 245 325, 220 325, 220 305 Z" fill="#98D8C8" filter="url(#shadow)" />
+                <!-- Right Subunit -->
+                <path d="M 280 195 C 280 175, 255 175, 255 195 L 255 305 C 255 325, 280 325, 280 305 Z" fill="#98D8C8" filter="url(#shadow)" />
+                <!-- Channel Inner Shadow -->
+                <rect x="245" y="195" width="10" height="110" fill="#7AB8A8" opacity="0.4" />
+            </g>
+
+            <!-- Integral Protein 2 (Solid) -->
+            <rect x="520" y="190" width="60" height="120" rx="25" fill="#98D8C8" filter="url(#shadow)" />
+            <path d="M 530 200 Q 550 220 570 200" fill="none" stroke="#7AB8A8" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+            <path d="M 530 280 Q 550 300 570 280" fill="none" stroke="#7AB8A8" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+
+            <!-- Peripheral Protein -->
+            <path d="M 380 285 C 380 315, 440 315, 440 285 C 440 265, 380 265, 380 285 Z" fill="#98D8C8" filter="url(#shadow)" />
+
+            <!-- Glycoprotein (Attached to Integral Protein 2) -->
+            <g>
+                <path d="M 550 190 L 550 150 L 525 125 M 550 150 L 575 125 M 575 125 L 590 100 M 575 125 L 560 100" stroke="#FFA07A" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#light-shadow)"/>
+                <!-- Sugar Residues -->
+                <circle cx="550" cy="150" r="4.5" fill="#FFA07A" />
+                <circle cx="525" cy="125" r="4.5" fill="#FFA07A" />
+                <circle cx="575" cy="125" r="4.5" fill="#FFA07A" />
+                <circle cx="590" cy="100" r="4.5" fill="#FFA07A" />
+                <circle cx="560" cy="100" r="4.5" fill="#FFA07A" />
+            </g>
+            
+            <!-- Glycolipid (Attached to a lipid head) -->
+            <g>
+                <path d="M 670 215 L 670 170 L 695 145 M 670 170 L 645 145" stroke="#FFA07A" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#light-shadow)"/>
+                <circle cx="670" cy="170" r="4" fill="#FFA07A" />
+                <circle cx="695" cy="145" r="4" fill="#FFA07A" />
+                <circle cx="645" cy="145" r="4" fill="#FFA07A" />
+            </g>
+        </g>
+
+        <!-- Transporting Molecules (Animated) -->
+        <!-- O2 Simple Diffusion -->
+        <use href="#o2-mol" class="o2-anim-1" />
+        <use href="#o2-mol" class="o2-anim-2" />
+        <use href="#o2-mol" class="o2-anim-3" />
+
+        <!-- H2O Facilitated Diffusion -->
+        <use href="#h2o-mol" class="h2o-anim-1" />
+        <use href="#h2o-mol" class="h2o-anim-2" />
+        <use href="#h2o-mol" class="h2o-anim-3" />
+
+        <!-- Labels and Annotations -->
+        <!-- Title -->
+        <text x="25" y="40" class="title">The Fluid Mosaic Model &amp; Cell Wall Interface</text>
+        <text x="25" y="60" class="subtitle">Structural relationship and selective permeability</text>
+
+        <!-- Region Labels -->
+        <text x="25" y="90" class="label" fill="#7F8C8D">Extracellular Space</text>
+        <text x="25" y="475" class="label" fill="#34495E">Cytoplasm (Intracellular)</text>
+
+        <!-- Structure Pointers -->
+        <!-- Cell Wall -->
+        <polyline points="630,140 580,140" class="label-line" />
+        <text x="640" y="144" class="label">Cell Wall (Cellulose Lattice)</text>
+        <text x="640" y="158" class="legend-text" fill="#7F8C8D">Rigid, porous structure</text>
+
+        <!-- Plasma Membrane -->
+        <polyline points="630,250 580,250" class="label-line" />
+        <text x="640" y="254" class="label">Plasma Membrane</text>
+        <text x="640" y="268" class="legend-text" fill="#7F8C8D">Fluid phospholipid bilayer</text>
+
+        <!-- Integral Protein -->
+        <polyline points="630,320 570,290" class="label-line" />
+        <text x="640" y="324" class="label">Integral Protein</text>
+
+        <!-- Peripheral Protein -->
+        <polyline points="460,350 420,300" class="label-line" />
+        <text x="470" y="354" class="label">Peripheral Protein</text>
+
+        <!-- Glycoprotein -->
+        <polyline points="630,100 585,115" class="label-line" />
+        <text x="640" y="104" class="label">Glycoprotein</text>
+
+        <!-- Phospholipid Parts -->
+        <polyline points="100,215 130,215" class="label-line" />
+        <text x="15" y="219" class="label">Hydrophilic Head</text>
+        
+        <polyline points="100,240 130,240" class="label-line" />
+        <text x="15" y="244" class="label">Hydrophobic Tail</text>
+
+        <!-- Process Labels -->
+        <text x="50" y="360" class="process-label">Passive Diffusion</text>
+        <path d="M 150 190 L 150 320" stroke="#E74C3C" stroke-width="1.5" stroke-dasharray="4,4" fill="none" opacity="0.5" />
+        <polygon points="146,315 154,315 150,325" fill="#E74C3C" opacity="0.5" />
+
+        <text x="200" y="360" class="process-label" fill="#3498DB">Facilitated Diffusion</text>
+        <text x="200" y="375" class="process-label" fill="#3498DB">(Aquaporin Channel)</text>
+        <path d="M 250 190 L 250 320" stroke="#3498DB" stroke-width="1.5" stroke-dasharray="4,4" fill="none" opacity="0.5" />
+        <polygon points="246,315 254,315 250,325" fill="#3498DB" opacity="0.5" />
+
+        <!-- Legend Box -->
+        <g transform="translate(600, 380)">
+            <rect width="175" height="95" rx="6" fill="#ffffff" filter="url(#shadow)" />
+            <text x="15" y="20" class="label">Key</text>
+            
+            <use href="#o2-mol" x="25" y="35" />
+            <text x="45" y="39" class="legend-text">O₂ Molecule</text>
+            
+            <use href="#h2o-mol" x="25" y="55" />
+            <text x="45" y="59" class="legend-text">H₂O Molecule</text>
+
+            <circle cx="25" cy="75" r="4" fill="#4A90D9" />
+            <text x="45" y="79" class="legend-text">Phospholipid</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

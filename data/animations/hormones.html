@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hormonal Control of the Menstrual Cycle</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        }
+
+        /* CSS Animations */
+        .endo-cross {
+            animation: endoGrow 20s linear infinite;
+        }
+
+        @keyframes endoGrow {
+            0%   { transform: scaleY(0.7); }
+            17.8% { transform: scaleY(0.15); }
+            50%  { transform: scaleY(0.6); }
+            75%  { transform: scaleY(1.0); }
+            100% { transform: scaleY(0.7); }
+        }
+
+        /* Dynamic Follicle Crossfades */
+        .dyn-primary { animation: fadePrimary 20s linear infinite; }
+        @keyframes fadePrimary { 0%, 15% {opacity:1} 20%, 100% {opacity:0} }
+
+        .dyn-secondary { animation: fadeSec 20s linear infinite; }
+        @keyframes fadeSec { 0%, 15% {opacity:0} 20%, 40% {opacity:1} 45%, 100% {opacity:0} }
+
+        .dyn-graafian { animation: fadeGraaf 20s linear infinite; }
+        @keyframes fadeGraaf { 0%, 40% {opacity:0} 45%, 49% {opacity:1} 51%, 100% {opacity:0} }
+
+        .dyn-ovulation { animation: fadeOv 20s linear infinite; }
+        @keyframes fadeOv { 0%, 49% {opacity:0} 50%, 55% {opacity:1} 56%, 100% {opacity:0} }
+
+        .dyn-luteum { animation: fadeLut 20s linear infinite; }
+        @keyframes fadeLut { 0%, 55% {opacity:0} 60%, 80% {opacity:1} 85%, 100% {opacity:0} }
+
+        .dyn-albicans { animation: fadeAlb 20s linear infinite; }
+        @keyframes fadeAlb { 0%, 80% {opacity:0} 85%, 100% {opacity:1} }
+
+        /* Dynamic Text Labels */
+        .label-menstruation { animation: fadeMenstruation 20s linear infinite; }
+        @keyframes fadeMenstruation { 0%, 15% {opacity:1} 18%, 100% {opacity:0} }
+
+        .label-proliferative { animation: fadeProlif 20s linear infinite; }
+        @keyframes fadeProlif { 0%, 20% {opacity:0} 25%, 45% {opacity:1} 50%, 100% {opacity:0} }
+
+        .label-lh-surge { animation: fadeLH 20s linear infinite; }
+        @keyframes fadeLH { 0%, 45% {opacity:0} 48%, 52% {opacity:1} 55%, 100% {opacity:0} }
+
+        .label-ovulation { animation: fadeOvul 20s linear infinite; }
+        @keyframes fadeOvul { 0%, 48% {opacity:0} 50%, 55% {opacity:1} 58%, 100% {opacity:0} }
+
+        .label-secretory { animation: fadeSecPhase 20s linear infinite; }
+        @keyframes fadeSecPhase { 0%, 55% {opacity:0} 60%, 95% {opacity:1} 100%, 100% {opacity:0} }
+
+        /* Timeline Follicle Highlights */
+        .tl-follicle { transition: all 0.3s ease; }
+        
+        .gland-path {
+            stroke-dasharray: 50;
+            animation: drawGland 20s linear infinite;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <svg viewBox="0 0 850 550" aria-label="Animated diagram of the hormonal control of the menstrual cycle" role="img">
+        <title>Hormonal Regulation of the Menstrual Cycle</title>
+        <desc>A 28-day synchronized timeline showing Pituitary Hormones (FSH, LH), Ovarian Events (Follicle development), Ovarian Hormones (Estrogen, Progesterone), and the Uterine Cycle (Endometrium thickness).</desc>
+
+        <defs>
+            <!-- Clip path that moves left to right to reveal the active graphs -->
+            <clipPath id="reveal-clip">
+                <rect x="200" y="0" width="0" height="550">
+                    <animate attributeName="width" from="0" to="600" dur="20s" repeatCount="indefinite" />
+                </rect>
+            </clipPath>
+            
+            <!-- Endometrium Gland Pattern -->
+            <pattern id="gland-pattern" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 10 0 Q 20 10, 10 20 Q 0 10, 10 0" fill="none" stroke="#C0392B" stroke-width="1" opacity="0.2"/>
+            </pattern>
+        </defs>
+
+        <!-- Main Title -->
+        <text x="425" y="30" font-size="22" font-weight="700" text-anchor="middle" fill="#2C3E50">Hormonal Regulation of the Menstrual Cycle</text>
+
+        <!-- White Background for Graph Area -->
+        <rect x="200" y="50" width="600" height="400" fill="#ffffff" rx="8" />
+
+        <!-- Grid Lines & Dividers -->
+        <g stroke="#E8F4FD" stroke-width="2">
+            <line x1="200" y1="130" x2="800" y2="130" />
+            <line x1="200" y1="230" x2="800" y2="230" />
+            <line x1="200" y1="330" x2="800" y2="330" />
+            <line x1="200" y1="450" x2="800" y2="450" />
+        </g>
+        
+        <!-- Vertical Day Markers (Faint) -->
+        <g stroke="#f8f9fa" stroke-width="2">
+            <line x1="285" y1="50" x2="285" y2="450" /> <!-- Day 5 -->
+            <line x1="478" y1="50" x2="478" y2="450" /> <!-- Day 14 -->
+            <line x1="628" y1="50" x2="628" y2="450" /> <!-- Day 21 -->
+        </g>
+
+        <!-- Y-Axis Labels (Left Panel) -->
+        <g font-size="13" font-weight="600" fill="#2C3E50">
+            <text x="15" y="80">Pituitary Hormones</text>
+            <text x="15" y="180">Ovarian Events</text>
+            <text x="15" y="280">Ovarian Hormones</text>
+            <text x="15" y="380">Uterine Cycle</text>
+        </g>
+
+        <!-- Legends -->
+        <g font-size="11" font-weight="600" fill="#7F8C8D">
+            <!-- Tier 1 Legend -->
+            <line x1="15" y1="100" x2="35" y2="100" stroke="#3498DB" stroke-width="3"/>
+            <text x="45" y="104">FSH</text>
+            <line x1="15" y1="118" x2="35" y2="118" stroke="#E74C3C" stroke-width="3"/>
+            <text x="45" y="122">LH</text>
+
+            <!-- Tier 3 Legend -->
+            <line x1="15" y1="300" x2="35" y2="300" stroke="#9B59B6" stroke-width="3"/>
+            <text x="45" y="304">Estrogen</text>
+            <line x1="15" y1="318" x2="35" y2="318" stroke="#F39C12" stroke-width="3"/>
+            <text x="45" y="322">Progesterone</text>
+        </g>
+
+        <!-- X-Axis Labels -->
+        <g font-size="12" font-weight="600" fill="#7F8C8D" text-anchor="middle">
+            <text x="200" y="475">Day 1</text>
+            <text x="285" y="475">Day 5</text>
+            <text x="478" y="475" fill="#E74C3C">Day 14 (Ovulation)</text>
+            <text x="628" y="475">Day 21</text>
+            <text x="800" y="475">Day 28</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- BACKGROUND GRAPHS (Faint, shows full cycle)-->
+        <!-- ========================================== -->
+        <g opacity="0.15">
+            <!-- FSH -->
+            <path d="M 200 110 Q 285 100, 350 115 Q 430 115, 478 80 Q 510 120, 628 120 Q 700 120, 800 110" fill="none" stroke="#3498DB" stroke-width="3" />
+            <!-- LH -->
+            <path d="M 200 120 L 430 120 Q 460 120, 478 55 Q 490 125, 530 125 L 800 120" fill="none" stroke="#E74C3C" stroke-width="3" />
+            <!-- Estrogen -->
+            <path d="M 200 315 L 300 315 Q 400 315, 457 250 Q 478 290, 500 290 Q 550 290, 628 270 Q 700 270, 800 315" fill="none" stroke="#9B59B6" stroke-width="3" />
+            <!-- Progesterone -->
+            <path d="M 200 325 L 478 325 Q 530 325, 628 250 Q 730 250, 800 325" fill="none" stroke="#F39C12" stroke-width="3" />
+            <!-- Endometrium Area -->
+            <path d="M 200 450 L 200 380 C 240 380, 260 435, 285 435 C 380 435, 430 390, 478 390 C 550 390, 590 350, 628 350 C 700 350, 750 380, 800 380 L 800 450 Z" fill="#C0392B" />
+        </g>
+
+        <!-- ========================================== -->
+        <!-- FOREGROUND GRAPHS (Revealed by Clip Path)  -->
+        <!-- ========================================== -->
+        <g clip-path="url(#reveal-clip)">
+            <!-- FSH -->
+            <path d="M 200 110 Q 285 100, 350 115 Q 430 115, 478 80 Q 510 120, 628 120 Q 700 120, 800 110" fill="none" stroke="#3498DB" stroke-width="4" stroke-linecap="round" />
+            
+            <!-- LH -->
+            <path d="M 200 120 L 430 120 Q 460 120, 478 55 Q 490 125, 530 125 L 800 120" fill="none" stroke="#E74C3C" stroke-width="4" stroke-linecap="round" />
+            
+            <!-- Estrogen -->
+            <path d="M 200 315 L 300 315 Q 400 315, 457 250 Q 478 290, 500 290 Q 550 290, 628 270 Q 700 270, 800 315" fill="none" stroke="#9B59B6" stroke-width="4" stroke-linecap="round" />
+            
+            <!-- Progesterone -->
+            <path d="M 200 325 L 478 325 Q 530 325, 628 250 Q 730 250, 800 325" fill="none" stroke="#F39C12" stroke-width="4" stroke-linecap="round" />
+            
+            <!-- Endometrium Area -->
+            <path d="M 200 450 L 200 380 C 240 380, 260 435, 285 435 C 380 435, 430 390, 478 390 C 550 390, 590 350, 628 350 C 700 350, 750 380, 800 380 L 800 450 Z" fill="#C0392B" opacity="0.4" />
+            <!-- Endometrium Top Border -->
+            <path d="M 200 380 C 240 380, 260 435, 285 435 C 380 435, 430 390, 478 390 C 550 390, 590 350, 628 350 C 700 350, 750 380, 800 380" fill="none" stroke="#C0392B" stroke-width="3" />
+            
+            <!-- Secretory Phase Glands (Squiggly lines inside endometrium) -->
+            <g fill="none" stroke="#C0392B" stroke-width="2" opacity="0.7">
+                <path d="M 550 450 Q 555 410, 545 380 Q 555 360, 550 355" />
+                <path d="M 600 450 Q 590 410, 605 380 Q 595 360, 600 355" />
+                <path d="M 650 450 Q 655 410, 645 380 Q 655 360, 650 355" />
+                <path d="M 700 450 Q 690 410, 705 380 Q 695 360, 700 370" />
+                <path d="M 750 450 Q 755 410, 745 380 Q 755 360, 750 375" />
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- TIMELINE FOLLICLES (Tier 2 Static Background) -->
+        <!-- ========================================== -->
+        <g transform="translate(0, 190)">
+            <!-- Day 4: Primary -->
+            <circle cx="264" cy="0" r="6" fill="#F39C12" opacity="0.8" />
+            
+            <!-- Day 9: Secondary -->
+            <g transform="translate(371, 0)" opacity="0.8">
+                <circle cx="0" cy="0" r="12" fill="#F39C12" />
+                <circle cx="-2" cy="-2" r="5" fill="#E8F4FD" /> <!-- Antrum -->
+                <circle cx="3" cy="3" r="3" fill="#2C3E50" /> <!-- Oocyte -->
+            </g>
+            
+            <!-- Day 13: Graafian -->
+            <g transform="translate(457, 0)" opacity="0.8">
+                <circle cx="0" cy="0" r="18" fill="#F39C12" />
+                <circle cx="-3" cy="-3" r="10" fill="#E8F4FD" />
+                <circle cx="8" cy="8" r="4" fill="#2C3E50" />
+            </g>
+            
+            <!-- Day 14: Ovulation (Ruptured) -->
+            <g transform="translate(478, 0)">
+                <path d="M-15,0 A15,15 0 1,0 15,0 A15,15 0 0,0 -15,0" fill="#F39C12" stroke="#E74C3C" stroke-dasharray="2,2" opacity="0.8"/>
+                <!-- Animated Oocyte popping out -->
+                <circle cx="0" cy="0" r="4" fill="#2C3E50">
+                    <animateTransform attributeName="transform" type="translate" values="0,0; 0,0; 0,-25; 0,-25; 0,0" keyTimes="0; 0.49; 0.51; 0.95; 1" dur="20s" repeatCount="indefinite" />
+                </circle>
+            </g>
+            
+            <!-- Day 21: Corpus Luteum -->
+            <g transform="translate(628, 0)" opacity="0.8">
+                <path d="M-15,-5 Q-10,-15 0,-10 Q10,-15 15,-5 Q20,5 10,15 Q0,20 -10,15 Q-20,5 -15,-5 Z" fill="#F1C40F" />
+            </g>
+            
+            <!-- Day 26: Corpus Albicans -->
+            <g transform="translate(735, 0)" opacity="0.8">
+                <path d="M-8,-2 Q-5,-8 0,-5 Q5,-8 8,-2 Q10,3 5,8 Q0,10 -5,8 Q-10,3 -8,-2 Z" fill="#BDC3C7" />
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- DYNAMIC LEFT PANEL (Cross-sections)        -->
+        <!-- ========================================== -->
+        
+        <!-- Dynamic Follicle Morphing (X=140, Y=190) -->
+        <g transform="translate(140, 190)">
+            <!-- Primary -->
+            <g class="dyn-primary">
+                <circle cx="0" cy="0" r="8" fill="#F39C12" />
+            </g>
+            <!-- Secondary -->
+            <g class="dyn-secondary">
+                <circle cx="0" cy="0" r="14" fill="#F39C12" />
+                <circle cx="-2" cy="-2" r="6" fill="#E8F4FD" />
+                <circle cx="4" cy="4" r="3" fill="#2C3E50" />
+            </g>
+            <!-- Graafian -->
+            <g class="dyn-graafian">
+                <circle cx="0" cy="0" r="20" fill="#F39C12" />
+                <circle cx="-4" cy="-4" r="12" fill="#E8F4FD" />
+                <circle cx="8" cy="8" r="5" fill="#2C3E50" />
+            </g>
+            <!-- Ovulation -->
+            <g class="dyn-ovulation">
+                <path d="M-18,0 A18,18 0 1,0 18,0 A18,18 0 0,0 -18,0" fill="#F39C12" stroke="#E74C3C" stroke-dasharray="3,3" />
+                <circle cx="0" cy="-25" r="5" fill="#2C3E50" />
+            </g>
+            <!-- Corpus Luteum -->
+            <g class="dyn-luteum">
+                <path d="M-18,-6 Q-12,-18 0,-12 Q12,-18 18,-6 Q24,6 12,18 Q0,24 -12,18 Q-24,6 -18,-6 Z" fill="#F1C40F" />
+            </g>
+            <!-- Corpus Albicans -->
+            <g class="dyn-albicans">
+                <path d="M-10,-3 Q-6,-10 0,-6 Q6,-10 10,-3 Q12,4 6,10 Q0,12 -6,10 Q-12,4 -10,-3 Z" fill="#BDC3C7" />
+            </g>
+        </g>
+
+        <!-- Dynamic Endometrium Cross-section (X=140, Y=450) -->
+        <rect x="120" y="350" width="40" height="100" fill="#C0392B" opacity="0.6" rx="3" class="endo-cross" style="transform-origin: 140px 450px;" />
+
+        <!-- ========================================== -->
+        <!-- DYNAMIC TEXT LABELS                        -->
+        <!-- ========================================== -->
+        <text x="240" y="400" class="label-menstruation" font-size="12" fill="#C0392B" font-weight="700">Menstruation</text>
+        <text x="350" y="400" class="label-proliferative" font-size="12" fill="#C0392B" font-weight="700">Proliferative Phase</text>
+        
+        <text x="485" y="65" class="label-lh-surge" font-size="13" fill="#E74C3C" font-weight="700">LH Surge!</text>
+        <text x="485" y="160" class="label-ovulation" font-size="12" fill="#2C3E50" font-weight="700">Ovulation</text>
+        
+        <text x="628" y="400" class="label-secretory" font-size="12" fill="#C0392B" font-weight="700" text-anchor="middle">Secretory Phase</text>
+
+        <!-- ========================================== -->
+        <!-- PLAYHEAD (Day Marker)                      -->
+        <!-- ========================================== -->
+        <g id="playhead">
+            <line x1="0" y1="50" x2="0" y2="460" stroke="#7F8C8D" stroke-dasharray="6,4" stroke-width="2" />
+            <polygon points="-6,50 6,50 0,62" fill="#7F8C8D" />
+            <polygon points="-6,460 6,460 0,448" fill="#7F8C8D" />
+            
+            <!-- SMIL Animation for Playhead -->
+            <animateTransform attributeName="transform" type="translate" from="200 0" to="800 0" dur="20s" repeatCount="indefinite" />
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

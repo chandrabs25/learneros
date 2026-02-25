@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C4 Pathway & Kranz Anatomy</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 100%;
+            max-height: 90vh;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* SVG Element Styles */
+        .text-title { font-size: 24px; font-weight: 700; fill: #2C3E50; }
+        .text-label { font-size: 12px; fill: #2C3E50; }
+        .text-bold { font-weight: 600; }
+        .text-chem { font-family: 'Roboto Mono', monospace; font-size: 9px; }
+        .text-enzyme { font-size: 10px; font-style: italic; fill: #2C3E50; }
+        
+        /* Animations */
+        .calvin-cycle {
+            transform-origin: 400px 285px;
+            animation: spin 4s linear infinite;
+        }
+
+        .stoma-left { animation: pulse-left 4s ease-in-out infinite; }
+        .stoma-right { animation: pulse-right 4s ease-in-out infinite; }
+
+        .molecule {
+            animation-duration: 12s;
+            animation-timing-function: linear;
+            animation-iteration-count: infinite;
+        }
+
+        #co2-entry { animation-name: co2-entry-path; }
+        #c4-acid { animation-name: c4-path; }
+        #co2-bsc { animation-name: co2-bsc-path; }
+        #c3-acid { animation-name: c3-path; }
+        #sugar { animation-name: sugar-path; }
+
+        /* Keyframes for 12-second loop */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse-left {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-3px); }
+        }
+
+        @keyframes pulse-right {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(3px); }
+        }
+
+        /* 0-2s: CO2 Entry */
+        @keyframes co2-entry-path {
+            0% { transform: translate(400px, 480px); opacity: 0; }
+            2% { transform: translate(400px, 470px); opacity: 1; }
+            16.6% { transform: translate(400px, 345px); opacity: 1; }
+            17%, 100% { transform: translate(400px, 345px); opacity: 0; }
+        }
+
+        /* 2-6s: Fixation & Transport */
+        @keyframes c4-path {
+            0%, 16.5% { transform: translate(400px, 345px); opacity: 0; }
+            16.6% { transform: translate(400px, 345px); opacity: 1; }
+            33.3% { transform: translate(400px, 345px); opacity: 1; }
+            50% { transform: translate(400px, 295px); opacity: 1; }
+            51%, 100% { transform: translate(400px, 295px); opacity: 0; }
+        }
+
+        /* 6-8s: Decarboxylation (CO2 to Calvin) */
+        @keyframes co2-bsc-path {
+            0%, 50% { transform: translate(400px, 295px); opacity: 0; }
+            51% { transform: translate(400px, 295px); opacity: 1; }
+            66.6% { transform: translate(400px, 285px); opacity: 1; }
+            67%, 100% { transform: translate(400px, 285px); opacity: 0; }
+        }
+
+        /* 6-10s: Regeneration (C3 returns) */
+        @keyframes c3-path {
+            0%, 50% { transform: translate(400px, 295px); opacity: 0; }
+            51% { transform: translate(400px, 295px); opacity: 1; }
+            60% { transform: translate(360px, 295px); opacity: 1; }
+            75% { transform: translate(360px, 345px); opacity: 1; }
+            83.3% { transform: translate(400px, 345px); opacity: 1; }
+            84%, 100% { transform: translate(400px, 345px); opacity: 0; }
+        }
+
+        /* 10-12s: Sugar Export */
+        @keyframes sugar-path {
+            0%, 83.3% { transform: translate(400px, 285px); opacity: 0; }
+            84% { transform: translate(400px, 285px); opacity: 1; }
+            99% { transform: translate(400px, 240px); opacity: 1; }
+            100% { transform: translate(400px, 240px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" aria-label="Animated diagram showing the C4 photosynthetic pathway and Kranz anatomy in a plant leaf.">
+            <defs>
+                <!-- Arrow Marker for Pathways -->
+                <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0,0 L 10,5 L 0,10 z" fill="#7F8C8D" />
+                </marker>
+
+                <!-- Bundle Sheath Chloroplast (Agranal, Large) -->
+                <g id="chloroplast-bsc">
+                    <ellipse cx="0" cy="0" rx="8" ry="4" fill="#196F3D" />
+                </g>
+
+                <!-- Mesophyll Chloroplast (Granal, Small) -->
+                <g id="chloroplast-mc">
+                    <ellipse cx="0" cy="0" rx="5" ry="3" fill="#145A32" />
+                    <!-- Grana stacks representation -->
+                    <line x1="-2" y1="-2" x2="-2" y2="2" stroke="#A9DFBF" stroke-width="0.5" />
+                    <line x1="0" y1="-2" x2="0" y2="2" stroke="#A9DFBF" stroke-width="0.5" />
+                    <line x1="2" y1="-2" x2="2" y2="2" stroke="#A9DFBF" stroke-width="0.5" />
+                </g>
+
+                <!-- Single Kranz Anatomy Segment (1/8th of the Wreath) -->
+                <!-- Designed to point downwards (0 degrees) -->
+                <g id="kranz-unit">
+                    <!-- Bundle Sheath Cell (Thick wall) -->
+                    <path d="M 15.3,37 L 34.4,83.1 A 90 90 0 0 1 -34.4,83.1 L -15.3,37 A 40 40 0 0 0 15.3,37 Z" 
+                          fill="#27AE60" stroke="#1E8449" stroke-width="3" stroke-linejoin="round" />
+                    <!-- Mesophyll Cell (Thin wall) -->
+                    <path d="M 34.4,83.1 L 61.2,147.8 A 160 160 0 0 1 -61.2,147.8 L -34.4,83.1 A 90 90 0 0 0 34.4,83.1 Z" 
+                          fill="#2ECC71" stroke="#1E8449" stroke-width="1.5" stroke-linejoin="round" />
+                    
+                    <!-- Chloroplasts in BSC (Peripheral/Centrifugal) -->
+                    <use href="#chloroplast-bsc" x="0" y="76" />
+                    <use href="#chloroplast-bsc" x="-18" y="72" transform="rotate(15 -18 72)" />
+                    <use href="#chloroplast-bsc" x="18" y="72" transform="rotate(-15 18 72)" />
+                    
+                    <!-- Chloroplasts in MC (Scattered) -->
+                    <use href="#chloroplast-mc" x="0" y="105" />
+                    <use href="#chloroplast-mc" x="-25" y="115" transform="rotate(20 -25 115)" />
+                    <use href="#chloroplast-mc" x="25" y="115" transform="rotate(-20 25 115)" />
+                    <use href="#chloroplast-mc" x="-15" y="135" transform="rotate(40 -15 135)" />
+                    <use href="#chloroplast-mc" x="15" y="135" transform="rotate(-40 15 135)" />
+                </g>
+            </defs>
+
+            <!-- Title -->
+            <text x="400" y="35" text-anchor="middle" class="text-title">
+                C<tspan dy="5" font-size="16">4</tspan><tspan dy="-5"> Pathway: Kranz Anatomy</tspan>
+            </text>
+
+            <!-- ================= BACKGROUND & STRUCTURE ================= -->
+            
+            <!-- Upper Epidermis -->
+            <rect x="50" y="50" width="700" height="20" rx="5" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" />
+            
+            <!-- Lower Epidermis (Split for Stoma) -->
+            <rect x="50" y="430" width="310" height="20" rx="5" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" />
+            <rect x="440" y="430" width="310" height="20" rx="5" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" />
+
+            <!-- Stoma Guard Cells -->
+            <g class="stoma-left">
+                <path d="M 360,430 C 380,430 390,440 390,450 C 390,460 380,470 360,470 Z" fill="#2ECC71" stroke="#1E8449" stroke-width="2" />
+            </g>
+            <g class="stoma-right">
+                <path d="M 440,430 C 420,430 410,440 410,450 C 410,460 420,470 440,470 Z" fill="#2ECC71" stroke="#1E8449" stroke-width="2" />
+            </g>
+
+            <!-- Kranz Anatomy Wreath (Centered at 400, 220) -->
+            <g transform="translate(400, 220)">
+                <use href="#kranz-unit" transform="rotate(0)" />
+                <use href="#kranz-unit" transform="rotate(45)" />
+                <use href="#kranz-unit" transform="rotate(90)" />
+                <use href="#kranz-unit" transform="rotate(135)" />
+                <use href="#kranz-unit" transform="rotate(180)" />
+                <use href="#kranz-unit" transform="rotate(225)" />
+                <use href="#kranz-unit" transform="rotate(270)" />
+                <use href="#kranz-unit" transform="rotate(315)" />
+            </g>
+
+            <!-- Plasmodesmata Channel (Bridge between bottom MC and BSC) -->
+            <rect x="390" y="300" width="20" height="8" fill="#2ECC71" />
+            <line x1="390" y1="300" x2="410" y2="300" stroke="#1E8449" stroke-width="1" stroke-dasharray="2 2" />
+            <line x1="390" y1="308" x2="410" y2="308" stroke="#1E8449" stroke-width="1" stroke-dasharray="2 2" />
+
+            <!-- Vascular Bundle -->
+            <circle cx="400" cy="220" r="38" fill="#fff" stroke="#2C3E50" stroke-width="2" />
+            <!-- Xylem (Top half) -->
+            <path d="M 362,220 A 38 38 0 0 1 438,220 Z" fill="#E74C3C" />
+            <!-- Phloem (Bottom half) -->
+            <path d="M 362,220 A 38 38 0 0 0 438,220 Z" fill="#3498DB" />
+            
+            <!-- Vascular details -->
+            <circle cx="400" cy="195" r="8" fill="#C0392B" />
+            <circle cx="380" cy="205" r="6" fill="#C0392B" />
+            <circle cx="420" cy="205" r="6" fill="#C0392B" />
+            <circle cx="400" cy="245" r="5" fill="#2980B9" />
+            <circle cx="385" cy="235" r="4" fill="#2980B9" />
+            <circle cx="415" cy="235" r="4" fill="#2980B9" />
+
+            <!-- ================= PATHWAY GUIDES & ENZYMES ================= -->
+            
+            <!-- Static Dashed Arrows for Pathway Context -->
+            <path d="M 400,470 L 400,355" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4 4" fill="none" marker-end="url(#arrow)" />
+            <path d="M 400,335 L 400,305" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4 4" fill="none" marker-end="url(#arrow)" />
+            <path d="M 400,285 L 400,250" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4 4" fill="none" marker-end="url(#arrow)" />
+            <path d="M 400,295 L 360,295 L 360,345 L 390,345" stroke="#7F8C8D" stroke-width="1.5" stroke-dasharray="4 4" fill="none" marker-end="url(#arrow)" />
+
+            <!-- Calvin Cycle -->
+            <circle cx="400" cy="285" r="14" fill="none" stroke="#fff" stroke-width="2" stroke-dasharray="6 4" class="calvin-cycle" />
+            <text x="420" y="288" font-size="10" font-weight="bold" fill="#fff">Calvin Cycle</text>
+
+            <!-- Enzyme Markers -->
+            <rect x="415" y="337" width="95" height="16" rx="8" fill="#98D8C8" />
+            <text x="462" y="348" class="text-enzyme" text-anchor="middle">PEP Carboxylase</text>
+
+            <rect x="420" y="260" width="60" height="16" rx="8" fill="#98D8C8" />
+            <text x="450" y="271" class="text-enzyme" text-anchor="middle">RuBisCO</text>
+
+            <!-- ================= ANIMATED MOLECULES ================= -->
+
+            <!-- CO2 Entry (Stoma to MC) -->
+            <g id="co2-entry" class="molecule">
+                <circle r="6" fill="#2C3E50" />
+                <text x="0" y="3" class="text-chem" fill="#fff" text-anchor="middle">CO₂</text>
+            </g>
+
+            <!-- C4 Acid (MC to BSC) -->
+            <g id="c4-acid" class="molecule">
+                <circle r="8" fill="#F1C40F" />
+                <text x="0" y="3" class="text-chem" fill="#000" text-anchor="middle">C₄</text>
+            </g>
+
+            <!-- CO2 in BSC (Decarboxylation to Calvin) -->
+            <g id="co2-bsc" class="molecule">
+                <circle r="6" fill="#2C3E50" />
+                <text x="0" y="3" class="text-chem" fill="#fff" text-anchor="middle">CO₂</text>
+            </g>
+
+            <!-- C3 Acid (BSC back to MC) -->
+            <g id="c3-acid" class="molecule">
+                <circle r="8" fill="#E67E22" />
+                <text x="0" y="3" class="text-chem" fill="#fff" text-anchor="middle">C₃</text>
+            </g>
+
+            <!-- Sugar Export (Calvin to Phloem) -->
+            <g id="sugar" class="molecule">
+                <circle r="7" fill="#FFF" stroke="#F39C12" stroke-width="2" />
+                <text x="0" y="3" class="text-chem" fill="#000" text-anchor="middle">S</text>
+            </g>
+
+            <!-- ================= LABELS & LEGEND ================= -->
+
+            <!-- Legend Box -->
+            <g transform="translate(20, 20)">
+                <rect x="0" y="0" width="180" height="200" fill="#fff" stroke="#BDC3C7" rx="5" opacity="0.95" />
+                <text x="15" y="25" class="text-label text-bold">Key / Legend</text>
+                
+                <circle cx="20" cy="45" r="6" fill="#2C3E50" />
+                <text x="35" y="49" class="text-label">Carbon Dioxide (CO₂)</text>
+                
+                <circle cx="20" cy="65" r="8" fill="#F1C40F" />
+                <text x="35" y="69" class="text-label">C₄ Acid (Malate)</text>
+                
+                <circle cx="20" cy="85" r="8" fill="#E67E22" />
+                <text x="35" y="89" class="text-label">C₃ Acid (Pyruvate)</text>
+                
+                <circle cx="20" cy="105" r="7" fill="#FFF" stroke="#F39C12" stroke-width="2" />
+                <text x="35" y="109" class="text-label">Sugar</text>
+                
+                <rect x="14" y="120" width="12" height="12" fill="#E74C3C" rx="2" />
+                <text x="35" y="130" class="text-label">Xylem (Water)</text>
+                
+                <rect x="14" y="140" width="12" height="12" fill="#3498DB" rx="2" />
+                <text x="35" y="150" class="text-label">Phloem (Sugars)</text>
+                
+                <ellipse cx="20" cy="170" rx="6" ry="3" fill="#145A32" />
+                <text x="35" y="174" class="text-label">Chloroplast</text>
+            </g>
+
+            <!-- Anatomy Labels (Right Side) -->
+            <g transform="translate(0, 0)">
+                <text x="600" y="120" class="text-label text-bold" font-size="14">Leaf Structure</text>
+                
+                <!-- Mesophyll Cell Label -->
+                <path d="M 550,160 L 600,160" stroke="#2C3E50" stroke-width="1" />
+                <text x="605" y="164" class="text-label">Mesophyll Cell (MC)</text>
+                
+                <!-- Bundle Sheath Cell Label -->
+                <path d="M 480,190 L 600,190" stroke="#2C3E50" stroke-width="1" />
+                <text x="605" y="194" class="text-label">Bundle Sheath Cell (BSC)</text>
+                
+                <!-- Vascular Bundle Label -->
+                <path d="M 440,220 L 600,220" stroke="#2C3E50" stroke-width="1" />
+                <text x="605" y="224" class="text-label">Vascular Bundle</text>
+                
+                <!-- Lower Epidermis Label -->
+                <path d="M 500,440 L 600,440" stroke="#2C3E50" stroke-width="1" />
+                <text x="605" y="444" class="text-label">Lower Epidermis</text>
+                
+                <!-- Stoma Label -->
+                <path d="M 430,460 L 600,460" stroke="#2C3E50" stroke-width="1" />
+                <text x="605" y="464" class="text-label">Stoma (Pore)</text>
+            </g>
+
+        </svg>
+    </div>
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Secondary Treatment: The Role of Heterotrophic Microbes</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 900px;
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Animations */
+        @keyframes waterClear {
+            0%, 25% { fill: #D2B48C; } /* Murky sewage */
+            55%, 85% { fill: #E8F4FD; } /* Clear water */
+            100% { fill: #D2B48C; } /* Reset */
+        }
+
+        @keyframes growFungi {
+            0%, 15% { stroke-dashoffset: 120; opacity: 0; }
+            25%, 85% { stroke-dashoffset: 0; opacity: 1; }
+            100% { stroke-dashoffset: 120; opacity: 0; }
+        }
+
+        @keyframes clusterBac {
+            0%, 15% { 
+                transform: translate(var(--startX), var(--startY)) rotate(var(--startR)); 
+            }
+            30%, 85% { 
+                transform: translate(var(--endX), var(--endY)) rotate(var(--endR)); 
+            }
+            100% { 
+                transform: translate(var(--startX), var(--startY)) rotate(var(--startR)); 
+            }
+        }
+
+        @keyframes consumeWaste {
+            0%, 25% { 
+                transform: translate(var(--startX), var(--startY)) scale(1); 
+                opacity: 1; 
+            }
+            45% { 
+                transform: translate(var(--endX), var(--endY)) scale(1); 
+                opacity: 1; 
+            }
+            55%, 85% { 
+                transform: translate(var(--endX), var(--endY)) scale(0); 
+                opacity: 0; 
+            }
+            100% { 
+                transform: translate(var(--startX), var(--startY)) scale(1); 
+                opacity: 1; 
+            }
+        }
+
+        @keyframes moveNeedle {
+            0%, 25% { transform: rotate(-65deg); } /* High BOD */
+            55%, 85% { transform: rotate(65deg); } /* Low BOD */
+            100% { transform: rotate(-65deg); }
+        }
+
+        @keyframes rise {
+            0% { 
+                transform: translate(var(--startX), 430px) scale(0.5); 
+                opacity: 0; 
+            }
+            10% { opacity: 0.6; }
+            90% { opacity: 0.6; }
+            100% { 
+                transform: translate(calc(var(--startX) + var(--drift)), 110px) scale(1.5); 
+                opacity: 0; 
+            }
+        }
+
+        /* Element Classes */
+        .water-fill {
+            animation: waterClear 20s infinite ease-in-out;
+        }
+        .fungi {
+            stroke: #98D8C8;
+            stroke-width: 2.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-dasharray: 120;
+            stroke-dashoffset: 120;
+            animation: growFungi 20s infinite ease-in-out;
+        }
+        .bac {
+            animation: clusterBac 20s infinite ease-in-out;
+        }
+        .waste {
+            animation: consumeWaste 20s infinite ease-in-out;
+        }
+        .needle {
+            transform-origin: 660px 240px;
+            animation: moveNeedle 20s infinite ease-in-out;
+        }
+        .bubble {
+            animation: rise var(--dur) infinite ease-in var(--delay);
+        }
+        
+        .title { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 22px; fill: #2C3E50; }
+        .subtitle { font-family: 'Inter', sans-serif; font-weight: 400; font-size: 14px; fill: #34495E; }
+        .label { font-family: 'Inter', sans-serif; font-weight: 600; font-size: 12px; fill: #2C3E50; }
+        .mono { font-family: 'Roboto Mono', monospace; font-size: 11px; fill: #7F8C8D; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Secondary Treatment: Biological Process</title>
+        <desc>Animation showing heterotrophic bacteria and fungi forming flocs to consume organic matter, reducing Biochemical Oxygen Demand (BOD) in an aeration tank.</desc>
+
+        <defs>
+            <!-- Reusable Bacteria -->
+            <rect id="bac-shape" x="-6" y="-3" width="12" height="6" rx="3" fill="#4A90D9" />
+            
+            <!-- Reusable Organic Waste Particle -->
+            <path id="waste-shape" d="M-4,-5 L2,-6 L6,-2 L4,5 L-3,6 L-7,2 Z" fill="#8B4513" />
+            
+            <!-- Arrow Marker -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50" />
+            </marker>
+
+            <!-- Gradient for Tank Background -->
+            <linearGradient id="tankGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#ffffff" stop-opacity="0.5"/>
+                <stop offset="100%" stop-color="#E8F4FD" stop-opacity="0.5"/>
+            </linearGradient>
+        </defs>
+
+        <!-- Titles -->
+        <text x="400" y="35" text-anchor="middle" class="title">Secondary Treatment (Biological Process)</text>
+        <text x="400" y="55" text-anchor="middle" class="subtitle">Heterotrophic Microbes reducing Biochemical Oxygen Demand (BOD)</text>
+
+        <!-- ================= AERATION TANK ================= -->
+        <g id="aeration-tank">
+            <!-- Tank Water (Animated Color) -->
+            <rect x="42" y="102" width="476" height="346" rx="8" class="water-fill" />
+            
+            <!-- Tank Border -->
+            <rect x="40" y="100" width="480" height="350" rx="10" stroke="#2C3E50" stroke-width="4" fill="url(#tankGrad)" style="mix-blend-mode: multiply;" />
+            
+            <!-- Aeration Pipe at Bottom -->
+            <rect x="60" y="430" width="440" height="10" rx="4" fill="#7F8C8D" />
+            <circle cx="100" cy="430" r="3" fill="#2C3E50" />
+            <circle cx="180" cy="430" r="3" fill="#2C3E50" />
+            <circle cx="260" cy="430" r="3" fill="#2C3E50" />
+            <circle cx="340" cy="430" r="3" fill="#2C3E50" />
+            <circle cx="420" cy="430" r="3" fill="#2C3E50" />
+            <circle cx="480" cy="430" r="3" fill="#2C3E50" />
+
+            <!-- Oxygen Bubbles -->
+            <g id="bubbles">
+                <circle class="bubble" style="--startX: 100px; --drift: -15px; --dur: 2.2s; --delay: 0.1s;" cx="0" cy="0" r="4" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 110px; --drift: 20px; --dur: 2.8s; --delay: 1.2s;" cx="0" cy="0" r="3" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 170px; --drift: 10px; --dur: 2.5s; --delay: 0.5s;" cx="0" cy="0" r="5" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 190px; --drift: -25px; --dur: 3.1s; --delay: 0.8s;" cx="0" cy="0" r="3" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 250px; --drift: 15px; --dur: 2.4s; --delay: 0.3s;" cx="0" cy="0" r="4" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 270px; --drift: -10px; --dur: 2.9s; --delay: 1.5s;" cx="0" cy="0" r="6" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 330px; --drift: 25px; --dur: 2.6s; --delay: 0.7s;" cx="0" cy="0" r="3" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 350px; --drift: -15px; --dur: 2.3s; --delay: 0.2s;" cx="0" cy="0" r="5" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 410px; --drift: 10px; --dur: 2.7s; --delay: 1.1s;" cx="0" cy="0" r="4" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 430px; --drift: -20px; --dur: 3.0s; --delay: 0.6s;" cx="0" cy="0" r="3" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 470px; --drift: 15px; --dur: 2.5s; --delay: 0.9s;" cx="0" cy="0" r="5" fill="#FFFFFF" />
+                <circle class="bubble" style="--startX: 490px; --drift: -10px; --dur: 2.8s; --delay: 1.4s;" cx="0" cy="0" r="4" fill="#FFFFFF" />
+            </g>
+
+            <!-- ================= FLOCS (Bacteria + Fungi) ================= -->
+            
+            <!-- Floc 1: Center ~ (160, 260) -->
+            <g id="floc1">
+                <path d="M160,260 Q130,220 100,230" class="fungi" />
+                <path d="M160,260 Q190,230 210,210" class="fungi" />
+                <path d="M160,260 Q150,300 170,320" class="fungi" />
+                <path d="M160,260 Q180,280 200,290" class="fungi" />
+                
+                <use href="#bac-shape" class="bac" style="--startX: 80px; --startY: 150px; --startR: 45deg; --endX: 150px; --endY: 250px; --endR: 15deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 220px; --startY: 180px; --startR: -30deg; --endX: 170px; --endY: 265px; --endR: -20deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 90px; --startY: 350px; --startR: 80deg; --endX: 155px; --endY: 270px; --endR: 45deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 250px; --startY: 300px; --startR: 10deg; --endX: 165px; --endY: 255px; --endR: 80deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 120px; --startY: 120px; --startR: -60deg; --endX: 160px; --endY: 260px; --endR: 110deg;" />
+            </g>
+
+            <!-- Floc 2: Center ~ (340, 310) -->
+            <g id="floc2">
+                <path d="M340,310 Q310,280 280,290" class="fungi" />
+                <path d="M340,310 Q370,270 390,260" class="fungi" />
+                <path d="M340,310 Q330,350 350,370" class="fungi" />
+                <path d="M340,310 Q360,330 380,340" class="fungi" />
+                <path d="M340,310 Q300,330 290,360" class="fungi" />
+
+                <use href="#bac-shape" class="bac" style="--startX: 280px; --startY: 200px; --startR: 25deg; --endX: 330px; --endY: 300px; --endR: 5deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 420px; --startY: 240px; --startR: -50deg; --endX: 350px; --endY: 315px; --endR: -40deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 290px; --startY: 400px; --startR: 70deg; --endX: 335px; --endY: 320px; --endR: 35deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 450px; --startY: 380px; --startR: -10deg; --endX: 345px; --endY: 305px; --endR: 90deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 350px; --startY: 150px; --startR: 90deg; --endX: 340px; --endY: 310px; --endR: 130deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 480px; --startY: 280px; --startR: 15deg; --endX: 355px; --endY: 325px; --endR: 60deg;" />
+            </g>
+
+            <!-- Floc 3: Center ~ (420, 180) -->
+            <g id="floc3">
+                <path d="M420,180 Q390,150 360,160" class="fungi" />
+                <path d="M420,180 Q450,140 470,130" class="fungi" />
+                <path d="M420,180 Q410,220 430,240" class="fungi" />
+                <path d="M420,180 Q440,200 460,210" class="fungi" />
+
+                <use href="#bac-shape" class="bac" style="--startX: 360px; --startY: 100px; --startR: 35deg; --endX: 410px; --endY: 170px; --endR: -15deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 480px; --startY: 120px; --startR: -20deg; --endX: 430px; --endY: 185px; --endR: 20deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 380px; --startY: 250px; --startR: 60deg; --endX: 415px; --endY: 190px; --endR: 55deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 490px; --startY: 220px; --startR: 5deg; --endX: 425px; --endY: 175px; --endR: 85deg;" />
+                <use href="#bac-shape" class="bac" style="--startX: 320px; --startY: 180px; --startR: -80deg; --endX: 420px; --endY: 180px; --endR: 100deg;" />
+            </g>
+
+            <!-- ================= ORGANIC WASTE (BOD) ================= -->
+            <!-- Moving to Floc 1 -->
+            <use href="#waste-shape" class="waste" style="--startX: 70px; --startY: 180px; --endX: 148px; --endY: 248px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 120px; --startY: 140px; --endX: 152px; --endY: 252px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 200px; --startY: 160px; --endX: 145px; --endY: 255px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 80px; --startY: 300px; --endX: 155px; --endY: 245px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 230px; --startY: 250px; --endX: 150px; --endY: 240px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 130px; --startY: 380px; --endX: 140px; --endY: 250px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 180px; --startY: 360px; --endX: 165px; --endY: 265px;" />
+
+            <!-- Moving to Floc 2 -->
+            <use href="#waste-shape" class="waste" style="--startX: 270px; --startY: 240px; --endX: 338px; --endY: 308px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 390px; --startY: 220px; --endX: 342px; --endY: 312px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 260px; --startY: 350px; --endX: 335px; --endY: 315px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 420px; --startY: 360px; --endX: 345px; --endY: 305px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 320px; --startY: 420px; --endX: 340px; --endY: 300px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 460px; --startY: 320px; --endX: 330px; --endY: 310px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 360px; --startY: 400px; --endX: 350px; --endY: 320px;" />
+
+            <!-- Moving to Floc 3 -->
+            <use href="#waste-shape" class="waste" style="--startX: 340px; --startY: 120px; --endX: 418px; --endY: 178px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 460px; --startY: 100px; --endX: 422px; --endY: 182px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 370px; --startY: 200px; --endX: 415px; --endY: 185px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 480px; --startY: 180px; --endX: 425px; --endY: 175px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 400px; --startY: 140px; --endX: 420px; --endY: 170px;" />
+            <use href="#waste-shape" class="waste" style="--startX: 440px; --startY: 260px; --endX: 410px; --endY: 180px;" />
+        </g>
+
+        <!-- Annotations for Tank -->
+        <text x="280" y="475" text-anchor="middle" class="label">Constant Aeration (O₂ Supply)</text>
+        <path d="M280,460 L280,445" stroke="#2C3E50" stroke-width="2" marker-end="url(#arrow)" />
+
+        <text x="140" y="130" text-anchor="middle" class="label">Flocs (Bacteria + Fungal Filaments)</text>
+        <line x1="140" y1="135" x2="155" y2="230" stroke="#2C3E50" stroke-width="1" stroke-dasharray="4,4" />
+        <line x1="140" y1="135" x2="330" y2="280" stroke="#2C3E50" stroke-width="1" stroke-dasharray="4,4" />
+        <line x1="140" y1="135" x2="410" y2="160" stroke="#2C3E50" stroke-width="1" stroke-dasharray="4,4" />
+
+
+        <!-- ================= BOD METER (Right Side) ================= -->
+        <g id="bod-meter" transform="translate(0, 0)">
+            <rect x="550" y="120" width="220" height="180" rx="8" fill="#ffffff" stroke="#BDC3C7" stroke-width="2" />
+            <text x="660" y="145" text-anchor="middle" class="label" font-size="14px">Biochemical Oxygen Demand</text>
+            <text x="660" y="165" text-anchor="middle" class="mono">(BOD Level)</text>
+            
+            <!-- Gauge Arcs -->
+            <!-- Red (High) -->
+            <path d="M 590 240 A 70 70 0 0 1 625 179" fill="none" stroke="#E74C3C" stroke-width="12" stroke-linecap="round" />
+            <!-- Yellow (Medium) -->
+            <path d="M 625 179 A 70 70 0 0 1 695 179" fill="none" stroke="#F39C12" stroke-width="12" />
+            <!-- Green (Low) -->
+            <path d="M 695 179 A 70 70 0 0 1 730 240" fill="none" stroke="#27AE60" stroke-width="12" stroke-linecap="round" />
+
+            <!-- Labels High/Low -->
+            <text x="575" y="255" text-anchor="middle" class="label" fill="#E74C3C">High</text>
+            <text x="745" y="255" text-anchor="middle" class="label" fill="#27AE60">Low</text>
+
+            <!-- Needle -->
+            <g class="needle">
+                <polygon points="656,240 664,240 660,160" fill="#2C3E50" />
+                <circle cx="660" cy="240" r="6" fill="#2C3E50" />
+            </g>
+
+            <text x="660" y="285" text-anchor="middle" class="mono" font-size="10px">BOD = O₂ consumed by microbes</text>
+        </g>
+
+        <!-- ================= LEGEND ================= -->
+        <g id="legend">
+            <rect x="550" y="320" width="220" height="130" rx="8" fill="#ffffff" stroke="#BDC3C7" stroke-width="2" />
+            <text x="660" y="340" text-anchor="middle" class="label">Key / Legend</text>
+            
+            <!-- Bacteria -->
+            <rect x="565" y="355" width="12" height="6" rx="3" fill="#4A90D9" />
+            <text x="585" y="362" class="subtitle" font-size="12px">Heterotrophic Bacteria</text>
+            
+            <!-- Fungi -->
+            <path d="M565,380 Q570,375 577,380" stroke="#98D8C8" stroke-width="2.5" fill="none" stroke-linecap="round" />
+            <text x="585" y="383" class="subtitle" font-size="12px">Fungal Filaments</text>
+            
+            <!-- Organic Matter -->
+            <use href="#waste-shape" x="571" y="400" />
+            <text x="585" y="404" class="subtitle" font-size="12px">Organic Matter (Waste)</text>
+            
+            <!-- Oxygen -->
+            <circle cx="571" cy="422" r="4" fill="#FFFFFF" stroke="#BDC3C7" stroke-width="1" />
+            <text x="585" y="426" class="subtitle" font-size="12px">Oxygen Bubbles</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

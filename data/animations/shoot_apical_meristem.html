@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shoot Apical Meristem Dynamics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-color: #f8f9fa;
+            --membrane: #4A90D9;
+            --nucleus: #2C3E50;
+            --cytoplasm: #E8F4FD;
+            --dna: #FF6B6B;
+            --plant-tissue: #2ECC71;
+            --vascular: #27AE60;
+            --text-color: #2C3E50;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px 0 10px 0;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-color);
+            margin: 0 0 5px 0;
+        }
+
+        p.subtitle {
+            font-size: 14px;
+            color: #555;
+            margin: 0;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            max-height: 80vh;
+            filter: drop-shadow(0px 4px 12px rgba(0,0,0,0.05));
+        }
+
+        /* CSS Animations for the 12s Plastochron Loop */
+        .dome-anim {
+            animation: domeGrowth 12s ease-in-out infinite;
+            transform-origin: 400px 300px;
+        }
+
+        .p0-anim {
+            animation: p0Growth 12s ease-in-out infinite;
+            transform-origin: 460px 240px;
+        }
+
+        .p1-anim {
+            animation: p1Growth 12s ease-in-out infinite;
+            transform-origin: 340px 300px;
+        }
+
+        .p2-anim {
+            animation: p2Growth 12s ease-in-out infinite;
+            transform-origin: 460px 360px;
+        }
+
+        .p3-anim {
+            animation: p3Growth 12s ease-in-out infinite;
+            transform-origin: 340px 420px;
+        }
+
+        .bud-anim {
+            animation: budDevelop 12s ease-in-out infinite;
+            transform-origin: 455px 345px;
+        }
+
+        .mitosis-pulse {
+            animation: pulseMitosis 12s ease-in-out infinite;
+        }
+
+        .mitosis-pulse.delay-1 { animation-delay: 1s; }
+        .mitosis-pulse.delay-2 { animation-delay: 3s; }
+        .mitosis-pulse.delay-3 { animation-delay: 5s; }
+        .mitosis-pulse.delay-4 { animation-delay: 7s; }
+
+        .vascular-flow {
+            stroke-dasharray: 10 5;
+            animation: flowVascular 12s linear infinite;
+        }
+
+        @keyframes domeGrowth {
+            0%, 100% { transform: translateY(0) scale(1); }
+            25% { transform: translateY(-3px) scale(1.01); }
+            75% { transform: translateY(-8px) scale(1.02); }
+        }
+
+        @keyframes p0Growth {
+            0%, 25% { transform: scale(0) translate(0,0); opacity: 0; }
+            50% { transform: scale(0.25) translate(8px, -8px); opacity: 1; }
+            75% { transform: scale(0.45) translate(15px, -15px); opacity: 1; }
+            100% { transform: scale(0) translate(0,0); opacity: 0; }
+        }
+
+        @keyframes p1Growth {
+            0% { transform: scale(0.45) translateY(0) rotate(0); }
+            25% { transform: scale(0.6) translateY(5px) rotate(-3deg); }
+            75% { transform: scale(1) translateY(20px) rotate(-10deg); }
+            100% { transform: scale(0.45) translateY(0) rotate(0); }
+        }
+
+        @keyframes p2Growth {
+            0% { transform: scale(1) translateY(0) rotate(0); }
+            25% { transform: scale(1.15) translateY(10px) rotate(5deg); }
+            75% { transform: scale(1.4) translateY(30px) rotate(12deg); }
+            100% { transform: scale(1) translateY(0) rotate(0); }
+        }
+
+        @keyframes p3Growth {
+            0% { transform: scale(1.4) translateY(0) rotate(0); opacity: 1; }
+            75% { transform: scale(1.6) translateY(40px) rotate(-8deg); opacity: 0.6; }
+            100% { transform: scale(1.4) translateY(0) rotate(0); opacity: 1; }
+        }
+
+        @keyframes budDevelop {
+            0%, 40% { opacity: 0; transform: scale(0.3); }
+            75% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.3); }
+        }
+
+        @keyframes pulseMitosis {
+            0%, 100% { opacity: 0; transform: scale(0.5); fill: var(--nucleus); }
+            10%, 20% { opacity: 1; transform: scale(1.5); fill: var(--dna); }
+            30% { opacity: 0; transform: scale(0.5); fill: var(--nucleus); }
+        }
+
+        @keyframes flowVascular {
+            0% { stroke-dashoffset: 150; }
+            100% { stroke-dashoffset: 0; }
+        }
+
+        /* Typography for SVG */
+        .label-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            fill: var(--text-color);
+        }
+        .label-sub {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            fill: #555;
+        }
+        .sci-text {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 13px;
+            font-weight: 500;
+            fill: var(--text-color);
+        }
+        .pointer-line {
+            stroke: var(--text-color);
+            stroke-width: 1.5;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        .pointer-dot {
+            fill: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Shoot Apical Meristem: Primary Growth & Leaf Initiation</h1>
+        <p class="subtitle">12-Second Plastochron Loop (Tunica-Corpus Model)</p>
+    </header>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 850 650" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram of a Shoot Apical Meristem">
+            <defs>
+                <linearGradient id="leafGradLeft" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#42D983" />
+                    <stop offset="100%" stop-color="#2ECC71" />
+                </linearGradient>
+                <linearGradient id="leafGradRight" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#42D983" />
+                    <stop offset="100%" stop-color="#2ECC71" />
+                </linearGradient>
+                
+                <!-- Drop shadow for leaves -->
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000000" flood-opacity="0.15"/>
+                </filter>
+            </defs>
+
+            <!-- BACKGROUND -->
+            <rect width="100%" height="100%" fill="var(--bg-color)" rx="12" />
+
+            <!-- MAIN PLANT STRUCTURE GROUP -->
+            <g id="plant-structure" transform="translate(25, 20)">
+                
+                <!-- VASCULAR TISSUE (PROVASCULAR STRANDS) -->
+                <g id="vascular-system" stroke="var(--vascular)" stroke-width="3.5" fill="none" stroke-linecap="round">
+                    <!-- Central stem vascular strands -->
+                    <path d="M 370 650 L 370 340 C 370 310, 350 310, 330 290" class="vascular-flow"/>
+                    <path d="M 430 650 L 430 400 C 430 370, 450 370, 470 350" class="vascular-flow"/>
+                    <path d="M 355 650 L 355 460 C 355 430, 335 430, 315 410" class="vascular-flow"/>
+                </g>
+
+                <!-- LEAF PRIMORDIA -->
+                <!-- P3 (Oldest, Left) -->
+                <g id="leaf-p3" class="p3-anim leaf" filter="url(#shadow)">
+                    <path d="M 340 420 C 250 390, 240 290, 300 230 C 290 290, 315 370, 340 400 Z" fill="url(#leafGradLeft)"/>
+                    <!-- Vascular trace inside leaf -->
+                    <path d="M 335 410 C 280 380, 270 310, 300 245" stroke="var(--vascular)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- P2 (Older, Right) -->
+                <g id="leaf-p2" class="p2-anim leaf" filter="url(#shadow)">
+                    <path d="M 460 360 C 550 330, 560 230, 500 170 C 510 230, 485 310, 460 340 Z" fill="url(#leafGradRight)"/>
+                    <path d="M 465 350 C 520 320, 530 250, 500 185" stroke="var(--vascular)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- P1 (Young, Left) -->
+                <g id="leaf-p1" class="p1-anim leaf" filter="url(#shadow)">
+                    <path d="M 340 300 C 250 270, 240 170, 300 110 C 290 170, 315 250, 340 280 Z" fill="url(#leafGradLeft)"/>
+                    <path d="M 335 290 C 280 260, 270 190, 300 125" stroke="var(--vascular)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- P0 (Emerging, Right) -->
+                <g id="leaf-p0" class="p0-anim leaf" filter="url(#shadow)">
+                    <path d="M 460 240 C 550 210, 560 110, 500 50 C 510 110, 485 190, 460 220 Z" fill="url(#leafGradRight)"/>
+                    <path d="M 465 230 C 520 200, 530 130, 500 65" stroke="var(--vascular)" stroke-width="2" fill="none" stroke-linecap="round"/>
+                </g>
+
+                <!-- SHOOT APEX (SAM & STEM) -->
+                <g id="shoot-apex" class="dome-anim">
+                    
+                    <!-- Corpus & Stem Base (L3+) -->
+                    <path d="M 340 650 L 340 230 C 340 140, 460 140, 460 230 L 460 650 Z" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="2"/>
+                    
+                    <!-- Cellular Grid (Corpus/Stem Elongation) -->
+                    <g stroke="var(--membrane)" stroke-width="1.5" opacity="0.6" fill="none">
+                        <!-- Vertical divisions -->
+                        <path d="M 370 230 L 370 650"/>
+                        <path d="M 400 230 L 400 650"/>
+                        <path d="M 430 230 L 430 650"/>
+                        
+                        <!-- Horizontal divisions (showing elongation) -->
+                        <!-- SAM / Central Zone (Isodiametric, dense) -->
+                        <path d="M 355 245 Q 400 255 445 245"/>
+                        <path d="M 350 260 Q 400 270 450 260"/>
+                        <path d="M 345 280 Q 400 290 455 280"/>
+                        <!-- Rib Meristem / Elongation Zone (Cells get longer) -->
+                        <path d="M 340 310 Q 400 320 460 310"/>
+                        <path d="M 340 355 Q 400 365 460 355"/>
+                        <path d="M 340 420 Q 400 430 460 420"/>
+                        <path d="M 340 510 Q 400 520 460 510"/>
+                        <path d="M 340 620 Q 400 630 460 620"/>
+                    </g>
+
+                    <!-- L2 Tunica Layer -->
+                    <path d="M 350 230 C 350 155, 450 155, 450 230" fill="none" stroke="var(--cytoplasm)" stroke-width="10"/>
+                    <!-- L2 Anticlinal Cell Walls -->
+                    <path d="M 355 230 C 355 162.5, 445 162.5, 445 230" fill="none" stroke="var(--membrane)" stroke-width="10" stroke-dasharray="2 16"/>
+                    <!-- L2 Nuclei -->
+                    <path d="M 355 230 C 355 162.5, 445 162.5, 445 230" fill="none" stroke="var(--nucleus)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 18" stroke-dashoffset="9"/>
+
+                    <!-- L1 Tunica Layer (Outermost) -->
+                    <path d="M 340 230 C 340 140, 460 140, 460 230" fill="none" stroke="var(--cytoplasm)" stroke-width="10"/>
+                    <!-- L1 Anticlinal Cell Walls -->
+                    <path d="M 345 230 C 345 147.5, 455 147.5, 455 230" fill="none" stroke="var(--membrane)" stroke-width="10" stroke-dasharray="2 18"/>
+                    <!-- L1 Nuclei -->
+                    <path d="M 345 230 C 345 147.5, 455 147.5, 455 230" fill="none" stroke="var(--nucleus)" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 20" stroke-dashoffset="10"/>
+
+                    <!-- Corpus Nuclei (Randomly scattered in the grid) -->
+                    <g fill="var(--nucleus)">
+                        <circle cx="385" cy="238" r="2"/>
+                        <circle cx="415" cy="238" r="2"/>
+                        <circle cx="385" cy="253" r="2"/>
+                        <circle cx="415" cy="253" r="2"/>
+                        <circle cx="355" cy="270" r="2"/>
+                        <circle cx="385" cy="270" r="2"/>
+                        <circle cx="415" cy="270" r="2"/>
+                        <circle cx="445" cy="270" r="2"/>
+                        <circle cx="385" cy="295" r="2"/>
+                        <circle cx="415" cy="295" r="2"/>
+                    </g>
+
+                    <!-- Active Mitosis Indicators (Pulsing DNA) -->
+                    <g id="mitosis-dots">
+                        <!-- Peripheral Zone Left -->
+                        <circle cx="360" cy="180" r="2" class="mitosis-pulse delay-1"/>
+                        <circle cx="350" cy="210" r="2" class="mitosis-pulse delay-3"/>
+                        <!-- Peripheral Zone Right -->
+                        <circle cx="440" cy="180" r="2" class="mitosis-pulse delay-2"/>
+                        <circle cx="450" cy="210" r="2" class="mitosis-pulse delay-4"/>
+                        <!-- Corpus Division -->
+                        <circle cx="385" cy="215" r="2" class="mitosis-pulse delay-1"/>
+                        <circle cx="415" cy="215" r="2" class="mitosis-pulse delay-3"/>
+                    </g>
+                </g>
+
+                <!-- AXILLARY BUDS -->
+                <!-- Bud in P2 Axil (Right) -->
+                <g class="bud-anim">
+                    <path d="M 460 340 C 445 325, 440 340, 445 355 Z" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="1.5"/>
+                    <circle cx="452" cy="342" r="1.5" fill="var(--nucleus)"/>
+                    <circle cx="448" cy="348" r="1.5" fill="var(--nucleus)"/>
+                </g>
+                
+                <!-- Bud in P3 Axil (Left) -->
+                <g>
+                    <path d="M 340 400 C 355 385, 360 400, 355 415 Z" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="1.5"/>
+                    <circle cx="348" cy="402" r="1.5" fill="var(--nucleus)"/>
+                    <circle cx="352" cy="408" r="1.5" fill="var(--nucleus)"/>
+                </g>
+
+            </g>
+
+            <!-- LABELS AND ANNOTATIONS -->
+            <g id="labels">
+                <!-- SAM Label -->
+                <polyline points="425,165 425,100 520,100" class="pointer-line"/>
+                <circle cx="425" cy="165" r="3" class="pointer-dot"/>
+                <text x="530" y="95" class="label-text">Shoot Apical Meristem (SAM)</text>
+                <text x="530" y="112" class="label-sub">Central dome of meristematic cells</text>
+
+                <!-- Tunica L1/L2 Label -->
+                <polyline points="360,185 280,185" class="pointer-line"/>
+                <circle cx="360" cy="185" r="3" class="pointer-dot"/>
+                <text x="270" y="180" class="sci-text" text-anchor="end">L1 & L2 (Tunica)</text>
+                <text x="270" y="195" class="label-sub" text-anchor="end">Anticlinal divisions</text>
+
+                <!-- Corpus Label -->
+                <polyline points="425,260 520,260" class="pointer-line"/>
+                <circle cx="425" cy="260" r="3" class="pointer-dot"/>
+                <text x="530" y="255" class="sci-text">L3 (Corpus)</text>
+                <text x="530" y="272" class="label-sub">Divisions in multiple planes</text>
+
+                <!-- Leaf Primordium (P2) -->
+                <polyline points="505,320 580,320" class="pointer-line"/>
+                <circle cx="505" cy="320" r="3" class="pointer-dot"/>
+                <text x="590" y="315" class="label-text">Leaf Primordium (P2)</text>
+                <text x="590" y="332" class="label-sub">Developing lateral organ</text>
+
+                <!-- Axillary Bud -->
+                <polyline points="480,365 580,365" class="pointer-line"/>
+                <circle cx="480" cy="365" r="3" class="pointer-dot"/>
+                <text x="590" y="360" class="label-text">Axillary Bud</text>
+                <text x="590" y="377" class="label-sub">Meristem in the leaf axil</text>
+
+                <!-- Provascular Tissue -->
+                <polyline points="465,450 580,450" class="pointer-line"/>
+                <circle cx="465" cy="450" r="3" class="pointer-dot"/>
+                <text x="590" y="445" class="label-text">Provascular Tissue</text>
+                <text x="590" y="462" class="label-sub">Developing xylem & phloem</text>
+
+                <!-- Zone of Elongation -->
+                <polyline points="425,560 520,560" class="pointer-line"/>
+                <circle cx="425" cy="560" r="3" class="pointer-dot"/>
+                <text x="530" y="555" class="label-text">Zone of Elongation</text>
+                <text x="530" y="572" class="label-sub">Cells expand longitudinally</text>
+                
+                <!-- Leaf Primordium (P3) -->
+                <polyline points="295,380 220,380" class="pointer-line"/>
+                <circle cx="295" cy="380" r="3" class="pointer-dot"/>
+                <text x="210" y="375" class="label-text" text-anchor="end">Leaf Primordium (P3)</text>
+                <text x="210" y="392" class="label-sub" text-anchor="end">Older, curving over apex</text>
+            </g>
+
+            <!-- LEGEND -->
+            <g id="legend" transform="translate(40, 500)">
+                <rect width="210" height="120" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+                <text x="15" y="25" class="label-text" style="font-size: 13px;">Tissue Key</text>
+                
+                <!-- Meristematic Cells -->
+                <rect x="15" y="40" width="16" height="16" rx="3" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="1.5"/>
+                <circle cx="23" cy="48" r="2" fill="var(--nucleus)"/>
+                <text x="40" y="52" class="label-sub">Meristematic Cells</text>
+
+                <!-- Active Mitosis -->
+                <rect x="15" y="65" width="16" height="16" rx="3" fill="var(--cytoplasm)" stroke="var(--membrane)" stroke-width="1.5"/>
+                <circle cx="23" cy="73" r="3" fill="var(--dna)"/>
+                <text x="40" y="77" class="label-sub">Active Mitosis (DNA)</text>
+
+                <!-- Developing Leaf -->
+                <rect x="15" y="90" width="16" height="16" rx="3" fill="var(--plant-tissue)"/>
+                <text x="40" y="102" class="label-sub">Developing Leaf Tissue</text>
+                
+                <!-- Vascular -->
+                <line x1="160" y1="98" x2="180" y2="98" stroke="var(--vascular)" stroke-width="3" stroke-linecap="round"/>
+                <text x="155" y="102" class="label-sub" text-anchor="end">Vascular</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

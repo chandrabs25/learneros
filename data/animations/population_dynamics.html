@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Population Dynamics Animation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #f8f9fa;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* Animations */
+        @keyframes pulseHub {
+            0% { transform: scale(1); fill: #F39C12; }
+            5% { transform: scale(1.05); fill: #f1c40f; }
+            35% { transform: scale(1.05); fill: #f1c40f; }
+            45% { transform: scale(1); fill: #F39C12; }
+            55% { transform: scale(0.95); fill: #e67e22; }
+            85% { transform: scale(0.95); fill: #e67e22; }
+            95% { transform: scale(1); fill: #F39C12; }
+            100% { transform: scale(1); fill: #F39C12; }
+        }
+
+        @keyframes slideInB {
+            0% { transform: translate(0, 0); opacity: 0; }
+            5% { opacity: 1; }
+            35% { transform: translate(100px, 60px); opacity: 1; }
+            40% { transform: translate(100px, 60px); opacity: 0; }
+            100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes slideInI {
+            0% { transform: translate(0, 0); opacity: 0; }
+            5% { opacity: 1; }
+            35% { transform: translate(100px, -60px); opacity: 1; }
+            40% { transform: translate(100px, -60px); opacity: 0; }
+            100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes slideOutD {
+            0%, 50% { transform: translate(0, 0); opacity: 0; }
+            55% { opacity: 1; }
+            85% { transform: translate(100px, -60px); opacity: 1; }
+            90% { transform: translate(100px, -60px); opacity: 0; }
+            100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes slideOutE {
+            0%, 50% { transform: translate(0, 0); opacity: 0; }
+            55% { opacity: 1; }
+            85% { transform: translate(100px, 60px); opacity: 1; }
+            90% { transform: translate(100px, 60px); opacity: 0; }
+            100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes glowPlus {
+            0%, 40% { fill: #2ECC71; filter: drop-shadow(0 0 6px rgba(46,204,113,0.8)); opacity: 1; transform: scale(1.2); }
+            45%, 100% { fill: #bdc3c7; filter: none; opacity: 0.4; transform: scale(1); }
+        }
+
+        @keyframes glowMinus {
+            0%, 45% { fill: #bdc3c7; filter: none; opacity: 0.4; transform: scale(1); }
+            50%, 90% { fill: #E74C3C; filter: drop-shadow(0 0 6px rgba(231,76,60,0.8)); opacity: 1; transform: scale(1.2); }
+            95%, 100% { fill: #bdc3c7; filter: none; opacity: 0.4; transform: scale(1); }
+        }
+
+        @keyframes highlightGrowth {
+            0%, 40% { fill: #2ECC71; font-weight: 700; }
+            45%, 100% { fill: #7f8c8d; font-weight: 400; }
+        }
+
+        @keyframes highlightDecline {
+            0%, 45% { fill: #7f8c8d; font-weight: 400; }
+            50%, 90% { fill: #E74C3C; font-weight: 700; }
+            95%, 100% { fill: #7f8c8d; font-weight: 400; }
+        }
+
+        /* Applying Animations */
+        .hub-rect { animation: pulseHub 10s infinite ease-in-out; transform-origin: 400px 225px; }
+        .hub-text { animation: pulseHub 10s infinite ease-in-out; transform-origin: 400px 225px; fill: #ffffff !important; }
+        
+        .icon-b { animation: slideInB 10s infinite ease-in-out; }
+        .icon-i { animation: slideInI 10s infinite ease-in-out; }
+        .icon-d { animation: slideOutD 10s infinite ease-in-out; }
+        .icon-e { animation: slideOutE 10s infinite ease-in-out; }
+
+        .plus-sign { animation: glowPlus 10s infinite ease-in-out; }
+        .minus-sign { animation: glowMinus 10s infinite ease-in-out; }
+
+        .formula-growth { animation: highlightGrowth 10s infinite ease-in-out; }
+        .formula-decline { animation: highlightDecline 10s infinite ease-in-out; }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" aria-label="Animated diagram of Population Dynamics" role="img">
+        <title>Population Dynamics: Factors Influencing Density (N)</title>
+        <desc>An animation showing how Natality and Immigration increase population density, while Mortality and Emigration decrease it.</desc>
+
+        <defs>
+            <!-- Arrowhead Marker -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#95a5a6"/>
+            </marker>
+            
+            <!-- Drop Shadow Filter -->
+            <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.1" flood-color="#000000"/>
+            </filter>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa"/>
+
+        <!-- Title -->
+        <text x="400" y="40" text-anchor="middle" font-family="Inter" font-weight="700" font-size="24" fill="#2C3E50">
+            Population Dynamics: Factors Influencing Density (N)
+        </text>
+
+        <!-- ==================== ARROWS ==================== -->
+        <!-- B to N -->
+        <path d="M 190 120 L 290 180" stroke="#95a5a6" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+        <!-- I to N -->
+        <path d="M 190 330 L 290 270" stroke="#95a5a6" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+        <!-- N to D -->
+        <path d="M 510 180 L 610 120" stroke="#95a5a6" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+        <!-- N to E -->
+        <path d="M 510 270 L 610 330" stroke="#95a5a6" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+
+        <!-- ==================== PLUS / MINUS SIGNS ==================== -->
+        <g class="plus-sign" style="transform-origin: 230px 135px;">
+            <text x="230" y="145" text-anchor="middle" font-family="Inter" font-weight="700" font-size="36">+</text>
+        </g>
+        <g class="plus-sign" style="transform-origin: 230px 315px;">
+            <text x="230" y="325" text-anchor="middle" font-family="Inter" font-weight="700" font-size="36">+</text>
+        </g>
+        <g class="minus-sign" style="transform-origin: 570px 135px;">
+            <text x="570" y="140" text-anchor="middle" font-family="Inter" font-weight="700" font-size="48">-</text>
+        </g>
+        <g class="minus-sign" style="transform-origin: 570px 315px;">
+            <text x="570" y="320" text-anchor="middle" font-family="Inter" font-weight="700" font-size="48">-</text>
+        </g>
+
+        <!-- ==================== NODES (Static Backgrounds) ==================== -->
+        <!-- Natality (B) -->
+        <circle cx="150" cy="100" r="40" fill="#eafaf1" stroke="#2ECC71" stroke-width="3" filter="url(#shadow)"/>
+        <text x="150" y="112" text-anchor="middle" font-family="Inter" font-weight="700" font-size="32" fill="#2ECC71">B</text>
+        <text x="150" y="45" text-anchor="middle" font-family="Inter" font-weight="600" font-size="16" fill="#2C3E50">Natality (B)</text>
+
+        <!-- Immigration (I) -->
+        <circle cx="150" cy="350" r="40" fill="#ebf4fa" stroke="#4A90D9" stroke-width="3" filter="url(#shadow)"/>
+        <text x="150" y="362" text-anchor="middle" font-family="Inter" font-weight="700" font-size="32" fill="#4A90D9">I</text>
+        <text x="150" y="415" text-anchor="middle" font-family="Inter" font-weight="600" font-size="16" fill="#2C3E50">Immigration (I)</text>
+
+        <!-- Mortality (D) -->
+        <circle cx="650" cy="100" r="40" fill="#fdedec" stroke="#E74C3C" stroke-width="3" filter="url(#shadow)"/>
+        <text x="650" y="112" text-anchor="middle" font-family="Inter" font-weight="700" font-size="32" fill="#E74C3C">D</text>
+        <text x="650" y="45" text-anchor="middle" font-family="Inter" font-weight="600" font-size="16" fill="#2C3E50">Mortality (D)</text>
+
+        <!-- Emigration (E) -->
+        <circle cx="650" cy="350" r="40" fill="#f4f6f6" stroke="#95A5A6" stroke-width="3" filter="url(#shadow)"/>
+        <text x="650" y="362" text-anchor="middle" font-family="Inter" font-weight="700" font-size="32" fill="#95A5A6">E</text>
+        <text x="650" y="415" text-anchor="middle" font-family="Inter" font-weight="600" font-size="16" fill="#2C3E50">Emigration (E)</text>
+
+        <!-- ==================== CENTRAL HUB (N) ==================== -->
+        <rect class="hub-rect" x="300" y="175" width="200" height="100" rx="25" stroke="#e67e22" stroke-width="4" filter="url(#shadow)"/>
+        <text class="hub-text" x="400" y="218" text-anchor="middle" font-family="Inter" font-weight="700" font-size="22">Population</text>
+        <text class="hub-text" x="400" y="248" text-anchor="middle" font-family="Inter" font-weight="700" font-size="22">Density (N)</text>
+
+        <!-- ==================== ANIMATED ICONS ==================== -->
+        <!-- Moving B (Egg) -->
+        <g transform="translate(190, 120)">
+            <g class="icon-b" transform="scale(1.5)">
+                <path d="M0,-12 C8,-12 12,-4 12,4 C12,12 8,16 0,16 C-8,16 -12,12 -12,4 C-12,-4 -8,-12 0,-12 Z" fill="#2ECC71"/>
+                <polyline points="-8,4 -4,0 0,5 4,-1 8,4" stroke="#fff" stroke-width="1.5" fill="none"/>
+            </g>
+        </g>
+
+        <!-- Moving I (Bird In) -->
+        <g transform="translate(190, 330)">
+            <g class="icon-i" transform="scale(1.5)">
+                <path d="M-12,0 Q-4,-12 4,-4 Q12,-12 16,-4 Q8,0 16,4 Q4,4 -12,0 Z" fill="#4A90D9"/>
+            </g>
+        </g>
+
+        <!-- Moving D (Skull) -->
+        <g transform="translate(510, 180)">
+            <g class="icon-d" transform="scale(1.5)">
+                <path d="M-10,-8 C-10,-16 10,-16 10,-8 C10,-2 6,0 6,4 L6,10 L-6,10 L-6,4 C-6,0 -10,-2 -10,-8 Z" fill="#E74C3C"/>
+                <circle cx="-4" cy="-4" r="2.5" fill="#fff"/>
+                <circle cx="4" cy="-4" r="2.5" fill="#fff"/>
+                <line x1="-3" y1="10" x2="-3" y2="6" stroke="#fff" stroke-width="1"/>
+                <line x1="0" y1="10" x2="0" y2="6" stroke="#fff" stroke-width="1"/>
+                <line x1="3" y1="10" x2="3" y2="6" stroke="#fff" stroke-width="1"/>
+            </g>
+        </g>
+
+        <!-- Moving E (Bird Out) -->
+        <g transform="translate(510, 270)">
+            <g class="icon-e" transform="scale(1.5)">
+                <path d="M-12,0 Q-4,-12 4,-4 Q12,-12 16,-4 Q8,0 16,4 Q4,4 -12,0 Z" fill="#95A5A6"/>
+            </g>
+        </g>
+
+        <!-- ==================== FORMULA DISPLAY ==================== -->
+        <rect x="220" y="440" width="360" height="45" rx="8" fill="#ffffff" stroke="#e0e0e0" stroke-width="2" filter="url(#shadow)"/>
+        <text x="400" y="468" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="20" fill="#2C3E50">
+            N<tspan dy="5" font-size="14">t+1</tspan><tspan dy="-5"> = N</tspan><tspan dy="5" font-size="14">t</tspan><tspan dy="-5"> + [ </tspan><tspan class="formula-growth">(B + I)</tspan><tspan> - </tspan><tspan class="formula-decline">(D + E)</tspan><tspan> ]</tspan>
+        </text>
+
+        <!-- ==================== LEGEND ==================== -->
+        <rect x="20" y="435" width="160" height="50" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" filter="url(#shadow)"/>
+        <circle cx="35" cy="450" r="6" fill="#2ECC71"/>
+        <text x="48" y="454" font-family="Inter" font-size="12" fill="#2C3E50">Increases N (+)</text>
+        <circle cx="35" cy="470" r="6" fill="#E74C3C"/>
+        <text x="48" y="474" font-family="Inter" font-size="12" fill="#2C3E50">Decreases N (-)</text>
+
+    </svg>
+</div>
+
+</body>
+</html>

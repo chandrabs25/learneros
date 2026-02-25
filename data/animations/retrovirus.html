@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Life Cycle of a Retrovirus (HIV)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* Animation Keyframes */
+        
+        /* 1. Virus Entry */
+        @keyframes anim-virus-entry {
+            0% { transform: translate(250px, 50px); opacity: 0; }
+            2% { opacity: 1; }
+            12% { transform: translate(376px, 176px); opacity: 1; }
+            13.3%, 100% { transform: translate(376px, 176px); opacity: 0; }
+        }
+
+        /* 2. Capsid Uncoating */
+        @keyframes anim-capsid {
+            0%, 12% { transform: translate(376px, 176px); opacity: 0; }
+            13.3% { transform: translate(376px, 176px); opacity: 1; }
+            18% { transform: translate(500px, 300px); opacity: 1; }
+            20%, 100% { transform: translate(500px, 300px); opacity: 0; }
+        }
+
+        /* 3. RNA Exposure */
+        @keyframes anim-rna-expose {
+            0%, 19% { transform: translate(500px, 300px); opacity: 0; }
+            20% { transform: translate(500px, 300px); opacity: 1; }
+            32% { transform: translate(500px, 300px); opacity: 1; }
+            33.3%, 100% { transform: translate(500px, 300px); opacity: 0; }
+        }
+
+        /* 4. Reverse Transcriptase Enzyme */
+        @keyframes anim-rt-enzyme {
+            0%, 19% { transform: translate(480px, 300px); opacity: 0; }
+            20% { transform: translate(480px, 300px); opacity: 1; }
+            30% { transform: translate(520px, 300px); opacity: 1; }
+            32%, 100% { transform: translate(520px, 300px); opacity: 0; }
+        }
+
+        /* 5. DNA Synthesis (Single Strand Drawing) */
+        @keyframes anim-dna-synth-stroke {
+            0%, 19% { stroke-dashoffset: 40; opacity: 0; }
+            20% { stroke-dashoffset: 40; opacity: 1; }
+            30%, 32% { stroke-dashoffset: 0; opacity: 1; }
+            33.3%, 100% { opacity: 0; }
+        }
+
+        @keyframes anim-dna-synth-group {
+            0%, 19% { transform: translate(500px, 300px); opacity: 0; }
+            20%, 32% { transform: translate(500px, 300px); opacity: 1; }
+            33.3%, 100% { transform: translate(500px, 300px); opacity: 0; }
+        }
+
+        /* 6. Viral DNA Movement & Integration */
+        @keyframes anim-viral-dna {
+            0%, 32% { transform: translate(500px, 300px); opacity: 0; }
+            33.3% { transform: translate(500px, 300px); opacity: 1; }
+            42% { transform: translate(650px, 360px); opacity: 1; }
+            48% { transform: translate(750px, 450px); opacity: 1; }
+            52% { transform: translate(750px, 450px); opacity: 1; }
+            53.3%, 100% { transform: translate(750px, 450px); opacity: 0; }
+        }
+
+        /* 7. Integration Glow */
+        @keyframes anim-glow {
+            0%, 50% { opacity: 0; transform: scale(0.8); }
+            52% { opacity: 1; transform: scale(1.2); }
+            55%, 100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        /* 8. New Viral RNA */
+        @keyframes anim-new-rna {
+            0%, 52% { transform: translate(750px, 450px); opacity: 0; }
+            53.3% { transform: translate(750px, 450px); opacity: 1; }
+            65% { transform: translate(650px, 320px); opacity: 1; }
+            78% { transform: translate(500px, 81px); opacity: 1; }
+            80%, 100% { transform: translate(500px, 81px); opacity: 0; }
+        }
+
+        /* 9. Budding Bulge */
+        @keyframes anim-budding-bulge {
+            0%, 77% { opacity: 0; transform: scale(0.5); }
+            79% { opacity: 1; transform: scale(1); }
+            82% { opacity: 1; transform: scale(1.3); }
+            85%, 100% { opacity: 0; transform: scale(1); }
+        }
+
+        /* 10. New Virus Release */
+        @keyframes anim-budding-virus {
+            0%, 79% { transform: translate(500px, 81px); opacity: 0; }
+            80% { transform: translate(500px, 81px); opacity: 1; }
+            95% { transform: translate(400px, -10px); opacity: 1; }
+            98%, 100% { transform: translate(400px, -10px); opacity: 0; }
+        }
+
+        /* Stage Labels Highlighting */
+        @keyframes highlight-1 { 
+            0%, 13.3% { opacity: 1; font-weight: 700; fill: #2C3E50; } 
+            14%, 100% { opacity: 0.4; font-weight: 400; fill: #7F8C8D; } 
+        }
+        @keyframes highlight-2 { 
+            0%, 13.2% { opacity: 0.4; font-weight: 400; fill: #7F8C8D; } 
+            13.3%, 33.3% { opacity: 1; font-weight: 700; fill: #2C3E50; } 
+            33.4%, 100% { opacity: 0.4; font-weight: 400; fill: #7F8C8D; } 
+        }
+        @keyframes highlight-3 { 
+            0%, 33.2% { opacity: 0.4; font-weight: 400; fill: #7F8C8D; } 
+            33.3%, 53.3% { opacity: 1; font-weight: 700; fill: #2C3E50; } 
+            53.4%, 100% { opacity: 0.4; font-weight: 400; fill: #7F8C8D; } 
+        }
+        @keyframes highlight-4 { 
+            0%, 53.2% { opacity: 0.4; font-weight: 400; fill: #7F8C8D; } 
+            53.3%, 79.9% { opacity: 1; font-weight: 700; fill: #2C3E50; } 
+            80%, 100% { opacity: 0.4; font-weight: 400; fill: #7F8C8D; } 
+        }
+        @keyframes highlight-5 { 
+            0%, 79.9% { opacity: 0.4; font-weight: 400; fill: #7F8C8D; } 
+            80%, 100% { opacity: 1; font-weight: 700; fill: #2C3E50; } 
+        }
+
+        /* Floating RT Label */
+        @keyframes rt-label {
+            0%, 19% { opacity: 0; }
+            20%, 32% { opacity: 1; }
+            33%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Glow Filter for Integration -->
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="5" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+
+            <!-- Intact Virus Particle -->
+            <g id="virus-def">
+                <circle cx="0" cy="0" r="20" fill="#E8F4FD" stroke="#4A90D9" stroke-width="3"/>
+                <!-- Glycoprotein Spikes -->
+                <path d="M 0 -20 L 0 -26 M 14 -14 L 18 -18 M 20 0 L 26 0 M 14 14 L 18 18 M 0 20 L 0 26 M -14 14 L -18 18 M -20 0 L -26 0 M -14 -14 L -18 -18" stroke="#4A90D9" stroke-width="2" stroke-linecap="round"/>
+                <circle cx="0" cy="-26" r="2.5" fill="#4A90D9"/>
+                <circle cx="18" cy="-18" r="2.5" fill="#4A90D9"/>
+                <circle cx="26" cy="0" r="2.5" fill="#4A90D9"/>
+                <circle cx="18" cy="18" r="2.5" fill="#4A90D9"/>
+                <circle cx="0" cy="26" r="2.5" fill="#4A90D9"/>
+                <circle cx="-18" cy="18" r="2.5" fill="#4A90D9"/>
+                <circle cx="-26" cy="0" r="2.5" fill="#4A90D9"/>
+                <circle cx="-18" cy="-18" r="2.5" fill="#4A90D9"/>
+                <!-- Capsid Core -->
+                <path d="M -8 -10 L 8 -10 L 0 12 Z" fill="#98D8C8" stroke="#7AB8A8" stroke-width="1" stroke-linejoin="round"/>
+                <!-- Viral RNA -->
+                <path d="M -4 -5 Q 0 -2, -4 2 T -4 8" fill="none" stroke="#FFA07A" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M 4 -5 Q 0 -2, 4 2 T 4 8" fill="none" stroke="#FFA07A" stroke-width="1.5" stroke-linecap="round"/>
+            </g>
+
+            <!-- Free Capsid -->
+            <g id="capsid-def">
+                <path d="M -10 -12 L 10 -12 L 0 15 Z" fill="#98D8C8" stroke="#7AB8A8" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M -5 -6 Q 0 -3, -5 3 T -5 10" fill="none" stroke="#FFA07A" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M 5 -6 Q 0 -3, 5 3 T 5 10" fill="none" stroke="#FFA07A" stroke-width="1.5" stroke-linecap="round"/>
+            </g>
+
+            <!-- Single Viral RNA Strand -->
+            <g id="viral-rna-def">
+                <path d="M -15 0 Q -7.5 -10, 0 0 T 15 0" fill="none" stroke="#FFA07A" stroke-width="2.5" stroke-linecap="round"/>
+            </g>
+
+            <!-- Double-Stranded Viral DNA -->
+            <g id="viral-dna-def">
+                <path d="M -15 -3 Q -7.5 -13, 0 -3 T 15 -3" fill="none" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M -15 3 Q -7.5 13, 0 3 T 15 3" fill="none" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round"/>
+                <line x1="-11" y1="-6" x2="-11" y2="6" stroke="#FF6B6B" stroke-width="1.5"/>
+                <line x1="-4" y1="-3" x2="-4" y2="3" stroke="#FF6B6B" stroke-width="1.5"/>
+                <line x1="4" y1="-3" x2="4" y2="3" stroke="#FF6B6B" stroke-width="1.5"/>
+                <line x1="11" y1="-6" x2="11" y2="6" stroke="#FF6B6B" stroke-width="1.5"/>
+            </g>
+
+            <!-- Reverse Transcriptase Enzyme -->
+            <g id="rt-def">
+                <circle cx="0" cy="0" r="8" fill="#98D8C8"/>
+                <path d="M -8 0 A 8 8 0 0 0 8 0" fill="#7AB8A8"/>
+            </g>
+        </defs>
+
+        <!-- Static Background Elements -->
+        
+        <!-- Cell Cytoplasm & Plasma Membrane -->
+        <!-- Membrane is a circular arc centered at (800, 600) with radius 600 -->
+        <path d="M 200 600 A 600 600 0 0 1 800 0 L 1000 0 L 1000 600 Z" fill="#E8F4FD" stroke="#4A90D9" stroke-width="8"/>
+        
+        <!-- Nucleus -->
+        <circle cx="750" cy="450" r="130" fill="#2C3E50" fill-opacity="0.15" stroke="#2C3E50" stroke-width="6" stroke-dasharray="35 15" stroke-linecap="round"/>
+        
+        <!-- Host Genome (Tangled DNA in Nucleus) -->
+        <path d="M 670 450 Q 690 390, 720 460 T 760 420 T 810 480 T 840 410 T 790 390 T 740 440 T 710 480 T 680 430 Q 660 410, 650 450" fill="none" stroke="#FF6B6B" stroke-width="3" opacity="0.6" stroke-linecap="round" stroke-linejoin="round"/>
+
+        <!-- Pathway Arrows (Dashed Lines) -->
+        <g fill="none" stroke="#A0AAB5" stroke-width="2" stroke-dasharray="6 6" opacity="0.6" stroke-linecap="round">
+            <!-- Entry to RT -->
+            <path d="M 376 176 L 500 300" />
+            <!-- RT to Nucleus -->
+            <path d="M 500 300 Q 575 330, 650 360 Q 700 405, 750 450" />
+            <!-- Nucleus to Budding -->
+            <path d="M 750 450 Q 700 385, 650 320 Q 575 200, 500 81" />
+        </g>
+
+        <!-- Animated Elements (15s Loop) -->
+
+        <!-- 1. Virus Entry -->
+        <use href="#virus-def" style="animation: anim-virus-entry 15s infinite ease-in-out;" />
+
+        <!-- 2. Capsid Uncoating -->
+        <use href="#capsid-def" style="animation: anim-capsid 15s infinite ease-in-out;" />
+
+        <!-- 3. Viral RNA Exposed -->
+        <use href="#viral-rna-def" style="animation: anim-rna-expose 15s infinite ease-in-out;" />
+
+        <!-- 4. Reverse Transcriptase Enzyme -->
+        <use href="#rt-def" style="animation: anim-rt-enzyme 15s infinite ease-in-out;" />
+        <text x="500" y="280" font-size="12" fill="#7AB8A8" font-weight="700" text-anchor="middle" style="animation: rt-label 15s infinite;">Reverse Transcriptase</text>
+
+        <!-- 5. DNA Synthesis (Single Strand forming over RNA) -->
+        <g style="animation: anim-dna-synth-group 15s infinite ease-in-out;">
+            <path d="M -15 5 Q -7.5 -5, 0 5 T 15 5" fill="none" stroke="#FF6B6B" stroke-width="2.5" stroke-linecap="round" stroke-dasharray="40" style="animation: anim-dna-synth-stroke 15s infinite linear;" />
+        </g>
+
+        <!-- 6. Viral DNA (Double-Stranded) Movement -->
+        <use href="#viral-dna-def" style="animation: anim-viral-dna 15s infinite ease-in-out;" />
+
+        <!-- 7. Integration Glow (Host Genome Site) -->
+        <circle cx="750" cy="450" r="15" fill="#FFD700" filter="url(#glow)" style="animation: anim-glow 15s infinite ease-in-out; transform-origin: 750px 450px;" />
+
+        <!-- 8. New Viral RNA -->
+        <use href="#viral-rna-def" style="animation: anim-new-rna 15s infinite ease-in-out;" />
+
+        <!-- 9. Budding Bulge on Membrane -->
+        <g style="animation: anim-budding-bulge 15s infinite ease-in-out; transform-origin: 500px 81px;">
+            <path d="M 475 95 Q 500 50, 525 65" fill="#E8F4FD" stroke="#4A90D9" stroke-width="8" stroke-linecap="round"/>
+            <!-- Spikes on Bulge -->
+            <line x1="490" y1="75" x2="480" y2="60" stroke="#4A90D9" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="480" cy="60" r="2.5" fill="#4A90D9"/>
+            <line x1="505" y1="65" x2="505" y2="45" stroke="#4A90D9" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="505" cy="45" r="2.5" fill="#4A90D9"/>
+            <line x1="520" y1="70" x2="530" y2="55" stroke="#4A90D9" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="530" cy="55" r="2.5" fill="#4A90D9"/>
+        </g>
+
+        <!-- 10. New Virus Release -->
+        <use href="#virus-def" style="animation: anim-budding-virus 15s infinite ease-in-out;" />
+
+
+        <!-- Static Text & Labels -->
+
+        <!-- Title -->
+        <text x="500" y="45" font-size="26" font-weight="700" fill="#2C3E50" text-anchor="middle">Life Cycle of a Retrovirus (HIV)</text>
+
+        <!-- Structural Labels -->
+        <text x="250" y="140" font-size="14" font-weight="700" fill="#4A90D9">Plasma Membrane</text>
+        <path d="M 290 150 L 330 180" fill="none" stroke="#4A90D9" stroke-width="1.5" stroke-linecap="round"/>
+        
+        <text x="600" y="240" font-size="20" font-weight="700" fill="#A0AAB5" letter-spacing="2">CYTOPLASM</text>
+        <text x="750" y="580" font-size="20" font-weight="700" fill="#2C3E50" text-anchor="middle" letter-spacing="2">NUCLEUS</text>
+        
+        <text x="860" y="480" font-size="14" font-weight="700" fill="#FF6B6B">Host Genome</text>
+        <path d="M 850 475 L 810 465" fill="none" stroke="#FF6B6B" stroke-width="1.5" stroke-linecap="round"/>
+
+        <!-- Left Panel: Stage Descriptions -->
+        <g font-size="15">
+            <text x="30" y="200" style="animation: highlight-1 15s infinite;">1. Virus fuses with plasma membrane</text>
+            <text x="30" y="240" style="animation: highlight-2 15s infinite;">2. Reverse Transcriptase forms viral DNA</text>
+            <text x="30" y="280" style="animation: highlight-3 15s infinite;">3. Viral DNA integrates into host genome</text>
+            <text x="30" y="320" style="animation: highlight-4 15s infinite;">4. New viral RNA produced by cell</text>
+            <text x="30" y="360" style="animation: highlight-5 15s infinite;">5. New viruses bud from host cell</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(760, 20)">
+            <rect x="0" y="0" width="220" height="120" fill="#ffffff" stroke="#e0e0e0" rx="8" opacity="0.95"/>
+            <text x="110" y="22" font-size="13" font-weight="700" fill="#2C3E50" text-anchor="middle">Legend</text>
+            
+            <circle cx="20" cy="45" r="6" fill="#4A90D9"/> 
+            <text x="35" y="49" font-size="12" fill="#2C3E50">Viral Envelope / Membrane</text>
+            
+            <circle cx="20" cy="65" r="6" fill="#98D8C8"/> 
+            <text x="35" y="69" font-size="12" fill="#2C3E50">Viral Proteins (Capsid/RT)</text>
+            
+            <line x1="12" y1="85" x2="28" y2="85" stroke="#FFA07A" stroke-width="3" stroke-linecap="round"/> 
+            <text x="35" y="89" font-size="12" fill="#2C3E50">Viral RNA</text>
+            
+            <line x1="12" y1="105" x2="28" y2="105" stroke="#FF6B6B" stroke-width="3" stroke-linecap="round"/> 
+            <text x="35" y="109" font-size="12" fill="#2C3E50">DNA (Viral &amp; Host)</text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

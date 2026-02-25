@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bacterial Plasmid: Independent Replication</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .header {
+            text-align: center;
+            padding: 20px 20px 10px 20px;
+            color: #2C3E50;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        .header p {
+            margin: 0;
+            font-size: 16px;
+            color: #7f8c8d;
+            max-width: 800px;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Animations */
+        .chromosome {
+            animation: jitter 3s ease-in-out infinite;
+            transform-origin: 350px 300px;
+        }
+        .bg-plasmid {
+            animation: float 6s ease-in-out infinite;
+        }
+        .bg-plasmid:nth-child(2) {
+            animation-delay: 1s;
+            animation-duration: 7s;
+        }
+        .bg-plasmid:nth-child(3) {
+            animation-delay: 2s;
+            animation-duration: 5s;
+        }
+        
+        /* 15s Total Loop */
+        .dna-pol-wrapper {
+            animation: dnaPolMove 15s linear infinite;
+            transform-origin: 650px 250px;
+        }
+        .new-strand {
+            animation: strandGrow 15s linear infinite;
+            transform-origin: 650px 250px;
+            transform: rotate(-90deg);
+        }
+        .plasmid-new {
+            animation: plasmidSplit 15s ease-in-out infinite;
+        }
+        .callout-rep {
+            animation: calloutRep 15s ease-in-out infinite;
+        }
+        .callout-copy {
+            animation: calloutCopy 15s ease-in-out infinite;
+        }
+        .protein-1 { animation: proteinEmit1 15s ease-out infinite; transform-origin: 615px 270px; }
+        .protein-2 { animation: proteinEmit2 15s ease-out infinite; transform-origin: 615px 270px; }
+        .protein-3 { animation: proteinEmit3 15s ease-out infinite; transform-origin: 615px 270px; }
+
+        /* Keyframes */
+        @keyframes jitter {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(2px, -1px) scale(1.01); }
+            50% { transform: translate(-1px, 2px) scale(0.99); }
+            75% { transform: translate(-2px, -2px) scale(1.005); }
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+        @keyframes dnaPolMove {
+            0%, 25% { opacity: 0; transform: rotate(0deg); }
+            26% { opacity: 1; transform: rotate(0deg) scale(0); }
+            28% { opacity: 1; transform: rotate(0deg) scale(1); }
+            60% { opacity: 1; transform: rotate(360deg) scale(1); }
+            62%, 100% { opacity: 0; transform: rotate(360deg) scale(0); }
+        }
+        @keyframes strandGrow {
+            0%, 28% { stroke-dashoffset: 277; opacity: 0; }
+            29% { opacity: 1; stroke-dashoffset: 277; }
+            60% { stroke-dashoffset: 0; opacity: 1; }
+            61%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes plasmidSplit {
+            0%, 60% { opacity: 0; transform: translate(0, 0); }
+            61% { opacity: 1; transform: translate(0, 0); }
+            70%, 100% { opacity: 1; transform: translate(90px, 80px); }
+        }
+        @keyframes calloutRep {
+            0%, 25% { opacity: 0; transform: translateY(10px); }
+            30%, 60% { opacity: 1; transform: translateY(0); }
+            65%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+        @keyframes calloutCopy {
+            0%, 65% { opacity: 0; transform: translateY(10px); }
+            70%, 95% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+        @keyframes proteinEmit1 {
+            0%, 66% { opacity: 0; transform: translate(0,0) scale(0.5); }
+            70% { opacity: 1; transform: translate(-15px, 15px) scale(1); }
+            90%, 100% { opacity: 0; transform: translate(-60px, 40px) scale(1.5); }
+        }
+        @keyframes proteinEmit2 {
+            0%, 70% { opacity: 0; transform: translate(0,0) scale(0.5); }
+            75% { opacity: 1; transform: translate(-10px, 30px) scale(1); }
+            95%, 100% { opacity: 0; transform: translate(-40px, 80px) scale(1.5); }
+        }
+        @keyframes proteinEmit3 {
+            0%, 74% { opacity: 0; transform: translate(0,0) scale(0.5); }
+            79% { opacity: 1; transform: translate(-30px, 10px) scale(1); }
+            100% { opacity: 0; transform: translate(-90px, 30px) scale(1.5); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>The Bacterial Plasmid</h1>
+        <p>Observe how plasmids act as extrachromosomal vectors, replicating independently of the genomic DNA and expressing advantageous traits like antibiotic resistance.</p>
+    </div>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <!-- Arrowhead for pointers -->
+                <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#7f8c8d" />
+                </marker>
+                
+                <!-- Drop shadow for cell -->
+                <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="15" stdDeviation="15" flood-color="#000000" flood-opacity="0.08"/>
+                </filter>
+
+                <!-- Glow for DNA Polymerase -->
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#f8f9fa" />
+
+            <!-- Bacterial Cell Envelope -->
+            <rect x="150" y="100" width="700" height="400" rx="200" ry="200" fill="#E8F4FD" stroke="#4A90D9" stroke-width="8" filter="url(#shadow)" />
+            <rect x="158" y="108" width="684" height="384" rx="192" ry="192" fill="none" stroke="#A9CCE3" stroke-width="2" />
+
+            <!-- Genomic / Chromosomal DNA (Tangled Mass) -->
+            <g class="chromosome">
+                <path d="M350,150 C400,130 450,180 420,230 C480,240 500,300 460,340 C490,380 440,450 380,420 C400,480 320,490 290,440 C240,480 180,440 210,380 C160,370 170,280 220,260 C180,210 240,140 290,180 C280,120 340,110 350,150 Z" fill="none" stroke="#2C3E50" stroke-width="6" stroke-linejoin="round" />
+                <path d="M320,180 C380,190 310,240 360,280 C410,320 340,380 380,410 C330,430 290,370 260,390 C220,350 280,310 240,260 C270,220 250,170 320,180 Z" fill="none" stroke="#2C3E50" stroke-width="6" stroke-linejoin="round" />
+                <path d="M290,220 C340,250 270,300 320,340 C370,380 300,410 350,400 C390,340 320,300 380,250 C420,200 340,180 290,220 Z" fill="none" stroke="#2C3E50" stroke-width="6" stroke-linejoin="round" />
+                <path d="M350,250 C310,270 380,310 340,350 C310,380 360,330 310,290 C270,250 330,220 350,250 Z" fill="none" stroke="#2C3E50" stroke-width="6" stroke-linejoin="round" />
+            </g>
+
+            <!-- Background Plasmids -->
+            <g class="bg-plasmid">
+                <circle cx="550" cy="400" r="25" fill="none" stroke="#FF6B6B" stroke-width="3" />
+            </g>
+            <g class="bg-plasmid">
+                <circle cx="780" cy="300" r="20" fill="none" stroke="#FF6B6B" stroke-width="3" />
+            </g>
+            <g class="bg-plasmid">
+                <circle cx="500" cy="200" r="18" fill="none" stroke="#FF6B6B" stroke-width="3" />
+            </g>
+
+            <!-- Main Replicating Plasmid -->
+            <g class="plasmid-main">
+                <!-- Outer & Inner Strands -->
+                <circle cx="650" cy="250" r="40" fill="none" stroke="#FF6B6B" stroke-width="2" />
+                <circle cx="650" cy="250" r="36" fill="none" stroke="#FF6B6B" stroke-width="2" />
+                
+                <!-- Origin of Replication (ori) -->
+                <path d="M 650 210 A 40 40 0 0 1 678.3 221.7" fill="none" stroke="#F39C12" stroke-width="6" />
+                
+                <!-- Selectable Marker (AmpR) -->
+                <path d="M 650 290 A 40 40 0 0 1 615.4 270" fill="none" stroke="#98D8C8" stroke-width="6" />
+
+                <!-- Growing New Strand (Animated) -->
+                <circle cx="650" cy="250" r="44" fill="none" stroke="#FF6B6B" stroke-width="3" stroke-dasharray="277" stroke-dashoffset="277" class="new-strand" />
+
+                <!-- DNA Polymerase (Animated) -->
+                <g class="dna-pol-wrapper">
+                    <circle cx="650" cy="210" r="9" fill="#F1C40F" filter="url(#glow)" />
+                    <circle cx="650" cy="210" r="6" fill="#ffffff" opacity="0.5" />
+                </g>
+            </g>
+
+            <!-- Newly Split Plasmid (Animated) -->
+            <g class="plasmid-new">
+                <circle cx="650" cy="250" r="40" fill="none" stroke="#FF6B6B" stroke-width="2" />
+                <circle cx="650" cy="250" r="36" fill="none" stroke="#FF6B6B" stroke-width="2" />
+                <path d="M 650 210 A 40 40 0 0 1 678.3 221.7" fill="none" stroke="#F39C12" stroke-width="6" />
+                <path d="M 650 290 A 40 40 0 0 1 615.4 270" fill="none" stroke="#98D8C8" stroke-width="6" />
+            </g>
+
+            <!-- Gene Expression: Proteins Emitting from AmpR -->
+            <circle cx="615" cy="270" r="6" fill="#98D8C8" class="protein-1" />
+            <circle cx="615" cy="270" r="5" fill="#98D8C8" class="protein-2" />
+            <circle cx="615" cy="270" r="7" fill="#98D8C8" class="protein-3" />
+
+            <!-- Dynamic Callouts -->
+            <g class="callout-rep">
+                <rect x="550" y="140" width="200" height="32" rx="6" fill="#FDF2E9" stroke="#F39C12" stroke-width="1.5" />
+                <text x="560" y="161" font-family="Inter" font-weight="600" font-size="14" fill="#D68910">Independent Replication</text>
+            </g>
+
+            <g class="callout-copy">
+                <rect x="690" y="380" width="160" height="32" rx="6" fill="#FDEDEC" stroke="#E74C3C" stroke-width="1.5" />
+                <text x="702" y="401" font-family="Inter" font-weight="600" font-size="14" fill="#C0392B">High Copy Number</text>
+            </g>
+
+            <!-- Static Labels & Pointers -->
+            
+            <!-- Chromosomal DNA -->
+            <path d="M 160 555 L 200 555 L 280 380" fill="none" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrow)" />
+            <text x="20" y="560" font-family="Inter" font-weight="600" font-size="14" fill="#2C3E50">Chromosomal DNA</text>
+
+            <!-- Plasmid DNA -->
+            <path d="M 800 70 L 760 70 L 660 200" fill="none" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrow)" />
+            <text x="810" y="75" font-family="Inter" font-weight="600" font-size="14" fill="#2C3E50">Plasmid DNA</text>
+
+            <!-- Origin of Replication -->
+            <path d="M 800 130 L 760 130 L 680 210" fill="none" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrow)" />
+            <text x="810" y="125" font-family="Inter" font-weight="600" font-size="14" fill="#2C3E50">Origin of Replication</text>
+            <text x="810" y="145" font-family="Roboto Mono" font-size="12" fill="#7f8c8d">(ori)</text>
+
+            <!-- Selectable Marker -->
+            <path d="M 450 70 L 500 70 L 605 265" fill="none" stroke="#7f8c8d" stroke-width="2" marker-end="url(#arrow)" />
+            <text x="300" y="65" font-family="Inter" font-weight="600" font-size="14" fill="#2C3E50">Selectable Marker</text>
+            <text x="300" y="85" font-family="Roboto Mono" font-size="12" fill="#7f8c8d">(AmpR gene)</text>
+
+            <!-- Title Card (In SVG) -->
+            <g transform="translate(20, 20)">
+                <rect width="390" height="50" rx="8" fill="#ffffff" stroke="#e0e0e0" stroke-width="2" filter="url(#shadow)" />
+                <text x="15" y="32" font-family="Inter" font-weight="700" font-size="18" fill="#2C3E50">Bacterial Plasmid: Extrachromosomal Vector</text>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(740, 440)">
+                <rect width="240" height="140" rx="8" fill="#ffffff" stroke="#e0e0e0" stroke-width="2" filter="url(#shadow)" />
+                <text x="15" y="25" font-family="Inter" font-weight="700" font-size="14" fill="#2C3E50">Legend</text>
+                
+                <circle cx="20" cy="45" r="6" fill="#2C3E50" />
+                <text x="35" y="50" font-family="Inter" font-size="12" fill="#2C3E50">Genomic DNA</text>
+                
+                <circle cx="20" cy="65" r="6" fill="#FF6B6B" />
+                <text x="35" y="70" font-family="Inter" font-size="12" fill="#2C3E50">Plasmid DNA</text>
+                
+                <circle cx="20" cy="85" r="6" fill="#F39C12" />
+                <text x="35" y="90" font-family="Inter" font-size="12" fill="#2C3E50">Origin of Replication</text>
+                
+                <circle cx="20" cy="105" r="6" fill="#98D8C8" />
+                <text x="35" y="110" font-family="Inter" font-size="12" fill="#2C3E50">Resistance Gene / Protein</text>
+                
+                <circle cx="20" cy="125" r="6" fill="#F1C40F" />
+                <text x="35" y="130" font-family="Inter" font-size="12" fill="#2C3E50">DNA Polymerase</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

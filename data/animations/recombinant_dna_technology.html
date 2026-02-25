@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Molecular Cloning: The Recombinant DNA Process</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        h1 {
+            font-family: 'Roboto Mono', monospace;
+            color: #2C3E50;
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        p.subtitle {
+            color: #555;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid #e9ecef;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- CSS Animations (15s Loop) --- */
+        
+        /* 1. Scissors Animation */
+        @keyframes scissor-approach {
+            0%, 5% { opacity: 0; transform: translate(30px, -30px) scale(0.5); }
+            10%, 15% { opacity: 1; transform: translate(0, 0) scale(1); }
+            18%, 100% { opacity: 0; transform: translate(0, 0) scale(1); }
+        }
+        @keyframes snip-top {
+            0%, 11% { transform: rotate(0deg); }
+            13% { transform: rotate(-20deg); }
+            15%, 100% { transform: rotate(0deg); }
+        }
+        @keyframes snip-bottom {
+            0%, 11% { transform: rotate(0deg); }
+            13% { transform: rotate(20deg); }
+            15%, 100% { transform: rotate(0deg); }
+        }
+
+        /* 2. DNA Cleavage (Intact to Cut) */
+        @keyframes fade-out-intact {
+            0%, 13.9% { opacity: 1; }
+            14%, 100% { opacity: 0; }
+        }
+        @keyframes fade-in-cut {
+            0%, 13.9% { opacity: 0; }
+            14%, 100% { opacity: 1; }
+        }
+
+        /* 3. Movement to Ligation */
+        @keyframes plasmid-move {
+            0%, 20% { transform: translate(150px, 160px); }
+            33%, 45% { transform: translate(650px, 160px); }
+            55%, 85% { transform: translate(400px, 360px); }
+            90%, 100% { opacity: 0; transform: translate(400px, 360px); }
+        }
+        @keyframes gene-move {
+            0%, 20% { transform: translate(150px, 60px); }
+            33% { transform: translate(650px, 60px); }
+            40%, 45% { transform: translate(650px, 160px); } /* Drops into plasmid */
+            55%, 85% { transform: translate(400px, 360px); }
+            90%, 100% { opacity: 0; transform: translate(400px, 360px); }
+        }
+
+        /* 4. Ligase Pulse */
+        @keyframes ligase-pulse {
+            0%, 38% { opacity: 0; transform: translate(650px, 131px) scale(0.5); }
+            40% { opacity: 1; transform: translate(650px, 131px) scale(1.2); }
+            42% { opacity: 1; transform: translate(650px, 131px) scale(0.9); }
+            44% { opacity: 1; transform: translate(650px, 131px) scale(1.1); }
+            46%, 100% { opacity: 0; transform: translate(650px, 131px) scale(0.5); }
+        }
+
+        /* 5. E. coli Transformation */
+        @keyframes ecoli-appear {
+            0%, 40% { opacity: 0; transform: translate(400px, 360px) scale(0.8); }
+            45%, 88% { opacity: 1; transform: translate(400px, 360px) scale(1); }
+            92%, 100% { opacity: 0; transform: translate(400px, 360px) scale(0.9); }
+        }
+
+        /* 6. Plasmid Pulse inside E. coli */
+        @keyframes plasmid-pulse {
+            0%, 60% { filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2)); }
+            65%, 80% { filter: drop-shadow(0px 0px 12px rgba(152, 216, 200, 0.8)); }
+            85%, 100% { filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2)); }
+        }
+
+        /* 7. Protein Expression */
+        @keyframes protein-1 {
+            0%, 60% { opacity: 0; transform: translate(400px, 360px) scale(0); }
+            65%, 85% { opacity: 1; transform: translate(320px, 320px) scale(1); }
+            90%, 100% { opacity: 0; transform: translate(320px, 320px) scale(1.1); }
+        }
+        @keyframes protein-2 {
+            0%, 65% { opacity: 0; transform: translate(400px, 360px) scale(0); }
+            70%, 85% { opacity: 1; transform: translate(480px, 390px) scale(1); }
+            90%, 100% { opacity: 0; transform: translate(480px, 390px) scale(1.1); }
+        }
+        @keyframes protein-3 {
+            0%, 70% { opacity: 0; transform: translate(400px, 360px) scale(0); }
+            75%, 85% { opacity: 1; transform: translate(350px, 410px) scale(1); }
+            90%, 100% { opacity: 0; transform: translate(350px, 410px) scale(1.1); }
+        }
+
+        /* 8. Dynamic Labels */
+        @keyframes label-cleavage {
+            0%, 25% { opacity: 1; } 30%, 100% { opacity: 0; }
+        }
+        @keyframes label-ligation {
+            0%, 25% { opacity: 0; } 30%, 50% { opacity: 1; } 55%, 100% { opacity: 0; }
+        }
+        @keyframes label-transformation {
+            0%, 50% { opacity: 0; } 55%, 88% { opacity: 1; } 92%, 100% { opacity: 0; }
+        }
+
+        /* Apply Animations */
+        .anim-scissor-group { animation: scissor-approach 15s infinite ease-in-out; }
+        .anim-snip-top { animation: snip-top 15s infinite ease-in-out; transform-origin: 0 0; }
+        .anim-snip-bottom { animation: snip-bottom 15s infinite ease-in-out; transform-origin: 0 0; }
+        
+        .anim-intact { animation: fade-out-intact 15s infinite; }
+        .anim-cut { animation: fade-in-cut 15s infinite; }
+        
+        .anim-plasmid-move { animation: plasmid-move 15s infinite ease-in-out; }
+        .anim-gene-move { animation: gene-move 15s infinite ease-in-out; }
+        .anim-plasmid-pulse { animation: plasmid-pulse 15s infinite ease-in-out; }
+        
+        .anim-ligase { animation: ligase-pulse 15s infinite ease-in-out; }
+        .anim-ecoli { animation: ecoli-appear 15s infinite ease-in-out; }
+        
+        .anim-prot1 { animation: protein-1 15s infinite ease-out; }
+        .anim-prot2 { animation: protein-2 15s infinite ease-out; }
+        .anim-prot3 { animation: protein-3 15s infinite ease-out; }
+
+        .lbl-cleavage { animation: label-cleavage 15s infinite; }
+        .lbl-ligation { animation: label-ligation 15s infinite; }
+        .lbl-transformation { animation: label-transformation 15s infinite; }
+
+    </style>
+</head>
+<body>
+
+    <h1>Recombinant DNA Technology</h1>
+    <p class="subtitle">The process of molecular cloning: isolating a gene of interest, inserting it into a plasmid vector using restriction enzymes and DNA ligase, and expressing the therapeutic protein in an <i>E. coli</i> host.</p>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Animated Recombinant DNA Process</title>
+            <desc>An animation showing a plasmid and human insulin gene being cut by restriction enzymes, joined by DNA ligase, and inserted into an E. coli bacterium to produce proteins.</desc>
+
+            <defs>
+                <!-- Drop Shadow for DNA -->
+                <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.15"/>
+                </filter>
+                
+                <!-- Glow for Ligase -->
+                <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+                    <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <!-- Arrowhead for flow lines -->
+                <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#BDC3C7" />
+                </marker>
+
+                <!-- Scissor Symbol -->
+                <g id="scissor-icon">
+                    <g class="anim-snip-top">
+                        <path d="M -25 -12 L 0 0 L 25 4 L 25 8 Z" fill="#2C3E50"/>
+                        <circle cx="-25" cy="-12" r="6" fill="none" stroke="#2C3E50" stroke-width="3"/>
+                    </g>
+                    <g class="anim-snip-bottom">
+                        <path d="M -25 12 L 0 0 L 25 -4 L 25 -8 Z" fill="#2C3E50"/>
+                        <circle cx="-25" cy="12" r="6" fill="none" stroke="#2C3E50" stroke-width="3"/>
+                    </g>
+                    <circle cx="0" cy="0" r="2.5" fill="#f8f9fa"/>
+                </g>
+
+                <!-- Protein Symbol -->
+                <g id="protein-icon">
+                    <circle cx="0" cy="0" r="6" fill="#98D8C8" stroke="#73B8A7" stroke-width="1.5"/>
+                    <circle cx="8" cy="5" r="7" fill="#98D8C8" stroke="#73B8A7" stroke-width="1.5"/>
+                    <circle cx="-6" cy="7" r="6" fill="#98D8C8" stroke="#73B8A7" stroke-width="1.5"/>
+                    <circle cx="5" cy="-6" r="5" fill="#98D8C8" stroke="#73B8A7" stroke-width="1.5"/>
+                    <circle cx="-5" cy="-5" r="5" fill="#98D8C8" stroke="#73B8A7" stroke-width="1.5"/>
+                </g>
+            </defs>
+
+            <!-- Background -->
+            <rect width="100%" height="100%" fill="#f8f9fa" />
+
+            <!-- Static Flow Arrows -->
+            <path d="M 260 160 L 500 160" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="6,6" marker-end="url(#arrow)"/>
+            <path d="M 650 230 Q 650 300 550 330" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="6,6" marker-end="url(#arrow)"/>
+
+            <!-- Stage Titles -->
+            <text x="150" y="250" text-anchor="middle" font-size="16" font-weight="700" fill="#2C3E50" class="lbl-cleavage">1. Cleavage</text>
+            <text x="650" y="250" text-anchor="middle" font-size="16" font-weight="700" fill="#2C3E50" class="lbl-ligation">2. Ligation</text>
+            <text x="400" y="480" text-anchor="middle" font-size="16" font-weight="700" fill="#2C3E50" class="lbl-transformation">3. Transformation & 4. Expression</text>
+
+            <!-- Legend -->
+            <g transform="translate(20, 360)">
+                <rect x="0" y="0" width="180" height="120" fill="#ffffff" stroke="#e9ecef" rx="6" shadow="url(#shadow)"/>
+                <text x="15" y="20" font-size="12" font-weight="700" fill="#2C3E50">Legend</text>
+                
+                <circle cx="20" cy="40" r="5" fill="#FF6B6B" stroke="#C0392B" stroke-width="1"/>
+                <text x="35" y="44" font-size="11" fill="#555">Plasmid DNA</text>
+                
+                <rect x="15" y="55" width="10" height="10" fill="#FF6B6B" stroke="#8E24AA" stroke-width="1" rx="2"/>
+                <text x="35" y="64" font-size="11" fill="#555">Gene of Interest</text>
+                
+                <circle cx="20" cy="80" r="5" fill="#2C3E50"/>
+                <text x="35" y="84" font-size="11" fill="#555">Restriction Enzyme</text>
+                
+                <circle cx="20" cy="100" r="5" fill="#F39C12"/>
+                <text x="35" y="104" font-size="11" fill="#555">DNA Ligase / Proteins</text>
+            </g>
+
+            <!-- ========================================== -->
+            <!-- ANIMATED ELEMENTS                          -->
+            <!-- ========================================== -->
+
+            <!-- E. coli Host Cell -->
+            <g class="anim-ecoli">
+                <!-- Cell Membrane & Cytoplasm -->
+                <rect x="-180" y="-80" width="360" height="160" rx="80" fill="#E8F4FD" stroke="#4A90D9" stroke-width="6" filter="url(#shadow)"/>
+                <!-- Bacterial Chromosome (Nucleoid) -->
+                <path d="M -120 0 Q -100 -40 -80 0 T -40 0 T 0 -20 T 20 10 T -20 30 T -60 20 T -100 40 Z" fill="none" stroke="#FFA07A" stroke-width="5" opacity="0.6"/>
+                <text x="-140" y="-95" font-size="14" font-weight="600" fill="#4A90D9" font-style="italic">Escherichia coli <tspan font-style="normal">Host</tspan></text>
+                <text x="-120" y="60" font-size="11" fill="#E74C3C" opacity="0.8">Bacterial Chromosome</text>
+            </g>
+
+            <!-- Proteins (Expression) -->
+            <g class="anim-prot1"><use href="#protein-icon"/><text x="15" y="5" font-size="11" fill="#27AE60" font-weight="600">Therapeutic Protein</text></g>
+            <g class="anim-prot2"><use href="#protein-icon"/></g>
+            <g class="anim-prot3"><use href="#protein-icon"/></g>
+
+            <!-- Plasmid Vector -->
+            <g class="anim-plasmid-move">
+                <g class="anim-plasmid-pulse">
+                    <!-- Intact Plasmid -->
+                    <g class="anim-intact">
+                        <circle cx="0" cy="0" r="34" fill="none" stroke="#FF6B6B" stroke-width="12" filter="url(#shadow)"/>
+                        <!-- Restriction Site Highlight -->
+                        <path d="M -12 -32 A 34 34 0 0 1 12 -32" fill="none" stroke="#2C3E50" stroke-width="12"/>
+                        <text x="0" y="65" text-anchor="middle" font-size="13" font-weight="600" fill="#C0392B">Plasmid Vector</text>
+                    </g>
+                    
+                    <!-- Cut Plasmid (Sticky Ends) -->
+                    <g class="anim-cut">
+                        <!-- Precise path for staggered sticky ends -->
+                        <path d="M 12 -38 L 12 -29 L 20 -29 L 20 -20 A 28 28 0 1 1 -20 -20 L -20 -29 L -12 -29 L -12 -38 A 40 40 0 1 0 12 -38 Z" fill="#FF6B6B" stroke="#C0392B" stroke-width="1.5" filter="url(#shadow)"/>
+                        <text x="0" y="65" text-anchor="middle" font-size="13" font-weight="600" fill="#C0392B">Plasmid Vector</text>
+                        <text x="0" y="-55" text-anchor="middle" font-size="11" fill="#2C3E50" class="lbl-cleavage">Sticky Ends</text>
+                    </g>
+                </g>
+            </g>
+
+            <!-- Gene of Interest -->
+            <g class="anim-gene-move">
+                <!-- Intact Gene -->
+                <g class="anim-intact">
+                    <rect x="-45" y="-38" width="90" height="18" fill="#FF6B6B" stroke="#8E24AA" stroke-width="1.5" rx="2" filter="url(#shadow)"/>
+                    <!-- Restriction Sites Highlight -->
+                    <rect x="-20" y="-38" width="40" height="18" fill="none" stroke="#2C3E50" stroke-width="2"/>
+                    <text x="0" y="-48" text-anchor="middle" font-size="13" font-weight="600" fill="#8E24AA">Gene of Interest</text>
+                    <text x="0" y="-62" text-anchor="middle" font-size="11" fill="#8E24AA">(Human Insulin)</text>
+                </g>
+                
+                <!-- Cut Gene (Puzzle Piece) -->
+                <g class="anim-cut">
+                    <path d="M -12 -38 L 12 -38 L 12 -29 L 20 -29 L 20 -20 L -20 -20 L -20 -29 L -12 -29 Z" fill="#FF6B6B" stroke="#8E24AA" stroke-width="1.5" filter="url(#shadow)"/>
+                    <text x="0" y="-48" text-anchor="middle" font-size="13" font-weight="600" fill="#8E24AA" class="lbl-cleavage">Trimmed Gene</text>
+                    <text x="0" y="-48" text-anchor="middle" font-size="13" font-weight="600" fill="#8E24AA" class="lbl-ligation">Recombinant DNA</text>
+                </g>
+            </g>
+
+            <!-- Restriction Enzymes (Scissors) -->
+            <!-- Scissor 1: Cutting Plasmid -->
+            <g transform="translate(150, 128)">
+                <g class="anim-scissor-group">
+                    <use href="#scissor-icon"/>
+                    <text x="35" y="4" font-size="12" font-weight="600" fill="#2C3E50">Restriction Endonuclease</text>
+                </g>
+            </g>
+            <!-- Scissor 2: Cutting Gene -->
+            <g transform="translate(150, 60)">
+                <g class="anim-scissor-group">
+                    <use href="#scissor-icon"/>
+                </g>
+            </g>
+
+            <!-- DNA Ligase -->
+            <g class="anim-ligase">
+                <circle cx="0" cy="0" r="14" fill="#F39C12" filter="url(#glow)"/>
+                <circle cx="0" cy="0" r="8" fill="#F1C40F"/>
+                <text x="25" y="4" font-size="13" font-weight="600" fill="#D68910">DNA Ligase</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

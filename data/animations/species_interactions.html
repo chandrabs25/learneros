@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Dynamics of Species Interactions</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;0,800;1,400&family=Roboto+Mono:wght@700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .diagram-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* Master Opacity Animations for the 6 Phases (24s loop, 4s each) */
+        .p1-sym { animation: op-p1 24s infinite; }
+        .p2-sym { animation: op-p2 24s infinite; }
+        .p3-sym { animation: op-p3 24s infinite; }
+        .p4-sym { animation: op-p4 24s infinite; }
+        .p5-sym { animation: op-p5 24s infinite; }
+        .p6-sym { animation: op-p6 24s infinite; }
+
+        @keyframes op-p1 {
+            0%, 14% { opacity: 1; }
+            16.66%, 100% { opacity: 0; }
+        }
+        @keyframes op-p2 {
+            0%, 14% { opacity: 0; }
+            16.66%, 31% { opacity: 1; }
+            33.33%, 100% { opacity: 0; }
+        }
+        @keyframes op-p3 {
+            0%, 31% { opacity: 0; }
+            33.33%, 48% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        @keyframes op-p4 {
+            0%, 48% { opacity: 0; }
+            50%, 64% { opacity: 1; }
+            66.66%, 100% { opacity: 0; }
+        }
+        @keyframes op-p5 {
+            0%, 64% { opacity: 0; }
+            66.66%, 81% { opacity: 1; }
+            83.33%, 100% { opacity: 0; }
+        }
+        @keyframes op-p6 {
+            0%, 81% { opacity: 0; }
+            83.33%, 98% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Species Movement Animations */
+        .species-a-mover { animation: move-a 24s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .species-b-mover { animation: move-b 24s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        
+        /* Species Scaling/Fitness Animations */
+        .species-a-scaler { animation: scale-a 24s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .species-b-scaler { animation: scale-b 24s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+        @keyframes move-a {
+            0%, 14% { transform: translate(320px, 250px); }
+            /* Competition Vibrate */
+            16.66% { transform: translate(340px, 250px); }
+            18% { transform: translate(338px, 252px); }
+            20% { transform: translate(342px, 248px); }
+            22% { transform: translate(338px, 250px); }
+            24% { transform: translate(342px, 252px); }
+            26% { transform: translate(338px, 248px); }
+            28% { transform: translate(342px, 250px); }
+            31% { transform: translate(340px, 250px); }
+            /* Predation */
+            33.33%, 48% { transform: translate(320px, 250px); }
+            /* Commensalism */
+            50%, 64% { transform: translate(400px, 190px); }
+            /* Amensalism */
+            66.66%, 81% { transform: translate(380px, 300px); }
+            /* Neutralism */
+            83.33%, 98% { transform: translate(250px, 150px); }
+            100% { transform: translate(320px, 250px); }
+        }
+
+        @keyframes scale-a {
+            0%, 31% { transform: scale(1); filter: grayscale(0%); opacity: 1; }
+            33.33%, 48% { transform: scale(1.4); filter: grayscale(0%); opacity: 1; }
+            50%, 64% { transform: scale(0.8); filter: grayscale(0%); opacity: 1; }
+            66.66%, 81% { transform: scale(0.6); filter: grayscale(80%); opacity: 0.7; }
+            83.33%, 100% { transform: scale(1); filter: grayscale(0%); opacity: 1; }
+        }
+
+        @keyframes move-b {
+            0%, 14% { transform: translate(480px, 250px); }
+            /* Competition Vibrate */
+            16.66% { transform: translate(460px, 250px); }
+            18% { transform: translate(462px, 248px); }
+            20% { transform: translate(458px, 252px); }
+            22% { transform: translate(462px, 250px); }
+            24% { transform: translate(458px, 248px); }
+            26% { transform: translate(462px, 252px); }
+            28% { transform: translate(458px, 250px); }
+            31% { transform: translate(460px, 250px); }
+            /* Predation */
+            33.33%, 48% { transform: translate(480px, 250px); }
+            /* Commensalism */
+            50%, 64% { transform: translate(400px, 260px); }
+            /* Amensalism */
+            66.66%, 81% { transform: translate(480px, 250px); }
+            /* Neutralism */
+            83.33%, 98% { transform: translate(550px, 350px); }
+            100% { transform: translate(480px, 250px); }
+        }
+
+        @keyframes scale-b {
+            0%, 31% { transform: scale(1); opacity: 1; }
+            33.33%, 48% { transform: scale(0.7); opacity: 0.3; }
+            50%, 64% { transform: scale(1); opacity: 1; }
+            66.66%, 81% { transform: scale(1.2); opacity: 1; }
+            83.33%, 100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Specific Effect Animations */
+        @keyframes pulse-glow {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        .anim-pulse {
+            transform-origin: center;
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes dash-flow {
+            to { stroke-dashoffset: -24; }
+        }
+        .anim-flow {
+            animation: dash-flow 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+
+<div class="diagram-container">
+    <svg viewBox="0 0 800 500" role="img" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">The Dynamics of Species Interactions</title>
+        <desc id="svg-desc">An animated biological diagram showing six types of interspecific population interactions: Mutualism, Competition, Predation, Commensalism, Amensalism, and Neutralism.</desc>
+
+        <!-- Definitions for Gradients, Shadows, Markers, and Icons -->
+        <defs>
+            <!-- Drop Shadow -->
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.15" />
+            </filter>
+
+            <!-- Glow Effect for Mutualism -->
+            <radialGradient id="green-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#2ECC71" stop-opacity="0.4" />
+                <stop offset="100%" stop-color="#2ECC71" stop-opacity="0" />
+            </radialGradient>
+
+            <!-- Arrow Markers -->
+            <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 Z" fill="#2ECC71" />
+            </marker>
+            <marker id="arrow-green-rev" viewBox="0 0 10 10" refX="2" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 10 0 L 0 5 L 10 10 Z" fill="#2ECC71" />
+            </marker>
+            <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 Z" fill="#E74C3C" />
+            </marker>
+
+            <!-- Species A Icon (Animal/Heterotroph) -->
+            <g id="icon-a">
+                <circle cx="0" cy="0" r="40" fill="#F39C12" stroke="#E67E22" stroke-width="4" filter="url(#shadow)"/>
+                <circle cx="-10" cy="-10" r="8" fill="#FFF" opacity="0.6" />
+                <circle cx="15" cy="10" r="5" fill="#D35400" opacity="0.6" />
+                <path d="M -20 15 Q 0 25 20 15" stroke="#D35400" stroke-width="3" fill="none" stroke-linecap="round"/>
+            </g>
+
+            <!-- Species B Icon (Plant/Autotroph) -->
+            <g id="icon-b">
+                <path d="M 0 -40 C 30 -40 40 -10 40 10 C 40 30 10 40 0 40 C -10 40 -40 30 -40 10 C -40 -10 -30 -40 0 -40 Z" fill="#2ECC71" stroke="#27AE60" stroke-width="4" filter="url(#shadow)"/>
+                <path d="M 0 -35 L 0 35 M 0 0 L 20 -15 M 0 10 L -20 -5" stroke="#27AE60" stroke-width="3" fill="none" stroke-linecap="round"/>
+            </g>
+
+            <!-- Interaction Symbols -->
+            <g id="sym-plus">
+                <circle cx="0" cy="0" r="16" fill="#FFF" filter="url(#shadow)"/>
+                <text x="0" y="11" font-family="Roboto Mono" font-size="30" font-weight="bold" fill="#2ECC71" text-anchor="middle">+</text>
+            </g>
+            <g id="sym-minus">
+                <circle cx="0" cy="0" r="16" fill="#FFF" filter="url(#shadow)"/>
+                <text x="0" y="10" font-family="Roboto Mono" font-size="34" font-weight="bold" fill="#E74C3C" text-anchor="middle">-</text>
+            </g>
+            <g id="sym-zero">
+                <circle cx="0" cy="0" r="16" fill="#FFF" filter="url(#shadow)"/>
+                <text x="0" y="10" font-family="Roboto Mono" font-size="24" font-weight="bold" fill="#95A5A6" text-anchor="middle">0</text>
+            </g>
+        </defs>
+
+        <!-- Background Stage -->
+        <ellipse cx="400" cy="300" rx="320" ry="120" fill="#E8ECEF" opacity="0.4" />
+
+        <!-- Static Header -->
+        <text x="400" y="50" font-family="Inter" font-size="28" font-weight="800" fill="#2C3E50" text-anchor="middle">The Dynamics of Species Interactions</text>
+        <text x="400" y="75" font-family="Inter" font-size="16" font-weight="600" fill="#7F8C8D" text-anchor="middle">Population Ecology</text>
+
+        <!-- Legend -->
+        <g transform="translate(620, 20)">
+            <rect x="0" y="0" width="160" height="70" rx="8" fill="#FFF" filter="url(#shadow)" />
+            <circle cx="20" cy="20" r="8" fill="#F39C12" />
+            <text x="35" y="25" font-family="Inter" font-size="12" font-weight="600" fill="#2C3E50">Species A (Animal)</text>
+            <circle cx="20" cy="45" r="8" fill="#2ECC71" />
+            <text x="35" y="50" font-family="Inter" font-size="12" font-weight="600" fill="#2C3E50">Species B (Plant)</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- INTERACTION ZONE VISUALS (Arrows, Glows)   -->
+        <!-- ========================================== -->
+
+        <!-- Phase 1: Mutualism Glow & Arrows -->
+        <g class="p1-sym">
+            <g class="anim-pulse" style="transform-origin: 400px 250px;">
+                <circle cx="400" cy="250" r="90" fill="url(#green-glow)" />
+            </g>
+            <path d="M 360 250 L 440 250" stroke="#2ECC71" stroke-width="4" marker-start="url(#arrow-green-rev)" marker-end="url(#arrow-green)" />
+        </g>
+
+        <!-- Phase 2: Competition Resource & Clashing Arrows -->
+        <g class="p2-sym">
+            <circle cx="400" cy="250" r="15" fill="#F1C40F" stroke="#F39C12" stroke-width="3" filter="url(#shadow)"/>
+            <path d="M 340 250 L 380 250" stroke="#E74C3C" stroke-width="4" marker-end="url(#arrow-red)" />
+            <path d="M 460 250 L 420 250" stroke="#E74C3C" stroke-width="4" marker-end="url(#arrow-red)" />
+        </g>
+
+        <!-- Phase 3: Predation Energy Flow Arrow -->
+        <g class="p3-sym">
+            <path d="M 460 250 L 360 250" stroke="#E74C3C" stroke-width="4" stroke-dasharray="8,4" marker-end="url(#arrow-red)" class="anim-flow" />
+        </g>
+
+        <!-- Phase 5: Amensalism Shade -->
+        <g class="p5-sym">
+            <ellipse cx="450" cy="320" rx="120" ry="40" fill="#2C3E50" opacity="0.15" />
+        </g>
+
+
+        <!-- ========================================== -->
+        <!-- SPECIES A (Mover Group)                    -->
+        <!-- ========================================== -->
+        <g class="species-a-mover">
+            <!-- Scaler Group (Only scales the biological icon) -->
+            <g class="species-a-scaler">
+                <use href="#icon-a" />
+            </g>
+            
+            <!-- Static Labels and Dynamic Symbols (Moves with A, but does not scale) -->
+            <text y="-55" text-anchor="middle" font-family="Inter" font-size="14" font-weight="800" fill="#2C3E50">Species A</text>
+            
+            <g transform="translate(30, -35)">
+                <use href="#sym-plus" class="p1-sym" />
+                <use href="#sym-minus" class="p2-sym" />
+                <use href="#sym-plus" class="p3-sym" />
+                <use href="#sym-plus" class="p4-sym" />
+                <use href="#sym-minus" class="p5-sym" />
+                <use href="#sym-zero" class="p6-sym" />
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- SPECIES B (Mover Group)                    -->
+        <!-- ========================================== -->
+        <g class="species-b-mover">
+            <!-- Scaler Group (Only scales the biological icon) -->
+            <g class="species-b-scaler">
+                <use href="#icon-b" />
+            </g>
+            
+            <!-- Static Labels and Dynamic Symbols (Moves with B, but does not scale) -->
+            <text y="-55" text-anchor="middle" font-family="Inter" font-size="14" font-weight="800" fill="#2C3E50">Species B</text>
+            
+            <g transform="translate(30, -35)">
+                <use href="#sym-plus" class="p1-sym" />
+                <use href="#sym-minus" class="p2-sym" />
+                <use href="#sym-minus" class="p3-sym" />
+                <use href="#sym-zero" class="p4-sym" />
+                <use href="#sym-zero" class="p5-sym" />
+                <use href="#sym-zero" class="p6-sym" />
+            </g>
+        </g>
+
+
+        <!-- ========================================== -->
+        <!-- DYNAMIC TEXT LABELS (Bottom Center)        -->
+        <!-- ========================================== -->
+        <g transform="translate(400, 430)">
+            
+            <!-- Phase 1 Text -->
+            <g class="p1-sym">
+                <text x="0" y="0" font-family="Inter" font-size="24" font-weight="800" fill="#2C3E50" text-anchor="middle">Mutualism (+/+)</text>
+                <text x="0" y="25" font-family="Inter" font-size="16" font-style="italic" fill="#7F8C8D" text-anchor="middle">e.g., Lichens (Algae &amp; Fungi)</text>
+            </g>
+
+            <!-- Phase 2 Text -->
+            <g class="p2-sym">
+                <text x="0" y="0" font-family="Inter" font-size="24" font-weight="800" fill="#2C3E50" text-anchor="middle">Competition (-/-)</text>
+                <text x="0" y="25" font-family="Inter" font-size="16" font-style="italic" fill="#7F8C8D" text-anchor="middle">e.g., Flamingos &amp; Resident Fishes competing for Zooplankton</text>
+            </g>
+
+            <!-- Phase 3 Text -->
+            <g class="p3-sym">
+                <text x="0" y="0" font-family="Inter" font-size="24" font-weight="800" fill="#2C3E50" text-anchor="middle">Predation / Parasitism (+/-)</text>
+                <text x="0" y="25" font-family="Inter" font-size="16" font-style="italic" fill="#7F8C8D" text-anchor="middle">e.g., Panthera leo &amp; Equus quagga / Cuscuta on host plant</text>
+            </g>
+
+            <!-- Phase 4 Text -->
+            <g class="p4-sym">
+                <text x="0" y="0" font-family="Inter" font-size="24" font-weight="800" fill="#2C3E50" text-anchor="middle">Commensalism (+/0)</text>
+                <text x="0" y="25" font-family="Inter" font-size="16" font-style="italic" fill="#7F8C8D" text-anchor="middle">e.g., Orchid growing on a Mango branch</text>
+            </g>
+
+            <!-- Phase 5 Text -->
+            <g class="p5-sym">
+                <text x="0" y="0" font-family="Inter" font-size="24" font-weight="800" fill="#2C3E50" text-anchor="middle">Amensalism (-/0)</text>
+                <text x="0" y="25" font-family="Inter" font-size="16" font-style="italic" fill="#7F8C8D" text-anchor="middle">e.g., Penicillium secreting penicillin, killing nearby bacteria</text>
+            </g>
+
+            <!-- Phase 6 Text -->
+            <g class="p6-sym">
+                <text x="0" y="0" font-family="Inter" font-size="24" font-weight="800" fill="#2C3E50" text-anchor="middle">Neutralism (0/0)</text>
+                <text x="0" y="25" font-family="Inter" font-size="16" font-style="italic" fill="#7F8C8D" text-anchor="middle">e.g., Tarantulas &amp; Cacti in the same desert environment</text>
+            </g>
+
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

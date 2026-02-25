@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Genetic Mechanism of Inbreeding Depression</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #e9ecef;
+            font-family: 'Inter', sans-serif;
+        }
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-radius: 12px;
+        }
+        
+        /* Animations */
+        @keyframes flyA {
+            0% { offset-distance: 0%; opacity: 0; }
+            5% { opacity: 1; }
+            20% { opacity: 1; offset-distance: 100%; }
+            25%, 100% { opacity: 0; offset-distance: 100%; }
+        }
+        @keyframes flyB {
+            0% { offset-distance: 0%; opacity: 0; }
+            5% { opacity: 1; }
+            20% { opacity: 1; offset-distance: 100%; }
+            25%, 100% { opacity: 0; offset-distance: 100%; }
+        }
+        
+        @keyframes state1 {
+            0%, 24% { opacity: 1; }
+            25%, 94% { opacity: 0; }
+            95%, 100% { opacity: 1; }
+        }
+        @keyframes state2 {
+            0%, 24% { opacity: 0; }
+            25%, 94% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+        
+        @keyframes growA {
+            0%, 45% { transform: scaleY(1) scaleX(1); }
+            55%, 94% { transform: scaleY(1.15) scaleX(1.05); }
+            95%, 100% { transform: scaleY(1) scaleX(1); }
+        }
+        @keyframes shrinkB {
+            0%, 45% { transform: scaleY(1) scaleX(1); }
+            55%, 94% { transform: scaleY(0.7) scaleX(0.85); }
+            95%, 100% { transform: scaleY(1) scaleX(1); }
+        }
+        
+        @keyframes colorShiftB {
+            0%, 45% { fill: #2ECC71; stroke: #2ECC71; }
+            55%, 94% { fill: #B5C933; stroke: #B5C933; }
+            95%, 100% { fill: #2ECC71; stroke: #2ECC71; }
+        }
+        @keyframes colorShiftB-strokeOnly {
+            0%, 45% { stroke: #2ECC71; }
+            55%, 94% { stroke: #B5C933; }
+            95%, 100% { stroke: #2ECC71; }
+        }
+        @keyframes colorShiftB-fillOnly {
+            0%, 45% { fill: #2ECC71; }
+            55%, 94% { fill: #B5C933; }
+            95%, 100% { fill: #2ECC71; }
+        }
+        
+        @keyframes droopB {
+            0%, 45% { transform: rotate(0deg); }
+            55%, 94% { transform: rotate(35deg); }
+            95%, 100% { transform: rotate(0deg); }
+        }
+        
+        @keyframes showPods {
+            0%, 45% { opacity: 0; transform: scale(0); }
+            55%, 94% { opacity: 1; transform: scale(1); }
+            95%, 100% { opacity: 0; transform: scale(0); }
+        }
+        
+        @keyframes resultText {
+            0%, 74% { opacity: 0; transform: translateY(10px); }
+            75%, 94% { opacity: 1; transform: translateY(0); }
+            95%, 100% { opacity: 0; transform: translateY(0); }
+        }
+        
+        @keyframes pulseRed {
+            0%, 24% { filter: drop-shadow(0 0 0px rgba(231,76,60,0)); }
+            25%, 94% { filter: drop-shadow(0 0 8px rgba(231,76,60,0.8)); }
+            95%, 100% { filter: drop-shadow(0 0 0px rgba(231,76,60,0)); }
+        }
+
+        @keyframes phase1 { 0%, 24% { opacity: 1; } 25%, 100% { opacity: 0; } }
+        @keyframes phase2 { 0%, 24% { opacity: 0; } 25%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+        @keyframes phase3 { 0%, 49% { opacity: 0; } 50%, 74% { opacity: 1; } 75%, 100% { opacity: 0; } }
+        @keyframes phase4 { 0%, 74% { opacity: 0; } 75%, 94% { opacity: 1; } 95%, 100% { opacity: 0; } }
+
+        /* Class Assignments */
+        .pollenA { offset-path: path('M 60 100 Q 130 80 198 150'); animation: flyA 12s linear infinite; }
+        .pollenB { offset-path: path('M 625 160 Q 615 120 600 150'); animation: flyB 12s linear infinite; }
+        
+        .state1 { animation: state1 12s infinite; }
+        .state2 { animation: state2 12s infinite; }
+        
+        .plantA { transform-origin: 200px 380px; animation: growA 12s ease-in-out infinite; }
+        .plantB { transform-origin: 600px 380px; animation: shrinkB 12s ease-in-out infinite; }
+        
+        .stemB { animation: colorShiftB-strokeOnly 12s ease-in-out infinite; }
+        .leafB { animation: colorShiftB-fillOnly 12s ease-in-out infinite; }
+        .flowerB { transform-origin: 600px 180px; animation: droopB 12s ease-in-out infinite; }
+        
+        .podsA { transform-origin: 200px 250px; animation: showPods 12s ease-in-out infinite; }
+        .podsB { transform-origin: 600px 250px; animation: showPods 12s ease-in-out infinite; }
+        
+        .result { animation: resultText 12s ease-in-out infinite; }
+        .pulse-recessive { animation: pulseRed 12s infinite; }
+
+        .phase-1 { animation: phase1 12s infinite; }
+        .phase-2 { animation: phase2 12s infinite; }
+        .phase-3 { animation: phase3 12s infinite; }
+        .phase-4 { animation: phase4 12s infinite; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background Split -->
+    <rect x="0" y="0" width="400" height="500" fill="#f8f9fa" />
+    <rect x="400" y="0" width="400" height="500" fill="#f1f3f5" />
+    <line x1="400" y1="80" x2="400" y2="480" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="6,6" />
+
+    <!-- Title and Headers -->
+    <text x="400" y="35" text-anchor="middle" font-size="22" font-weight="700" fill="#2C3E50">The Genetic Mechanism of Inbreeding Depression</text>
+    
+    <text x="200" y="70" text-anchor="middle" font-size="16" font-weight="600" fill="#2C3E50">Cross-Pollination (Outbreeding)</text>
+    <text x="600" y="70" text-anchor="middle" font-size="16" font-weight="600" fill="#2C3E50">Self-Pollination (Inbreeding)</text>
+
+    <!-- Phase Indicators -->
+    <g font-size="14" font-weight="600" text-anchor="middle">
+        <text x="400" y="100" fill="#3498DB" class="phase-1">Generation 1: Pollen Transfer</text>
+        <text x="400" y="100" fill="#9B59B6" class="phase-2">Generation 2: Genetic Recombination</text>
+        <text x="400" y="100" fill="#E67E22" class="phase-3">Generation 3: Phenotypic Expression</text>
+        <text x="400" y="100" fill="#2C3E50" class="phase-4">Result: Fitness Comparison</text>
+    </g>
+
+    <!-- Legend -->
+    <g transform="translate(15, 50)">
+        <rect x="0" y="0" width="130" height="75" rx="6" fill="#FFF" stroke="#BDC3C7" stroke-width="1" opacity="0.9"/>
+        <circle cx="15" cy="15" r="6" fill="#4A90D9"/>
+        <text x="30" y="19" font-size="11" fill="#2C3E50">Dominant (A)</text>
+        <circle cx="15" cy="37" r="6" fill="#E74C3C"/>
+        <text x="30" y="41" font-size="11" fill="#2C3E50">Deleterious (a)</text>
+        <circle cx="15" cy="59" r="4" fill="#F1C40F"/>
+        <text x="30" y="63" font-size="11" fill="#2C3E50">Pollen Grain</text>
+    </g>
+
+    <!-- Sync/Async Icon -->
+    <g transform="translate(655, 50)">
+        <rect x="0" y="0" width="130" height="55" rx="6" fill="#FFF" stroke="#BDC3C7" stroke-width="1" opacity="0.9"/>
+        <text x="65" y="18" text-anchor="middle" font-size="11" font-weight="600" fill="#2C3E50">Mating System</text>
+        <text x="65" y="34" text-anchor="middle" font-size="10" fill="#27AE60">Outbreeding: Async</text>
+        <text x="65" y="48" text-anchor="middle" font-size="10" fill="#E74C3C">Inbreeding: Sync</text>
+    </g>
+
+    <!-- Ground Lines -->
+    <line x1="80" y1="380" x2="320" y2="380" stroke="#95A5A6" stroke-width="4" stroke-linecap="round"/>
+    <line x1="480" y1="380" x2="720" y2="380" stroke="#95A5A6" stroke-width="4" stroke-linecap="round"/>
+
+    <!-- ================= LINEAGE A (LEFT) ================= -->
+    <g class="plantA">
+        <!-- Stem -->
+        <path d="M 200 380 Q 190 280 200 180" stroke="#2ECC71" stroke-width="6" fill="none" stroke-linecap="round"/>
+        <!-- Leaves -->
+        <path d="M 197 330 Q 140 320 130 280 Q 160 270 195 310" fill="#2ECC71" />
+        <path d="M 202 270 Q 260 250 270 210 Q 240 200 201 250" fill="#2ECC71" />
+        
+        <!-- Seed Pods (Animated) -->
+        <g class="podsA">
+            <path d="M 198 250 Q 170 260 180 290 Q 200 280 198 250" fill="#2ECC71" stroke="#27AE60" stroke-width="2"/>
+            <path d="M 202 250 Q 230 260 220 290 Q 200 280 202 250" fill="#2ECC71" stroke="#27AE60" stroke-width="2"/>
+            <circle cx="186" cy="270" r="2" fill="#27AE60"/>
+            <circle cx="214" cy="270" r="2" fill="#27AE60"/>
+        </g>
+
+        <!-- Flower -->
+        <g>
+            <!-- Petals -->
+            <circle cx="182" cy="170" r="16" fill="#FFF" stroke="#E8F4FD" stroke-width="2"/>
+            <circle cx="218" cy="170" r="16" fill="#FFF" stroke="#E8F4FD" stroke-width="2"/>
+            <circle cx="182" cy="195" r="16" fill="#FFF" stroke="#E8F4FD" stroke-width="2"/>
+            <circle cx="218" cy="195" r="16" fill="#FFF" stroke="#E8F4FD" stroke-width="2"/>
+            <!-- Anthers -->
+            <path d="M 195 185 L 170 160" stroke="#2ECC71" stroke-width="2" />
+            <circle cx="170" cy="160" r="4.5" fill="#F1C40F" />
+            <path d="M 205 185 L 230 160" stroke="#2ECC71" stroke-width="2" />
+            <circle cx="230" cy="160" r="4.5" fill="#F1C40F" />
+            <!-- Stigma/Pistil -->
+            <path d="M 196 185 L 196 150 Q 200 145 204 150 L 204 185 Z" fill="#27AE60" />
+        </g>
+    </g>
+
+    <!-- Pollen Path A -->
+    <path d="M 60 100 Q 130 80 198 150" stroke="#2C3E50" stroke-width="1.5" stroke-dasharray="4,4" fill="none" opacity="0.4"/>
+    <!-- Pollen Grain A -->
+    <g class="pollenA">
+        <circle cx="0" cy="0" r="3.5" fill="#F1C40F"/>
+        <circle cx="-4" cy="4" r="2.5" fill="#F1C40F"/>
+        <circle cx="4" cy="2" r="2" fill="#F1C40F"/>
+    </g>
+
+    <!-- Genetics Box A -->
+    <rect x="100" y="405" width="200" height="75" rx="8" fill="#FFF" stroke="#BDC3C7" stroke-width="2" shadow="0 4px 6px rgba(0,0,0,0.1)"/>
+    <text x="200" y="425" text-anchor="middle" font-family="Roboto Mono" font-size="14" fill="#2C3E50" class="state1">Genotype: Aa</text>
+    <text x="200" y="425" text-anchor="middle" font-family="Roboto Mono" font-size="14" fill="#2C3E50" class="state2">Genotype: AA</text>
+    
+    <!-- Alleles A -->
+    <g transform="translate(170, 455)">
+        <circle cx="0" cy="0" r="14" fill="#4A90D9"/>
+        <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFF">A</text>
+    </g>
+    <g transform="translate(230, 455)" class="state1">
+        <circle cx="0" cy="0" r="14" fill="#E74C3C"/>
+        <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFF">a</text>
+    </g>
+    <g transform="translate(230, 455)" class="state2">
+        <circle cx="0" cy="0" r="14" fill="#4A90D9"/>
+        <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFF">A</text>
+    </g>
+
+    <!-- Result Label A -->
+    <g class="result" transform="translate(100, 200)">
+        <rect x="0" y="0" width="200" height="40" rx="6" fill="#2ECC71" opacity="0.95"/>
+        <text x="100" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#FFF">Hybrid Vigor</text>
+    </g>
+
+
+    <!-- ================= LINEAGE B (RIGHT) ================= -->
+    <g class="plantB">
+        <!-- Stem -->
+        <path d="M 600 380 Q 590 280 600 180" stroke-width="6" fill="none" stroke-linecap="round" class="stemB"/>
+        <!-- Leaves -->
+        <path d="M 597 330 Q 540 320 530 280 Q 560 270 595 310" class="leafB" />
+        <path d="M 602 270 Q 660 250 670 210 Q 640 200 601 250" class="leafB" />
+        
+        <!-- Seed Pods (Animated) -->
+        <g class="podsB">
+            <path d="M 598 250 Q 580 255 585 275 Q 600 265 598 250" fill="#D35400" stroke="#A04000" stroke-width="2"/>
+            <path d="M 602 250 Q 620 255 615 275 Q 600 265 602 250" fill="#D35400" stroke="#A04000" stroke-width="2"/>
+        </g>
+
+        <!-- Flower -->
+        <g class="flowerB">
+            <!-- Petals -->
+            <circle cx="582" cy="170" r="16" fill="#FFF" stroke="#E8F4FD" stroke-width="2"/>
+            <circle cx="618" cy="170" r="16" fill="#FFF" stroke="#E8F4FD" stroke-width="2"/>
+            <circle cx="582" cy="195" r="16" fill="#FFF" stroke="#E8F4FD" stroke-width="2"/>
+            <circle cx="618" cy="195" r="16" fill="#FFF" stroke="#E8F4FD" stroke-width="2"/>
+            <!-- Anthers -->
+            <path d="M 595 185 L 570 160" stroke="#2ECC71" stroke-width="2" class="stemB" />
+            <circle cx="570" cy="160" r="4.5" fill="#F1C40F" />
+            <path d="M 605 185 L 630 160" stroke="#2ECC71" stroke-width="2" class="stemB" />
+            <circle cx="630" cy="160" r="4.5" fill="#F1C40F" />
+            <!-- Stigma/Pistil -->
+            <path d="M 596 185 L 596 150 Q 600 145 604 150 L 604 185 Z" fill="#27AE60" class="leafB" />
+        </g>
+    </g>
+
+    <!-- Pollen Path B -->
+    <path d="M 625 160 Q 615 120 600 150" stroke="#2C3E50" stroke-width="1.5" stroke-dasharray="4,4" fill="none" opacity="0.4"/>
+    <!-- Pollen Grain B -->
+    <g class="pollenB">
+        <circle cx="0" cy="0" r="3.5" fill="#F1C40F"/>
+        <circle cx="-4" cy="4" r="2.5" fill="#F1C40F"/>
+        <circle cx="4" cy="2" r="2" fill="#F1C40F"/>
+    </g>
+
+    <!-- Genetics Box B -->
+    <rect x="500" y="405" width="200" height="75" rx="8" fill="#FFF" stroke="#BDC3C7" stroke-width="2"/>
+    <text x="600" y="425" text-anchor="middle" font-family="Roboto Mono" font-size="14" fill="#2C3E50" class="state1">Genotype: Aa</text>
+    <text x="600" y="425" text-anchor="middle" font-family="Roboto Mono" font-size="14" fill="#2C3E50" class="state2">Genotype: aa</text>
+    
+    <!-- Alleles B -->
+    <g transform="translate(570, 455)" class="state1">
+        <circle cx="0" cy="0" r="14" fill="#4A90D9"/>
+        <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFF">A</text>
+    </g>
+    <g transform="translate(570, 455)" class="state2 pulse-recessive">
+        <circle cx="0" cy="0" r="14" fill="#E74C3C"/>
+        <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFF">a</text>
+    </g>
+    <g transform="translate(630, 455)" class="pulse-recessive">
+        <circle cx="0" cy="0" r="14" fill="#E74C3C"/>
+        <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#FFF">a</text>
+    </g>
+
+    <!-- Result Label B -->
+    <g class="result" transform="translate(470, 200)">
+        <rect x="0" y="0" width="260" height="40" rx="6" fill="#E74C3C" opacity="0.95"/>
+        <text x="130" y="25" text-anchor="middle" font-size="16" font-weight="700" fill="#FFF">Inbreeding Depression</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

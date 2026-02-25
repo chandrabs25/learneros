@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chemiosmotic Hypothesis: ATP Synthesis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #2C3E50;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-align: center;
+        }
+        p.subtitle {
+            font-size: 14px;
+            color: #7F8C8D;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* Animations */
+        .water-splitting { animation: fadeOut 12s infinite; }
+        .oxygen-release { animation: floatDown 12s infinite; }
+        .protons-release { animation: moveLumen 12s infinite; }
+        
+        @keyframes fadeOut {
+            0%, 10% { opacity: 1; transform: scale(1); }
+            15%, 100% { opacity: 0; transform: scale(1.2); }
+        }
+        @keyframes floatDown {
+            0%, 10% { opacity: 0; transform: translateY(0); }
+            15% { opacity: 1; transform: translateY(0); }
+            30%, 100% { opacity: 0; transform: translateY(25px); }
+        }
+        @keyframes moveLumen {
+            0%, 10% { opacity: 0; transform: translate(0,0); }
+            15% { opacity: 1; transform: translate(0,0); }
+            30%, 100% { opacity: 1; transform: translate(25px, 35px); }
+        }
+
+        .pumped-proton { animation: pump 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes pump {
+            0%, 16% { opacity: 0; transform: translateY(0); }
+            20% { opacity: 1; transform: translateY(0); }
+            40% { opacity: 1; transform: translateY(200px); }
+            50%, 100% { opacity: 0; transform: translateY(200px); }
+        }
+
+        .chemi-proton { animation: chemi 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes chemi {
+            0%, 50% { opacity: 0; transform: translateY(0); }
+            55% { opacity: 1; transform: translateY(0); }
+            85% { opacity: 1; transform: translateY(-200px); }
+            90%, 100% { opacity: 0; transform: translateY(-200px); }
+        }
+
+        #cf1-rotor {
+            transform-origin: 650px 170px;
+            animation: spin 12s infinite cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes spin {
+            0%, 50% { transform: rotate(0deg); }
+            85%, 100% { transform: rotate(360deg); }
+        }
+
+        .adp-text { animation: adp 12s infinite; }
+        .atp-text { animation: atp 12s infinite; }
+        @keyframes adp {
+            0%, 70% { opacity: 1; }
+            75%, 100% { opacity: 0; }
+        }
+        @keyframes atp {
+            0%, 70% { opacity: 0; transform: scale(0.8); }
+            80% { opacity: 1; transform: scale(1.2); }
+            90%, 100% { opacity: 1; transform: scale(1); }
+        }
+
+        .nadp-text { animation: nadp 6s infinite; }
+        .nadph-text { animation: nadph 6s infinite; }
+        @keyframes nadp { 
+            0%, 50% { opacity: 1; } 
+            55%, 100% { opacity: 0; } 
+        }
+        @keyframes nadph { 
+            0%, 50% { opacity: 0; } 
+            60%, 90% { opacity: 1; } 
+            100% { opacity: 0; } 
+        }
+
+        .ambient-h { animation: float 4s infinite ease-in-out alternate; }
+        .ambient-h:nth-child(odd) { animation-delay: -2s; animation-duration: 5s; }
+        @keyframes float {
+            0% { transform: translateY(-5px); }
+            100% { transform: translateY(5px); }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Chemiosmotic Hypothesis: ATP Synthesis in Chloroplasts</h1>
+    <p class="subtitle">Light-driven electron transport generates a proton gradient used by ATP Synthase to produce ATP.</p>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Animated Diagram of the Chemiosmotic Hypothesis</title>
+            <desc>Cross-section of the thylakoid membrane showing Photosystem II, Cytochrome b6f, Photosystem I, and ATP Synthase. Protons are pumped into the lumen and flow back through ATP synthase to generate ATP.</desc>
+
+            <defs>
+                <!-- Glow Filters -->
+                <filter id="glow-yellow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+                <filter id="glow-white" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="2" result="blur" />
+                    <feMerge>
+                        <feMergeNode in="blur" />
+                        <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                </filter>
+
+                <!-- Lipid Bilayer Pattern -->
+                <pattern id="lipid" width="16" height="80" patternUnits="userSpaceOnUse">
+                    <!-- Top Layer -->
+                    <circle cx="8" cy="10" r="6" fill="#4A90D9" />
+                    <line x1="6" y1="16" x2="6" y2="38" stroke="#A9CCE3" stroke-width="2" />
+                    <line x1="10" y1="16" x2="10" y2="38" stroke="#A9CCE3" stroke-width="2" />
+                    <!-- Bottom Layer -->
+                    <circle cx="8" cy="70" r="6" fill="#4A90D9" />
+                    <line x1="6" y1="64" x2="6" y2="42" stroke="#A9CCE3" stroke-width="2" />
+                    <line x1="10" y1="64" x2="10" y2="42" stroke="#A9CCE3" stroke-width="2" />
+                </pattern>
+
+                <!-- Background Gradients -->
+                <linearGradient id="stromaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#f8f9fa"/>
+                    <stop offset="100%" stop-color="#E8F4FD"/>
+                </linearGradient>
+                <linearGradient id="lumenGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#D5F5E3"/>
+                    <stop offset="100%" stop-color="#A3E4D7"/>
+                </linearGradient>
+
+                <!-- Electron Path -->
+                <path id="e-path" d="M 115 250 L 290 230 L 455 250 L 515 180" fill="none" stroke="none" />
+            </defs>
+
+            <!-- Background Compartments -->
+            <rect width="800" height="210" fill="url(#stromaGrad)" />
+            <rect y="290" width="800" height="210" fill="url(#lumenGrad)" />
+            
+            <!-- Thylakoid Membrane -->
+            <rect y="210" width="800" height="80" fill="url(#lipid)" />
+            <line x1="0" y1="210" x2="800" y2="210" stroke="#4A90D9" stroke-width="2" opacity="0.5"/>
+            <line x1="0" y1="290" x2="800" y2="290" stroke="#4A90D9" stroke-width="2" opacity="0.5"/>
+
+            <!-- Compartment Labels -->
+            <text x="400" y="40" text-anchor="middle" font-size="20" font-weight="700" fill="#2C3E50">STROMA</text>
+            <text x="400" y="60" text-anchor="middle" font-size="14" fill="#34495E">(Low H⁺ concentration, pH ~8)</text>
+            
+            <text x="400" y="460" text-anchor="middle" font-size="20" font-weight="700" fill="#2C3E50">THYLAKOID LUMEN</text>
+            <text x="400" y="480" text-anchor="middle" font-size="14" fill="#34495E">(High H⁺ concentration, pH ~5)</text>
+
+            <!-- Legend -->
+            <g transform="translate(630, 20)">
+                <rect width="150" height="60" rx="8" fill="#ffffff" stroke="#BDC3C7" stroke-width="1" opacity="0.9"/>
+                <circle cx="15" cy="20" r="6" fill="#FFD700" filter="url(#glow-yellow)"/>
+                <text x="30" y="24" font-size="12" fill="#2C3E50">Proton (H⁺)</text>
+                <circle cx="15" cy="40" r="4" fill="#FFFFCC" filter="url(#glow-white)"/>
+                <text x="30" y="44" font-size="12" fill="#2C3E50">Electron (e⁻)</text>
+            </g>
+
+            <!-- PROTEIN COMPLEXES -->
+            
+            <!-- Photosystem II (PSII) -->
+            <g transform="translate(80, 180)">
+                <rect width="70" height="140" rx="20" fill="#27AE60" stroke="#1E8449" stroke-width="2"/>
+                <text x="35" y="75" text-anchor="middle" fill="white" font-weight="bold" font-size="16">PSII</text>
+            </g>
+
+            <!-- Cytochrome b6f -->
+            <g transform="translate(260, 190)">
+                <rect width="60" height="120" rx="15" fill="#98D8C8" stroke="#76C7B3" stroke-width="2"/>
+                <text x="30" y="65" text-anchor="middle" fill="#2C3E50" font-weight="bold" font-size="14">Cyt b₆f</text>
+            </g>
+
+            <!-- Photosystem I (PSI) -->
+            <g transform="translate(420, 180)">
+                <rect width="70" height="140" rx="20" fill="#27AE60" stroke="#1E8449" stroke-width="2"/>
+                <text x="35" y="75" text-anchor="middle" fill="white" font-weight="bold" font-size="16">PSI</text>
+            </g>
+
+            <!-- NADP+ Reductase -->
+            <g transform="translate(490, 160)">
+                <path d="M0,40 Q20,0 50,20 Q60,60 20,80 Z" fill="#9B59B6" stroke="#8E44AD" stroke-width="2"/>
+                <text x="25" y="45" text-anchor="middle" fill="white" font-size="10" font-weight="bold">NADP⁺</text>
+                <text x="25" y="57" text-anchor="middle" fill="white" font-size="10" font-weight="bold">Red.</text>
+            </g>
+
+            <!-- ATP Synthase -->
+            <g transform="translate(630, 210)">
+                <!-- CF0 (Membrane Channel) -->
+                <rect width="40" height="90" rx="5" fill="#F39C12" stroke="#D35400" stroke-width="2"/>
+                <text x="20" y="50" text-anchor="middle" fill="white" font-weight="bold" font-size="14">CF₀</text>
+            </g>
+            
+            <!-- CF1 (Catalytic Knob - Rotates) -->
+            <g id="cf1-rotor">
+                <circle cx="0" cy="0" r="35" fill="#F39C12" stroke="#D35400" stroke-width="2"/>
+                <path d="M0,-35 A35,35 0 0,1 35,0 L0,0 Z" fill="#E67E22" />
+                <path d="M0,35 A35,35 0 0,1 -35,0 L0,0 Z" fill="#E67E22" />
+                <circle cx="0" cy="0" r="12" fill="#D35400" />
+            </g>
+            <!-- Static Text over CF1 -->
+            <text x="650" y="174" text-anchor="middle" fill="white" font-weight="bold" font-size="14">CF₁</text>
+
+
+            <!-- AMBIENT PROTONS (Gradient Representation) -->
+            <g class="ambient-h" transform="translate(150, 350)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <g class="ambient-h" transform="translate(220, 420)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <g class="ambient-h" transform="translate(350, 380)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <g class="ambient-h" transform="translate(400, 320)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <g class="ambient-h" transform="translate(500, 450)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <g class="ambient-h" transform="translate(560, 360)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <g class="ambient-h" transform="translate(720, 400)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <g class="ambient-h" transform="translate(760, 330)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <!-- Few in Stroma -->
+            <g class="ambient-h" transform="translate(200, 100)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <g class="ambient-h" transform="translate(480, 80)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/><text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+
+
+            <!-- ANIMATED SEQUENCES -->
+
+            <!-- 1. Water Splitting (Photolysis) -->
+            <text x="115" y="420" text-anchor="middle" font-size="12" font-weight="bold" fill="#2C3E50">Photolysis of Water</text>
+            <text x="115" y="435" text-anchor="middle" font-family="Roboto Mono" font-size="12" fill="#E74C3C">2H₂O → 4H⁺ + O₂ + 4e⁻</text>
+            
+            <g transform="translate(115, 350)">
+                <g class="water-splitting">
+                    <circle cx="-10" cy="5" r="4" fill="#4A90D9"/>
+                    <circle cx="10" cy="5" r="4" fill="#4A90D9"/>
+                    <circle cx="0" cy="-5" r="6" fill="#E74C3C"/>
+                    <text x="0" y="20" text-anchor="middle" font-family="Roboto Mono" font-size="12" fill="#2C3E50" font-weight="bold">H₂O</text>
+                </g>
+                <g class="oxygen-release">
+                    <circle cx="-5" cy="0" r="5" fill="#BDC3C7"/>
+                    <circle cx="5" cy="0" r="5" fill="#BDC3C7"/>
+                    <text x="0" y="18" text-anchor="middle" font-family="Roboto Mono" font-size="12" fill="#7F8C8D" font-weight="bold">O₂</text>
+                </g>
+                <g class="protons-release">
+                    <circle cx="-15" cy="-10" r="6" fill="#FFD700" filter="url(#glow-yellow)"/>
+                    <text x="-15" y="-9" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+                    <circle cx="15" cy="-10" r="6" fill="#FFD700" filter="url(#glow-yellow)"/>
+                    <text x="15" y="-9" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+                </g>
+            </g>
+
+            <!-- 2. Electron Transport Chain -->
+            <text x="290" y="120" text-anchor="middle" font-size="12" font-weight="bold" fill="#2C3E50">Electron Transport Chain</text>
+            <path d="M 115 250 L 290 230 L 455 250 L 515 180" fill="none" stroke="#BDC3C7" stroke-width="2" stroke-dasharray="4,4" opacity="0.5"/>
+            
+            <g>
+                <circle r="4" fill="#FFFFCC" filter="url(#glow-white)"/>
+                <text x="0" y="-8" text-anchor="middle" font-family="Roboto Mono" font-size="10" fill="#2C3E50" font-weight="bold">e⁻</text>
+                <animateMotion dur="6s" repeatCount="indefinite" path="M 115 250 L 290 230 L 455 250 L 515 180" />
+            </g>
+            <g>
+                <circle r="4" fill="#FFFFCC" filter="url(#glow-white)"/>
+                <text x="0" y="-8" text-anchor="middle" font-family="Roboto Mono" font-size="10" fill="#2C3E50" font-weight="bold">e⁻</text>
+                <animateMotion dur="6s" begin="3s" repeatCount="indefinite" path="M 115 250 L 290 230 L 455 250 L 515 180" />
+            </g>
+
+            <!-- 3. Proton Pumping (Cyt b6f) -->
+            <g class="pumped-proton" transform="translate(290, 150)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/>
+                <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <!-- Arrow indicating pumping -->
+            <path d="M 290 170 L 290 330" fill="none" stroke="#FFD700" stroke-width="2" stroke-dasharray="4,4" opacity="0.6"/>
+            <polygon points="285,320 295,320 290,330" fill="#FFD700" opacity="0.6"/>
+
+            <!-- 4. Chemiosmosis (ATP Synthase) -->
+            <text x="650" y="100" text-anchor="middle" font-size="12" font-weight="bold" fill="#2C3E50">ATP Synthesis</text>
+            <g class="chemi-proton" transform="translate(650, 350)">
+                <circle r="6" fill="#FFD700" filter="url(#glow-yellow)"/>
+                <text x="0" y="1" text-anchor="middle" dominant-baseline="middle" font-family="Roboto Mono" font-size="8" fill="#2C3E50" font-weight="bold">H⁺</text>
+            </g>
+            <!-- Arrow indicating flow -->
+            <path d="M 650 330 L 650 130" fill="none" stroke="#FFD700" stroke-width="2" stroke-dasharray="4,4" opacity="0.6"/>
+            <polygon points="645,140 655,140 650,130" fill="#FFD700" opacity="0.6"/>
+
+            <!-- 5. ATP Production -->
+            <g transform="translate(720, 160)">
+                <g class="adp-text">
+                    <text x="0" y="0" text-anchor="middle" font-family="Roboto Mono" font-size="14" fill="#2C3E50" font-weight="bold">ADP + Pᵢ</text>
+                </g>
+                <g class="atp-text">
+                    <text x="0" y="0" text-anchor="middle" font-family="Roboto Mono" font-size="18" fill="#E74C3C" font-weight="bold" filter="url(#glow-white)">ATP</text>
+                </g>
+            </g>
+
+            <!-- 6. NADPH Production -->
+            <g transform="translate(540, 140)">
+                <g class="nadp-text">
+                    <text x="0" y="0" text-anchor="middle" font-family="Roboto Mono" font-size="12" fill="#2C3E50" font-weight="bold">NADP⁺ + H⁺</text>
+                </g>
+                <g class="nadph-text">
+                    <text x="0" y="0" text-anchor="middle" font-family="Roboto Mono" font-size="14" fill="#E74C3C" font-weight="bold" filter="url(#glow-white)">NADPH</text>
+                </g>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>

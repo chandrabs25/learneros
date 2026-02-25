@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phylum Chordata: Fundamental Characteristics</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* --- Animations --- */
+        
+        /* 1. Feature Identification Pulses (0-4s) */
+        @keyframes pulse-noto {
+            0%, 6%, 16%, 100% { filter: drop-shadow(0 0 0px rgba(243,156,18,0)); }
+            11% { filter: drop-shadow(0 0 12px rgba(243,156,18,1)); }
+        }
+        @keyframes pulse-nerve {
+            0%, 14%, 24%, 100% { filter: drop-shadow(0 0 0px rgba(74,144,217,0)); }
+            19% { filter: drop-shadow(0 0 12px rgba(74,144,217,1)); }
+        }
+        @keyframes pulse-slits {
+            0%, 22%, 32%, 100% { filter: drop-shadow(0 0 0px rgba(152,216,200,0)); }
+            27% { filter: drop-shadow(0 0 12px rgba(152,216,200,1)); }
+        }
+
+        /* 2. Label Fade-ins */
+        @keyframes fade-label-1 { 0%, 5% { opacity: 0; } 10%, 100% { opacity: 1; } }
+        @keyframes fade-label-2 { 0%, 13% { opacity: 0; } 18%, 100% { opacity: 1; } }
+        @keyframes fade-label-3 { 0%, 21% { opacity: 0; } 26%, 100% { opacity: 1; } }
+        @keyframes fade-label-4 { 0%, 29% { opacity: 0; } 34%, 100% { opacity: 1; } }
+
+        /* Hide structural labels during swim phase to focus on mechanics */
+        @keyframes visibility-labels {
+            0%, 33% { opacity: 1; }
+            35%, 81% { opacity: 0; }
+            83%, 100% { opacity: 1; }
+        }
+
+        /* 3. Swimming Path Morphing (4-10s) */
+        /* Neutral -> Swim 1 (Tail Up) -> Swim 2 (Tail Down) */
+        @keyframes swim-body {
+            0%, 33.3% { d: path("M 90 245 C 250 180, 500 190, 720 240 C 500 310, 250 320, 90 255 Z"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 90 245 C 250 130, 500 240, 720 200 C 500 360, 250 270, 90 255 Z"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 90 245 C 250 230, 500 140, 720 280 C 500 260, 250 370, 90 255 Z"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 90 245 C 250 180, 500 190, 720 240 C 500 310, 250 320, 90 255 Z"); animation-timing-function: ease-in-out; }
+        }
+
+        @keyframes swim-nerve {
+            0%, 33.3% { d: path("M 120 220 C 300 220, 500 220, 680 220"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 120 220 C 300 170, 500 270, 680 180"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 120 220 C 300 270, 500 170, 680 260"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 120 220 C 300 220, 500 220, 680 220"); animation-timing-function: ease-in-out; }
+        }
+
+        @keyframes swim-noto {
+            0%, 33.3% { d: path("M 110 240 C 300 240, 500 240, 690 240"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 110 240 C 300 190, 500 290, 690 200"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 110 240 C 300 290, 500 190, 690 280"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 110 240 C 300 240, 500 240, 690 240"); animation-timing-function: ease-in-out; }
+        }
+
+        @keyframes swim-gut {
+            0%, 33.3% { d: path("M 110 265 C 250 265, 400 265, 550 265"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 110 265 C 250 215, 400 315, 550 265"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 110 265 C 250 315, 400 215, 550 265"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 110 265 C 250 265, 400 265, 550 265"); animation-timing-function: ease-in-out; }
+        }
+
+        /* Myotomes Animation */
+        @keyframes swim-m1 {
+            0%, 33.3% { d: path("M 180 200 L 200 240 L 180 300"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 180 170 L 200 210 L 180 270"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 180 230 L 200 270 L 180 330"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 180 200 L 200 240 L 180 300"); animation-timing-function: ease-in-out; }
+        }
+        @keyframes swim-m2 {
+            0%, 33.3% { d: path("M 260 190 L 280 240 L 260 310"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 260 150 L 280 200 L 260 270"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 260 230 L 280 280 L 260 350"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 260 190 L 280 240 L 260 310"); animation-timing-function: ease-in-out; }
+        }
+        @keyframes swim-m3 {
+            0%, 33.3% { d: path("M 340 185 L 360 240 L 340 315"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 340 165 L 360 220 L 340 295"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 340 205 L 360 260 L 340 335"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 340 185 L 360 240 L 340 315"); animation-timing-function: ease-in-out; }
+        }
+        @keyframes swim-m4 {
+            0%, 33.3% { d: path("M 420 185 L 440 240 L 420 315"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 420 205 L 440 260 L 420 335"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 420 165 L 440 220 L 420 295"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 420 185 L 440 240 L 420 315"); animation-timing-function: ease-in-out; }
+        }
+        @keyframes swim-m5 {
+            0%, 33.3% { d: path("M 500 190 L 520 240 L 500 310"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 500 230 L 520 280 L 500 350"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 500 150 L 520 200 L 500 270"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 500 190 L 520 240 L 500 310"); animation-timing-function: ease-in-out; }
+        }
+        @keyframes swim-m6 {
+            0%, 33.3% { d: path("M 580 205 L 600 240 L 580 290"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 580 225 L 600 260 L 580 310"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 580 185 L 600 220 L 580 270"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 580 205 L 600 240 L 580 290"); animation-timing-function: ease-in-out; }
+        }
+
+        /* Pharyngeal Slits Animation */
+        @keyframes swim-s1 {
+            0%, 33.3% { d: path("M 130 255 L 130 275"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 130 235 L 130 255"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 130 275 L 130 295"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 130 255 L 130 275"); animation-timing-function: ease-in-out; }
+        }
+        @keyframes swim-s2 {
+            0%, 33.3% { d: path("M 145 255 L 145 275"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 145 235 L 145 255"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 145 275 L 145 295"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 145 255 L 145 275"); animation-timing-function: ease-in-out; }
+        }
+        @keyframes swim-s3 {
+            0%, 33.3% { d: path("M 160 255 L 160 275"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 160 235 L 160 255"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 160 275 L 160 295"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 160 255 L 160 275"); animation-timing-function: ease-in-out; }
+        }
+        @keyframes swim-s4 {
+            0%, 33.3% { d: path("M 175 255 L 175 275"); animation-timing-function: ease-in-out; }
+            37.5%, 45.8%, 54.1%, 62.5%, 70.8%, 79.1% { d: path("M 175 235 L 175 255"); animation-timing-function: ease-in-out; }
+            41.6%, 50.0%, 58.3%, 66.6%, 75.0% { d: path("M 175 275 L 175 295"); animation-timing-function: ease-in-out; }
+            83.3%, 100% { d: path("M 175 255 L 175 275"); animation-timing-function: ease-in-out; }
+        }
+
+        /* 4. Functional Annotation (Appears during swim) */
+        @keyframes fade-annotation {
+            0%, 32%, 84%, 100% { opacity: 0; transform: translateY(10px); }
+            35%, 81% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 5. Hierarchy Highlight (10-12s) */
+        @keyframes fade-bg-structures {
+            0%, 83%, 100% { opacity: 1; }
+            86%, 96% { opacity: 0.15; }
+        }
+        @keyframes show-hierarchy-label {
+            0%, 83%, 100% { opacity: 0; transform: translateY(10px); }
+            86%, 96% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Element Assignments --- */
+        .anim-body { animation: swim-body 12s linear infinite, fade-bg-structures 12s linear infinite; }
+        .anim-nerve { animation: swim-nerve 12s linear infinite, pulse-nerve 12s linear infinite; }
+        .anim-noto { animation: swim-noto 12s linear infinite, pulse-noto 12s linear infinite; }
+        .anim-gut { animation: swim-gut 12s linear infinite; }
+        
+        .anim-m1 { animation: swim-m1 12s linear infinite; }
+        .anim-m2 { animation: swim-m2 12s linear infinite; }
+        .anim-m3 { animation: swim-m3 12s linear infinite; }
+        .anim-m4 { animation: swim-m4 12s linear infinite; }
+        .anim-m5 { animation: swim-m5 12s linear infinite; }
+        .anim-m6 { animation: swim-m6 12s linear infinite; }
+        .anim-myotomes { animation: fade-bg-structures 12s linear infinite; }
+
+        .anim-s1 { animation: swim-s1 12s linear infinite; }
+        .anim-s2 { animation: swim-s2 12s linear infinite; }
+        .anim-s3 { animation: swim-s3 12s linear infinite; }
+        .anim-s4 { animation: swim-s4 12s linear infinite; }
+        .anim-slits { animation: fade-bg-structures 12s linear infinite, pulse-slits 12s linear infinite; }
+
+        .label-1 { animation: fade-label-1 12s linear infinite; }
+        .label-2 { animation: fade-label-2 12s linear infinite; }
+        .label-3 { animation: fade-label-3 12s linear infinite; }
+        .label-4 { animation: fade-label-4 12s linear infinite; }
+        
+        .hide-during-swim { animation: visibility-labels 12s linear infinite; }
+        .func-anno { animation: fade-annotation 12s linear infinite; }
+        .hierarchy-label { animation: show-hierarchy-label 12s linear infinite; }
+
+        .pointer-line {
+            stroke: #7F8C8D;
+            stroke-width: 1.5;
+            stroke-dasharray: 4 4;
+            fill: none;
+        }
+        .pointer-dot {
+            fill: #7F8C8D;
+        }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Animated Diagram of Chordate Body Plan</title>
+        <desc>A lateral view of a generalized chordate showing the dorsal hollow nerve cord, notochord, gut, pharyngeal slits, and post-anal tail. The animation demonstrates the notochord's role in lateral undulation.</desc>
+
+        <!-- Defs for Markers and Filters -->
+        <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#7F8C8D" />
+            </marker>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#f8f9fa" rx="12" />
+
+        <!-- Title & Subtitle -->
+        <text x="400" y="45" text-anchor="middle" font-family="Inter" font-size="24" font-weight="700" fill="#2C3E50">Phylum Chordata: Fundamental Characteristics</text>
+        <text x="400" y="68" text-anchor="middle" font-family="Inter" font-size="14" fill="#7F8C8D">Focus: The Notochord and Body Plan Dynamics</text>
+
+        <!-- Legend -->
+        <g transform="translate(20, 440)" font-family="Inter" font-size="11" fill="#2C3E50">
+            <rect x="0" y="0" width="12" height="12" fill="#4A90D9" rx="2"/>
+            <text x="18" y="10">Neural Tissue</text>
+            
+            <rect x="110" y="0" width="12" height="12" fill="#F39C12" rx="2"/>
+            <text x="128" y="10">Notochord</text>
+            
+            <rect x="210" y="0" width="12" height="12" fill="#E74C3C" rx="2"/>
+            <text x="228" y="10">Digestive Tract</text>
+            
+            <rect x="330" y="0" width="12" height="12" fill="rgba(255, 107, 107, 0.5)" rx="2"/>
+            <text x="348" y="10">Myotomes (Muscle)</text>
+        </g>
+
+        <!-- Main Diagram Group -->
+        <g id="chordate-diagram">
+            
+            <!-- Body Outline -->
+            <path class="anim-body" d="M 90 245 C 250 180, 500 190, 720 240 C 500 310, 250 320, 90 255 Z" 
+                  fill="rgba(232, 244, 253, 0.5)" stroke="#2C3E50" stroke-width="3" stroke-linejoin="round" />
+
+            <!-- Myotomes (Muscle Segments) -->
+            <g class="anim-myotomes" fill="none" stroke="rgba(255, 107, 107, 0.4)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+                <path class="anim-m1" d="M 180 200 L 200 240 L 180 300" />
+                <path class="anim-m2" d="M 260 190 L 280 240 L 260 310" />
+                <path class="anim-m3" d="M 340 185 L 360 240 L 340 315" />
+                <path class="anim-m4" d="M 420 185 L 440 240 L 420 315" />
+                <path class="anim-m5" d="M 500 190 L 520 240 L 500 310" />
+                <path class="anim-m6" d="M 580 205 L 600 240 L 580 290" />
+            </g>
+
+            <!-- Gut / Alimentary Canal -->
+            <g>
+                <path class="anim-gut" d="M 110 265 C 250 265, 400 265, 550 265" fill="none" stroke="#E74C3C" stroke-width="14" stroke-linecap="round" />
+                <path class="anim-gut" d="M 110 265 C 250 265, 400 265, 550 265" fill="none" stroke="#EC7063" stroke-width="6" stroke-linecap="round" />
+            </g>
+
+            <!-- Pharyngeal Gill Slits -->
+            <g class="anim-slits" fill="none" stroke="#98D8C8" stroke-width="4" stroke-linecap="round">
+                <path class="anim-s1" d="M 130 255 L 130 275" />
+                <path class="anim-s2" d="M 145 255 L 145 275" />
+                <path class="anim-s3" d="M 160 255 L 160 275" />
+                <path class="anim-s4" d="M 175 255 L 175 275" />
+            </g>
+
+            <!-- Notochord -->
+            <g>
+                <path class="anim-noto" d="M 110 240 C 300 240, 500 240, 690 240" fill="none" stroke="#F39C12" stroke-width="12" stroke-linecap="round" />
+                <path class="anim-noto" d="M 110 240 C 300 240, 500 240, 690 240" fill="none" stroke="#F5B041" stroke-width="4" stroke-linecap="round" />
+            </g>
+
+            <!-- Dorsal Hollow Nerve Cord -->
+            <g>
+                <path class="anim-nerve" d="M 120 220 C 300 220, 500 220, 680 220" fill="none" stroke="#4A90D9" stroke-width="10" stroke-linecap="round" />
+                <!-- Inner stroke to indicate hollow tube -->
+                <path class="anim-nerve" d="M 120 220 C 300 220, 500 220, 680 220" fill="none" stroke="#E8F4FD" stroke-width="4" stroke-linecap="round" />
+            </g>
+
+        </g>
+
+        <!-- Labels & Annotations -->
+        <g class="hide-during-swim" font-family="Inter" font-size="13" fill="#2C3E50" font-weight="600">
+            
+            <!-- Notochord Label -->
+            <g class="label-1">
+                <text x="400" y="110" text-anchor="middle" fill="#D68910">Notochord</text>
+                <path class="pointer-line" d="M 400 115 L 400 225" marker-end="url(#arrow)" />
+            </g>
+
+            <!-- Nerve Cord Label -->
+            <g class="label-2">
+                <text x="220" y="130" text-anchor="middle" fill="#2980B9">Dorsal hollow nerve cord</text>
+                <path class="pointer-line" d="M 220 135 L 220 205" marker-end="url(#arrow)" />
+            </g>
+
+            <!-- Pharyngeal Slits Label -->
+            <g class="label-3">
+                <text x="150" y="360" text-anchor="middle" fill="#16A085">Pharyngeal gill slits</text>
+                <path class="pointer-line" d="M 150 345 L 150 285" marker-end="url(#arrow)" />
+            </g>
+
+            <!-- Post-anal Tail Label -->
+            <g class="label-4">
+                <text x="640" y="360" text-anchor="middle">Post-anal tail</text>
+                <path class="pointer-line" d="M 640 345 L 640 255" marker-end="url(#arrow)" />
+                
+                <!-- Anus Marker -->
+                <text x="550" y="320" text-anchor="middle" font-size="11" fill="#C0392B" font-weight="400">Anus</text>
+                <path class="pointer-line" d="M 550 305 L 550 275" marker-end="url(#arrow)" />
+            </g>
+
+        </g>
+
+        <!-- Functional Annotation (Appears during swimming phase) -->
+        <g class="func-anno">
+            <rect x="100" y="420" width="600" height="44" rx="8" fill="#FDF2E9" stroke="#F5B041" stroke-width="1" />
+            <text x="400" y="446" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="13" fill="#D68910" font-weight="700">
+                The Notochord provides skeletal support and resists longitudinal
+            </text>
+            <text x="400" y="466" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="13" fill="#D68910" font-weight="700">
+                compression, enabling efficient lateral swimming.
+            </text>
+        </g>
+
+        <!-- Hierarchy Highlight Label (Appears at the end) -->
+        <g class="hierarchy-label">
+            <rect x="220" y="130" width="360" height="30" rx="15" fill="#2C3E50" opacity="0.9" />
+            <text x="400" y="150" text-anchor="middle" font-family="Inter" font-size="14" fill="#ffffff" font-weight="600">
+                Notochord: Positioned between Nerve Cord and Gut
+            </text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

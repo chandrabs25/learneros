@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pistil Anatomy & Pollen-Pistil Interaction</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital@0;1&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            background-color: #f8f9fa;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+        }
+
+        /* Typography */
+        .title { font-size: 22px; font-weight: 700; fill: #2C3E50; }
+        .subtitle { font-size: 14px; fill: #34495E; }
+        .sci-name { font-family: 'Roboto Mono', monospace; font-style: italic; }
+        .label { font-size: 14px; fill: #2C3E50; font-weight: 600; }
+        .label-small { font-size: 12px; fill: #7F8C8D; }
+        .dyn-label { font-size: 15px; font-weight: 700; }
+
+        /* Lines */
+        .leader-line {
+            stroke: #BDC3C7;
+            stroke-width: 1.5;
+            stroke-dasharray: 4, 4;
+            fill: none;
+        }
+
+        /* Animations */
+        .pollen-incompatible {
+            transform-origin: center;
+            transform-box: fill-box;
+            animation: pulseIncompatible 13s ease-in-out infinite;
+        }
+
+        .pollen-compatible {
+            transform-origin: center;
+            transform-box: fill-box;
+            animation: pulseCompatible 13s ease-in-out infinite;
+        }
+
+        .pollen-tube {
+            stroke-dasharray: 550;
+            stroke-dashoffset: 550;
+            animation: growTube 13s ease-in-out infinite;
+        }
+
+        .gamete-1 {
+            offset-path: path('M 400 85 Q 405 150 405 250 C 405 300 445 300 445 360 C 445 430 415 445 400 440 L 400 415 L 400 402');
+            animation: moveGamete1 13s ease-in-out infinite;
+        }
+
+        .gamete-2 {
+            offset-path: path('M 400 85 Q 405 150 405 250 C 405 300 445 300 445 360 C 445 430 415 445 400 440 L 400 415 L 400 375');
+            animation: moveGamete2 13s ease-in-out infinite;
+        }
+
+        .dyn-l1 { animation: fadeL1 13s ease-in-out infinite; }
+        .dyn-l2 { animation: fadeL2 13s ease-in-out infinite; }
+        .dyn-l3 { animation: fadeL3 13s ease-in-out infinite; }
+
+        /* Keyframes */
+        @keyframes pulseIncompatible {
+            0% { fill: #F1C40F; transform: scale(1); }
+            7.69% { fill: #E74C3C; transform: scale(1.4); }
+            15.38% { fill: #E74C3C; transform: scale(1); }
+            95% { fill: #E74C3C; transform: scale(1); opacity: 1; }
+            100% { fill: #F1C40F; transform: scale(1); opacity: 0; }
+        }
+
+        @keyframes pulseCompatible {
+            0% { fill: #F1C40F; transform: scale(1); }
+            7.69% { fill: #2ECC71; transform: scale(1.4); }
+            15.38% { fill: #F1C40F; transform: scale(1); }
+            95% { fill: #F1C40F; transform: scale(1); opacity: 1; }
+            100% { fill: #F1C40F; transform: scale(1); opacity: 0; }
+        }
+
+        @keyframes growTube {
+            0%, 15.38% { stroke-dashoffset: 550; opacity: 0; }
+            15.39% { opacity: 1; stroke-dashoffset: 550; }
+            30.76% { stroke-dashoffset: 480; } /* Germination */
+            61.53% { stroke-dashoffset: 150; } /* Growth through style */
+            76.92% { stroke-dashoffset: 0; }   /* Entry into micropyle */
+            95% { stroke-dashoffset: 0; opacity: 1; }
+            96%, 100% { opacity: 0; stroke-dashoffset: 550; }
+        }
+
+        @keyframes moveGamete1 {
+            0%, 15.38% { offset-distance: 0%; opacity: 0; }
+            15.39% { opacity: 1; offset-distance: 0%; }
+            30.76% { offset-distance: 12%; }
+            61.53% { offset-distance: 70%; }
+            76.92% { offset-distance: 95%; } /* At micropyle */
+            84.61% { offset-distance: 100%; opacity: 1; } /* Reaches egg */
+            95% { offset-distance: 100%; opacity: 1; }
+            96%, 100% { opacity: 0; offset-distance: 0%; }
+        }
+
+        @keyframes moveGamete2 {
+            0%, 15.38% { offset-distance: 0%; opacity: 0; }
+            15.39% { opacity: 1; offset-distance: 0%; }
+            30.76% { offset-distance: 10%; }
+            61.53% { offset-distance: 68%; }
+            76.92% { offset-distance: 93%; } /* Behind gamete 1 */
+            92.30% { offset-distance: 100%; opacity: 1; } /* Reaches polar nuclei */
+            95% { offset-distance: 100%; opacity: 1; }
+            96%, 100% { opacity: 0; offset-distance: 0%; }
+        }
+
+        @keyframes fadeL1 {
+            0%, 2% { opacity: 0; }
+            5%, 25% { opacity: 1; }
+            28%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeL2 {
+            0%, 28% { opacity: 0; }
+            31%, 70% { opacity: 1; }
+            73%, 100% { opacity: 0; }
+        }
+
+        @keyframes fadeL3 {
+            0%, 73% { opacity: 0; }
+            76%, 95% { opacity: 1; }
+            98%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="svg-title svg-desc">
+        <title id="svg-title">Pollen-Pistil Interaction and Pollen Tube Growth</title>
+        <desc id="svg-desc">Animated diagram showing the longitudinal section of a pistil. Compatible pollen germinates, growing a pollen tube down the style, entering the ovule through the micropyle, and releasing two male gametes into the embryo sac.</desc>
+
+        <defs>
+            <!-- Gradients -->
+            <linearGradient id="pistilGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#2ECC71" />
+                <stop offset="20%" stop-color="#27AE60" />
+                <stop offset="60%" stop-color="#27AE60" />
+                <stop offset="85%" stop-color="#2ECC71" />
+                <stop offset="100%" stop-color="#27AE60" />
+            </linearGradient>
+
+            <linearGradient id="ovuleGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#F39C12" />
+                <stop offset="100%" stop-color="#D68910" />
+            </linearGradient>
+
+            <linearGradient id="embryoGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#E8F4FD" />
+                <stop offset="100%" stop-color="#D4E6F1" />
+            </linearGradient>
+
+            <!-- Drop Shadow for depth -->
+            <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.1" />
+            </filter>
+        </defs>
+
+        <!-- Header -->
+        <text x="400" y="35" class="title" text-anchor="middle">Pistil Anatomy &amp; Pollen-Pistil Interaction</text>
+        <text x="400" y="58" class="subtitle" text-anchor="middle">Double Fertilization in <tspan class="sci-name">Angiospermae</tspan></text>
+
+        <!-- Main Anatomy Group -->
+        <g id="anatomy" filter="url(#shadow)">
+            <!-- Pistil (Stigma, Style, Ovary) -->
+            <path d="M 370 100 
+                     C 370 85, 430 85, 430 100 
+                     C 415 110, 415 150, 415 280 
+                     C 470 320, 470 440, 400 440 
+                     C 330 440, 330 320, 385 280 
+                     C 385 150, 385 110, 370 100 Z" 
+                  fill="url(#pistilGrad)" stroke="#1E8449" stroke-width="3" stroke-linejoin="round"/>
+
+            <!-- Ovule (Outer Integument) -->
+            <path d="M 385 435 
+                     C 340 430, 340 320, 400 320 
+                     C 460 320, 460 430, 415 435" 
+                  fill="url(#ovuleGrad)" stroke="#B9770E" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Ovule (Inner Integument) -->
+            <path d="M 390 425 
+                     C 355 420, 355 330, 400 330 
+                     C 445 330, 445 420, 410 425" 
+                  fill="#F5B041" stroke="#B9770E" stroke-width="1.5" stroke-linecap="round"/>
+
+            <!-- Embryo Sac -->
+            <path d="M 395 415 
+                     C 370 410, 370 340, 400 340 
+                     C 430 340, 430 410, 405 415 Z" 
+                  fill="url(#embryoGrad)" stroke="#AED6F1" stroke-width="2"/>
+        </g>
+
+        <!-- Embryo Sac Contents (7-celled, 8-nucleate) -->
+        <g id="cells">
+            <!-- Antipodals (Top) -->
+            <circle cx="390" cy="352" r="4" fill="#98D8C8" stroke="#76B5A5" stroke-width="1"/>
+            <circle cx="400" cy="349" r="4" fill="#98D8C8" stroke="#76B5A5" stroke-width="1"/>
+            <circle cx="410" cy="352" r="4" fill="#98D8C8" stroke="#76B5A5" stroke-width="1"/>
+
+            <!-- Polar Nuclei (Center) -->
+            <circle cx="396" cy="375" r="5" fill="#FFA07A" stroke="#E58F6D" stroke-width="1"/>
+            <circle cx="404" cy="375" r="5" fill="#FFA07A" stroke="#E58F6D" stroke-width="1"/>
+
+            <!-- Synergids (Bottom Sides) -->
+            <circle cx="392" cy="407" r="5" fill="#98D8C8" stroke="#76B5A5" stroke-width="1"/>
+            <circle cx="408" cy="407" r="5" fill="#98D8C8" stroke="#76B5A5" stroke-width="1"/>
+
+            <!-- Egg Cell (Bottom Center) -->
+            <circle cx="400" cy="400" r="6" fill="#FF6B6B" stroke="#E05D5D" stroke-width="1.5"/>
+        </g>
+
+        <!-- Pollen Tube Animation -->
+        <g id="animation-layer">
+            <!-- Pollen Tube Path -->
+            <path class="pollen-tube" 
+                  d="M 400 85 Q 405 150 405 250 C 405 300 445 300 445 360 C 445 430 415 445 400 440 L 400 415" 
+                  fill="none" stroke="#F1C40F" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <!-- Male Gametes -->
+            <circle class="gamete-1" cx="0" cy="0" r="2.5" fill="#2C3E50" />
+            <circle class="gamete-2" cx="0" cy="0" r="2.5" fill="#2C3E50" />
+
+            <!-- Pollen Grains -->
+            <circle class="pollen-incompatible" cx="380" cy="85" r="6" stroke="#D4AC0D" stroke-width="1.5"/>
+            <circle class="pollen-compatible" cx="400" cy="85" r="6" stroke="#D4AC0D" stroke-width="1.5"/>
+            <circle class="pollen-incompatible" cx="420" cy="85" r="6" stroke="#D4AC0D" stroke-width="1.5"/>
+        </g>
+
+        <!-- Static Labels & Leader Lines -->
+        <g id="static-labels">
+            <!-- Left Side -->
+            <polyline class="leader-line" points="260,100 370,100" />
+            <text x="250" y="104" class="label" text-anchor="end">Stigma</text>
+
+            <polyline class="leader-line" points="260,200 385,200" />
+            <text x="250" y="204" class="label" text-anchor="end">Style</text>
+
+            <polyline class="leader-line" points="260,380 340,380" />
+            <text x="250" y="384" class="label" text-anchor="end">Ovary</text>
+
+            <!-- Right Side -->
+            <polyline class="leader-line" points="540,85 430,85" />
+            <text x="550" y="89" class="label" text-anchor="start">Pollen Grains</text>
+
+            <polyline class="leader-line" points="540,330 450,330" />
+            <text x="550" y="334" class="label" text-anchor="start">Ovule</text>
+
+            <polyline class="leader-line" points="540,375 430,375" />
+            <text x="550" y="379" class="label" text-anchor="start">Embryo Sac</text>
+
+            <polyline class="leader-line" points="540,440 410,440" />
+            <text x="550" y="444" class="label" text-anchor="start">Micropyle</text>
+            <text x="550" y="458" class="label-small" text-anchor="start">(Entry point for tube)</text>
+        </g>
+
+        <!-- Dynamic Process Labels -->
+        <g id="dynamic-labels">
+            <g class="dyn-l1">
+                <text x="550" y="120" class="dyn-label" fill="#2ECC71">✓ Compatible Pollen</text>
+                <text x="550" y="140" class="dyn-label" fill="#E74C3C">✗ Incompatible Pollen</text>
+                <text x="550" y="158" class="label-small" fill="#7F8C8D">Chemical recognition phase</text>
+            </g>
+            
+            <g class="dyn-l2">
+                <text x="550" y="240" class="dyn-label" fill="#D4AC0D">↓ Pollen Tube Growth</text>
+                <text x="550" y="258" class="label-small" fill="#7F8C8D">Chemotropic guidance through style</text>
+            </g>
+
+            <g class="dyn-l3">
+                <text x="550" y="400" class="dyn-label" fill="#2C3E50">→ Gamete Release</text>
+                <text x="550" y="418" class="label-small" fill="#7F8C8D">2 male gametes enter embryo sac</text>
+            </g>
+        </g>
+
+        <!-- Legend -->
+        <g id="legend" transform="translate(20, 380)">
+            <rect x="0" y="0" width="160" height="100" fill="#ffffff" stroke="#E5E7E9" stroke-width="1" rx="6" filter="url(#shadow)"/>
+            <text x="10" y="20" class="label" font-size="12">Legend</text>
+            
+            <circle cx="15" cy="35" r="4" fill="#F1C40F" />
+            <text x="25" y="39" class="label-small">Pollen / Tube</text>
+
+            <circle cx="15" cy="55" r="4" fill="#2C3E50" />
+            <text x="25" y="59" class="label-small">Male Gametes</text>
+
+            <circle cx="15" cy="75" r="4" fill="#FF6B6B" />
+            <text x="25" y="79" class="label-small">Egg Cell</text>
+
+            <circle cx="15" cy="95" r="4" fill="#FFA07A" />
+            <text x="25" y="99" class="label-small">Polar Nuclei</text>
+        </g>
+
+    </svg>
+
+</body>
+</html>

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamics of Protein Tertiary Structure and Denaturation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --protein: #98D8C8;
+            --substrate: #FF6B6B;
+            --product: #FFA07A;
+            --hbond: #4A90D9;
+            --disulfide: #F1C40F;
+            --ionic: #F39C12;
+            --text-main: #2C3E50;
+            --heat: #E74C3C;
+            --bg: #f8f9fa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Typography */
+        text {
+            font-family: 'Inter', sans-serif;
+            fill: var(--text-main);
+        }
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+        }
+        .subtitle {
+            font-size: 16px;
+            font-weight: 600;
+        }
+        .label {
+            font-size: 12px;
+        }
+        .small-label {
+            font-size: 10px;
+        }
+
+        /* Animations */
+        .protein-path {
+            fill: none;
+            stroke: var(--protein);
+            stroke-width: 14;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.15));
+            animation: proteinMorph 15s infinite ease-in-out;
+        }
+
+        .protein-shake {
+            animation: jitter 15s infinite linear;
+        }
+
+        .bonds {
+            animation: bondsFade 15s infinite ease-in-out;
+        }
+
+        .heat-glow {
+            animation: heatGlowAnim 15s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        .thermo-fluid {
+            animation: heatRise 15s infinite ease-in-out;
+        }
+
+        .thermo-bulb {
+            animation: bulbColor 15s infinite ease-in-out;
+        }
+
+        .ph-slider {
+            animation: phMove 15s infinite ease-in-out;
+        }
+
+        .substrate-native {
+            animation: substrateNative 15s infinite ease-in-out;
+        }
+
+        .product1 {
+            animation: product1Anim 15s infinite ease-in-out;
+        }
+
+        .product2 {
+            animation: product2Anim 15s infinite ease-in-out;
+        }
+
+        .substrate-denatured {
+            animation: substrateDenatured 15s infinite ease-in-out;
+        }
+
+        .text-native {
+            animation: textNative 15s infinite ease-in-out;
+        }
+
+        .text-denatured {
+            animation: textDenatured 15s infinite ease-in-out;
+        }
+
+        .denat-process-label {
+            animation: denatLabel 15s infinite ease-in-out;
+        }
+
+        /* Keyframes */
+        @keyframes proteinMorph {
+            0%, 35% {
+                d: path('M 200 250 C 150 150, 250 100, 300 180 C 350 260, 250 350, 350 350 C 400 350, 380 250, 420 250 C 430 250, 440 300, 460 300 C 480 300, 490 250, 500 250 C 540 250, 520 350, 570 350 C 670 350, 570 260, 620 180 C 670 100, 770 150, 720 250');
+            }
+            45%, 75% {
+                d: path('M 100 280 C 130 180, 150 320, 190 260 C 230 200, 250 380, 290 310 C 330 240, 340 160, 380 220 C 420 280, 430 360, 470 300 C 510 240, 530 190, 570 250 C 610 310, 620 370, 660 290 C 700 210, 710 180, 740 240 C 770 300, 780 340, 800 280');
+            }
+            85%, 100% {
+                d: path('M 200 250 C 150 150, 250 100, 300 180 C 350 260, 250 350, 350 350 C 400 350, 380 250, 420 250 C 430 250, 440 300, 460 300 C 480 300, 490 250, 500 250 C 540 250, 520 350, 570 350 C 670 350, 570 260, 620 180 C 670 100, 770 150, 720 250');
+            }
+        }
+
+        @keyframes jitter {
+            0%, 25% { transform: translate(0, 0); }
+            26% { transform: translate(2px, -2px); }
+            28% { transform: translate(-2px, 1px); }
+            30% { transform: translate(1px, -1px); }
+            32% { transform: translate(-1px, 2px); }
+            34% { transform: translate(2px, -1px); }
+            35%, 100% { transform: translate(0, 0); }
+        }
+
+        @keyframes bondsFade {
+            0%, 25% { opacity: 1; }
+            35%, 75% { opacity: 0; }
+            85%, 100% { opacity: 1; }
+        }
+
+        @keyframes heatRise {
+            0%, 25% { y: 430px; height: 20px; fill: #3498DB; }
+            35%, 75% { y: 270px; height: 180px; fill: var(--heat); }
+            85%, 100% { y: 430px; height: 20px; fill: #3498DB; }
+        }
+
+        @keyframes bulbColor {
+            0%, 25% { fill: #3498DB; }
+            35%, 75% { fill: var(--heat); }
+            85%, 100% { fill: #3498DB; }
+        }
+
+        @keyframes heatGlowAnim {
+            0%, 25% { opacity: 0; }
+            35%, 75% { opacity: 0.15; }
+            85%, 100% { opacity: 0; }
+        }
+
+        @keyframes phMove {
+            0%, 25% { transform: translateY(0); }
+            35%, 75% { transform: translateY(80px); }
+            85%, 100% { transform: translateY(0); }
+        }
+
+        @keyframes substrateNative {
+            0% { opacity: 0; transform: translate(460px, 50px); }
+            2% { opacity: 1; transform: translate(460px, 50px); }
+            8% { opacity: 1; transform: translate(460px, 260px); }
+            15% { opacity: 1; transform: translate(460px, 260px); }
+            16% { opacity: 0; transform: translate(460px, 260px); }
+            100% { opacity: 0; transform: translate(460px, 260px); }
+        }
+
+        @keyframes product1Anim {
+            0%, 15% { opacity: 0; transform: translate(460px, 260px); }
+            16% { opacity: 1; transform: translate(460px, 260px); }
+            23% { opacity: 0; transform: translate(400px, 350px); }
+            100% { opacity: 0; transform: translate(400px, 350px); }
+        }
+
+        @keyframes product2Anim {
+            0%, 15% { opacity: 0; transform: translate(460px, 260px); }
+            16% { opacity: 1; transform: translate(460px, 260px); }
+            23% { opacity: 0; transform: translate(520px, 350px); }
+            100% { opacity: 0; transform: translate(520px, 350px); }
+        }
+
+        @keyframes substrateDenatured {
+            0%, 48% { opacity: 0; transform: translate(460px, 50px); }
+            50% { opacity: 1; transform: translate(460px, 50px); }
+            56% { opacity: 1; transform: translate(460px, 220px); }
+            62% { opacity: 0; transform: translate(560px, 100px) rotate(45deg); }
+            100% { opacity: 0; transform: translate(560px, 100px); }
+        }
+
+        @keyframes textNative {
+            0%, 30% { opacity: 1; }
+            40%, 80% { opacity: 0; }
+            90%, 100% { opacity: 1; }
+        }
+
+        @keyframes textDenatured {
+            0%, 30% { opacity: 0; }
+            40%, 80% { opacity: 1; }
+            90%, 100% { opacity: 0; }
+        }
+
+        @keyframes denatLabel {
+            0%, 25% { opacity: 0; }
+            30%, 80% { opacity: 1; }
+            85%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Dynamics of Protein Tertiary Structure and Denaturation</title>
+            <desc>An animated diagram showing a folded protein with an active site that binds a substrate. As heat and pH increase, the intramolecular bonds break, causing the protein to unfold (denature) and lose its functional active site, preventing substrate binding.</desc>
+
+            <!-- Definitions -->
+            <defs>
+                <radialGradient id="heatGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#E74C3C" stop-opacity="0.8" />
+                    <stop offset="100%" stop-color="#E74C3C" stop-opacity="0" />
+                </radialGradient>
+                
+                <linearGradient id="phGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#E74C3C" />
+                    <stop offset="50%" stop-color="#2ECC71" />
+                    <stop offset="100%" stop-color="#3498DB" />
+                </linearGradient>
+
+                <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50" />
+                </marker>
+
+                <filter id="drop-shadow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="2" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.15" />
+                </filter>
+            </defs>
+
+            <!-- Background Heat Glow -->
+            <circle cx="400" cy="250" r="400" fill="url(#heatGlow)" class="heat-glow" />
+
+            <!-- Title & Headers -->
+            <text x="400" y="40" class="title" text-anchor="middle">Dynamics of Protein Tertiary Structure & Denaturation</text>
+            
+            <text x="400" y="70" class="subtitle text-native" text-anchor="middle" fill="#27AE60">Native Functional State</text>
+            <text x="400" y="70" class="subtitle text-denatured" text-anchor="middle" fill="#E74C3C">Denatured (Inactive) State</text>
+
+            <text x="400" y="460" class="subtitle denat-process-label" text-anchor="middle" fill="#E74C3C">Denaturation due to Extreme Heat / pH</text>
+
+            <!-- Thermometer (Left) -->
+            <g transform="translate(10, 0)">
+                <rect x="20" y="250" width="20" height="200" rx="10" fill="#fff" stroke="#2C3E50" stroke-width="2" />
+                <rect x="24" y="430" width="12" height="20" class="thermo-fluid" />
+                <circle cx="30" cy="460" r="20" fill="#fff" stroke="#2C3E50" stroke-width="2" />
+                <circle cx="30" cy="460" r="16" class="thermo-bulb" />
+                
+                <!-- Tick Marks -->
+                <line x1="45" y1="270" x2="55" y2="270" stroke="#2C3E50" stroke-width="1" />
+                <line x1="45" y1="310" x2="55" y2="310" stroke="#2C3E50" stroke-width="1" />
+                <line x1="45" y1="350" x2="55" y2="350" stroke="#2C3E50" stroke-width="1" />
+                <line x1="45" y1="390" x2="55" y2="390" stroke="#2C3E50" stroke-width="1" />
+                <line x1="45" y1="430" x2="55" y2="430" stroke="#2C3E50" stroke-width="1" />
+                
+                <text x="30" y="235" class="label" text-anchor="middle" font-weight="bold">Heat</text>
+            </g>
+
+            <!-- pH Scale (Right) -->
+            <g transform="translate(-10, 0)">
+                <rect x="740" y="250" width="20" height="200" rx="10" fill="url(#phGradient)" stroke="#2C3E50" stroke-width="2" />
+                
+                <!-- Tick Marks -->
+                <line x1="725" y1="250" x2="735" y2="250" stroke="#2C3E50" stroke-width="1" />
+                <line x1="725" y1="350" x2="735" y2="350" stroke="#2C3E50" stroke-width="1" />
+                <line x1="725" y1="450" x2="735" y2="450" stroke="#2C3E50" stroke-width="1" />
+                
+                <text x="715" y="254" class="small-label" text-anchor="end">Acidic</text>
+                <text x="715" y="354" class="small-label" text-anchor="end">Optimum</text>
+                <text x="715" y="454" class="small-label" text-anchor="end">Alkaline</text>
+                
+                <text x="750" y="235" class="label" text-anchor="middle" font-weight="bold">pH</text>
+                
+                <!-- Slider Arrow -->
+                <polygon points="730,350 740,345 740,355" fill="#2C3E50" class="ph-slider" />
+            </g>
+
+            <!-- Protein and Bonds Container -->
+            <g class="protein-shake">
+                
+                <!-- Intramolecular Bonds (Fade out during denaturation) -->
+                <g class="bonds">
+                    <!-- Disulfide Bridge -->
+                    <line x1="350" y1="350" x2="570" y2="350" stroke="#F1C40F" stroke-width="5" />
+                    <text x="460" y="342" class="small-label" fill="#D4AC0D" text-anchor="middle" font-weight="bold">Disulfide Bridge (S-S)</text>
+                    
+                    <!-- Hydrogen Bonds -->
+                    <line x1="300" y1="180" x2="420" y2="250" stroke="#4A90D9" stroke-width="3" stroke-dasharray="4 4" />
+                    <text x="340" y="210" class="small-label" fill="#4A90D9" text-anchor="middle" font-weight="bold">H-Bonds</text>
+                    
+                    <line x1="500" y1="250" x2="620" y2="180" stroke="#4A90D9" stroke-width="3" stroke-dasharray="4 4" />
+                    
+                    <!-- Ionic Interaction -->
+                    <line x1="200" y1="250" x2="350" y2="350" stroke="#F39C12" stroke-width="3" stroke-dasharray="6 3" />
+                    <text x="250" y="315" class="small-label" fill="#E67E22" text-anchor="middle" font-weight="bold">Ionic Bond</text>
+                    
+                    <circle cx="200" cy="250" r="8" fill="#F39C12" />
+                    <text x="200" y="253" class="mono" font-size="10" fill="#fff" text-anchor="middle" dominant-baseline="middle">+</text>
+                    
+                    <circle cx="350" cy="350" r="8" fill="#F39C12" />
+                    <text x="350" y="353" class="mono" font-size="10" fill="#fff" text-anchor="middle" dominant-baseline="middle">-</text>
+                </g>
+
+                <!-- Polypeptide Chain -->
+                <path class="protein-path" d="M 200 250 C 150 150, 250 100, 300 180 C 350 260, 250 350, 350 350 C 400 350, 380 250, 420 250 C 430 250, 440 300, 460 300 C 480 300, 490 250, 500 250 C 540 250, 520 350, 570 350 C 670 350, 570 260, 620 180 C 670 100, 770 150, 720 250" />
+                
+            </g>
+
+            <!-- Active Site Annotation (Only visible in Native state) -->
+            <g class="text-native">
+                <path d="M 460 330 L 460 380" stroke="#2C3E50" stroke-width="2" marker-start="url(#arrow)" />
+                <text x="460" y="400" class="label" text-anchor="middle" font-weight="bold">Specific Active Site</text>
+            </g>
+
+            <!-- Substrate & Products (Native Animation) -->
+            <g class="substrate-native" filter="url(#drop-shadow)">
+                <polygon points="0,-15 13,-7.5 13,7.5 0,15 -13,7.5 -13,-7.5" fill="#FF6B6B" />
+                <text x="0" y="-22" class="label" text-anchor="middle" fill="#E74C3C" font-weight="bold">Substrate</text>
+            </g>
+
+            <g class="product1" filter="url(#drop-shadow)">
+                <polygon points="0,-15 0,15 -13,7.5 -13,-7.5" fill="#FFA07A" />
+                <text x="-10" y="-22" class="small-label" text-anchor="middle" fill="#E74C3C">Product</text>
+            </g>
+
+            <g class="product2" filter="url(#drop-shadow)">
+                <polygon points="0,-15 13,-7.5 13,7.5 0,15" fill="#FFA07A" />
+                <text x="10" y="-22" class="small-label" text-anchor="middle" fill="#E74C3C">Product</text>
+            </g>
+
+            <!-- Substrate (Denatured Animation - Bounces off) -->
+            <g class="substrate-denatured" filter="url(#drop-shadow)">
+                <polygon points="0,-15 13,-7.5 13,7.5 0,15 -13,7.5 -13,-7.5" fill="#FF6B6B" />
+                <text x="0" y="-22" class="label" text-anchor="middle" fill="#E74C3C" font-weight="bold">Substrate</text>
+            </g>
+
+            <!-- Legend -->
+            <g transform="translate(600, 40)">
+                <rect width="180" height="100" fill="#ffffff" stroke="#e0e0e0" rx="6" filter="url(#drop-shadow)" />
+                <text x="10" y="20" class="label" font-weight="bold">Key:</text>
+                
+                <line x1="10" y1="35" x2="30" y2="35" stroke="#98D8C8" stroke-width="4" stroke-linecap="round" />
+                <text x="40" y="39" class="small-label">Polypeptide Chain</text>
+                
+                <polygon points="15,45 22,50 22,58 15,63 8,58 8,50" fill="#FF6B6B" />
+                <text x="40" y="58" class="small-label">Substrate / Molecule</text>
+                
+                <line x1="10" y1="75" x2="30" y2="75" stroke="#4A90D9" stroke-width="2" stroke-dasharray="3 3" />
+                <text x="40" y="79" class="small-label">Hydrogen Bond</text>
+                
+                <line x1="10" y1="90" x2="30" y2="90" stroke="#F1C40F" stroke-width="3" />
+                <text x="40" y="94" class="small-label">Disulfide Bridge</text>
+            </g>
+
+        </svg>
+    </div>
+</body>
+</html>

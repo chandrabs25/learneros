@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Molecular Basis of Mendelian Segregation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            width: 100%;
+            max-width: 1200px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        /* Base Styles */
+        .cell-membrane {
+            fill: #E8F4FD;
+            stroke: #4A90D9;
+            stroke-width: 2.5px;
+        }
+        .nucleus {
+            fill: none;
+            stroke: #2C3E50;
+            stroke-width: 2px;
+            stroke-dasharray: 6, 4;
+        }
+        .chromosome {
+            stroke: #FF6B6B;
+            stroke-width: 8px;
+            stroke-linecap: round;
+        }
+        .centromere {
+            fill: #E74C3C;
+        }
+        .label {
+            font-family: 'Inter', sans-serif;
+            text-anchor: middle;
+            fill: #2C3E50;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .mono {
+            font-family: 'Roboto Mono', monospace;
+            font-weight: 500;
+            font-size: 13px;
+            fill: #4A90D9;
+        }
+        .title {
+            font-size: 26px;
+            font-weight: 700;
+            fill: #2C3E50;
+        }
+        .subtitle {
+            font-size: 15px;
+            fill: #34495E;
+            font-weight: 400;
+        }
+
+        /* Global Scene Reset */
+        .scene {
+            animation: sceneFade 11s infinite linear;
+        }
+        @keyframes sceneFade {
+            0%, 92% { opacity: 1; }
+            98%, 100% { opacity: 0; }
+        }
+
+        /* Cell Membrane Animations */
+        .anim-parent-cell { animation: parentCellAnim 11s infinite linear; }
+        @keyframes parentCellAnim {
+            0%, 18% { transform: translate(200px, 320px) scale(1, 1); opacity: 1; }
+            27% { transform: translate(500px, 320px) scale(1, 1); opacity: 1; }
+            32% { transform: translate(500px, 320px) scale(0.6, 1.4); opacity: 1; }
+            36%, 100% { transform: translate(500px, 320px) scale(0.3, 1.6); opacity: 0; }
+        }
+
+        .anim-nucleus { animation: nucleusAnim 11s infinite linear; }
+        @keyframes nucleusAnim {
+            0%, 18% { transform: translate(200px, 320px); opacity: 1; }
+            27%, 100% { transform: translate(500px, 320px); opacity: 0; }
+        }
+
+        .anim-inter-top { animation: interTopAnim 11s infinite linear; }
+        @keyframes interTopAnim {
+            0%, 32% { transform: translate(500px, 260px) scale(0.5, 0.8); opacity: 0; }
+            36% { transform: translate(500px, 260px) scale(0.6, 0.9); opacity: 1; }
+            45% { transform: translate(500px, 200px) scale(1, 1); opacity: 1; }
+            50% { transform: translate(500px, 200px) scale(0.6, 1.3); opacity: 1; }
+            54%, 100% { transform: translate(500px, 200px) scale(0.3, 1.5); opacity: 0; }
+        }
+
+        .anim-inter-bot { animation: interBotAnim 11s infinite linear; }
+        @keyframes interBotAnim {
+            0%, 32% { transform: translate(500px, 380px) scale(0.5, 0.8); opacity: 0; }
+            36% { transform: translate(500px, 380px) scale(0.6, 0.9); opacity: 1; }
+            45% { transform: translate(500px, 440px) scale(1, 1); opacity: 1; }
+            50% { transform: translate(500px, 440px) scale(0.6, 1.3); opacity: 1; }
+            54%, 100% { transform: translate(500px, 440px) scale(0.3, 1.5); opacity: 0; }
+        }
+
+        .anim-gamete-1 { animation: gamete1Anim 11s infinite linear; }
+        @keyframes gamete1Anim {
+            0%, 50% { transform: translate(500px, 170px) scale(0.5, 0.8); opacity: 0; }
+            54% { transform: translate(500px, 170px) scale(0.6, 0.9); opacity: 1; }
+            63%, 72% { transform: translate(500px, 140px) scale(1, 1); opacity: 1; }
+            79% { transform: translate(800px, 320px) scale(1, 1); opacity: 1; }
+            81%, 100% { transform: translate(800px, 320px) scale(1, 1); opacity: 0; }
+        }
+
+        .anim-gamete-2 { animation: gamete2Anim 11s infinite linear; }
+        @keyframes gamete2Anim {
+            0%, 50% { transform: translate(500px, 230px) scale(0.5, 0.8); opacity: 0; }
+            54% { transform: translate(500px, 230px) scale(0.6, 0.9); opacity: 1; }
+            63%, 72% { transform: translate(500px, 260px) scale(1, 1); opacity: 1; }
+            81%, 100% { transform: translate(500px, 260px) scale(0.5, 0.5); opacity: 0; }
+        }
+
+        .anim-gamete-3 { animation: gamete3Anim 11s infinite linear; }
+        @keyframes gamete3Anim {
+            0%, 50% { transform: translate(500px, 410px) scale(0.5, 0.8); opacity: 0; }
+            54% { transform: translate(500px, 410px) scale(0.6, 0.9); opacity: 1; }
+            63%, 72% { transform: translate(500px, 380px) scale(1, 1); opacity: 1; }
+            81%, 100% { transform: translate(500px, 380px) scale(0.5, 0.5); opacity: 0; }
+        }
+
+        .anim-gamete-4 { animation: gamete4Anim 11s infinite linear; }
+        @keyframes gamete4Anim {
+            0%, 50% { transform: translate(500px, 470px) scale(0.5, 0.8); opacity: 0; }
+            54% { transform: translate(500px, 470px) scale(0.6, 0.9); opacity: 1; }
+            63%, 72% { transform: translate(500px, 500px) scale(1, 1); opacity: 1; }
+            79% { transform: translate(800px, 320px) scale(1, 1); opacity: 1; }
+            81%, 100% { transform: translate(800px, 320px) scale(1, 1); opacity: 0; }
+        }
+
+        .anim-zygote { animation: zygoteAnim 11s infinite linear; }
+        @keyframes zygoteAnim {
+            0%, 79% { transform: translate(800px, 320px) scale(0.8); opacity: 0; }
+            81% { transform: translate(800px, 320px) scale(0.9); opacity: 1; }
+            90%, 100% { transform: translate(800px, 320px) scale(1); opacity: 1; }
+        }
+
+        .anim-zygote-glow { animation: zygoteGlowAnim 11s infinite linear; }
+        @keyframes zygoteGlowAnim {
+            0%, 81% { opacity: 0; }
+            90%, 100% { opacity: 1; }
+        }
+
+        .anim-zygote-nucleus { animation: zygoteNucleusAnim 11s infinite linear; }
+        @keyframes zygoteNucleusAnim {
+            0%, 81% { opacity: 0; }
+            90%, 100% { opacity: 1; }
+        }
+
+        /* Chromosome Animations */
+        .anim-chr-A-left { animation: chrALeftAnim 11s infinite linear; }
+        @keyframes chrALeftAnim {
+            0%, 9% { transform: translate(180px, 320px) rotate(0deg); opacity: 1; }
+            18% { transform: translate(180px, 320px) rotate(-15deg); opacity: 1; }
+            27% { transform: translate(480px, 320px) rotate(-15deg); opacity: 1; }
+            36%, 45% { transform: translate(500px, 200px) rotate(-15deg); opacity: 1; }
+            54%, 72% { transform: translate(500px, 140px) rotate(0deg); opacity: 1; }
+            79%, 100% { transform: translate(780px, 320px) rotate(0deg); opacity: 1; }
+        }
+
+        .anim-chr-A-right { animation: chrARightAnim 11s infinite linear; }
+        @keyframes chrARightAnim {
+            0%, 9% { transform: translate(180px, 320px) rotate(0deg); opacity: 0; }
+            18% { transform: translate(180px, 320px) rotate(15deg); opacity: 1; }
+            27% { transform: translate(480px, 320px) rotate(15deg); opacity: 1; }
+            36%, 45% { transform: translate(500px, 200px) rotate(15deg); opacity: 1; }
+            54%, 72% { transform: translate(500px, 260px) rotate(0deg); opacity: 1; }
+            81%, 100% { transform: translate(500px, 260px) rotate(0deg); opacity: 0; }
+        }
+
+        .anim-chr-a-left { animation: chrALeftRecAnim 11s infinite linear; }
+        @keyframes chrALeftRecAnim {
+            0%, 9% { transform: translate(220px, 320px) rotate(0deg); opacity: 1; }
+            18% { transform: translate(220px, 320px) rotate(-15deg); opacity: 1; }
+            27% { transform: translate(520px, 320px) rotate(-15deg); opacity: 1; }
+            36%, 45% { transform: translate(500px, 440px) rotate(-15deg); opacity: 1; }
+            54%, 72% { transform: translate(500px, 380px) rotate(0deg); opacity: 1; }
+            81%, 100% { transform: translate(500px, 380px) rotate(0deg); opacity: 0; }
+        }
+
+        .anim-chr-a-right { animation: chrARightRecAnim 11s infinite linear; }
+        @keyframes chrARightRecAnim {
+            0%, 9% { transform: translate(220px, 320px) rotate(0deg); opacity: 0; }
+            18% { transform: translate(220px, 320px) rotate(15deg); opacity: 1; }
+            27% { transform: translate(520px, 320px) rotate(15deg); opacity: 1; }
+            36%, 45% { transform: translate(500px, 440px) rotate(15deg); opacity: 1; }
+            54%, 72% { transform: translate(500px, 500px) rotate(0deg); opacity: 1; }
+            79%, 100% { transform: translate(820px, 320px) rotate(0deg); opacity: 1; }
+        }
+
+        /* Text Label Animations */
+        .anim-label-parent { animation: labelParentAnim 11s infinite linear; }
+        @keyframes labelParentAnim {
+            0%, 18% { opacity: 1; transform: translate(200px, 230px); }
+            27%, 100% { opacity: 0; transform: translate(500px, 230px); }
+        }
+
+        .anim-label-rep { animation: labelRepAnim 11s infinite linear; }
+        @keyframes labelRepAnim {
+            0%, 5% { opacity: 0; }
+            9%, 18% { opacity: 1; }
+            22%, 100% { opacity: 0; }
+        }
+
+        .anim-label-m1 { animation: labelM1Anim 11s infinite linear; }
+        @keyframes labelM1Anim {
+            0%, 27% { opacity: 0; }
+            32%, 40% { opacity: 1; }
+            45%, 100% { opacity: 0; }
+        }
+
+        .anim-label-m2 { animation: labelM2Anim 11s infinite linear; }
+        @keyframes labelM2Anim {
+            0%, 45% { opacity: 0; }
+            50%, 58% { opacity: 1; }
+            63%, 100% { opacity: 0; }
+        }
+
+        .anim-label-gametes { animation: labelGametesAnim 11s infinite linear; }
+        @keyframes labelGametesAnim {
+            0%, 58% { opacity: 0; }
+            63%, 72% { opacity: 1; }
+            81%, 100% { opacity: 0; }
+        }
+
+        .anim-label-fert { animation: labelFertAnim 11s infinite linear; }
+        @keyframes labelFertAnim {
+            0%, 72% { opacity: 0; }
+            77%, 85% { opacity: 1; }
+            90%, 100% { opacity: 0; }
+        }
+
+        .anim-label-zygote { animation: labelZygoteAnim 11s infinite linear; }
+        @keyframes labelZygoteAnim {
+            0%, 81% { opacity: 0; }
+            90%, 100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg">
+    <title>The Molecular Basis of Mendelian Segregation</title>
+    <desc>An animated diagram showing a heterozygous parent cell undergoing meiosis to form four haploid gametes, followed by fertilization to form a diploid zygote, demonstrating the Law of Segregation.</desc>
+
+    <defs>
+        <radialGradient id="purpleGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="30%" stop-color="#8E44AD" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#8E44AD" stop-opacity="0"/>
+        </radialGradient>
+        <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.1"/>
+        </filter>
+    </defs>
+
+    <!-- Static Background Elements -->
+    <rect width="1000" height="600" fill="#f8f9fa" />
+    
+    <text x="500" y="45" text-anchor="middle" class="title">Mendelian Inheritance: Law of Segregation</text>
+    <text x="500" y="75" text-anchor="middle" class="subtitle">Homologous chromosomes separate during meiosis, ensuring each gamete receives only one allele.</text>
+
+    <!-- Legend -->
+    <g transform="translate(30, 100)">
+        <rect x="0" y="0" width="210" height="130" fill="#ffffff" stroke="#bdc3c7" stroke-width="1" rx="8" filter="url(#dropShadow)"/>
+        <text x="15" y="25" font-family="Inter" font-weight="700" font-size="14" fill="#2C3E50">Legend</text>
+        
+        <circle cx="25" cy="45" r="6" fill="#8E44AD"/>
+        <text x="40" y="50" font-family="Inter" font-size="13" fill="#34495E">Dominant Allele (A)</text>
+        
+        <circle cx="25" cy="70" r="6" fill="#D1D1D1"/>
+        <text x="40" y="75" font-family="Inter" font-size="13" fill="#34495E">Recessive Allele (a)</text>
+        
+        <line x1="18" y1="95" x2="32" y2="95" stroke="#FF6B6B" stroke-width="5" stroke-linecap="round"/>
+        <text x="40" y="100" font-family="Inter" font-size="13" fill="#34495E">Chromosome</text>
+        
+        <circle cx="25" cy="115" r="6" fill="#E8F4FD" stroke="#4A90D9" stroke-width="1.5"/>
+        <text x="40" y="120" font-family="Inter" font-size="13" fill="#34495E">Cell Membrane</text>
+    </g>
+
+    <!-- Global Scene Container -->
+    <g class="scene">
+        
+        <!-- Cell Membranes -->
+        <circle cx="0" cy="0" r="60" class="cell-membrane anim-parent-cell" />
+        <circle cx="0" cy="0" r="40" class="nucleus anim-nucleus" />
+
+        <circle cx="0" cy="0" r="45" class="cell-membrane anim-inter-top" />
+        <circle cx="0" cy="0" r="45" class="cell-membrane anim-inter-bot" />
+
+        <circle cx="0" cy="0" r="30" class="cell-membrane anim-gamete-1" />
+        <circle cx="0" cy="0" r="30" class="cell-membrane anim-gamete-2" />
+        <circle cx="0" cy="0" r="30" class="cell-membrane anim-gamete-3" />
+        <circle cx="0" cy="0" r="30" class="cell-membrane anim-gamete-4" />
+
+        <circle cx="0" cy="0" r="60" class="cell-membrane anim-zygote" />
+        <circle cx="0" cy="0" r="58" fill="url(#purpleGlow)" class="anim-zygote-glow" />
+        <circle cx="0" cy="0" r="40" class="nucleus anim-zygote-nucleus" />
+
+        <!-- Chromosomes -->
+        <!-- Dominant A (Left Chromatid) -->
+        <g class="anim-chr-A-left">
+            <line x1="0" y1="-22" x2="0" y2="22" class="chromosome" />
+            <circle cx="0" cy="0" r="3.5" class="centromere" />
+            <circle cx="0" cy="-12" r="7" fill="#8E44AD" opacity="0.4" />
+            <circle cx="0" cy="-12" r="3.5" fill="#8E44AD" />
+            <text x="9" y="-8" font-family="Inter" font-size="13" font-weight="700" fill="#8E44AD">A</text>
+        </g>
+
+        <!-- Dominant A (Right Chromatid) -->
+        <g class="anim-chr-A-right">
+            <line x1="0" y1="-22" x2="0" y2="22" class="chromosome" />
+            <circle cx="0" cy="0" r="3.5" class="centromere" />
+            <circle cx="0" cy="-12" r="7" fill="#8E44AD" opacity="0.4" />
+            <circle cx="0" cy="-12" r="3.5" fill="#8E44AD" />
+            <text x="9" y="-8" font-family="Inter" font-size="13" font-weight="700" fill="#8E44AD">A</text>
+        </g>
+
+        <!-- Recessive a (Left Chromatid) -->
+        <g class="anim-chr-a-left">
+            <line x1="0" y1="-22" x2="0" y2="22" class="chromosome" />
+            <circle cx="0" cy="0" r="3.5" class="centromere" />
+            <circle cx="0" cy="-12" r="7" fill="#D1D1D1" opacity="0.5" />
+            <circle cx="0" cy="-12" r="3.5" fill="#D1D1D1" />
+            <text x="9" y="-8" font-family="Inter" font-size="13" font-weight="700" fill="#7f8c8d">a</text>
+        </g>
+
+        <!-- Recessive a (Right Chromatid) -->
+        <g class="anim-chr-a-right">
+            <line x1="0" y1="-22" x2="0" y2="22" class="chromosome" />
+            <circle cx="0" cy="0" r="3.5" class="centromere" />
+            <circle cx="0" cy="-12" r="7" fill="#D1D1D1" opacity="0.5" />
+            <circle cx="0" cy="-12" r="3.5" fill="#D1D1D1" />
+            <text x="9" y="-8" font-family="Inter" font-size="13" font-weight="700" fill="#7f8c8d">a</text>
+        </g>
+
+        <!-- Text Labels -->
+        <text class="label anim-label-parent">Heterozygous Parent <tspan class="mono">(Aa)</tspan></text>
+        <text x="200" y="420" class="label anim-label-rep" fill="#E74C3C">DNA Replication</text>
+        
+        <text x="500" y="110" class="label anim-label-m1" font-size="16" fill="#E74C3C" font-weight="700">MEIOSIS I</text>
+        <text x="500" y="110" class="label anim-label-m2" font-size="16" fill="#E74C3C" font-weight="700">MEIOSIS II</text>
+        <text x="500" y="90" class="label anim-label-gametes">Gametes <tspan class="mono">(n)</tspan></text>
+        
+        <text x="650" y="315" class="label anim-label-fert" font-size="16" fill="#E74C3C" font-weight="700">FERTILIZATION</text>
+        
+        <g class="anim-label-zygote">
+            <text x="800" y="230" class="label">F1 Zygote <tspan class="mono">(Aa)</tspan></text>
+            <text x="800" y="410" class="label">Genotype: <tspan class="mono">Aa</tspan></text>
+            <text x="800" y="430" class="label" fill="#8E44AD">Phenotype: Dominant</text>
+        </g>
+
+    </g>
+</svg>
+
+</body>
+</html>

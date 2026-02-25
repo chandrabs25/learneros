@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Anatropous Ovule: Structure and Transformation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: #ffffff;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            overflow: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            text-align: center;
+            color: #2C3E50;
+            margin: 10px 0 5px 0;
+            font-size: 24px;
+        }
+        p.subtitle {
+            text-align: center;
+            color: #7F8C8D;
+            margin: 0 0 20px 0;
+            font-size: 14px;
+            font-style: italic;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        /* --- Animations --- */
+        
+        /* Phase Indicators */
+        .phase1 { animation: p1 15s infinite; }
+        @keyframes p1 { 0%, 25% { opacity: 1; } 26%, 100% { opacity: 0; } }
+        
+        .phase2 { animation: p2 15s infinite; }
+        @keyframes p2 { 0%, 25% { opacity: 0; } 26%, 52% { opacity: 1; } 53%, 100% { opacity: 0; } }
+        
+        .phase3 { animation: p3 15s infinite; }
+        @keyframes p3 { 0%, 52% { opacity: 0; } 53%, 65% { opacity: 1; } 66%, 100% { opacity: 0; } }
+        
+        .phase4 { animation: p4 15s infinite; }
+        @keyframes p4 { 0%, 65% { opacity: 0; } 66%, 95% { opacity: 1; } 96%, 100% { opacity: 0; } }
+
+        /* Structural Layers */
+        .anim-outer { animation: animOuter 15s infinite; }
+        @keyframes animOuter {
+            0%, 2% { opacity: 0; fill: #27AE60; }
+            5%, 60% { opacity: 1; fill: #27AE60; }
+            66%, 95% { opacity: 1; fill: #8B4513; }
+            98%, 100% { opacity: 0; fill: #8B4513; }
+        }
+
+        .anim-inner { animation: animInner 15s infinite; }
+        @keyframes animInner {
+            0%, 6% { opacity: 0; fill: #2ECC71; }
+            9%, 60% { opacity: 1; fill: #2ECC71; }
+            66%, 95% { opacity: 1; fill: #D2B48C; }
+            98%, 100% { opacity: 0; fill: #D2B48C; }
+        }
+
+        .anim-nucellus { animation: animNucellus 15s infinite; }
+        @keyframes animNucellus {
+            0%, 10% { opacity: 0; }
+            13%, 60% { opacity: 1; }
+            66%, 95% { opacity: 0.2; }
+            98%, 100% { opacity: 0; }
+        }
+
+        .anim-sac { animation: animSac 15s infinite; }
+        @keyframes animSac {
+            0%, 14% { opacity: 0; }
+            17%, 95% { opacity: 1; }
+            98%, 100% { opacity: 0; }
+        }
+
+        /* Cells */
+        .anim-egg { 
+            animation: animEgg 15s infinite; 
+            transform-origin: 450px 285px; 
+        }
+        @keyframes animEgg {
+            0%, 14% { opacity: 0; transform: scale(1); fill: #F39C12; }
+            17%, 49% { opacity: 1; transform: scale(1); fill: #F39C12; }
+            50%, 52% { opacity: 1; transform: scale(1.3); fill: #FFD700; }
+            60%, 95% { opacity: 1; transform: scale(1.5); fill: #27AE60; }
+            98%, 100% { opacity: 0; }
+        }
+
+        .anim-polar { 
+            animation: animPolar 15s infinite; 
+            transform-origin: 450px 240px; 
+        }
+        @keyframes animPolar {
+            0%, 14% { opacity: 0; transform: scale(1); fill: #2C3E50; }
+            17%, 51% { opacity: 1; transform: scale(1); fill: #2C3E50; }
+            52%, 54% { opacity: 1; transform: scale(1.4); fill: #FFD700; }
+            60%, 95% { opacity: 0.8; transform: scale(2.5); fill: #E8F4FD; stroke: #4A90D9; stroke-width: 1px; }
+            98%, 100% { opacity: 0; }
+        }
+
+        .anim-degenerate { animation: animDegenerate 15s infinite; }
+        @keyframes animDegenerate {
+            0%, 14% { opacity: 0; }
+            17%, 55% { opacity: 1; }
+            60%, 100% { opacity: 0; }
+        }
+
+        /* Pollen Tube */
+        .anim-tube {
+            stroke-dasharray: 250;
+            stroke-dashoffset: 250;
+            animation: growTube 15s infinite;
+        }
+        @keyframes growTube {
+            0%, 26% { stroke-dashoffset: 250; opacity: 0; }
+            27% { opacity: 1; }
+            40%, 95% { stroke-dashoffset: 0; opacity: 1; }
+            98%, 100% { opacity: 0; stroke-dashoffset: 0; }
+        }
+
+        /* Labels */
+        .label-const { animation: fadeConst 15s infinite; }
+        @keyframes fadeConst {
+            0%, 5% { opacity: 0; }
+            10%, 95% { opacity: 1; }
+            98%, 100% { opacity: 0; }
+        }
+
+        .label-ovule { animation: fadeOvule 15s infinite; }
+        @keyframes fadeOvule {
+            0%, 10% { opacity: 0; }
+            15%, 60% { opacity: 1; }
+            65%, 100% { opacity: 0; }
+        }
+
+        .label-seed { animation: fadeSeed 15s infinite; }
+        @keyframes fadeSeed {
+            0%, 60% { opacity: 0; }
+            66%, 95% { opacity: 1; }
+            98%, 100% { opacity: 0; }
+        }
+
+        .label-pollen { animation: fadePollen 15s infinite; }
+        @keyframes fadePollen {
+            0%, 26% { opacity: 0; }
+            30%, 60% { opacity: 1; }
+            65%, 100% { opacity: 0; }
+        }
+
+        .label-sperm { animation: fadeSperm 15s infinite; }
+        @keyframes fadeSperm {
+            0%, 45% { opacity: 0; }
+            47%, 55% { opacity: 1; }
+            58%, 100% { opacity: 0; }
+        }
+
+        /* Typography */
+        text {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            fill: #2C3E50;
+        }
+        .sci-mono {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 11px;
+            fill: #E74C3C;
+            font-weight: 600;
+        }
+        .pointer {
+            stroke: #95A5A6;
+            stroke-width: 1.5;
+            fill: none;
+            stroke-dasharray: 2 2;
+        }
+        .pointer-dot {
+            fill: #95A5A6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Anatomy of an Anatropous Ovule & Seed Development</h1>
+    <p class="subtitle">Double Fertilization and Transformation into a Seed</p>
+
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+                <feDropShadow dx="2" dy="4" stdDeviation="4" flood-opacity="0.15"/>
+            </filter>
+        </defs>
+
+        <!-- Phase Indicators (Top Right) -->
+        <g transform="translate(760, 40)">
+            <text text-anchor="end" font-size="16" font-weight="bold" fill="#34495E" class="phase1">Phase 1: Structural Identification</text>
+            <text text-anchor="end" font-size="16" font-weight="bold" fill="#E74C3C" class="phase2">Phase 2: Pollen Tube Entry</text>
+            <text text-anchor="end" font-size="16" font-weight="bold" fill="#F39C12" class="phase3">Phase 3: Double Fertilization</text>
+            <text text-anchor="end" font-size="16" font-weight="bold" fill="#27AE60" class="phase4">Phase 4: Seed Transformation</text>
+        </g>
+
+        <!-- ==================== OVULE STRUCTURES ==================== -->
+        <g filter="url(#shadow)">
+            <!-- Outer Integument & Funicle -->
+            <path class="anim-outer" d="
+                M 320,480 
+                L 320,200 
+                C 320,60 560,60 560,200 
+                C 560,320 530,370 510,390 
+                L 485,365 
+                C 525,330 530,120 450,120 
+                C 390,120 380,250 390,365 
+                L 365,390 
+                C 350,360 360,250 360,200 
+                L 360,480 Z" 
+                stroke="#1E8449" stroke-width="2"/>
+
+            <!-- Inner Integument -->
+            <path class="anim-inner" d="
+                M 390,365 
+                C 380,250 390,120 450,120 
+                C 530,120 525,330 485,365 
+                L 470,345 
+                C 505,310 510,140 450,140 
+                C 400,140 395,250 405,345 Z" 
+                stroke="#27AE60" stroke-width="2"/>
+
+            <!-- Nucellus -->
+            <path class="anim-nucellus" d="
+                M 410,340 
+                C 400,250 405,140 450,140 
+                C 495,140 500,250 490,340 
+                C 470,360 430,360 410,340 Z" 
+                fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+        </g>
+
+        <!-- Embryo Sac -->
+        <ellipse class="anim-sac" cx="450" cy="240" rx="35" ry="80" fill="#FFFFFF" stroke="#4A90D9" stroke-width="2"/>
+
+        <!-- Cells inside Embryo Sac -->
+        <g class="anim-sac">
+            <!-- Antipodals (Chalazal end) -->
+            <g class="anim-degenerate">
+                <circle cx="450" cy="175" r="7" fill="#98D8C8" stroke="#73C6B6" stroke-width="1"/>
+                <circle cx="435" cy="185" r="7" fill="#98D8C8" stroke="#73C6B6" stroke-width="1"/>
+                <circle cx="465" cy="185" r="7" fill="#98D8C8" stroke="#73C6B6" stroke-width="1"/>
+            </g>
+
+            <!-- Polar Nuclei (Central Cell) -->
+            <g class="anim-polar">
+                <circle cx="443" cy="240" r="6"/>
+                <circle cx="457" cy="240" r="6"/>
+            </g>
+
+            <!-- Egg Apparatus (Micropylar end) -->
+            <g class="anim-degenerate">
+                <!-- Synergids -->
+                <ellipse cx="432" cy="295" rx="10" ry="14" fill="#98D8C8" stroke="#73C6B6" stroke-width="1"/>
+                <ellipse cx="468" cy="295" rx="10" ry="14" fill="#98D8C8" stroke="#73C6B6" stroke-width="1"/>
+                <!-- Filiform Apparatus lines -->
+                <path d="M 428,300 Q 432,305 436,300 M 464,300 Q 468,305 472,300" stroke="#FFFFFF" fill="none" stroke-width="1.5"/>
+            </g>
+            
+            <!-- Egg Cell -->
+            <ellipse class="anim-egg" cx="450" cy="285" rx="12" ry="16" stroke="#E67E22" stroke-width="1"/>
+        </g>
+
+        <!-- ==================== FERTILIZATION PROCESS ==================== -->
+        
+        <!-- Pollen Tube -->
+        <path id="pollen-tube-path" class="anim-tube" d="M 450,490 L 450,380 C 450,350 435,330 435,305" fill="none" stroke="#FF6B6B" stroke-width="5" stroke-linecap="round"/>
+
+        <!-- Sperm Cell 1 (To Egg) -->
+        <circle r="4" fill="#FFD700" opacity="0">
+            <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.44;0.45;0.5;0.51;1" dur="15s" repeatCount="indefinite"/>
+            <animateMotion dur="15s" repeatCount="indefinite" path="M 450,490 L 450,380 C 450,350 435,330 435,305 L 450,285" keyPoints="0;0;1;1" keyTimes="0;0.44;0.5;1" calcMode="linear"/>
+        </circle>
+
+        <!-- Sperm Cell 2 (To Polar Nuclei) -->
+        <circle r="4" fill="#FFD700" opacity="0">
+            <animate attributeName="opacity" values="0;0;1;1;0;0" keyTimes="0;0.46;0.47;0.52;0.53;1" dur="15s" repeatCount="indefinite"/>
+            <animateMotion dur="15s" repeatCount="indefinite" path="M 450,490 L 450,380 C 450,350 435,330 435,305 L 450,240" keyPoints="0;0;1;1" keyTimes="0;0.46;0.52;1" calcMode="linear"/>
+        </circle>
+
+
+        <!-- ==================== LABELS & ANNOTATIONS ==================== -->
+        
+        <!-- Constant Labels (Left Side & Micropyle) -->
+        <g class="label-const">
+            <!-- Chalaza -->
+            <text x="180" y="100" text-anchor="end" font-weight="600">Chalaza</text>
+            <polyline points="190,95 420,95" class="pointer"/>
+            <circle cx="420" cy="95" r="2.5" class="pointer-dot"/>
+
+            <!-- Hilum -->
+            <text x="180" y="250" text-anchor="end" font-weight="600">Hilum</text>
+            <polyline points="190,245 360,245" class="pointer"/>
+            <circle cx="360" cy="245" r="2.5" class="pointer-dot"/>
+
+            <!-- Funicle -->
+            <text x="180" y="400" text-anchor="end" font-weight="600">Funicle</text>
+            <polyline points="190,395 340,395" class="pointer"/>
+            <circle cx="340" cy="395" r="2.5" class="pointer-dot"/>
+
+            <!-- Micropyle -->
+            <text x="620" y="420" text-anchor="start" font-weight="600">Micropyle</text>
+            <polyline points="610,415 450,380" class="pointer"/>
+            <circle cx="450" cy="380" r="2.5" class="pointer-dot"/>
+        </g>
+
+        <!-- Phase 1: Ovule Labels (Right Side) -->
+        <g class="label-ovule">
+            <!-- Outer Integument -->
+            <text x="620" y="120" text-anchor="start">Outer Integument</text>
+            <polyline points="610,115 530,130" class="pointer"/>
+            <circle cx="530" cy="130" r="2.5" class="pointer-dot"/>
+
+            <!-- Inner Integument -->
+            <text x="620" y="160" text-anchor="start">Inner Integument</text>
+            <polyline points="610,155 490,160" class="pointer"/>
+            <circle cx="490" cy="160" r="2.5" class="pointer-dot"/>
+
+            <!-- Nucellus -->
+            <text x="620" y="200" text-anchor="start">Nucellus</text>
+            <polyline points="610,195 470,190" class="pointer"/>
+            <circle cx="470" cy="190" r="2.5" class="pointer-dot"/>
+
+            <!-- Polar Nuclei -->
+            <text x="620" y="240" text-anchor="start">Polar Nuclei <tspan class="sci-mono">(n + n)</tspan></text>
+            <polyline points="610,235 460,240" class="pointer"/>
+            <circle cx="460" cy="240" r="2.5" class="pointer-dot"/>
+
+            <!-- Egg Cell -->
+            <text x="620" y="280" text-anchor="start">Egg Cell <tspan class="sci-mono">(n)</tspan></text>
+            <polyline points="610,275 465,285" class="pointer"/>
+            <circle cx="465" cy="285" r="2.5" class="pointer-dot"/>
+
+            <!-- Synergids -->
+            <text x="620" y="320" text-anchor="start">Synergids <tspan class="sci-mono">(n)</tspan></text>
+            <polyline points="610,315 475,300" class="pointer"/>
+            <circle cx="475" cy="300" r="2.5" class="pointer-dot"/>
+        </g>
+
+        <!-- Phase 2 & 3: Fertilization Labels -->
+        <g class="label-pollen">
+            <text x="180" y="450" text-anchor="end" fill="#E74C3C" font-weight="600">Pollen Tube</text>
+            <polyline points="190,445 445,445" class="pointer" stroke="#E74C3C"/>
+            <circle cx="445" cy="445" r="2.5" fill="#E74C3C"/>
+        </g>
+
+        <g class="label-sperm">
+            <text x="180" y="320" text-anchor="end" fill="#D4AC0D" font-weight="600">Sperm Cells <tspan class="sci-mono" fill="#D4AC0D">(n)</tspan></text>
+            <polyline points="190,315 440,315" class="pointer" stroke="#D4AC0D"/>
+            <circle cx="440" cy="315" r="2.5" fill="#D4AC0D"/>
+        </g>
+
+        <!-- Phase 4: Seed Labels (Right Side) -->
+        <g class="label-seed">
+            <!-- Testa -->
+            <text x="620" y="120" text-anchor="start" fill="#8B4513" font-weight="600">Testa (Seed Coat)</text>
+            <polyline points="610,115 530,130" class="pointer"/>
+            <circle cx="530" cy="130" r="2.5" class="pointer-dot"/>
+
+            <!-- Tegmen -->
+            <text x="620" y="160" text-anchor="start" fill="#A67C00" font-weight="600">Tegmen</text>
+            <polyline points="610,155 490,160" class="pointer"/>
+            <circle cx="490" cy="160" r="2.5" class="pointer-dot"/>
+
+            <!-- Endosperm -->
+            <text x="620" y="240" text-anchor="start" fill="#2980B9" font-weight="600">Endosperm <tspan class="sci-mono" fill="#2980B9">(3n)</tspan></text>
+            <polyline points="610,235 460,240" class="pointer"/>
+            <circle cx="460" cy="240" r="2.5" class="pointer-dot"/>
+
+            <!-- Zygote / Embryo -->
+            <text x="620" y="280" text-anchor="start" fill="#27AE60" font-weight="600">Zygote / Embryo <tspan class="sci-mono" fill="#27AE60">(2n)</tspan></text>
+            <polyline points="610,275 465,285" class="pointer"/>
+            <circle cx="465" cy="285" r="2.5" class="pointer-dot"/>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>
