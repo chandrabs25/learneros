@@ -59,6 +59,13 @@ interface LineagePayload {
 
 type Point = { x: number; y: number };
 
+interface SessionItem {
+  session_id: string;
+  preview: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 const typeColor: Record<LineageNode["type"], string> = {
   concept: "#f97316",
   grade: "#0ea5e9",
@@ -131,6 +138,9 @@ export default function TutorPage() {
   const [matchedInsights, setMatchedInsights] = useState<InsightItem[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
+  const [pastSessions, setPastSessions] = useState<SessionItem[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+
   const [lineageOpen, setLineageOpen] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState<MatchedConcept | null>(null);
   const [lineageLoading, setLineageLoading] = useState(false);
@@ -165,6 +175,31 @@ export default function TutorPage() {
     return () => {
       cancelled = true;
     };
+  }, [getIdToken]);
+
+  // Fetch past sessions list
+  const loadSessionsList = async () => {
+    setSessionsLoading(true);
+    try {
+      const token = await getIdToken();
+      if (!token) return;
+      const res = await fetch(`${API_URL}/api/tutor/sessions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok && Array.isArray(data?.sessions)) {
+        setPastSessions(data.sessions);
+      }
+    } catch {
+      // Silently ignore – sidebar is optional
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSessionsList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getIdToken]);
 
   useEffect(() => {
@@ -222,6 +257,8 @@ export default function TutorPage() {
       const matched = Array.isArray(data?.matched_insights) ? data.matched_insights : [];
       setMatchedInsights(matched);
       setMessages((prev) => [...prev, { role: "assistant", text: data?.response || "I could not generate a response." }]);
+      // Refresh session list so this session appears
+      loadSessionsList();
     } catch (e: unknown) {
       setMessages((prev) => [...prev, { role: "assistant", text: e instanceof Error ? e.message : "Failed to contact LearnerOS Tutor." }]);
     } finally {
@@ -272,6 +309,7 @@ export default function TutorPage() {
         text: "New exploration started. What topic do you want to learn now?",
       },
     ]);
+    loadSessionsList();
   };
 
   const lineageNodes = lineageData?.nodes ?? [];
@@ -295,32 +333,94 @@ export default function TutorPage() {
 
   return (
     <div className="tutor-layout" style={{ height: "calc(100vh - 64px)", background: "#f8f6f5", overflow: "hidden", position: "relative" }}>
-      <aside className="tutor-left" style={{ borderRight: "1px solid #e2e8f0", background: "#fff", padding: "1rem", display: "flex", flexDirection: "column", gap: "1rem", minHeight: 0 }}>
-        <div style={{ fontSize: "0.68rem", letterSpacing: "0.12em", fontWeight: 800, textTransform: "uppercase", color: "#94a3b8" }}>Matched Insights</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", overflowY: "auto", minHeight: 0 }}>
-          {matchedInsights.length === 0 ? (
-            <div style={{ fontSize: "0.85rem", color: "#64748b" }}>No query-matched insights yet. Ask a question to retrieve relevant active insights.</div>
+      <aside className="tutor-left" style={{ borderRight: "1px solid #e2e8f0", background: "#fff", padding: "1rem", display: "flex", flexDirection: "column", gap: "0", minHeight: 0 }}>
+        {/* ── Past Sessions ── */}
+        <div style={{ fontSize: "0.68rem", letterSpacing: "0.12em", fontWeight: 800, textTransform: "uppercase", color: "#94a3b8", marginBottom: "0.5rem" }}>Chat History</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", overflowY: "auto", flex: 1, minHeight: 0, marginBottom: "0.75rem" }}>
+          {sessionsLoading ? (
+            <div style={{ fontSize: "0.82rem", color: "#94a3b8" }}>Loading sessions...</div>
+          ) : pastSessions.length === 0 ? (
+            <div style={{ fontSize: "0.82rem", color: "#94a3b8" }}>No past sessions yet.</div>
           ) : (
-            matchedInsights.map((ins) => (
-              <div
-                key={ins.id}
+            pastSessions.map((s) => (
+              <button
+                key={s.session_id}
+                onClick={async () => {
+                  if (s.session_id === sessionId) return;
+                  try {
+                    const token = await getIdToken();
+                    if (!token) return;
+                    const res = await fetch(`${API_URL}/api/tutor/session/${encodeURIComponent(s.session_id)}`, {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const data = await res.json();
+                    if (res.ok && data?.session_id) {
+                      setSessionId(data.session_id);
+                      const history = Array.isArray(data.messages) ? data.messages : [];
+                      setMessages(history.length > 0
+                        ? history.map((m: { role: "user" | "assistant"; content: string }) => ({ role: m.role, text: m.content }))
+                        : [{ role: "assistant" as const, text: "This session has no messages yet." }]
+                      );
+                      setMatchedInsights([]);
+                      setLineageOpen(false);
+                      setSelectedConcept(null);
+                      setLineageData(null);
+                    }
+                  } catch { /* ignore */ }
+                }}
                 style={{
-                  border: "1px solid #fb923c",
-                  background: "#fff7ed",
-                  borderRadius: 10,
-                  padding: "0.6rem",
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
+                  border: s.session_id === sessionId ? "1px solid #0f172a" : "1px solid #e2e8f0",
+                  background: s.session_id === sessionId ? "#0f172a" : "#f8fafc",
+                  color: s.session_id === sessionId ? "#fff" : "#334155",
+                  borderRadius: 8,
+                  padding: "0.5rem 0.6rem",
+                  cursor: s.session_id === sessionId ? "default" : "pointer",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                  lineHeight: 1.35,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  fontFamily: "var(--font-body)",
+                  transition: "all 0.15s ease",
                 }}
               >
-                <div style={{ display: "flex", gap: "0.35rem", alignItems: "center", marginBottom: "0.25rem" }}>
-                  <span style={{ fontSize: "0.62rem", fontWeight: 800, textTransform: "uppercase", color: "#c2410c" }}>{ins.type.replace(/_/g, " ")}</span>
-                  <span style={{ fontSize: "0.62rem", color: "#94a3b8" }}>{ins.category}</span>
-                </div>
-                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.2rem" }}>{ins.concept_name || ins.concept_id || "General"}</div>
-                <div style={{ fontSize: "0.76rem", color: "#334155", lineHeight: 1.4 }}>{ins.content}</div>
-              </div>
+                {s.preview || "(empty session)"}
+              </button>
             ))
           )}
         </div>
+
+        {/* ── Matched Insights ── */}
+        {matchedInsights.length > 0 && (
+          <>
+            <div style={{ fontSize: "0.68rem", letterSpacing: "0.12em", fontWeight: 800, textTransform: "uppercase", color: "#94a3b8", marginBottom: "0.5rem", borderTop: "1px solid #e2e8f0", paddingTop: "0.75rem" }}>Matched Insights</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", overflowY: "auto", minHeight: 0, maxHeight: 200 }}>
+              {matchedInsights.map((ins) => (
+                <div
+                  key={ins.id}
+                  style={{
+                    border: "1px solid #fb923c",
+                    background: "#fff7ed",
+                    borderRadius: 10,
+                    padding: "0.6rem",
+                  }}
+                >
+                  <div style={{ display: "flex", gap: "0.35rem", alignItems: "center", marginBottom: "0.25rem" }}>
+                    <span style={{ fontSize: "0.62rem", fontWeight: 800, textTransform: "uppercase", color: "#c2410c" }}>{ins.type.replace(/_/g, " ")}</span>
+                    <span style={{ fontSize: "0.62rem", color: "#94a3b8" }}>{ins.category}</span>
+                  </div>
+                  <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.2rem" }}>{ins.concept_name || ins.concept_id || "General"}</div>
+                  <div style={{ fontSize: "0.76rem", color: "#334155", lineHeight: 1.4 }}>{ins.content}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
         <button
           onClick={newExploration}
           style={{ marginTop: "auto", border: "2px dashed #cbd5e1", borderRadius: 10, background: "transparent", padding: "0.7rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer", fontFamily: "var(--font-display)" }}
@@ -377,7 +477,7 @@ export default function TutorPage() {
                 disabled={sending || !input.trim()}
                 style={{ border: "none", borderRadius: 14, background: "#f45c25", color: "#fff", width: 48, height: 48, cursor: sending || !input.trim() ? "not-allowed" : "pointer", opacity: sending || !input.trim() ? 0.6 : 1 }}
               >
-                <span className="material-symbols-outlined">arrow_upward</span>
+                <span className="material-symbols-outlined" style={sending ? { animation: "spin 1s linear infinite" } : undefined}>{sending ? "progress_activity" : "arrow_upward"}</span>
               </button>
             </div>
           </div>
@@ -405,9 +505,9 @@ export default function TutorPage() {
                   style={{
                     width: "100%",
                     borderRadius: 8,
-                    border: "1px solid #cbd5e1",
-                    background: c.conceptId ? "#ffffff" : "#f1f5f9",
-                    color: c.conceptId ? "#0f172a" : "#94a3b8",
+                    border: "none",
+                    background: c.conceptId ? "#0f172a" : "#e2e8f0",
+                    color: c.conceptId ? "#ffffff" : "#94a3b8",
                     fontSize: "0.74rem",
                     fontWeight: 700,
                     padding: "0.35rem 0.5rem",

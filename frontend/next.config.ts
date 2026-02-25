@@ -21,7 +21,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com data:",
               "img-src 'self' data: blob: https:",
               "connect-src 'self' https: wss:",
-              "frame-src 'self' https://teacher-b2cd9.firebaseapp.com https://*.firebaseapp.com https://accounts.google.com https://api.learneros.me https://learneros-backend.fly.dev https://assets.learneros.me https://pub-7b711dfeeb684804918a49acc097090a.r2.dev",
+              "frame-src 'self' https://teacher-b2cd9.firebaseapp.com https://*.firebaseapp.com https://accounts.google.com https://api.learneros.me https://learneros-backend.fly.dev https://assets.learneros.me",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

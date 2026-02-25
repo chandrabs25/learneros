@@ -470,17 +470,29 @@ export default function KnowledgeGraphPage() {
     const lineageNodePositions = useMemo(() => {
         const positions: Record<string, { x: number; y: number }> = {};
         if (!lineageData?.nodes?.length) return positions;
-        const byType: Record<LineageNode["type"], LineageNode[]> = {
-            concept: [],
-            grade: [],
-            subject: [],
-            chapter: [],
-        };
-        for (const node of lineageData.nodes) byType[node.type].push(node);
-        for (const t of (Object.keys(byType) as LineageNode["type"][])) {
-            byType[t].sort((a, b) => (a.label || "").localeCompare(b.label || "", undefined, { sensitivity: "base" }));
+
+        const edges = lineageData.edges || [];
+        const nodeById: Record<string, LineageNode> = {};
+        for (const node of lineageData.nodes) nodeById[node.id] = node;
+
+        // Build parent→children adjacency from edges
+        const childrenOf: Record<string, string[]> = {};
+        for (const edge of edges) {
+            if (!childrenOf[edge.source]) childrenOf[edge.source] = [];
+            childrenOf[edge.source].push(edge.target);
         }
 
+        // Sort children alphabetically at each level for consistency
+        for (const key of Object.keys(childrenOf)) {
+            childrenOf[key].sort((a, b) =>
+                (nodeById[a]?.label || "").localeCompare(nodeById[b]?.label || "", undefined, { sensitivity: "base" })
+            );
+        }
+
+        // Walk the tree depth-first from the concept node to produce a
+        // hierarchical ordering. Nodes at the same depth share an x column,
+        // and the DFS order ensures children are grouped under their parent.
+        const columnOrder: LineageNode["type"][] = ["concept", "grade", "subject", "chapter"];
         const xMap: Record<LineageNode["type"], number> = {
             concept: 60,
             grade: 180,
@@ -490,11 +502,55 @@ export default function KnowledgeGraphPage() {
         const yStart = 30;
         const yGap = 50;
 
-        for (const type of (Object.keys(xMap) as LineageNode["type"][])) {
-            byType[type].forEach((n, idx) => {
-                positions[n.id] = { x: xMap[type], y: yStart + idx * yGap };
-            });
+        // Counter per column tracks the next y slot
+        const ySlot: Record<string, number> = {};
+        for (const t of columnOrder) ySlot[t] = 0;
+
+        // DFS walk: concept → grades → subjects → chapters
+        const visited = new Set<string>();
+        const dfs = (nodeId: string) => {
+            if (visited.has(nodeId)) return;
+            visited.add(nodeId);
+            const node = nodeById[nodeId];
+            if (!node) return;
+            positions[nodeId] = {
+                x: xMap[node.type],
+                y: yStart + ySlot[node.type] * yGap,
+            };
+            ySlot[node.type]++;
+            for (const childId of (childrenOf[nodeId] || [])) {
+                dfs(childId);
+            }
+        };
+
+        // Find concept node(s) as root(s)
+        for (const node of lineageData.nodes) {
+            if (node.type === "concept") dfs(node.id);
         }
+        // Position any remaining unvisited nodes (fallback)
+        for (const node of lineageData.nodes) {
+            if (!visited.has(node.id)) {
+                positions[node.id] = {
+                    x: xMap[node.type],
+                    y: yStart + ySlot[node.type] * yGap,
+                };
+                ySlot[node.type]++;
+            }
+        }
+
+        // Center the concept node vertically relative to all its children
+        const gradePositions = lineageData.nodes
+            .filter(n => n.type === "grade" && positions[n.id])
+            .map(n => positions[n.id].y);
+        if (gradePositions.length > 0) {
+            const minY = Math.min(...gradePositions);
+            const maxY = Math.max(...gradePositions);
+            const conceptNode = lineageData.nodes.find(n => n.type === "concept");
+            if (conceptNode && positions[conceptNode.id]) {
+                positions[conceptNode.id].y = (minY + maxY) / 2;
+            }
+        }
+
         return positions;
     }, [lineageData]);
 
@@ -525,7 +581,7 @@ export default function KnowledgeGraphPage() {
                     </p>
                 )}
                 <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: 10, background: "#fff" }}>
-                    <svg width={svgWidth} height={Math.max(220, ((lineageData.nodes?.length || 0) + 2) * 32)}>
+                    <svg width={svgWidth} height={Math.max(220, Object.values(lineageNodePositions).reduce((max, p) => Math.max(max, p.y), 0) + 60)}>
                         {(lineageData.edges || []).map((edge, i) => {
                             const from = lineageNodePositions[edge.source];
                             const to = lineageNodePositions[edge.target];
@@ -983,9 +1039,9 @@ export default function KnowledgeGraphPage() {
                                         style={{
                                             width: "100%",
                                             borderRadius: 8,
-                                            border: "1px solid #cbd5e1",
-                                            background: lineageLoading ? "#f1f5f9" : "#fff",
-                                            color: "#0f172a",
+                                            border: "none",
+                                            background: lineageLoading ? "#334155" : "#0f172a",
+                                            color: "#ffffff",
                                             fontSize: "0.78rem",
                                             fontWeight: 700,
                                             padding: "0.48rem 0.62rem",

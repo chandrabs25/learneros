@@ -1102,7 +1102,7 @@ export default function SectionViewerPage() {
                                 fontFamily: "var(--font-display)",
                             }}
                         >
-                            {tutorSending ? "..." : "Send"}
+                            {tutorSending ? <span className="material-symbols-outlined" style={{ fontSize: "1rem", animation: "spin 1s linear infinite" }}>progress_activity</span> : "Send"}
                         </button>
                     </div>
                 </div>
@@ -1176,10 +1176,10 @@ export default function SectionViewerPage() {
                             <button
                                 onClick={() => setTutorOpen(true)}
                                 style={{
-                                display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1.25rem",
-                                background: "#ff7f50", color: "white", border: "none", borderRadius: "var(--radius)",
-                                fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", fontFamily: "var(--font-display)",
-                            }}>
+                                    display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.75rem 1.25rem",
+                                    background: "#ff7f50", color: "white", border: "none", borderRadius: "var(--radius)",
+                                    fontWeight: 700, fontSize: "0.875rem", cursor: "pointer", fontFamily: "var(--font-display)",
+                                }}>
                                 <span className="material-symbols-outlined" style={{ fontSize: "1.125rem" }}>smart_toy</span>
                                 LearnerOS Tutor
                             </button>

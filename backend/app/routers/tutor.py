@@ -78,6 +78,17 @@ class TutorSessionHistoryResponse(BaseModel):
     messages: list[TutorHistoryMessage] = []
 
 
+class TutorSessionSummary(BaseModel):
+    session_id: str
+    preview: str = ""
+    created_at: str | None = None
+    updated_at: str | None = None
+
+
+class TutorSessionListResponse(BaseModel):
+    sessions: list[TutorSessionSummary] = []
+
+
 
 def _get_llm_client() -> OpenAI:
     global _llm_client
@@ -644,3 +655,47 @@ async def latest_global_tutor_session(user: CurrentUser | None = Depends(get_opt
         return {"session_id": None, "messages": []}
     messages = _load_conversation_history(user.student_id, sess_id, limit=40)
     return {"session_id": sess_id, "messages": messages}
+
+
+@router.get("/tutor/session/{session_id:path}", response_model=TutorSessionHistoryResponse)
+async def get_global_tutor_session(session_id: str, user: CurrentUser | None = Depends(get_optional_user)):
+    """Load a specific global tutor session by ID."""
+    if not user:
+        return {"session_id": None, "messages": []}
+    messages = _load_conversation_history(user.student_id, session_id, limit=40)
+    return {"session_id": session_id, "messages": messages}
+
+
+@router.get("/tutor/sessions", response_model=TutorSessionListResponse)
+async def list_global_tutor_sessions(user: CurrentUser | None = Depends(get_optional_user)):
+    """Return all global tutor sessions for the current user, most recent first."""
+    if not user:
+        return {"sessions": []}
+    rows = read_query(
+        """
+        MATCH (s:Student {id: $student_id})-[:HAS_TUTOR_SESSION]->(sess:TutorSession)
+        WHERE sess.mode = 'global'
+        OPTIONAL MATCH (sess)-[:HAS_MESSAGE]->(m:TutorMessage {role: 'user'})
+        WITH sess, m ORDER BY m.created_at ASC
+        WITH sess, collect(m.content)[0] AS first_msg
+        RETURN sess.id AS id,
+               coalesce(first_msg, '') AS preview,
+               toString(sess.created_at) AS created_at,
+               toString(coalesce(sess.updated_at, sess.created_at)) AS updated_at
+        ORDER BY coalesce(sess.updated_at, sess.created_at) DESC
+        LIMIT 30
+        """,
+        student_id=user.student_id,
+    )
+    return {
+        "sessions": [
+            {
+                "session_id": r.get("id", ""),
+                "preview": (r.get("preview") or "")[:80],
+                "created_at": r.get("created_at"),
+                "updated_at": r.get("updated_at"),
+            }
+            for r in rows
+            if r.get("id")
+        ]
+    }
