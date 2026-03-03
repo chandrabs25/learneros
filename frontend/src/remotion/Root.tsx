@@ -8,7 +8,7 @@ export const RemotionRoot = () => {
       <Composition
         id="LearnerosPitch"
         component={LearnerosPitch}
-        durationInFrames={31 * 30}
+        durationInFrames={Math.round(27.5 * 30)}
         fps={30}
         width={1920}
         height={1080}

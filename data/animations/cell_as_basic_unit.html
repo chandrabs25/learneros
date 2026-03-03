@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Cell: The Basic Unit of Life</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;500&display=swap');
+
+        :root {
+            --membrane: #4A90D9;
+            --nucleus: #2C3E50;
+            --cyto: #E8F4FD;
+            --dna: #FF6B6B;
+            --protein: #98D8C8;
+            --mito: #E74C3C;
+            --animal: #F39C12;
+            --o2: #3498DB;
+            --glucose: #2ECC71;
+            --co2: #8E44AD;
+            --bg: #f8f9fa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            max-width: 100%;
+            max-height: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+        }
+
+        /* Global Animations */
+        .wobble {
+            animation: organic-wobble 8s infinite ease-in-out;
+            transform-origin: 220px 250px;
+        }
+
+        .mitochondria {
+            animation: mito-pulse 2s infinite ease-in-out;
+        }
+
+        .ribosome {
+            animation: jitter 12s infinite;
+        }
+
+        .fade-labels {
+            animation: labels-fade 12s infinite;
+        }
+
+        #cell-unit {
+            animation: cell-migrate 12s infinite ease-in-out;
+            transform-origin: 100px 130px;
+        }
+
+        /* Phase 1: Metabolism Flow */
+        .nutrient-o2 { animation: flow-in-o2 12s infinite; }
+        .nutrient-gluc { animation: flow-in-gluc 12s infinite; }
+        .waste-co2 { animation: flow-out-co2 12s infinite; }
+
+        /* Phase 2: Protein Synthesis */
+        .protein-synth-1 { animation: protein-flow-1 12s infinite; }
+        .protein-synth-2 { animation: protein-flow-2 12s infinite; }
+
+        /* Phase 3: Tissue Grid Pulses */
+        #gc1 { animation: pulse-gc 12s infinite 0.0s; }
+        #gc2 { animation: pulse-gc 12s infinite 0.2s; }
+        #gc3 { animation: pulse-gc 12s infinite 0.4s; }
+        #gc4 { animation: pulse-gc 12s infinite 0.6s; }
+        #gc5 { animation: pulse-gc 12s infinite 0.8s; }
+        #gc6 { animation: pulse-gc 12s infinite 1.0s; }
+        #gc7 { animation: pulse-gc 12s infinite 1.2s; }
+        #gc8 { animation: pulse-gc 12s infinite 1.4s; }
+
+        /* Keyframes */
+        @keyframes organic-wobble {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            33% { transform: scale(1.02, 0.98) rotate(1deg); }
+            66% { transform: scale(0.98, 1.02) rotate(-1deg); }
+        }
+
+        @keyframes mito-pulse {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50% { transform: scale(1.08); filter: brightness(1.3); }
+        }
+
+        @keyframes jitter {
+            0%, 30%, 70%, 100% { transform: translate(0,0); }
+            35%, 45%, 55%, 65% { transform: translate(1px, -1px); }
+            40%, 50%, 60% { transform: translate(-1px, 1px); }
+        }
+
+        @keyframes labels-fade {
+            0%, 60% { opacity: 1; }
+            65%, 95% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes cell-migrate {
+            0%, 60% { transform: translate(0, 0) scale(1); }
+            68%, 92% { transform: translate(420px, 80px) scale(0.3333); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
+
+        /* Phase 1 Keyframes (0-33%) */
+        @keyframes flow-in-o2 {
+            0% { transform: translate(0,0); opacity: 0; }
+            2% { opacity: 1; }
+            12% { transform: translate(120px, 10px); opacity: 1; }
+            15% { transform: translate(140px, 20px); opacity: 0; }
+            100% { transform: translate(140px, 20px); opacity: 0; }
+        }
+
+        @keyframes flow-in-gluc {
+            0%, 5% { transform: translate(0,0); opacity: 0; }
+            7% { opacity: 1; }
+            17% { transform: translate(120px, -10px); opacity: 1; }
+            20% { transform: translate(140px, -20px); opacity: 0; }
+            100% { transform: translate(140px, -20px); opacity: 0; }
+        }
+
+        @keyframes flow-out-co2 {
+            0%, 15% { transform: translate(0,0); opacity: 0; }
+            17% { opacity: 1; }
+            27% { transform: translate(-120px, -30px); opacity: 1; }
+            30% { transform: translate(-140px, -40px); opacity: 0; }
+            100% { transform: translate(-140px, -40px); opacity: 0; }
+        }
+
+        /* Phase 2 Keyframes (33-66%) */
+        @keyframes protein-flow-1 {
+            0%, 33% { transform: translate(0,0) scale(0.5); opacity: 0; }
+            36% { opacity: 1; transform: translate(0,0) scale(1); }
+            55% { transform: translate(0, 90px) scale(1); opacity: 1; }
+            60% { transform: translate(0, 120px) scale(1); opacity: 0; }
+            100% { transform: translate(0, 120px) scale(1); opacity: 0; }
+        }
+
+        @keyframes protein-flow-2 {
+            0%, 40% { transform: translate(0,0) scale(0.5); opacity: 0; }
+            43% { opacity: 1; transform: translate(0,0) scale(1); }
+            60% { transform: translate(30px, 80px) scale(1); opacity: 1; }
+            65% { transform: translate(40px, 110px) scale(1); opacity: 0; }
+            100% { transform: translate(40px, 110px) scale(1); opacity: 0; }
+        }
+
+        /* Phase 3 Keyframes (66-100%) */
+        @keyframes pulse-gc {
+            0%, 70%, 95%, 100% { opacity: 0.4; filter: brightness(1); }
+            75% { opacity: 1; filter: brightness(1.2); }
+            85% { opacity: 0.4; filter: brightness(1); }
+        }
+
+        .mono { font-family: 'Roboto Mono', monospace; }
+        .bold { font-weight: 700; }
+        .semi { font-weight: 600; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" aria-label="Animated diagram showing cellular metabolism and tissue organization">
+    <title>The Functional Unit: Cellular Metabolism and Tissue Organization</title>
+    <desc>An animation demonstrating the cell as the basic unit of life. Phase 1 shows nutrients entering for metabolism. Phase 2 shows protein synthesis. Phase 3 shows the cell integrating into a larger tissue structure.</desc>
+
+    <defs>
+        <!-- Drop Shadows & Glows -->
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.2"/>
+        </filter>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3" result="blur"/>
+            <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+        </filter>
+        
+        <!-- Arrow Marker -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50" />
+        </marker>
+        <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5">
+            <circle cx="5" cy="5" r="3" fill="#2C3E50" />
+        </marker>
+
+        <!-- Protein Template -->
+        <g id="protein-complex">
+            <circle cx="0" cy="0" r="4" fill="var(--protein)"/>
+            <circle cx="5" cy="3" r="4" fill="var(--protein)"/>
+            <circle cx="2" cy="-4" r="4" fill="var(--protein)"/>
+            <circle cx="-4" cy="2" r="4" fill="var(--protein)"/>
+        </g>
+    </defs>
+
+    <!-- Background -->
+    <rect width="100%" height="100%" fill="#ffffff" rx="12" />
+
+    <!-- Main Title -->
+    <text x="400" y="45" font-size="24" class="bold" fill="var(--nucleus)" text-anchor="middle" letter-spacing="1">THE CELL: THE BASIC UNIT OF LIFE</text>
+    <text x="400" y="65" font-size="12" fill="#7F8C8D" text-anchor="middle">Phase 1: Metabolism (0-4s) | Phase 2: Synthesis (4-8s) | Phase 3: Tissue Structure (8-12s)</text>
+
+    <!-- TISSUE GRID (Right Side) -->
+    <g id="tissue-grid">
+        <text x="650" y="100" font-size="14" class="bold fade-labels" fill="var(--animal)" text-anchor="middle" letter-spacing="1">TISSUE: STRUCTURAL UNIT</text>
+        
+        <!-- Row 1 -->
+        <g id="gc1" transform="translate(520, 120)">
+            <rect width="80" height="80" rx="15" fill="var(--animal)" stroke="#E67E22" stroke-width="2" />
+            <circle cx="40" cy="40" r="12" fill="#D35400" opacity="0.5" />
+        </g>
+        <g id="gc2" transform="translate(610, 120)">
+            <rect width="80" height="80" rx="15" fill="var(--animal)" stroke="#E67E22" stroke-width="2" />
+            <circle cx="40" cy="40" r="12" fill="#D35400" opacity="0.5" />
+        </g>
+        <g id="gc3" transform="translate(700, 120)">
+            <rect width="80" height="80" rx="15" fill="var(--animal)" stroke="#E67E22" stroke-width="2" />
+            <circle cx="40" cy="40" r="12" fill="#D35400" opacity="0.5" />
+        </g>
+        
+        <!-- Row 2 (Missing center-left cell for the primary cell to fill) -->
+        <g id="gc4" transform="translate(610, 210)">
+            <rect width="80" height="80" rx="15" fill="var(--animal)" stroke="#E67E22" stroke-width="2" />
+            <circle cx="40" cy="40" r="12" fill="#D35400" opacity="0.5" />
+        </g>
+        <g id="gc5" transform="translate(700, 210)">
+            <rect width="80" height="80" rx="15" fill="var(--animal)" stroke="#E67E22" stroke-width="2" />
+            <circle cx="40" cy="40" r="12" fill="#D35400" opacity="0.5" />
+        </g>
+        
+        <!-- Row 3 -->
+        <g id="gc6" transform="translate(520, 300)">
+            <rect width="80" height="80" rx="15" fill="var(--animal)" stroke="#E67E22" stroke-width="2" />
+            <circle cx="40" cy="40" r="12" fill="#D35400" opacity="0.5" />
+        </g>
+        <g id="gc7" transform="translate(610, 300)">
+            <rect width="80" height="80" rx="15" fill="var(--animal)" stroke="#E67E22" stroke-width="2" />
+            <circle cx="40" cy="40" r="12" fill="#D35400" opacity="0.5" />
+        </g>
+        <g id="gc8" transform="translate(700, 300)">
+            <rect width="80" height="80" rx="15" fill="var(--animal)" stroke="#E67E22" stroke-width="2" />
+            <circle cx="40" cy="40" r="12" fill="#D35400" opacity="0.5" />
+        </g>
+    </g>
+
+    <!-- PRIMARY CELL UNIT (Left/Center) -->
+    <g id="cell-unit">
+        <g class="wobble">
+            <!-- Plasma Membrane & Cytoplasm -->
+            <rect x="100" y="130" width="240" height="240" rx="60" fill="var(--cyto)" stroke="var(--membrane)" stroke-width="6" opacity="0.95" />
+            <rect x="104" y="134" width="232" height="232" rx="56" fill="none" stroke="#ffffff" stroke-width="2" opacity="0.7" />
+            
+            <!-- Cytoplasm Label (Internal) -->
+            <text x="220" y="350" font-size="12" fill="var(--membrane)" text-anchor="middle" opacity="0.7" class="semi">Cytoplasm (Metabolic Arena)</text>
+
+            <!-- Nucleus -->
+            <g transform="translate(220, 250)">
+                <circle cx="0" cy="0" r="45" fill="var(--nucleus)" stroke="#34495E" stroke-width="4" filter="url(#shadow)" />
+                <!-- DNA Double Helix -->
+                <g transform="rotate(-45)">
+                    <path d="M -25,0 Q -10,-20 0,0 T 25,0" stroke="var(--dna)" fill="none" stroke-width="3" />
+                    <path d="M -25,0 Q -10,20 0,0 T 25,0" stroke="var(--dna)" fill="none" stroke-width="3" opacity="0.6" />
+                    <!-- Base pairs -->
+                    <line x1="-18" y1="-8" x2="-18" y2="8" stroke="var(--dna)" stroke-width="1" opacity="0.5"/>
+                    <line x1="-8" y1="-12" x2="-8" y2="12" stroke="var(--dna)" stroke-width="1" opacity="0.5"/>
+                    <line x1="8" y1="-12" x2="8" y2="12" stroke="var(--dna)" stroke-width="1" opacity="0.5"/>
+                    <line x1="18" y1="-8" x2="18" y2="8" stroke="var(--dna)" stroke-width="1" opacity="0.5"/>
+                </g>
+            </g>
+
+            <!-- Mitochondria 1 (Top Left) -->
+            <g transform="translate(150, 180) rotate(-20)" class="mitochondria" filter="url(#shadow)">
+                <path d="M -25,-15 C -15,-30 15,-30 25,-15 C 40,0 25,30 15,30 C 0,30 -15,15 -25,-15 Z" fill="var(--mito)" />
+                <path d="M -20,-10 L -5,-15 L 0,-5 L 10,-15 L 15,0 L 20,-5" stroke="#FADBD8" fill="none" stroke-width="2" stroke-linejoin="round" />
+            </g>
+
+            <!-- Mitochondria 2 (Bottom Right) -->
+            <g transform="translate(290, 310) rotate(45)" class="mitochondria" filter="url(#shadow)">
+                <path d="M -25,-15 C -15,-30 15,-30 25,-15 C 40,0 25,30 15,30 C 0,30 -15,15 -25,-15 Z" fill="var(--mito)" />
+                <path d="M -20,-10 L -5,-15 L 0,-5 L 10,-15 L 15,0 L 20,-5" stroke="#FADBD8" fill="none" stroke-width="2" stroke-linejoin="round" />
+            </g>
+
+            <!-- Ribosomes (Scattered dots) -->
+            <g fill="var(--protein)">
+                <circle cx="140" cy="260" r="3" class="ribosome" />
+                <circle cx="155" cy="250" r="3" class="ribosome" />
+                <circle cx="170" cy="270" r="3" class="ribosome" />
+                <circle cx="150" cy="285" r="3" class="ribosome" />
+                <circle cx="180" cy="255" r="3" class="ribosome" />
+                <circle cx="160" cy="295" r="3" class="ribosome" />
+                <circle cx="270" cy="190" r="3" class="ribosome" />
+                <circle cx="285" cy="205" r="3" class="ribosome" />
+                <circle cx="260" cy="215" r="3" class="ribosome" />
+            </g>
+
+            <!-- Active Molecules (Animated) -->
+            <g id="active-molecules">
+                <!-- Phase 1: Nutrients In -->
+                <circle cx="20" cy="175" r="5" fill="var(--o2)" class="nutrient-o2" filter="url(#glow)" />
+                <circle cx="20" cy="185" r="6" fill="var(--glucose)" class="nutrient-gluc" filter="url(#glow)" />
+                
+                <!-- Phase 1: Waste Out -->
+                <circle cx="150" cy="180" r="5" fill="var(--co2)" class="waste-co2" filter="url(#glow)" />
+
+                <!-- Phase 2: Protein Synthesis & Export -->
+                <use href="#protein-complex" x="160" y="270" class="protein-synth-1" filter="url(#shadow)" />
+                <use href="#protein-complex" x="145" y="260" class="protein-synth-2" filter="url(#shadow)" />
+            </g>
+        </g>
+    </g>
+
+    <!-- LABELS & ANNOTATIONS (Fade out during Phase 3) -->
+    <g id="labels" class="fade-labels">
+        <!-- Plasma Membrane -->
+        <line x1="100" y1="250" x2="40" y2="250" stroke="var(--nucleus)" stroke-width="1.5" marker-start="url(#dot)" />
+        <text x="35" y="254" font-size="14" fill="var(--nucleus)" text-anchor="end" class="semi">Plasma Membrane</text>
+
+        <!-- Nucleus -->
+        <line x1="220" y1="205" x2="220" y2="100" stroke="var(--nucleus)" stroke-width="1.5" marker-start="url(#dot)" />
+        <line x1="220" y1="100" x2="240" y2="100" stroke="var(--nucleus)" stroke-width="1.5" />
+        <text x="245" y="104" font-size="14" fill="var(--nucleus)" text-anchor="start" class="semi">Nucleus <tspan font-size="12" font-weight="400" fill="#7F8C8D">(Genetic Controller)</tspan></text>
+
+        <!-- Mitochondria -->
+        <line x1="290" y1="330" x2="290" y2="410" stroke="var(--nucleus)" stroke-width="1.5" marker-start="url(#dot)" />
+        <line x1="290" y1="410" x2="310" y2="410" stroke="var(--nucleus)" stroke-width="1.5" />
+        <text x="315" y="414" font-size="14" fill="var(--nucleus)" text-anchor="start" class="semi">Mitochondria <tspan font-size="12" font-weight="400" fill="#7F8C8D">(Energy Conversion)</tspan></text>
+
+        <!-- Process Labels -->
+        <text x="90" y="165" font-size="12" fill="var(--membrane)" text-anchor="end" class="mono bold">IN: O₂ + Nutrients</text>
+        <line x1="95" y1="170" x2="120" y2="170" stroke="var(--membrane)" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="2,2" />
+
+        <text x="90" y="135" font-size="12" fill="var(--co2)" text-anchor="end" class="mono bold">OUT: Waste (CO₂)</text>
+        <line x1="120" y1="140" x2="95" y2="140" stroke="var(--co2)" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="2,2" />
+
+        <text x="160" y="405" font-size="12" fill="var(--protein)" text-anchor="start" class="mono bold">OUT: Synthesized Proteins</text>
+        <line x1="150" y1="380" x2="150" y2="400" stroke="var(--protein)" stroke-width="1.5" marker-end="url(#arrow)" stroke-dasharray="2,2" />
+    </g>
+
+    <!-- LEGEND -->
+    <g id="legend" transform="translate(180, 460)">
+        <rect x="0" y="0" width="440" height="30" rx="6" fill="#ffffff" stroke="#e0e0e0" stroke-width="1" />
+        
+        <circle cx="20" cy="15" r="5" fill="var(--o2)" />
+        <text x="30" y="19" font-size="11" fill="#333">Oxygen (O₂)</text>
+        
+        <circle cx="110" cy="15" r="5" fill="var(--glucose)" />
+        <text x="120" y="19" font-size="11" fill="#333">Glucose</text>
+        
+        <circle cx="185" cy="15" r="5" fill="var(--co2)" />
+        <text x="195" y="19" font-size="11" fill="#333">Waste (CO₂)</text>
+        
+        <use href="#protein-complex" x="280" y="15" transform="scale(0.8) translate(70, 4)" />
+        <text x="295" y="19" font-size="11" fill="#333">Protein</text>
+        
+        <circle cx="360" cy="15" r="5" fill="var(--mito)" />
+        <text x="370" y="19" font-size="11" fill="#333">ATP (Pulse)</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

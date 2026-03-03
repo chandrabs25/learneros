@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biomolecular Dynamics: Preparation for Cell Division</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            max-width: 100%;
+            max-height: 100vh;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+        }
+
+        text {
+            fill: #2C3E50;
+            user-select: none;
+        }
+
+        .title { font-weight: 700; font-size: 20px; }
+        .subtitle { font-weight: 400; font-size: 14px; fill: #7f8c8d; }
+        .label { font-weight: 700; font-size: 16px; text-shadow: 2px 2px 4px rgba(255,255,255,0.8), -2px -2px 4px rgba(255,255,255,0.8); }
+        .mono { font-family: 'Roboto Mono', monospace; font-size: 11px; font-weight: 700; }
+        
+        /* --- Animations --- */
+        
+        /* Phase 1: DNA Replication (0-6s / 0%-40%) */
+        @keyframes clip-slide-right {
+            0% { transform: translateX(150px); }
+            40%, 66% { transform: translateX(450px); }
+            100% { transform: translateX(450px); }
+        }
+        @keyframes clip-reveal-right {
+            0% { transform: translateX(950px); }
+            40%, 66% { transform: translateX(1250px); }
+            100% { transform: translateX(1250px); }
+        }
+        @keyframes clip-new-top {
+            0% { transform: translateX(920px); }
+            40%, 66% { transform: translateX(1220px); }
+            100% { transform: translateX(1220px); }
+        }
+        @keyframes clip-new-bot {
+            0% { transform: translateX(900px); }
+            40%, 66% { transform: translateX(1200px); }
+            100% { transform: translateX(1200px); }
+        }
+        @keyframes helicase-move {
+            0% { transform: translate(150px, 120px); }
+            40%, 66% { transform: translate(450px, 120px); }
+            100% { transform: translate(450px, 120px); }
+        }
+        @keyframes pol-top-move {
+            0% { transform: translate(120px, 65px); }
+            40%, 66% { transform: translate(420px, 65px); }
+            100% { transform: translate(420px, 65px); }
+        }
+        @keyframes pol-bot-move {
+            0% { transform: translate(100px, 175px); }
+            40%, 66% { transform: translate(400px, 175px); }
+            100% { transform: translate(400px, 175px); }
+        }
+
+        /* Phase 2: Protein Synthesis (4-10s / 26%-66%) */
+        @keyframes mrna-move {
+            0%, 25% { stroke-dashoffset: 500; opacity: 0; }
+            26% { opacity: 1; }
+            55% { stroke-dashoffset: -100; opacity: 1; }
+            56%, 100% { opacity: 0; }
+        }
+        @keyframes ribosome-pulse {
+            0%, 35% { transform: scale(1); }
+            40%, 50% { transform: scale(1.08); }
+            55%, 100% { transform: scale(1); }
+        }
+        @keyframes chain-grow-clip {
+            0%, 35% { transform: scale(0); }
+            55%, 66% { transform: scale(1); }
+            100% { transform: scale(0); }
+        }
+        @keyframes tubulin-appear {
+            0%, 50% { opacity: 0; transform: scale(0.5); }
+            55%, 66% { opacity: 1; transform: scale(1); }
+            80%, 100% { opacity: 0; transform: scale(0.8); }
+        }
+
+        /* Phase 3: Condensation (10-14s / 66%-93%) */
+        @keyframes phase1-fade {
+            0%, 66% { opacity: 1; filter: blur(0px); transform: translate(0, 0) scale(1); }
+            80% { opacity: 0; filter: blur(8px); transform: translate(150px, 100px) scale(0.6); }
+            100% { opacity: 0; }
+        }
+        @keyframes tubulin-migrate {
+            0%, 66% { opacity: 1; transform: translate(0, 0) scale(1); }
+            80% { opacity: 0; transform: translate(-180px, 30px) scale(0.6); }
+            100% { opacity: 0; }
+        }
+        @keyframes chromosome-appear {
+            0%, 70% { opacity: 0; transform: scale(0.3) rotate(-45deg); filter: blur(10px); }
+            85%, 93% { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0px); }
+            100% { opacity: 0; transform: scale(1.1) rotate(5deg); filter: blur(5px); }
+        }
+
+        /* Labels */
+        @keyframes label-s {
+            0%, 5% { opacity: 0; transform: translateY(10px); }
+            10%, 35% { opacity: 1; transform: translateY(0); }
+            40%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+        @keyframes label-g2 {
+            0%, 25% { opacity: 0; transform: translateY(10px); }
+            30%, 60% { opacity: 1; transform: translateY(0); }
+            66%, 100% { opacity: 0; transform: translateY(-10px); }
+        }
+        @keyframes label-condense {
+            0%, 65% { opacity: 0; transform: translateY(10px); }
+            70%, 93% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+    <title>Biomolecular Dynamics: Preparation for Cell Division</title>
+    <desc>Animated diagram showing DNA replication in the S phase, protein synthesis in the G2 phase, and chromatin condensation into chromosomes.</desc>
+
+    <!-- Definitions for Clip Paths and Filters -->
+    <defs>
+        <clipPath id="zipped-clip">
+            <rect x="0" y="0" width="800" height="240" style="animation: clip-slide-right 15s infinite linear;" />
+        </clipPath>
+        <clipPath id="unzipped-clip">
+            <rect x="-800" y="0" width="800" height="240" style="animation: clip-reveal-right 15s infinite linear;" />
+        </clipPath>
+        <clipPath id="new-top-clip">
+            <rect x="-800" y="0" width="800" height="120" style="animation: clip-new-top 15s infinite linear;" />
+        </clipPath>
+        <clipPath id="new-bot-clip">
+            <rect x="-800" y="120" width="800" height="120" style="animation: clip-new-bot 15s infinite linear;" />
+        </clipPath>
+        <clipPath id="chain-clip">
+            <circle cx="600" cy="330" r="150" transform-origin="600px 330px" style="animation: chain-grow-clip 15s infinite linear;" />
+        </clipPath>
+        <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+    </defs>
+
+    <!-- Backgrounds -->
+    <rect width="800" height="500" fill="#ffffff" />
+    
+    <!-- Cytoplasm Area -->
+    <path d="M 500 0 Q 550 250 500 500 L 800 500 L 800 0 Z" fill="#E8F4FD" />
+    
+    <!-- Nuclear Envelope (Porous) -->
+    <path d="M 500 0 Q 550 250 500 500" fill="none" stroke="#4A90D9" stroke-width="5" stroke-dasharray="15,10" stroke-linecap="round" />
+    <text x="530" y="480" font-size="12" fill="#4A90D9" font-weight="bold" opacity="0.7" transform="rotate(-15 530 480)">Nuclear Envelope</text>
+    <text x="20" y="480" font-size="16" fill="#2C3E50" font-weight="bold" opacity="0.3">NUCLEUS</text>
+    <text x="680" y="480" font-size="16" fill="#4A90D9" font-weight="bold" opacity="0.3">CYTOPLASM</text>
+
+    <!-- ========================================== -->
+    <!-- PHASE 1: DNA REPLICATION (S-PHASE)         -->
+    <!-- ========================================== -->
+    <g style="animation: phase1-fade 15s infinite linear; transform-origin: 250px 120px;">
+        
+        <!-- Zipped Parent DNA -->
+        <g clip-path="url(#zipped-clip)">
+            <!-- Double Helix Wave 1 -->
+            <path d="M 100 120 Q 115 90, 130 120 T 160 120 T 190 120 T 220 120 T 250 120 T 280 120 T 310 120 T 340 120 T 370 120 T 400 120 T 430 120 T 460 120 T 490 120" fill="none" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" />
+            <!-- Double Helix Wave 2 -->
+            <path d="M 100 120 Q 115 150, 130 120 T 160 120 T 190 120 T 220 120 T 250 120 T 280 120 T 310 120 T 340 120 T 370 120 T 400 120 T 430 120 T 460 120 T 490 120" fill="none" stroke="#E74C3C" stroke-width="4" stroke-linecap="round" />
+            <!-- Base Pairs -->
+            <path d="M 115 105 L 115 135 M 145 105 L 145 135 M 175 105 L 175 135 M 205 105 L 205 135 M 235 105 L 235 135 M 265 105 L 265 135 M 295 105 L 295 135 M 325 105 L 325 135 M 355 105 L 355 135 M 385 105 L 385 135 M 415 105 L 415 135 M 445 105 L 445 135 M 475 105 L 475 135" stroke="#2C3E50" stroke-width="2" opacity="0.3" />
+        </g>
+
+        <!-- Unzipped Templates -->
+        <g clip-path="url(#unzipped-clip)">
+            <!-- Top Template -->
+            <path d="M 60 60 L 490 60" fill="none" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" />
+            <path d="M 75 60 L 75 70 M 105 60 L 105 70 M 135 60 L 135 70 M 165 60 L 165 70 M 195 60 L 195 70 M 225 60 L 225 70 M 255 60 L 255 70 M 285 60 L 285 70 M 315 60 L 315 70 M 345 60 L 345 70 M 375 60 L 375 70 M 405 60 L 405 70 M 435 60 L 435 70 M 465 60 L 465 70" stroke="#2C3E50" stroke-width="2" opacity="0.3" />
+            
+            <!-- Bottom Template -->
+            <path d="M 60 180 L 490 180" fill="none" stroke="#E74C3C" stroke-width="4" stroke-linecap="round" />
+            <path d="M 75 170 L 75 180 M 105 170 L 105 180 M 135 170 L 135 180 M 165 170 L 165 180 M 195 170 L 195 180 M 225 170 L 225 180 M 255 170 L 255 180 M 285 170 L 285 180 M 315 170 L 315 180 M 345 170 L 345 180 M 375 170 L 375 180 M 405 170 L 405 180 M 435 170 L 435 180 M 465 170 L 465 180" stroke="#2C3E50" stroke-width="2" opacity="0.3" />
+        </g>
+
+        <!-- Newly Synthesized Strands -->
+        <g clip-path="url(#new-top-clip)">
+            <path d="M 60 70 L 490 70" fill="none" stroke="#E74C3C" stroke-width="4" stroke-linecap="round" stroke-dasharray="8,4" />
+        </g>
+        <g clip-path="url(#new-bot-clip)">
+            <path d="M 60 170 L 490 170" fill="none" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" stroke-dasharray="8,4" />
+        </g>
+
+        <!-- Enzymes -->
+        <!-- Helicase -->
+        <g style="animation: helicase-move 15s infinite linear;">
+            <polygon points="-25,-65 -25,65 35,0" fill="#98D8C8" stroke="#76C7B3" stroke-width="2" filter="url(#glow)" />
+            <text x="-15" y="-75" class="mono" fill="#2C3E50">Helicase</text>
+        </g>
+
+        <!-- DNA Polymerase (Leading/Top) -->
+        <g style="animation: pol-top-move 15s infinite linear;">
+            <circle cx="0" cy="0" r="16" fill="#F39C12" stroke="#E67E22" stroke-width="2" filter="url(#glow)" />
+            <path d="M -8 -5 Q 0 -10 8 -5 Q 12 5 0 10 Q -12 5 -8 -5 Z" fill="#fff" opacity="0.4" />
+            <text x="-25" y="-22" class="mono" fill="#2C3E50">DNA Pol</text>
+        </g>
+
+        <!-- DNA Polymerase (Lagging/Bottom) -->
+        <g style="animation: pol-bot-move 15s infinite linear;">
+            <circle cx="0" cy="0" r="16" fill="#F39C12" stroke="#E67E22" stroke-width="2" filter="url(#glow)" />
+            <path d="M -8 -5 Q 0 -10 8 -5 Q 12 5 0 10 Q -12 5 -8 -5 Z" fill="#fff" opacity="0.4" />
+            <text x="-25" y="32" class="mono" fill="#2C3E50">DNA Pol</text>
+        </g>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- PHASE 2: PROTEIN SYNTHESIS (G2-PHASE)      -->
+    <!-- ========================================== -->
+    
+    <!-- mRNA Strand -->
+    <path d="M 350 250 Q 365 230, 380 250 T 410 250 T 440 250 C 460 250, 480 350, 500 350 Q 515 330, 530 350 T 560 350 T 590 350 T 620 350 T 650 350 T 680 350" 
+          fill="none" stroke="#FFA07A" stroke-width="5" stroke-linecap="round" 
+          stroke-dasharray="80 500" style="animation: mrna-move 15s infinite linear;" filter="url(#glow)" />
+    
+    <!-- Ribosome Complex -->
+    <g transform="translate(600, 350)" style="animation: ribosome-pulse 15s infinite linear; transform-origin: 600px 350px;">
+        <!-- Large Subunit -->
+        <path d="M -35 -5 C -35 -45, 35 -45, 35 -5 Z" fill="#2C3E50" />
+        <!-- Small Subunit -->
+        <path d="M -25 5 C -25 30, 25 30, 25 5 Z" fill="#34495E" />
+        <text x="-30" y="45" class="mono" fill="#2C3E50">Ribosome</text>
+        <text x="-65" y="-15" class="mono" fill="#FFA07A" style="animation: label-g2 15s infinite linear;">mRNA</text>
+    </g>
+
+    <!-- Growing Protein Chain (Nascent Tubulin) -->
+    <g clip-path="url(#chain-clip)">
+        <path d="M 600 330 Q 570 290, 610 250 T 590 190 T 630 140" 
+              fill="none" stroke="#76C7B3" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 18" />
+    </g>
+
+    <!-- Folded Globular Protein (Tubulin) -->
+    <g style="animation: tubulin-appear 15s infinite linear; transform-origin: 610px 180px;">
+        <g style="animation: tubulin-migrate 15s infinite linear; transform-origin: 610px 180px;">
+            <circle cx="610" cy="180" r="22" fill="#98D8C8" stroke="#76C7B3" stroke-width="2" filter="url(#glow)" />
+            <circle cx="595" cy="165" r="16" fill="#76C7B3" />
+            <circle cx="625" cy="170" r="14" fill="#76C7B3" />
+            <circle cx="605" cy="195" r="12" fill="#76C7B3" />
+            <circle cx="620" cy="190" r="10" fill="#98D8C8" />
+            <text x="645" y="185" class="mono" fill="#2C3E50">Tubulin (Spindle Precursor)</text>
+        </g>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- PHASE 3: CHROMATIN CONDENSATION            -->
+    <!-- ========================================== -->
+    <g style="animation: chromosome-appear 15s infinite linear; transform-origin: 400px 250px;">
+        <!-- Sister Chromatid 1 -->
+        <g transform="rotate(35 400 250)">
+            <rect x="385" y="150" width="30" height="200" rx="15" fill="#FF6B6B" stroke="#E74C3C" stroke-width="2" filter="url(#glow)" />
+            <!-- Banding -->
+            <line x1="385" y1="180" x2="415" y2="180" stroke="#E74C3C" stroke-width="4" />
+            <line x1="385" y1="200" x2="415" y2="200" stroke="#E74C3C" stroke-width="4" />
+            <line x1="385" y1="300" x2="415" y2="300" stroke="#E74C3C" stroke-width="4" />
+            <line x1="385" y1="320" x2="415" y2="320" stroke="#E74C3C" stroke-width="4" />
+        </g>
+        <!-- Sister Chromatid 2 -->
+        <g transform="rotate(-35 400 250)">
+            <rect x="385" y="150" width="30" height="200" rx="15" fill="#FF6B6B" stroke="#E74C3C" stroke-width="2" filter="url(#glow)" />
+            <!-- Banding -->
+            <line x1="385" y1="180" x2="415" y2="180" stroke="#E74C3C" stroke-width="4" />
+            <line x1="385" y1="200" x2="415" y2="200" stroke="#E74C3C" stroke-width="4" />
+            <line x1="385" y1="300" x2="415" y2="300" stroke="#E74C3C" stroke-width="4" />
+            <line x1="385" y1="320" x2="415" y2="320" stroke="#E74C3C" stroke-width="4" />
+        </g>
+        <!-- Centromere -->
+        <circle cx="400" cy="250" r="14" fill="#2C3E50" stroke="#ffffff" stroke-width="2" />
+        <text x="440" y="255" class="mono" fill="#2C3E50" font-size="14">Sister Chromatids</text>
+    </g>
+
+    <!-- ========================================== -->
+    <!-- UI, TITLES, AND LEGEND                     -->
+    <!-- ========================================== -->
+    
+    <!-- Title Card -->
+    <text x="20" y="35" class="title">Biomolecular Dynamics: Preparation for Cell Division</text>
+    <text x="20" y="55" class="subtitle">Synthesis &amp; Organization during S and G2 Phases</text>
+
+    <!-- Dynamic Process Labels -->
+    <text x="180" y="220" class="label" fill="#E74C3C" style="animation: label-s 15s infinite linear;">DNA Replication (S-Phase)</text>
+    <text x="550" y="420" class="label" fill="#98D8C8" style="animation: label-g2 15s infinite linear;">Protein Synthesis (G2-Phase)</text>
+    <text x="300" y="120" class="label" fill="#FF6B6B" style="animation: label-condense 15s infinite linear;">Chromatin Condensation (Prophase Prep)</text>
+
+    <!-- Legend -->
+    <g transform="translate(20, 390)">
+        <rect x="0" y="0" width="180" height="90" rx="8" fill="#ffffff" stroke="#2C3E50" stroke-width="1" opacity="0.9" />
+        <text x="10" y="20" font-size="12" font-weight="bold" fill="#2C3E50">Legend</text>
+        
+        <circle cx="15" cy="35" r="5" fill="#FF6B6B" />
+        <text x="30" y="39" font-size="11" fill="#2C3E50">DNA / Chromosomes</text>
+        
+        <circle cx="15" cy="55" r="5" fill="#FFA07A" />
+        <text x="30" y="59" font-size="11" fill="#2C3E50">mRNA Strand</text>
+        
+        <circle cx="15" cy="75" r="5" fill="#98D8C8" />
+        <text x="30" y="79" font-size="11" fill="#2C3E50">Proteins / Enzymes</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

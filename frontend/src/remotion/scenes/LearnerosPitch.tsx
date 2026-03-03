@@ -1,13 +1,8 @@
 import { ThreeCanvas } from "@remotion/three";
-import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Sequence, interpolate, spring, useCurrentFrame, useVideoConfig, Easing } from "remotion";
 import { ThreeDCenteredScenes } from "./ThreeDEnvironment";
-import { AITutorScene } from "./AITutorScene";
 import { AtlasScene } from "./AtlasScene";
-import { InsightsDashboardScene } from "./InsightsDashboardScene";
-import { KnowledgeGraphScene, KnowledgeGraphWorkScene } from "./KnowledgeGraphScene";
 import { OpeningHubScene } from "./OpeningHubScene";
-import { PhysicsChapterScene } from "./PhysicsChapterScene";
-import { SubsectionViewerScene } from "./SubsectionViewerScene";
 
 const StoryCaption = ({ title, subtitle }: { title: string; subtitle: string }) => {
   const frame = useCurrentFrame();
@@ -68,90 +63,84 @@ const StoryCaption = ({ title, subtitle }: { title: string; subtitle: string }) 
   );
 };
 
-const LaptopStage = ({ children, opacity }: { children: React.ReactNode, opacity: number }) => {
-  const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
+interface VRStageProps {
+  children: React.ReactNode;
+  opacity: number;
+  containerOpacity?: number;
+  globalFrame?: number;
+  totalDuration?: number;
+  disableEnterAnimation?: boolean;
+  flatFrameStart?: number;
+  flatFrameEnd?: number;
+  expandFrameStart?: number;
+}
+
+export const VRStage = ({
+  children,
+  opacity = 1,
+  containerOpacity = 1,
+  globalFrame,
+  totalDuration,
+  disableEnterAnimation,
+  flatFrameStart,
+  flatFrameEnd,
+  expandFrameStart,
+}: VRStageProps) => {
+  const localFrame = useCurrentFrame();
+  const { fps, durationInFrames: localDuration } = useVideoConfig();
 
   const inAnim = spring({
-    frame,
-    fps,
-    config: { damping: 200 },
-    durationInFrames: Math.round(0.65 * fps),
-  });
-
-  const progress = interpolate(frame, [0, durationInFrames], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
-
-  const screenTilt = interpolate(progress, [0, 1], [-8, 0]);
-  const moveX = interpolate(progress, [0, 1], [0, 0]);
-  const moveY = interpolate(progress, [0, 1], [24, -10]);
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: 200,
-        right: 200,
-        top: 150,
-        bottom: 120,
-        transform: `translate(${moveX}px, ${moveY}px) scale(${interpolate(inAnim, [0, 1], [0.95, 0.88])})`,
-        opacity: interpolate(inAnim, [0, 1], [0, opacity]),
-        transformStyle: "preserve-3d",
-        perspective: 2400,
-        pointerEvents: "none"
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: 22,
-          transform: `perspective(2400px) rotateX(${screenTilt}deg) translateZ(-40px)`,
-          transformOrigin: "50% 100%",
-        }}
-      >
-        <div
-          style={{
-            position: "absolute",
-            inset: 22,
-            borderRadius: 18,
-            overflow: "hidden",
-            backgroundColor: "#000",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <div style={{ width: 1920, height: 1080, transform: "scale(0.8)", transformOrigin: "center" }}>
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const VRStage = ({ children, opacity }: { children: React.ReactNode, opacity: number }) => {
-  const frame = useCurrentFrame();
-  const { fps, durationInFrames } = useVideoConfig();
-
-  const inAnim = spring({
-    frame,
+    frame: localFrame, // Keep enter-animation relative to scene start
     fps,
     config: { damping: 190 },
     durationInFrames: Math.round(0.6 * fps),
   });
 
-  const progress = interpolate(frame, [0, durationInFrames], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-  });
+  const activeFrame = globalFrame !== undefined ? globalFrame : localFrame;
+  const t = activeFrame / fps;
 
-  const floatY = interpolate(progress, [0, 1], [12, -16]);
-  const rotateY = interpolate(progress, [0, 1], [-10, 8]);
-  const rotateX = interpolate(progress, [0, 1], [7, 3]);
+  // Continuous floating and rotating using cosine waves mapped to elapsed time in seconds
+  // Start identical to progress=0: floatY=12, rotateY=-10, rotateX=7
+  const baseFloatY = Math.cos(t * 0.8) * 14 - 2;
+  const baseRotateY = -Math.cos(t * 0.9) * 9 - 1;
+  const baseRotateX = Math.cos(t * 1.0) * 2 + 5;
+
+  // Flatten the rotation and float if flat frames are provided
+  let floatY = baseFloatY;
+  let rotateY = baseRotateY;
+  let rotateX = baseRotateX;
+  if (flatFrameStart !== undefined && flatFrameEnd !== undefined) {
+    const flattenProgress = interpolate(activeFrame, [flatFrameStart, flatFrameEnd], [0, 1], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.inOut(Easing.cubic)
+    });
+    floatY = interpolate(flattenProgress, [0, 1], [baseFloatY, 0]);
+    rotateY = interpolate(flattenProgress, [0, 1], [baseRotateY, 0]);
+    rotateX = interpolate(flattenProgress, [0, 1], [baseRotateX, 0]);
+  }
+
+  // Expand the stage to full screen
+  let scale = 0.8;
+  let insets = { left: 192, right: 192, top: 108, bottom: 108 };
+  let borderRadiusOuter = 28;
+  let borderRadiusInner = 36;
+
+  if (expandFrameStart !== undefined) {
+    const expandProgress = interpolate(activeFrame, [expandFrameStart, expandFrameStart + fps * 1.5], [0, 1], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+      easing: Easing.inOut(Easing.cubic)
+    });
+
+    scale = interpolate(expandProgress, [0, 1], [0.8, 1]);
+    insets.left = interpolate(expandProgress, [0, 1], [192, 0]);
+    insets.right = interpolate(expandProgress, [0, 1], [192, 0]);
+    insets.top = interpolate(expandProgress, [0, 1], [108, 0]);
+    insets.bottom = interpolate(expandProgress, [0, 1], [108, 0]);
+    borderRadiusOuter = interpolate(expandProgress, [0, 1], [28, 0]);
+    borderRadiusInner = interpolate(expandProgress, [0, 1], [36, 0]);
+  }
 
   return (
     <div
@@ -160,30 +149,39 @@ const VRStage = ({ children, opacity }: { children: React.ReactNode, opacity: nu
         inset: 0,
         transformStyle: "preserve-3d",
         perspective: 2200,
-        opacity: interpolate(inAnim, [0, 1], [0, opacity]),
+        opacity: disableEnterAnimation ? opacity : interpolate(inAnim, [0, 1], [0, opacity]),
         pointerEvents: "none"
       }}
     >
       <div
         style={{
           position: "absolute",
-          left: 170,
-          right: 170,
-          top: 116,
-          bottom: 120,
-          borderRadius: 28,
-          overflow: "hidden",
+          left: insets.left,
+          right: insets.right,
+          top: insets.top,
+          bottom: insets.bottom,
+          borderRadius: borderRadiusOuter,
+          overflow: expandFrameStart !== undefined && activeFrame >= expandFrameStart ? "visible" : "hidden",
           transform: `translateY(${floatY}px) rotateY(${rotateY}deg) rotateX(${rotateX}deg)`,
-          border: "1px solid rgba(172,234,255,0.4)",
-          background: "linear-gradient(145deg, rgba(225,248,255,0.2), rgba(150,208,233,0.08))",
-          boxShadow: "0 36px 80px rgba(0,0,0,0.45)",
-          backdropFilter: "blur(10px)",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <div style={{ width: 1920, height: 1080, transform: "scale(0.8)", transformOrigin: "center" }}>
+        <div
+          style={{
+            width: 1920,
+            height: 1080,
+            transform: `scale(${scale})`,
+            transformOrigin: "center",
+            flexShrink: 0,
+            zIndex: 10,
+            backgroundColor: "#ffffff",
+            borderRadius: borderRadiusInner,
+            boxShadow: "0 40px 100px -20px rgba(15,23,42,0.6), 0 20px 40px -20px rgba(15,23,42,0.3)",
+            overflow: expandFrameStart !== undefined && activeFrame >= expandFrameStart ? "visible" : "hidden"
+          }}
+        >
           {children}
         </div>
       </div>
@@ -195,29 +193,18 @@ export const LearnerosPitch = () => {
   const frame = useCurrentFrame();
   const { fps, width, height } = useVideoConfig();
 
-  const totalDuration = 31 * fps;
+  const totalDuration = Math.round(27.5 * fps);
   const barsIn = interpolate(frame, [0, 0.6 * fps], [0, 1], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   const firstSceneStart = 0;
-  const secondSceneStart = Math.round(3.0 * fps);
-  const thirdSceneStart = Math.round(5.1 * fps);
-  const fourthSceneStart = Math.round(8.2 * fps);
-  const fifthSceneStart = Math.round(11.3 * fps);
-  const sixthSceneStart = Math.round(14.6 * fps);
-  const seventhSceneStart = Math.round(18.1 * fps);
-  const eighthSceneStart = Math.round(25.2 * fps);
+  const secondSceneStart = Math.round(2.26 * fps + 25);
 
-  const firstSceneDuration = secondSceneStart - firstSceneStart;
-  const secondSceneDuration = thirdSceneStart - secondSceneStart;
-  const thirdSceneDuration = fourthSceneStart - thirdSceneStart;
-  const fourthSceneDuration = fifthSceneStart - fourthSceneStart;
-  const fifthSceneDuration = sixthSceneStart - fifthSceneStart;
-  const sixthSceneDuration = seventhSceneStart - sixthSceneStart;
-  const seventhSceneDuration = eighthSceneStart - seventhSceneStart;
-  const eighthSceneDuration = totalDuration - eighthSceneStart;
+  // First scene extends past the second scene start to create an overlap during the card zoom (2.26s to 3.2s)
+  const firstSceneDuration = Math.round(3.2 * fps) - firstSceneStart;
+  const secondSceneDuration = totalDuration - secondSceneStart;
 
   const createFadeOut = (startSec: number, endSec: number) =>
     interpolate(frame, [startSec * fps, endSec * fps], [1, 0], {
@@ -225,16 +212,19 @@ export const LearnerosPitch = () => {
       extrapolateRight: "clamp",
     });
 
-  const openingFadeOut = createFadeOut(2.7, 3.0);
-  const atlasFadeOut = createFadeOut(4.8, 5.1);
-  const chapterFadeOut = createFadeOut(7.9, 8.2);
-  const subsectionFadeOut = createFadeOut(11.0, 11.3);
-  const graphFadeOut = createFadeOut(14.3, 14.6);
-  const workGraphFadeOut = createFadeOut(17.8, 18.1);
-  const insightsFadeOut = createFadeOut(24.9, 25.2);
+  const openingFadeOut = createFadeOut(3.0, 3.2);
+  const openingBrighten = interpolate(frame, [3.0 * fps, 3.2 * fps], [1, 5], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  const swipeFade = interpolate(frame, [1.1 * fps, 1.45 * fps], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
   return (
-    <AbsoluteFill style={{ backgroundColor: "#020611" }}>
+    <AbsoluteFill style={{ backgroundColor: "#ffffff" }}>
       {/* BACKGROUND: True WebGL 3D Room and Laptop mesh */}
       <ThreeCanvas width={width} height={height}>
         <ThreeDCenteredScenes />
@@ -243,107 +233,41 @@ export const LearnerosPitch = () => {
       {/* FOREGROUND: HTML DOM nodes projected using CSS 3D */}
 
       <Sequence from={0} durationInFrames={firstSceneDuration}>
-        <LaptopStage opacity={openingFadeOut}>
-          <OpeningHubScene />
-        </LaptopStage>
-        <StoryCaption
-          title="Start with intent"
-          subtitle="Grade 10 transitions to Grade 11, then the card is clicked to begin."
-        />
+        <AbsoluteFill style={{ filter: `brightness(${openingBrighten})` }}>
+          <VRStage opacity={1} containerOpacity={swipeFade} globalFrame={frame} totalDuration={totalDuration}>
+            <OpeningHubScene />
+          </VRStage>
+        </AbsoluteFill>
       </Sequence>
 
       <Sequence from={secondSceneStart} durationInFrames={secondSceneDuration}>
-        <VRStage opacity={atlasFadeOut}>
+        {/* Flatten the stage as the card moves to the left (3.2s to 4.7s relative to secondSceneStart) */}
+        {/* Expand the stage to fullscreen at 6.0s (3.0s relative to secondSceneStart) */}
+        <VRStage
+          opacity={1}
+          globalFrame={frame}
+          totalDuration={totalDuration}
+          disableEnterAnimation={true}
+          flatFrameStart={secondSceneStart + Math.round(3.0 * fps)}
+          flatFrameEnd={secondSceneStart + Math.round(4.5 * fps)}
+          expandFrameStart={secondSceneStart + Math.round(3.0 * fps)}
+        >
           <AtlasScene />
         </VRStage>
-        <StoryCaption
-          title="Choose the learning domain"
-          subtitle="The camera pans out: Atlas now appears floating in 3D space."
-        />
       </Sequence>
 
-      <Sequence from={thirdSceneStart} durationInFrames={thirdSceneDuration}>
-        <VRStage opacity={chapterFadeOut}>
-          <PhysicsChapterScene />
-        </VRStage>
-        <StoryCaption
-          title="Focus on a chapter"
-          subtitle="Work, Energy and Power is selected, then Explore is pressed to dive deeper."
-        />
-      </Sequence>
-
-      <Sequence from={fourthSceneStart} durationInFrames={fourthSceneDuration}>
-        <VRStage opacity={subsectionFadeOut}>
-          <SubsectionViewerScene />
-        </VRStage>
-        <StoryCaption
-          title="Pinpoint understanding"
-          subtitle="The subsection opens with misconception, partial understanding, and competency insights."
-        />
-      </Sequence>
-
-      <Sequence from={fifthSceneStart} durationInFrames={fifthSceneDuration}>
-        <VRStage opacity={graphFadeOut}>
-          <KnowledgeGraphScene />
-        </VRStage>
-        <StoryCaption
-          title="Visualize concept structure"
-          subtitle="A circular concept graph around the chapter node exposes prerequisite relationships."
-        />
-      </Sequence>
-
-      <Sequence from={sixthSceneStart} durationInFrames={sixthSceneDuration}>
-        <VRStage opacity={workGraphFadeOut}>
-          <KnowledgeGraphWorkScene />
-        </VRStage>
-        <StoryCaption
-          title="Interrogate a concept node"
-          subtitle="Work is clicked, blinks as selected, and diagnostics update with coherent counts."
-        />
-      </Sequence>
-
-      <Sequence from={seventhSceneStart} durationInFrames={seventhSceneDuration}>
-        <VRStage opacity={insightsFadeOut}>
-          <InsightsDashboardScene />
-        </VRStage>
-        <StoryCaption
-          title="Turn insight into intervention"
-          subtitle="Dashboard scrolls rapidly; vector explain opens an explanation card before tutor handoff."
-        />
-      </Sequence>
-
-      <Sequence from={eighthSceneStart} durationInFrames={eighthSceneDuration}>
-        <VRStage opacity={1}>
-          <AITutorScene />
-        </VRStage>
-        <StoryCaption
-          title="Close the loop with AI tutoring"
-          subtitle="LearnerOS Tutor responds with personalized guidance grounded in matched insights and concepts."
-        />
-      </Sequence>
-
-      <div
+      {/* 0.5s fade to black at the very end of the video */}
+      <AbsoluteFill
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: interpolate(barsIn, [0, 1], [0, 42]),
-          backgroundColor: "#02040a",
-          zIndex: 200,
+          backgroundColor: "#000000",
+          opacity: interpolate(
+            frame,
+            [totalDuration - Math.round(0.5 * fps), totalDuration - 1],
+            [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+          ),
           pointerEvents: "none",
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: interpolate(barsIn, [0, 1], [0, 42]),
-          backgroundColor: "#02040a",
-          zIndex: 200,
-          pointerEvents: "none",
+          zIndex: 9999,
         }}
       />
     </AbsoluteFill>

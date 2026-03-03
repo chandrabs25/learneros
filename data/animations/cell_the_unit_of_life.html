@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biological Hierarchy: From Cell to Organ System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- Animations --- */
+        
+        /* Nucleus Pulse */
+        @keyframes pulse-nucleus {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .nucleus-pulse {
+            animation: pulse-nucleus 2s infinite ease-in-out;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        /* Peristalsis (Stomach Pulse) */
+        @keyframes peristalsis {
+            0%, 100% { transform: scaleY(1) scaleX(1); }
+            50% { transform: scaleY(0.96) scaleX(1.03); }
+        }
+        .peristalsis {
+            animation: peristalsis 1.5s infinite ease-in-out;
+            transform-origin: center;
+            transform-box: fill-box;
+        }
+
+        /* Master Timeline: 12s Loop */
+        
+        /* Cell 0 (Center Base) */
+        @keyframes cell-0-fade {
+            0%, 20% { opacity: 1; }
+            25%, 45% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+        .anim-cell-0 { animation: cell-0-fade 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Cell Clones (Tissue Formation) */
+        @keyframes cell-1 { 0%, 20% { opacity: 0; transform: translate(400px, 260px); } 25%, 45% { opacity: 1; transform: translate(400px, 185px); } 50%, 100% { opacity: 0; transform: translate(400px, 185px); } }
+        @keyframes cell-2 { 0%, 20% { opacity: 0; transform: translate(400px, 260px); } 25%, 45% { opacity: 1; transform: translate(465px, 222px); } 50%, 100% { opacity: 0; transform: translate(465px, 222px); } }
+        @keyframes cell-3 { 0%, 20% { opacity: 0; transform: translate(400px, 260px); } 25%, 45% { opacity: 1; transform: translate(465px, 298px); } 50%, 100% { opacity: 0; transform: translate(465px, 298px); } }
+        @keyframes cell-4 { 0%, 20% { opacity: 0; transform: translate(400px, 260px); } 25%, 45% { opacity: 1; transform: translate(400px, 335px); } 50%, 100% { opacity: 0; transform: translate(400px, 335px); } }
+        @keyframes cell-5 { 0%, 20% { opacity: 0; transform: translate(400px, 260px); } 25%, 45% { opacity: 1; transform: translate(335px, 298px); } 50%, 100% { opacity: 0; transform: translate(335px, 298px); } }
+        @keyframes cell-6 { 0%, 20% { opacity: 0; transform: translate(400px, 260px); } 25%, 45% { opacity: 1; transform: translate(335px, 222px); } 50%, 100% { opacity: 0; transform: translate(335px, 222px); } }
+        
+        .anim-cell-1 { animation: cell-1 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .anim-cell-2 { animation: cell-2 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .anim-cell-3 { animation: cell-3 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .anim-cell-4 { animation: cell-4 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .anim-cell-5 { animation: cell-5 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .anim-cell-6 { animation: cell-6 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Intercellular Matrix */
+        @keyframes matrix-fade {
+            0%, 20% { opacity: 0; }
+            25%, 45% { opacity: 0.2; }
+            50%, 100% { opacity: 0; }
+        }
+        .anim-matrix { animation: matrix-fade 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Organ (Stomach) Morph & Move */
+        @keyframes organ-morph {
+            0%, 45% { opacity: 0; transform: translate(400px, 260px) scale(1.8); }
+            50%, 70% { opacity: 1; transform: translate(400px, 260px) scale(1.8); }
+            75%, 96% { opacity: 1; transform: translate(425px, 230px) scale(0.6); }
+            98%, 100% { opacity: 0; transform: translate(425px, 230px) scale(0.6); }
+        }
+        .anim-organ { animation: organ-morph 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Organ System (Torso & Tract) */
+        @keyframes system-fade {
+            0%, 70% { opacity: 0; }
+            75%, 96% { opacity: 1; }
+            98%, 100% { opacity: 0; }
+        }
+        .anim-system { animation: system-fade 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Coordination Signal */
+        @keyframes signal-move {
+            0%, 75% { opacity: 0; transform: translate(400px, 90px); }
+            78% { opacity: 1; transform: translate(400px, 90px); }
+            83% { opacity: 1; transform: translate(415px, 200px); }
+            84% { opacity: 0; transform: translate(415px, 200px); }
+            86% { opacity: 1; transform: translate(400px, 90px); }
+            91% { opacity: 1; transform: translate(415px, 200px); }
+            92%, 100% { opacity: 0; transform: translate(415px, 200px); }
+        }
+        .anim-signal { animation: signal-move 12s infinite linear; }
+
+        /* Dynamic Labels */
+        @keyframes label-cell { 0%, 23% { opacity: 1; } 25%, 100% { opacity: 0; } }
+        @keyframes label-tissue { 0%, 23% { opacity: 0; } 25%, 48% { opacity: 1; } 50%, 100% { opacity: 0; } }
+        @keyframes label-organ { 0%, 48% { opacity: 0; } 50%, 73% { opacity: 1; } 75%, 100% { opacity: 0; } }
+        @keyframes label-system { 0%, 73% { opacity: 0; } 75%, 96% { opacity: 1; } 98%, 100% { opacity: 0; } }
+        
+        .label-cell { animation: label-cell 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .label-tissue { animation: label-tissue 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .label-organ { animation: label-organ 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+        .label-system { animation: label-system 12s infinite cubic-bezier(0.4, 0, 0.2, 1); }
+
+        /* Progress Flow Indicators */
+        @keyframes prog-cell { 0%, 24% { fill: #2C3E50; } 25%, 100% { fill: #BDC3C7; } }
+        @keyframes prog-tissue { 0%, 24% { fill: #BDC3C7; } 25%, 49% { fill: #2C3E50; } 50%, 100% { fill: #BDC3C7; } }
+        @keyframes prog-organ { 0%, 49% { fill: #BDC3C7; } 50%, 74% { fill: #2C3E50; } 75%, 100% { fill: #BDC3C7; } }
+        @keyframes prog-system { 0%, 74% { fill: #BDC3C7; } 75%, 96% { fill: #2C3E50; } 98%, 100% { fill: #BDC3C7; } }
+        
+        @keyframes prog-arrow-1 { 0%, 24% { stroke: #BDC3C7; } 25%, 96% { stroke: #2C3E50; } 98%, 100% { stroke: #BDC3C7; } }
+        @keyframes prog-arrow-2 { 0%, 49% { stroke: #BDC3C7; } 50%, 96% { stroke: #2C3E50; } 98%, 100% { stroke: #BDC3C7; } }
+        @keyframes prog-arrow-3 { 0%, 74% { stroke: #BDC3C7; } 75%, 96% { stroke: #2C3E50; } 98%, 100% { stroke: #BDC3C7; } }
+
+        .prog-cell { animation: prog-cell 12s infinite; }
+        .prog-tissue { animation: prog-tissue 12s infinite; }
+        .prog-organ { animation: prog-organ 12s infinite; }
+        .prog-system { animation: prog-system 12s infinite; }
+        .prog-arrow-1 { animation: prog-arrow-1 12s infinite; }
+        .prog-arrow-2 { animation: prog-arrow-2 12s infinite; }
+        .prog-arrow-3 { animation: prog-arrow-3 12s infinite; }
+
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Animated diagram showing biological hierarchy from cell to organ system">
+        <title>Biological Hierarchy: From Cell to Organ System</title>
+        <desc>An animation demonstrating how a single cell multiplies to form tissue, which organizes into an organ (stomach), and finally integrates into an organ system (digestive system).</desc>
+
+        <!-- Defs for reusable components -->
+        <defs>
+            <!-- Single Generalized Animal Cell -->
+            <g id="single-cell">
+                <!-- Cell Membrane & Cytoplasm -->
+                <circle cx="0" cy="0" r="35" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2"/>
+                <!-- Nucleus (~12% of volume) -->
+                <circle cx="0" cy="0" r="12" fill="#2C3E50" class="nucleus-pulse"/>
+                <!-- Mitochondria 1 -->
+                <g transform="translate(16, 14) rotate(45)">
+                    <ellipse cx="0" cy="0" rx="7" ry="4" fill="#E74C3C"/>
+                    <path d="M-4,0 L-2,-2 L0,2 L2,-2 L4,0" stroke="#fff" stroke-width="1" fill="none"/>
+                </g>
+                <!-- Mitochondria 2 -->
+                <g transform="translate(-16, -14) rotate(-45)">
+                    <ellipse cx="0" cy="0" rx="7" ry="4" fill="#E74C3C"/>
+                    <path d="M-4,0 L-2,-2 L0,2 L2,-2 L4,0" stroke="#fff" stroke-width="1" fill="none"/>
+                </g>
+                <!-- Mitochondria 3 -->
+                <g transform="translate(-18, 10) rotate(15)">
+                    <ellipse cx="0" cy="0" rx="6" ry="3.5" fill="#E74C3C"/>
+                    <path d="M-3,0 L-1.5,-1.5 L0,1.5 L1.5,-1.5 L3,0" stroke="#fff" stroke-width="0.8" fill="none"/>
+                </g>
+            </g>
+        </defs>
+
+        <!-- Background -->
+        <rect width="100%" height="100%" fill="#ffffff" />
+
+        <!-- Title -->
+        <text x="400" y="40" font-size="24" font-weight="700" fill="#2C3E50" text-anchor="middle">Biological Hierarchy: Cell to Organ System</text>
+
+        <!-- Progress Flow Indicators -->
+        <g font-size="16" font-weight="600" text-anchor="middle">
+            <text x="150" y="80" class="prog-cell">Cell</text>
+            <path d="M 210,75 L 270,75 M 260,65 L 270,75 L 260,85" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="prog-arrow-1"/>
+            
+            <text x="330" y="80" class="prog-tissue">Tissue</text>
+            <path d="M 390,75 L 450,75 M 440,65 L 450,75 L 440,85" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="prog-arrow-2"/>
+            
+            <text x="510" y="80" class="prog-organ">Organ</text>
+            <path d="M 570,75 L 630,75 M 620,65 L 630,75 L 620,85" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" class="prog-arrow-3"/>
+            
+            <text x="710" y="80" class="prog-system">Organ System</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(620, 110)">
+            <rect x="0" y="0" width="160" height="110" fill="#f8f9fa" stroke="#E0E0E0" rx="6"/>
+            <text x="80" y="20" font-size="12" font-weight="600" fill="#2C3E50" text-anchor="middle">Key</text>
+            
+            <circle cx="15" cy="35" r="5" fill="#4A90D9"/>
+            <text x="30" y="39" font-size="11" fill="#2C3E50">Cell Membrane</text>
+            
+            <circle cx="15" cy="55" r="5" fill="#2C3E50"/>
+            <text x="30" y="59" font-size="11" fill="#2C3E50">Nucleus</text>
+            
+            <circle cx="15" cy="75" r="5" fill="#E74C3C"/>
+            <text x="30" y="79" font-size="11" fill="#2C3E50">Mitochondria</text>
+            
+            <circle cx="15" cy="95" r="5" fill="#F39C12"/>
+            <text x="30" y="99" font-size="11" fill="#2C3E50">Animal Tissue</text>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 4: ORGAN SYSTEM (Torso & Tract)      -->
+        <!-- ========================================== -->
+        <g class="anim-system">
+            <!-- Torso Silhouette -->
+            <path d="M 350, 60 C 350, 20 450, 20 450, 60 C 450, 80 430, 90 430, 110 L 440, 140 C 460, 160 470, 210 470, 310 L 460, 410 L 340, 410 L 330, 310 C 330, 210 340, 160 360, 140 L 370, 110 C 370, 90 350, 80 350, 60 Z" fill="#E0E0E0" stroke="#BDC3C7" stroke-width="2"/>
+            
+            <!-- Esophagus -->
+            <path d="M 400, 90 C 400, 140 410, 180 415, 200" stroke="#E67E22" stroke-width="12" fill="none" stroke-linecap="round"/>
+            
+            <!-- Large Intestine -->
+            <path d="M 360, 350 L 360, 270 C 360, 260 370, 260 380, 260 L 430, 260 C 440, 260 440, 270 440, 280 L 440, 350" stroke="#D35400" stroke-width="16" fill="none" stroke-linejoin="round"/>
+            
+            <!-- Small Intestine -->
+            <path d="M 425, 260 Q 380, 280 400, 300 T 420, 320 T 380, 340 T 400, 360" stroke="#F39C12" stroke-width="10" fill="none" stroke-linecap="round"/>
+        </g>
+
+        <!-- Coordination Signal (Travels down esophagus) -->
+        <circle cx="0" cy="0" r="4" fill="#FFFFFF" class="anim-signal" filter="drop-shadow(0 0 2px rgba(0,0,0,0.5))"/>
+
+        <!-- ========================================== -->
+        <!-- STAGE 3: ORGAN (Stomach)                   -->
+        <!-- ========================================== -->
+        <g class="anim-organ">
+            <g class="peristalsis">
+                <!-- Outer Muscularis Layer -->
+                <path d="M -10,-50 C -10,-30 -20,0 -20,30 C -20,50 10,60 30,40 C 50,10 40,-40 20,-50 C 10,-55 0,-55 -10,-50 Z" fill="#F39C12" stroke="#D68910" stroke-width="2"/>
+                <!-- Inner Mucosa Layer -->
+                <path d="M -3,-45 C -3,-25 -12,0 -12,25 C -12,40 10,50 22,35 C 38,10 30,-35 15,-42 C 8,-45 0,-45 -3,-45 Z" fill="#F8C471"/>
+                <!-- Rugae (Internal Folds) -->
+                <path d="M -5,0 Q 5,10 15,-5 M -5,15 Q 8,25 20,5 M 0,30 Q 10,35 22,18" stroke="#E67E22" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+            </g>
+        </g>
+
+        <!-- ========================================== -->
+        <!-- STAGE 1 & 2: CELL & TISSUE                 -->
+        <!-- ========================================== -->
+        
+        <!-- Intercellular Substance (Matrix) -->
+        <g class="anim-matrix">
+            <path d="M 310,260 C 310,160 490,160 490,260 C 490,360 310,360 310,260 Z" fill="#98D8C8"/>
+        </g>
+
+        <!-- Cloned Cells (Tissue Formation) -->
+        <g class="anim-cell-1"><use href="#single-cell" /></g>
+        <g class="anim-cell-2"><use href="#single-cell" /></g>
+        <g class="anim-cell-3"><use href="#single-cell" /></g>
+        <g class="anim-cell-4"><use href="#single-cell" /></g>
+        <g class="anim-cell-5"><use href="#single-cell" /></g>
+        <g class="anim-cell-6"><use href="#single-cell" /></g>
+
+        <!-- Base Cell (Center) -->
+        <g class="anim-cell-0" transform="translate(400, 260)">
+            <use href="#single-cell" />
+        </g>
+
+        <!-- ========================================== -->
+        <!-- DYNAMIC LABELS                             -->
+        <!-- ========================================== -->
+        
+        <!-- Cell Label -->
+        <g class="label-cell" text-anchor="middle">
+            <text x="400" y="440" font-size="20" font-weight="700" fill="#2C3E50">CELL</text>
+            <text x="400" y="460" font-size="14" fill="#2C3E50">The fundamental unit of life</text>
+        </g>
+
+        <!-- Tissue Label -->
+        <g class="label-tissue" text-anchor="middle">
+            <text x="400" y="440" font-size="20" font-weight="700" fill="#2C3E50">TISSUE</text>
+            <text x="400" y="460" font-size="14" fill="#2C3E50">Group of similar cells and intercellular substance</text>
+        </g>
+
+        <!-- Organ Label -->
+        <g class="label-organ" text-anchor="middle">
+            <text x="400" y="440" font-size="20" font-weight="700" fill="#2C3E50">ORGAN (Stomach)</text>
+            <text x="400" y="460" font-size="14" fill="#2C3E50">Tissues organized to perform a specific function</text>
+        </g>
+
+        <!-- System Label -->
+        <g class="label-system" text-anchor="middle">
+            <text x="400" y="440" font-size="20" font-weight="700" fill="#2C3E50">ORGAN SYSTEM (Digestive)</text>
+            <text x="400" y="460" font-size="14" fill="#2C3E50">Coordinated organs working together</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

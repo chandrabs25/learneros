@@ -1,7 +1,7 @@
-import {loadFont as loadInter} from "@remotion/google-fonts/Inter";
-import {AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig} from "remotion";
+import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
+import { AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
 
-const {fontFamily} = loadInter("normal", {
+const { fontFamily } = loadInter("normal", {
   weights: ["300", "400", "500", "600", "700", "800"],
   subsets: ["latin"],
 });
@@ -82,14 +82,14 @@ const renderInsights = (mode: SelectedNode) => {
   return graphInsights;
 };
 
-const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}) => {
+const GraphSceneBase: React.FC<GraphSceneProps> = ({ selectedNode, showWorkClick }) => {
   const frame = useCurrentFrame();
-  const {fps} = useVideoConfig();
+  const { fps } = useVideoConfig();
 
   const inAnim = spring({
     frame,
     fps,
-    config: {damping: 200},
+    config: { damping: 200 },
     durationInFrames: Math.round(0.8 * fps),
   });
 
@@ -119,7 +119,7 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
   const selectedSubtitle = selectedNode === "Work" ? "Prerequisite Concept" : "Chapter Overview";
 
   return (
-    <AbsoluteFill style={{fontFamily, backgroundColor: "#f9fafb", color: "#0f172a"}}>
+    <AbsoluteFill style={{ fontFamily, backgroundColor: "#f9fafb", color: "#0f172a" }}>
       <div
         style={{
           position: "absolute",
@@ -136,7 +136,7 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
           zIndex: 20,
         }}
       >
-        <div style={{display: "flex", alignItems: "center", gap: 12}}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div
             style={{
               width: 34,
@@ -152,12 +152,12 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
           >
             △
           </div>
-          <div style={{fontWeight: 700, fontSize: 34}}>LearnerOS</div>
+          <div style={{ fontWeight: 700, fontSize: 34 }}>LearnerOS</div>
         </div>
-        <div style={{display: "flex", alignItems: "center", gap: 18}}>
-          <div style={{textAlign: "right", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.1}}>
-            <div style={{fontWeight: 800}}>Samanapalli Srichandra</div>
-            <div style={{color: "#64748b", marginTop: 2}}>Sign Out</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+          <div style={{ textAlign: "right", fontSize: 11, textTransform: "uppercase", letterSpacing: 1.1 }}>
+            <div style={{ fontWeight: 800 }}>Samanapalli Srichandra</div>
+            <div style={{ color: "#64748b", marginTop: 2 }}>Sign Out</div>
           </div>
           <div
             style={{
@@ -177,7 +177,7 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
         </div>
       </div>
 
-      <div style={{position: "absolute", top: 72, left: 0, right: 480, bottom: 0, overflow: "hidden"}}>
+      <div style={{ position: "absolute", top: 72, left: 0, right: 480, bottom: 0, overflow: "hidden" }}>
         <div
           style={{
             position: "absolute",
@@ -188,7 +188,7 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
             backgroundPosition: "0 0, 12px 12px",
           }}
         />
-        <div style={{position: "absolute", top: 24, left: 24}}>
+        <div style={{ position: "absolute", top: 24, left: 24 }}>
           <button
             style={{
               border: "1px solid #e2e8f0",
@@ -222,11 +222,11 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
             gap: 8,
           }}
         >
-          <span style={{color: "#0d9488", fontWeight: 700}}>i</span>
+          <span style={{ color: "#0d9488", fontWeight: 700 }}>i</span>
           Select any node to view insights and 3D animations
         </div>
 
-        <svg style={{position: "absolute", inset: 0, width: "100%", height: "100%"}}>
+        <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
           {graphNodes.map((_, i) => {
             const a = -Math.PI / 2 + (i / graphNodes.length) * Math.PI * 2;
             const x = centerX + Math.cos(a) * radius;
@@ -251,7 +251,7 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
             boxShadow: `0 0 0 10px rgba(13,148,136,${selectedNode === "chapter" ? 0.1 : 0.03})`,
           }}
         >
-          <span style={{fontSize: 46, color: "#0d9488"}}>💡</span>
+          <span style={{ fontSize: 46, color: "#0d9488" }}>💡</span>
         </div>
         <div
           style={{
@@ -267,10 +267,10 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
             boxShadow: "0 10px 22px -15px rgba(17,24,39,0.7)",
           }}
         >
-          <div style={{fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", opacity: 0.7}}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, textTransform: "uppercase", opacity: 0.7 }}>
             Chapter 5
           </div>
-          <div style={{fontSize: 12, fontWeight: 700, textTransform: "uppercase"}}>Work, Energy and Power</div>
+          <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase" }}>Work, Energy and Power</div>
         </div>
 
         {graphNodes.map((name, i) => {
@@ -281,7 +281,7 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
           const nodeIn = spring({
             frame: frame - delay,
             fps,
-            config: {damping: 200},
+            config: { damping: 200 },
             durationInFrames: Math.round(0.6 * fps),
           });
 
@@ -314,7 +314,7 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
                     : "0 6px 16px -12px rgba(15,23,42,0.35)",
                 }}
               >
-                <span style={{color: isSelected ? "#0d9488" : "#64748b", fontSize: 26}}>⚗</span>
+                <span style={{ color: isSelected ? "#0d9488" : "#64748b", fontSize: 26 }}>⚗</span>
               </div>
               <div
                 style={{
@@ -354,8 +354,8 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
           boxShadow: "-18px 0 28px -28px rgba(15,23,42,0.35)",
         }}
       >
-        <div style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
-          <div style={{display: "flex", gap: 8, alignItems: "center"}}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             <span
               style={{
                 backgroundColor: "#111827",
@@ -370,14 +370,14 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
             >
               Insights
             </span>
-            <span style={{fontSize: 24, fontWeight: 700}}>Node Profile</span>
+            <span style={{ fontSize: 24, fontWeight: 700 }}>Node Profile</span>
           </div>
-          <button style={{border: "none", background: "none", color: "#64748b", fontSize: 22}}>×</button>
+          <button style={{ border: "none", background: "none", color: "#64748b", fontSize: 22 }}>×</button>
         </div>
 
-        <div style={{marginTop: 20}}>
-          <div style={{fontSize: 56, fontWeight: 800, lineHeight: 1.05}}>{selectedTitle}</div>
-          <div style={{marginTop: 8, fontSize: 11, color: "#0d9488", textTransform: "uppercase", letterSpacing: 2, fontWeight: 700}}>
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 56, fontWeight: 800, lineHeight: 1.05 }}>{selectedTitle}</div>
+          <div style={{ marginTop: 8, fontSize: 11, color: "#0d9488", textTransform: "uppercase", letterSpacing: 2, fontWeight: 700 }}>
             {selectedSubtitle}
           </div>
         </div>
@@ -401,31 +401,31 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
           </button>
         ) : null}
 
-        <div style={{display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 22}}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 22 }}>
           {[
             ["Competency", selectedNode === "Work" ? "1" : "3", "#10b981"],
             ["Partial Understanding", selectedNode === "Work" ? "0" : "3", "#f59e0b"],
             ["Misconception", selectedNode === "Work" ? "1" : "4", "#f43f5e"],
           ].map(([label, value, color]) => (
-            <div key={String(label)} style={{border: "1px solid #e2e8f0", backgroundColor: "#f8fafc", borderRadius: 10, padding: 12}}>
-              <div style={{fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700}}>
+            <div key={String(label)} style={{ border: "1px solid #e2e8f0", backgroundColor: "#f8fafc", borderRadius: 10, padding: 12 }}>
+              <div style={{ fontSize: 9, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700 }}>
                 {label}
               </div>
-              <div style={{marginTop: 8, fontSize: 38, lineHeight: 1, fontWeight: 800, color}}>{value}</div>
+              <div style={{ marginTop: 8, fontSize: 38, lineHeight: 1, fontWeight: 800, color }}>{value}</div>
             </div>
           ))}
         </div>
 
-        <div style={{marginTop: 24}}>
-          <div style={{display: "flex", gap: 8, alignItems: "center"}}>
-            <span style={{color: "#0d9488", fontSize: 16}}>✦</span>
-            <span style={{fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700}}>
+        <div style={{ marginTop: 24 }}>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <span style={{ color: "#0d9488", fontSize: 16 }}>✦</span>
+            <span style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700 }}>
               Learning Insights
             </span>
           </div>
-          <div style={{marginTop: 10, display: "flex", flexDirection: "column", gap: 10}}>
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
             {renderInsights(selectedNode).map((insight) => (
-              <div key={insight.title} style={{border: "1px solid #e2e8f0", borderRadius: 14, padding: 14, position: "relative"}}>
+              <div key={insight.title} style={{ border: "1px solid #e2e8f0", borderRadius: 14, padding: 14, position: "relative" }}>
                 <div
                   style={{
                     position: "absolute",
@@ -438,7 +438,7 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
                     borderBottomLeftRadius: 14,
                   }}
                 />
-                <div style={{display: "flex", justifyContent: "space-between", marginLeft: 10, alignItems: "center"}}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginLeft: 10, alignItems: "center" }}>
                   <span
                     style={{
                       fontSize: 10,
@@ -453,10 +453,10 @@ const GraphSceneBase: React.FC<GraphSceneProps> = ({selectedNode, showWorkClick}
                   >
                     {insight.label}
                   </span>
-                  <span style={{fontSize: 10, color: "#94a3b8", textTransform: "uppercase"}}>{insight.type}</span>
+                  <span style={{ fontSize: 10, color: "#94a3b8", textTransform: "uppercase" }}>{insight.type}</span>
                 </div>
-                <div style={{marginTop: 9, marginLeft: 10, fontSize: 13, fontWeight: 700}}>{insight.title}</div>
-                <div style={{marginTop: 7, marginLeft: 10, fontSize: 12, color: "#475569", lineHeight: 1.5}}>{insight.body}</div>
+                <div style={{ marginTop: 9, marginLeft: 10, fontSize: 13, fontWeight: 700 }}>{insight.title}</div>
+                <div style={{ marginTop: 7, marginLeft: 10, fontSize: 12, color: "#475569", lineHeight: 1.5 }}>{insight.body}</div>
               </div>
             ))}
           </div>

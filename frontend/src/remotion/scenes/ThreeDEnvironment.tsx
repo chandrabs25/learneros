@@ -45,57 +45,17 @@ export const CameraController = () => {
     );
 };
 
-const LaptopMesh = () => {
-    return (
-        <group position={[0, -0.2, 0]}>
-            {/* Base */}
-            <mesh position={[0, -0.05, 0.6]}>
-                <boxGeometry args={[3.2, 0.1, 2.2]} />
-                <meshStandardMaterial color="#3b4a5a" metalness={0.6} roughness={0.3} />
-            </mesh>
-            {/* Keyboard area illusion */}
-            <mesh position={[0, 0.005, 0.5]}>
-                <boxGeometry args={[2.9, 0.01, 1.2]} />
-                <meshStandardMaterial color="#1a202c" />
-            </mesh>
 
-            {/* Screen Hinge */}
-            <mesh position={[0, 1, -0.45]} rotation={[-0.1, 0, 0]}>
-                <boxGeometry args={[3.2, 2.1, 0.1]} />
-                <meshStandardMaterial color="#2d3748" metalness={0.5} roughness={0.4} />
-            </mesh>
-
-            {/* Screen Glow (to fake screen light inside 3D) */}
-            <mesh position={[0, 1, -0.39]} rotation={[-0.1, 0, 0]}>
-                <boxGeometry args={[3.0, 1.9, 0.05]} />
-                <meshBasicMaterial color="#d4f1f9" />
-            </mesh>
-        </group>
-    );
-};
 
 const RoomEnvironment = () => {
     return (
         <group>
-            <ambientLight intensity={1.8} />
-            <directionalLight position={[5, 10, 5]} intensity={2.5} castShadow color="#cce6ff" />
-            <pointLight position={[-5, 5, -5]} intensity={2.0} color="#4fa4ff" />
-            <pointLight position={[0, 2, 2]} intensity={1.5} color="#ffffff" />
+            {/* Sets the entire 3D WebGL Canvas background to a darker off-white (slate-200) */}
+            <color attach="background" args={["#e2e8f0"]} />
 
-            {/* Floor with Grid to sell the 3D space */}
-            <group position={[0, -0.8, 0]}>
-                <mesh rotation={[-Math.PI / 2, 0, 0]}>
-                    <planeGeometry args={[100, 100]} />
-                    <meshStandardMaterial color="#112233" roughness={0.6} metalness={0.2} />
-                </mesh>
-                <gridHelper args={[100, 100, "#2c4f6b", "#162f45"]} position={[0, 0.01, 0]} />
-            </group>
-
-            {/* Background walls */}
-            <mesh position={[0, 10, -10]}>
-                <planeGeometry args={[100, 40]} />
-                <meshStandardMaterial color="#0c1724" roughness={0.9} />
-            </mesh>
+            {/* Bright, even lighting so any floating elements stay bright */}
+            <ambientLight intensity={3.0} />
+            <directionalLight position={[0, 10, 5]} intensity={1.5} color="#ffffff" />
         </group>
     );
 };
@@ -105,7 +65,6 @@ export const ThreeDCenteredScenes = () => {
         <group>
             <RoomEnvironment />
             <CameraController />
-            <LaptopMesh />
         </group>
     );
 };

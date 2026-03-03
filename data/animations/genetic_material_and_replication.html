@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNA Replication: S-Phase</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Roboto+Mono:wght@500&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+
+        svg {
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #f8f9fa;
+        }
+
+        /* Animations */
+        .scene {
+            animation: fade-scene 12s linear infinite;
+        }
+
+        .fork-group {
+            animation: move-fork 12s linear infinite;
+        }
+
+        .dsdna-clip {
+            animation: clip-dsdna 12s linear infinite;
+        }
+
+        .top-ssdna, .bottom-ssdna {
+            stroke-dasharray: 700;
+            animation: draw-ssdna 12s linear infinite;
+        }
+
+        .lead-strand {
+            stroke-dasharray: 700;
+            animation: draw-lead 12s linear infinite;
+        }
+
+        .pol-lead {
+            animation: move-pol-lead 12s linear infinite;
+        }
+
+        .bp-lead {
+            animation: grow-bp-lead 12s linear infinite;
+        }
+
+        /* Lagging Strand Fragment 1 */
+        .lag-frag1 {
+            stroke-dasharray: 120;
+            animation: draw-frag1 12s linear infinite;
+        }
+        .bp-lag1 {
+            animation: grow-bp-lag1 12s linear infinite;
+        }
+        .primer1 {
+            animation: show-primer1 12s linear infinite;
+        }
+
+        /* Lagging Strand Fragment 2 */
+        .lag-frag2 {
+            stroke-dasharray: 120;
+            animation: draw-frag2 12s linear infinite;
+        }
+        .bp-lag2 {
+            animation: grow-bp-lag2 12s linear infinite;
+        }
+        .primer2 {
+            animation: show-primer2 12s linear infinite;
+        }
+
+        .pol-lag {
+            animation: move-pol-lag 12s linear infinite;
+        }
+
+        .primase {
+            animation: move-primase 12s linear infinite;
+        }
+
+        .nuc-lead {
+            animation: nuc-snap-lead 1s linear infinite;
+        }
+        .nuc-lead-delay {
+            animation: nuc-snap-lead 1s linear infinite 0.5s;
+        }
+        .nuc-lag {
+            animation: nuc-snap-lag 1s linear infinite;
+        }
+        .nuc-lag-delay {
+            animation: nuc-snap-lag 1s linear infinite 0.5s;
+        }
+
+        /* Keyframes */
+        @keyframes fade-scene {
+            0% { opacity: 0; }
+            3% { opacity: 1; }
+            97% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes move-fork {
+            0% { transform: translateX(210px); }
+            100% { transform: translateX(610px); }
+        }
+
+        @keyframes clip-dsdna {
+            0% { clip-path: inset(0 0 0 210px); }
+            100% { clip-path: inset(0 0 0 610px); }
+        }
+
+        @keyframes draw-ssdna {
+            0% { stroke-dashoffset: 590; }
+            100% { stroke-dashoffset: 190; }
+        }
+
+        @keyframes move-pol-lead {
+            0% { transform: translate(140px, 150px); }
+            100% { transform: translate(540px, 150px); }
+        }
+
+        @keyframes draw-lead {
+            0% { stroke-dashoffset: 610; }
+            100% { stroke-dashoffset: 210; }
+        }
+
+        @keyframes grow-bp-lead {
+            0% { width: 90px; }
+            100% { width: 490px; }
+        }
+
+        /* Lagging Fragment 1 Timing: 37.5% to 62.5% */
+        @keyframes draw-frag1 {
+            0%, 37% { stroke-dashoffset: 120; }
+            62.5%, 100% { stroke-dashoffset: 0; }
+        }
+        @keyframes grow-bp-lag1 {
+            0%, 37% { x: 310px; width: 0px; }
+            62.5%, 100% { x: 190px; width: 120px; }
+        }
+        @keyframes show-primer1 {
+            0%, 33% { opacity: 0; }
+            34%, 100% { opacity: 1; }
+        }
+
+        /* Lagging Fragment 2 Timing: 75% to 100% */
+        @keyframes draw-frag2 {
+            0%, 75% { stroke-dashoffset: 120; }
+            100% { stroke-dashoffset: 0; }
+        }
+        @keyframes grow-bp-lag2 {
+            0%, 75% { x: 460px; width: 0px; }
+            100% { x: 340px; width: 120px; }
+        }
+        @keyframes show-primer2 {
+            0%, 71% { opacity: 0; }
+            72%, 100% { opacity: 1; }
+        }
+
+        @keyframes move-pol-lag {
+            0%, 35% { transform: translate(310px, 350px); opacity: 0; }
+            36% { opacity: 1; }
+            62.5% { transform: translate(190px, 350px); opacity: 1; }
+            63.5% { opacity: 0; }
+            73% { transform: translate(460px, 350px); opacity: 0; }
+            74% { opacity: 1; }
+            100% { transform: translate(340px, 350px); opacity: 1; }
+        }
+
+        @keyframes move-primase {
+            0%, 30% { transform: translate(320px, 350px); opacity: 0; }
+            32% { opacity: 1; }
+            36% { opacity: 0; }
+            68% { transform: translate(470px, 350px); opacity: 0; }
+            70% { opacity: 1; }
+            74% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes nuc-snap-lead {
+            0% { transform: translate(40px, -30px); opacity: 0; }
+            20% { opacity: 1; }
+            50%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        @keyframes nuc-snap-lag {
+            0% { transform: translate(-40px, 30px); opacity: 0; }
+            20% { opacity: 1; }
+            50%, 100% { transform: translate(0, 0); opacity: 0; }
+        }
+
+        .label { font-size: 14px; font-weight: 500; fill: #2C3E50; }
+        .label-small { font-size: 12px; font-weight: 500; fill: #2C3E50; }
+        .dir-label { font-family: 'Roboto Mono', monospace; font-size: 13px; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+<svg viewBox="0 0 800 500" aria-label="Animated diagram of DNA Replication in the S-Phase" role="img">
+    <title>Molecular Mechanism of DNA Replication in the S-Phase</title>
+    <desc>Animation showing Helicase unwinding the parental DNA double helix, while DNA Polymerase synthesizes the leading strand continuously and the lagging strand discontinuously via Okazaki fragments.</desc>
+
+    <defs>
+        <!-- Base Pair Patterns -->
+        <pattern id="bp-ss" x="0" y="0" width="10" height="20" patternUnits="userSpaceOnUse">
+            <line x1="5" y1="0" x2="5" y2="20" stroke="#2C3E50" stroke-width="2" opacity="0.15" />
+        </pattern>
+        <pattern id="bp-ds" x="0" y="0" width="10" height="30" patternUnits="userSpaceOnUse">
+            <line x1="5" y1="0" x2="5" y2="30" stroke="#2C3E50" stroke-width="2" opacity="0.25" />
+        </pattern>
+
+        <!-- Arrowhead for labels -->
+        <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2C3E50" />
+        </marker>
+    </defs>
+
+    <!-- Cellular Context -->
+    <rect x="15" y="15" width="770" height="470" rx="40" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" stroke-dasharray="12 8" />
+    <circle cx="400" cy="250" r="300" fill="#2C3E50" opacity="0.06" />
+    
+    <!-- Title -->
+    <text x="400" y="55" text-anchor="middle" font-size="22" font-weight="700" fill="#2C3E50">DNA Replication: S-Phase of Cell Cycle</text>
+
+    <g class="scene">
+        <!-- Base Pairs (Drawn behind DNA strands) -->
+        <!-- dsDNA Base Pairs -->
+        <g class="dsdna-clip">
+            <rect x="50" y="235" width="760" height="30" fill="url(#bp-ds)" />
+        </g>
+        
+        <!-- Leading Strand Base Pairs -->
+        <rect x="50" y="140" height="20" fill="url(#bp-ss)" class="bp-lead" />
+
+        <!-- Lagging Strand Base Pairs -->
+        <rect x="50" y="340" width="110" height="20" fill="url(#bp-ss)" /> <!-- Fragment 0 -->
+        <rect y="340" height="20" fill="url(#bp-ss)" class="bp-lag1" /> <!-- Fragment 1 -->
+        <rect y="340" height="20" fill="url(#bp-ss)" class="bp-lag2" /> <!-- Fragment 2 -->
+
+        <!-- Parental DNA Strands (#FF6B6B) -->
+        <!-- dsDNA Helix (Right side, clipped as fork moves) -->
+        <g class="dsdna-clip" fill="none" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round">
+            <path d="M 50 250 Q 60 235, 70 250 T 90 250 T 110 250 T 130 250 T 150 250 T 170 250 T 190 250 T 210 250 T 230 250 T 250 250 T 270 250 T 290 250 T 310 250 T 330 250 T 350 250 T 370 250 T 390 250 T 410 250 T 430 250 T 450 250 T 470 250 T 490 250 T 510 250 T 530 250 T 550 250 T 570 250 T 590 250 T 610 250 T 630 250 T 650 250 T 670 250 T 690 250 T 710 250 T 730 250 T 750 250 T 770 250 T 790 250 T 810 250" />
+            <path d="M 50 250 Q 60 265, 70 250 T 90 250 T 110 250 T 130 250 T 150 250 T 170 250 T 190 250 T 210 250 T 230 250 T 250 250 T 270 250 T 290 250 T 310 250 T 330 250 T 350 250 T 370 250 T 390 250 T 410 250 T 430 250 T 450 250 T 470 250 T 490 250 T 510 250 T 530 250 T 550 250 T 570 250 T 590 250 T 610 250 T 630 250 T 650 250 T 670 250 T 690 250 T 710 250 T 730 250 T 750 250 T 770 250 T 790 250 T 810 250" />
+        </g>
+
+        <!-- Unwound Single Strands (Left side) -->
+        <line x1="50" y1="140" x2="750" y2="140" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" class="top-ssdna" />
+        <line x1="50" y1="360" x2="750" y2="360" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" class="bottom-ssdna" />
+
+        <!-- Newly Synthesized DNA Strands (#FFA07A) -->
+        <!-- Leading Strand (Continuous) -->
+        <line x1="50" y1="160" x2="750" y2="160" stroke="#FFA07A" stroke-width="3" stroke-linecap="round" class="lead-strand" />
+        
+        <!-- Lagging Strand (Discontinuous Okazaki Fragments) -->
+        <line x1="160" y1="340" x2="50" y2="340" stroke="#FFA07A" stroke-width="3" stroke-linecap="round" /> <!-- Fragment 0 (Static) -->
+        <line x1="310" y1="340" x2="190" y2="340" stroke="#FFA07A" stroke-width="3" stroke-linecap="round" class="lag-frag1" />
+        <line x1="460" y1="340" x2="340" y2="340" stroke="#FFA07A" stroke-width="3" stroke-linecap="round" class="lag-frag2" />
+
+        <!-- RNA Primers (#27AE60) -->
+        <line x1="160" y1="340" x2="140" y2="340" stroke="#27AE60" stroke-width="4" stroke-linecap="round" /> <!-- Primer 0 -->
+        <line x1="310" y1="340" x2="290" y2="340" stroke="#27AE60" stroke-width="4" stroke-linecap="round" class="primer1" />
+        <line x1="460" y1="340" x2="440" y2="340" stroke="#27AE60" stroke-width="4" stroke-linecap="round" class="primer2" />
+
+        <!-- Enzymes -->
+        <!-- Moving Fork Group (Helicase + Diagonals) -->
+        <g class="fork-group">
+            <!-- Diagonal Connections to simulate Y-fork -->
+            <line x1="0" y1="250" x2="-50" y2="140" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" />
+            <line x1="0" y1="250" x2="-50" y2="360" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" />
+            
+            <!-- Helicase Enzyme -->
+            <path d="M -15 225 L 15 250 L -15 275 Z" fill="#98D8C8" stroke="#2C3E50" stroke-width="2" />
+            <text x="0" y="210" text-anchor="middle" class="label-small">Helicase</text>
+        </g>
+
+        <!-- DNA Polymerase III (Leading Strand) -->
+        <g class="pol-lead">
+            <!-- Floating Nucleotides -->
+            <circle cx="0" cy="0" r="3" fill="#FFA07A" class="nuc-lead" />
+            <circle cx="0" cy="0" r="3" fill="#FFA07A" class="nuc-lead-delay" />
+            
+            <!-- Sliding Clamp / Pol III -->
+            <ellipse cx="0" cy="0" rx="22" ry="14" fill="#98D8C8" stroke="#2C3E50" stroke-width="2" />
+            <text x="0" y="4" text-anchor="middle" font-size="10" font-weight="700" fill="#2C3E50">Pol III</text>
+            <text x="-35" y="-20" class="label-small">5' → 3'</text>
+        </g>
+
+        <!-- DNA Polymerase III (Lagging Strand) -->
+        <g class="pol-lag">
+            <!-- Floating Nucleotides -->
+            <circle cx="0" cy="0" r="3" fill="#FFA07A" class="nuc-lag" />
+            <circle cx="0" cy="0" r="3" fill="#FFA07A" class="nuc-lag-delay" />
+
+            <!-- Sliding Clamp / Pol III -->
+            <ellipse cx="0" cy="0" rx="22" ry="14" fill="#98D8C8" stroke="#2C3E50" stroke-width="2" />
+            <text x="0" y="4" text-anchor="middle" font-size="10" font-weight="700" fill="#2C3E50">Pol III</text>
+            <text x="35" y="25" class="label-small">5' → 3'</text>
+        </g>
+
+        <!-- Primase Enzyme -->
+        <g class="primase">
+            <rect x="-12" y="-12" width="24" height="24" rx="4" fill="#27AE60" stroke="#2C3E50" stroke-width="2" />
+            <text x="0" y="25" text-anchor="middle" font-size="10" font-weight="700" fill="#2C3E50">Primase</text>
+        </g>
+    </g>
+
+    <!-- Static Labels & Annotations -->
+    <!-- Directionality Markers (5' and 3') -->
+    <text x="25" y="144" class="dir-label" fill="#FF6B6B">3'</text>
+    <text x="25" y="164" class="dir-label" fill="#FFA07A">5'</text>
+    <text x="25" y="344" class="dir-label" fill="#FFA07A">3'</text>
+    <text x="25" y="364" class="dir-label" fill="#FF6B6B">5'</text>
+    
+    <text x="765" y="244" class="dir-label" fill="#FF6B6B">5'</text>
+    <text x="765" y="268" class="dir-label" fill="#FF6B6B">3'</text>
+
+    <!-- Structural Labels -->
+    <text x="180" y="110" class="label">Leading Strand (Continuous)</text>
+    <line x1="170" y1="115" x2="170" y2="150" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow)" />
+
+    <text x="180" y="415" class="label">Lagging Strand (Discontinuous)</text>
+    <text x="230" y="435" class="label-small" fill="#2C3E50">Okazaki Fragments</text>
+    <line x1="220" y1="420" x2="220" y2="355" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow)" />
+    <line x1="370" y1="420" x2="370" y2="355" stroke="#2C3E50" stroke-width="1.5" marker-end="url(#arrow)" />
+
+    <!-- Legend -->
+    <g transform="translate(600, 360)">
+        <rect x="0" y="0" width="165" height="110" rx="6" fill="#ffffff" stroke="#2C3E50" stroke-width="1" opacity="0.95" />
+        <text x="82" y="20" text-anchor="middle" class="label-small" font-weight="700">Legend</text>
+        
+        <line x1="15" y1="35" x2="35" y2="35" stroke="#FF6B6B" stroke-width="4" stroke-linecap="round" />
+        <text x="45" y="39" class="label-small">Parental DNA</text>
+        
+        <line x1="15" y1="55" x2="35" y2="55" stroke="#FFA07A" stroke-width="3" stroke-linecap="round" />
+        <text x="45" y="59" class="label-small">New DNA</text>
+        
+        <rect x="15" y="70" width="20" height="10" rx="2" fill="#98D8C8" stroke="#2C3E50" stroke-width="1" />
+        <text x="45" y="79" class="label-small">Enzymes</text>
+
+        <line x1="15" y1="95" x2="35" y2="95" stroke="#27AE60" stroke-width="4" stroke-linecap="round" />
+        <text x="45" y="99" class="label-small">RNA Primer</text>
+    </g>
+
+</svg>
+
+</body>
+</html>

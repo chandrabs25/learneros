@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mechanisms of Heredity and Variation: Meiotic Recombination</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            height: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        svg {
+            display: block;
+            width: 100%;
+            height: auto;
+        }
+
+        /* CSS Animations */
+        .c1 { animation: move-c1 12s ease-in-out infinite; }
+        .c2 { animation: move-c2 12s ease-in-out infinite; }
+        .c3 { animation: move-c3 12s ease-in-out infinite; }
+        .c4 { animation: move-c4 12s ease-in-out infinite; }
+
+        .c2-bottom-group { animation: bend-c2 12s ease-in-out infinite; transform-origin: 0px 0px; }
+        .c3-bottom-group { animation: bend-c3 12s ease-in-out infinite; transform-origin: 0px 0px; }
+
+        .c2-color { animation: color-c2 12s infinite; }
+        .c3-color { animation: color-c3 12s infinite; }
+
+        .cell-structure { animation: fade-cell 12s ease-in-out infinite; }
+        .gametes-circles { animation: fade-gametes-circles 12s ease-in-out infinite; }
+
+        .label-pairing { animation: fade-pairing 12s ease-in-out infinite; }
+        .label-crossing { animation: fade-crossing 12s ease-in-out infinite; }
+        .label-recombinant { animation: fade-recombinant 12s ease-in-out infinite; }
+        .label-gametes { animation: fade-gametes 12s ease-in-out infinite; }
+        .label-parents { animation: fade-parents 12s ease-in-out infinite; }
+
+        /* Keyframes for Chromatid Movement */
+        @keyframes move-c1 {
+            0%, 5% { transform: translate(145px, 250px); opacity: 0; }
+            10% { transform: translate(145px, 250px); opacity: 1; }
+            25%, 58.3% { transform: translate(365px, 250px); opacity: 1; }
+            75%, 91.6% { transform: translate(200px, 120px); opacity: 1; }
+            95%, 100% { transform: translate(200px, 120px); opacity: 0; }
+        }
+        @keyframes move-c2 {
+            0%, 5% { transform: translate(165px, 250px); opacity: 0; }
+            10% { transform: translate(165px, 250px); opacity: 1; }
+            25%, 58.3% { transform: translate(385px, 250px); opacity: 1; }
+            75%, 91.6% { transform: translate(200px, 380px); opacity: 1; }
+            95%, 100% { transform: translate(200px, 380px); opacity: 0; }
+        }
+        @keyframes move-c3 {
+            0%, 5% { transform: translate(635px, 250px); opacity: 0; }
+            10% { transform: translate(635px, 250px); opacity: 1; }
+            25%, 58.3% { transform: translate(415px, 250px); opacity: 1; }
+            75%, 91.6% { transform: translate(600px, 120px); opacity: 1; }
+            95%, 100% { transform: translate(600px, 120px); opacity: 0; }
+        }
+        @keyframes move-c4 {
+            0%, 5% { transform: translate(655px, 250px); opacity: 0; }
+            10% { transform: translate(655px, 250px); opacity: 1; }
+            25%, 58.3% { transform: translate(435px, 250px); opacity: 1; }
+            75%, 91.6% { transform: translate(600px, 380px); opacity: 1; }
+            95%, 100% { transform: translate(600px, 380px); opacity: 0; }
+        }
+
+        /* Keyframes for Crossing Over (Bending) */
+        @keyframes bend-c2 {
+            0%, 25% { transform: rotate(0deg); }
+            28%, 38% { transform: rotate(16deg); }
+            41.6%, 100% { transform: rotate(0deg); }
+        }
+        @keyframes bend-c3 {
+            0%, 25% { transform: rotate(0deg); }
+            28%, 38% { transform: rotate(-16deg); }
+            41.6%, 100% { transform: rotate(0deg); }
+        }
+
+        /* Keyframes for Genetic Exchange (Color Swap) */
+        @keyframes color-c2 {
+            0%, 33.29% { stroke: #FF6B6B; }
+            33.3%, 100% { stroke: #4A90D9; }
+        }
+        @keyframes color-c3 {
+            0%, 33.29% { stroke: #4A90D9; }
+            33.3%, 100% { stroke: #FF6B6B; }
+        }
+
+        /* Keyframes for Cell Structures */
+        @keyframes fade-cell {
+            0%, 58.3% { opacity: 1; }
+            65%, 100% { opacity: 0; }
+        }
+        @keyframes fade-gametes-circles {
+            0%, 70% { opacity: 0; }
+            75%, 91.6% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+
+        /* Keyframes for Labels */
+        @keyframes fade-pairing {
+            0%, 5% { opacity: 0; }
+            10%, 22% { opacity: 1; }
+            25%, 100% { opacity: 0; }
+        }
+        @keyframes fade-crossing {
+            0%, 25% { opacity: 0; }
+            28%, 40% { opacity: 1; }
+            42%, 100% { opacity: 0; }
+        }
+        @keyframes fade-recombinant {
+            0%, 42% { opacity: 0; }
+            45%, 56% { opacity: 1; }
+            58.3%, 100% { opacity: 0; }
+        }
+        @keyframes fade-gametes {
+            0%, 70% { opacity: 0; }
+            75%, 91.6% { opacity: 1; }
+            95%, 100% { opacity: 0; }
+        }
+        @keyframes fade-parents {
+            0%, 5% { opacity: 0; }
+            10%, 40% { opacity: 1; }
+            45%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="svg-container">
+    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+        <title>Mechanisms of Heredity and Variation: Meiotic Recombination</title>
+        <desc>Animated diagram illustrating homologous chromosomes pairing, crossing over to exchange genetic material, and segregating into four haploid gametes.</desc>
+
+        <defs>
+            <!-- Drop Shadow for Chromosomes -->
+            <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="2" dy="3" stdDeviation="2" flood-color="#000000" flood-opacity="0.25"/>
+            </filter>
+            
+            <!-- Arrowhead for Labels -->
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1 L 10 5 L 0 9 z" fill="#8E44AD" />
+            </marker>
+        </defs>
+
+        <!-- TITLE & SUBTITLE -->
+        <text x="400" y="40" text-anchor="middle" font-size="22" font-weight="700" fill="#2C3E50">Heredity &amp; Variation: Meiotic Recombination</text>
+        <text x="400" y="65" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="16" font-weight="700" fill="#7F8C8D">Diploid (2n) &rarr; Haploid (n)</text>
+
+        <!-- CELL STRUCTURES (Fades out during segregation) -->
+        <g class="cell-structure">
+            <!-- Cell Membrane -->
+            <rect x="50" y="80" width="700" height="380" rx="40" fill="#ffffff" stroke="#4A90D9" stroke-width="2" stroke-dasharray="10 5" />
+            <!-- Nucleus -->
+            <circle cx="400" cy="250" r="130" fill="#E8F4FD" stroke="#2C3E50" stroke-width="2" />
+        </g>
+
+        <!-- GAMETES (Fades in at the end) -->
+        <g class="gametes-circles">
+            <!-- Top Left -->
+            <circle cx="200" cy="120" r="70" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" stroke-dasharray="6 3"/>
+            <text x="200" y="65" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="14" font-weight="700" fill="#4A90D9">n</text>
+            <!-- Bottom Left -->
+            <circle cx="200" cy="380" r="70" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" stroke-dasharray="6 3"/>
+            <text x="200" y="435" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="14" font-weight="700" fill="#4A90D9">n</text>
+            <!-- Top Right -->
+            <circle cx="600" cy="120" r="70" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" stroke-dasharray="6 3"/>
+            <text x="600" y="65" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="14" font-weight="700" fill="#4A90D9">n</text>
+            <!-- Bottom Right -->
+            <circle cx="600" cy="380" r="70" fill="#E8F4FD" stroke="#4A90D9" stroke-width="2" stroke-dasharray="6 3"/>
+            <text x="600" y="435" text-anchor="middle" font-family="'Roboto Mono', monospace" font-size="14" font-weight="700" fill="#4A90D9">n</text>
+        </g>
+
+        <!-- CHROMOSOMES -->
+        <g filter="url(#shadow)">
+            
+            <!-- C1: Paternal Outer Chromatid -->
+            <g class="c1">
+                <!-- Top Arm -->
+                <line x1="0" y1="-80" x2="0" y2="0" stroke="#FF6B6B" stroke-width="14" stroke-linecap="round"/>
+                <!-- Gene 1 -->
+                <line x1="-8" y1="-50" x2="8" y2="-50" stroke="#F39C12" stroke-width="4"/>
+                <!-- Bottom Arm -->
+                <g class="c1-bottom-group">
+                    <line x1="0" y1="0" x2="0" y2="80" stroke="#FF6B6B" stroke-width="14" stroke-linecap="round"/>
+                    <!-- Gene 2 -->
+                    <line x1="-8" y1="40" x2="8" y2="40" stroke="#98D8C8" stroke-width="4"/>
+                </g>
+                <!-- Centromere -->
+                <circle cx="0" cy="0" r="6" fill="#2C3E50"/>
+            </g>
+
+            <!-- C2: Paternal Inner Chromatid (Crosses Over) -->
+            <g class="c2">
+                <!-- Top Arm -->
+                <line x1="0" y1="-80" x2="0" y2="0" stroke="#FF6B6B" stroke-width="14" stroke-linecap="round"/>
+                <!-- Gene 1 -->
+                <line x1="-8" y1="-50" x2="8" y2="-50" stroke="#F39C12" stroke-width="4"/>
+                <!-- Bottom Arm (Animated Bend & Color) -->
+                <g class="c2-bottom-group">
+                    <line x1="0" y1="0" x2="0" y2="80" class="c2-color" stroke-width="14" stroke-linecap="round"/>
+                    <!-- Gene 2 -->
+                    <line x1="-8" y1="40" x2="8" y2="40" stroke="#98D8C8" stroke-width="4"/>
+                </g>
+                <!-- Centromere -->
+                <circle cx="0" cy="0" r="6" fill="#2C3E50"/>
+            </g>
+
+            <!-- C3: Maternal Inner Chromatid (Crosses Over) -->
+            <g class="c3">
+                <!-- Top Arm -->
+                <line x1="0" y1="-80" x2="0" y2="0" stroke="#4A90D9" stroke-width="14" stroke-linecap="round"/>
+                <!-- Gene 1 -->
+                <line x1="-8" y1="-50" x2="8" y2="-50" stroke="#F39C12" stroke-width="4"/>
+                <!-- Bottom Arm (Animated Bend & Color) -->
+                <g class="c3-bottom-group">
+                    <line x1="0" y1="0" x2="0" y2="80" class="c3-color" stroke-width="14" stroke-linecap="round"/>
+                    <!-- Gene 2 -->
+                    <line x1="-8" y1="40" x2="8" y2="40" stroke="#98D8C8" stroke-width="4"/>
+                </g>
+                <!-- Centromere -->
+                <circle cx="0" cy="0" r="6" fill="#2C3E50"/>
+            </g>
+
+            <!-- C4: Maternal Outer Chromatid -->
+            <g class="c4">
+                <!-- Top Arm -->
+                <line x1="0" y1="-80" x2="0" y2="0" stroke="#4A90D9" stroke-width="14" stroke-linecap="round"/>
+                <!-- Gene 1 -->
+                <line x1="-8" y1="-50" x2="8" y2="-50" stroke="#F39C12" stroke-width="4"/>
+                <!-- Bottom Arm -->
+                <g class="c4-bottom-group">
+                    <line x1="0" y1="0" x2="0" y2="80" stroke="#4A90D9" stroke-width="14" stroke-linecap="round"/>
+                    <!-- Gene 2 -->
+                    <line x1="-8" y1="40" x2="8" y2="40" stroke="#98D8C8" stroke-width="4"/>
+                </g>
+                <!-- Centromere -->
+                <circle cx="0" cy="0" r="6" fill="#2C3E50"/>
+            </g>
+
+        </g>
+
+        <!-- DYNAMIC LABELS -->
+        <text class="label-pairing" x="400" y="420" text-anchor="middle" font-size="18" font-weight="700" fill="#2C3E50">Phase 1: Homologous Synapsis</text>
+        <text class="label-crossing" x="400" y="420" text-anchor="middle" font-size="18" font-weight="700" fill="#E74C3C">Phase 2: Crossing Over (Variation)</text>
+        <text class="label-gametes" x="400" y="255" text-anchor="middle" font-size="18" font-weight="700" fill="#2C3E50">Phase 3: Gamete Formation (Heredity)</text>
+
+        <g class="label-parents">
+            <text x="155" y="140" text-anchor="middle" font-size="14" font-weight="700" fill="#FF6B6B">Paternal DNA</text>
+            <text x="645" y="140" text-anchor="middle" font-size="14" font-weight="700" fill="#4A90D9">Maternal DNA</text>
+        </g>
+
+        <g class="label-recombinant">
+            <text x="400" y="380" text-anchor="middle" font-size="14" font-weight="700" fill="#8E44AD">Recombinant Chromatids</text>
+            <path d="M 390 360 L 385 330" stroke="#8E44AD" stroke-width="2" marker-end="url(#arrow)"/>
+            <path d="M 410 360 L 415 330" stroke="#8E44AD" stroke-width="2" marker-end="url(#arrow)"/>
+        </g>
+
+        <!-- LEGEND -->
+        <g transform="translate(200, 470)">
+            <rect x="0" y="0" width="12" height="12" fill="#FF6B6B" rx="2"/>
+            <text x="18" y="11" font-size="12" font-weight="600" fill="#2C3E50">Paternal</text>
+            
+            <rect x="90" y="0" width="12" height="12" fill="#4A90D9" rx="2"/>
+            <text x="108" y="11" font-size="12" font-weight="600" fill="#2C3E50">Maternal</text>
+            
+            <rect x="180" y="0" width="12" height="12" fill="#F39C12" rx="2"/>
+            <text x="198" y="11" font-size="12" font-weight="600" fill="#2C3E50">Gene 1 Locus</text>
+            
+            <rect x="295" y="0" width="12" height="12" fill="#98D8C8" rx="2"/>
+            <text x="313" y="11" font-size="12" font-weight="600" fill="#2C3E50">Gene 2 Locus</text>
+        </g>
+
+    </svg>
+</div>
+
+</body>
+</html>

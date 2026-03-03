@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natural Selection: The Mechanism of Evolutionary Change</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:ital@0;1&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+        }
+        .svg-container {
+            width: 100%;
+            max-width: 1000px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        /* --- CSS Animations --- */
+        
+        /* 1. Jitter (Life-like movement) */
+        @keyframes jitter {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(1px, -1px) rotate(1deg); }
+            50% { transform: translate(-1px, 1px) rotate(-1deg); }
+            75% { transform: translate(-1px, -1px) rotate(0deg); }
+        }
+        .jitter {
+            animation: jitter 0.4s infinite linear;
+            transform-origin: center;
+        }
+
+        /* 2. Predator Beak Movement (3-6s) */
+        @keyframes beakMove {
+            0%, 20% { transform: translate(100px, -150px); opacity: 0; }
+            22% { transform: translate(150px, -150px); opacity: 1; }
+            25%, 27% { transform: translate(250px, 200px); }
+            30%, 32% { transform: translate(450px, 220px); }
+            35%, 37% { transform: translate(650px, 190px); }
+            40%, 100% { transform: translate(800px, -150px); opacity: 0; }
+        }
+        .beak-anim {
+            animation: beakMove 12s infinite ease-in-out;
+        }
+
+        /* 3. Predator Beak Snapping */
+        @keyframes beakSnap {
+            0%, 24% { transform: rotate(0deg); }
+            25% { transform: rotate(25deg); }
+            26% { transform: rotate(0deg); }
+            29% { transform: rotate(0deg); }
+            30% { transform: rotate(25deg); }
+            31% { transform: rotate(0deg); }
+            34% { transform: rotate(0deg); }
+            35% { transform: rotate(25deg); }
+            36% { transform: rotate(0deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .snap-anim {
+            transform-origin: 10px -70px;
+            animation: beakSnap 12s infinite linear;
+        }
+
+        /* 4. Orange Beetles Dying (Sequential) */
+        @keyframes die1 {
+            0%, 25% { transform: scale(1); opacity: 1; }
+            26%, 90% { transform: scale(0); opacity: 0; }
+            95%, 100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes die2 {
+            0%, 30% { transform: scale(1); opacity: 1; }
+            31%, 90% { transform: scale(0); opacity: 0; }
+            95%, 100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes die3 {
+            0%, 35% { transform: scale(1); opacity: 1; }
+            36%, 90% { transform: scale(0); opacity: 0; }
+            95%, 100% { transform: scale(1); opacity: 1; }
+        }
+        .die1 { animation: die1 12s infinite ease-out; transform-origin: center; }
+        .die2 { animation: die2 12s infinite ease-out; transform-origin: center; }
+        .die3 { animation: die3 12s infinite ease-out; transform-origin: center; }
+
+        /* 5. Differential Survival Checkmarks (6-8s) */
+        @keyframes showCheck {
+            0%, 49% { opacity: 0; transform: scale(0); }
+            52%, 64% { opacity: 1; transform: scale(1); }
+            66%, 100% { opacity: 0; transform: scale(0); }
+        }
+        .check-anim {
+            animation: showCheck 12s infinite cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-origin: center;
+        }
+
+        /* 6. Green Beetles Pulse (Inheritance Phase 8-11s) */
+        @keyframes pulse {
+            0%, 65% { transform: scale(1); }
+            68% { transform: scale(1.2); }
+            72%, 100% { transform: scale(1); }
+        }
+        .pulse {
+            animation: pulse 12s infinite ease-in-out;
+            transform-origin: center;
+        }
+
+        /* 7. Offspring Appearance */
+        @keyframes offspringLeft {
+            0%, 68% { opacity: 0; transform: scale(0) translate(0, 0); }
+            72%, 90% { opacity: 1; transform: scale(0.65) translate(-60px, 60px); }
+            95%, 100% { opacity: 0; transform: scale(0) translate(0, 0); }
+        }
+        @keyframes offspringRight {
+            0%, 68% { opacity: 0; transform: scale(0) translate(0, 0); }
+            72%, 90% { opacity: 1; transform: scale(0.65) translate(60px, 60px); }
+            95%, 100% { opacity: 0; transform: scale(0) translate(0, 0); }
+        }
+        .offspring-left { animation: offspringLeft 12s infinite ease-out; transform-origin: center; }
+        .offspring-right { animation: offspringRight 12s infinite ease-out; transform-origin: center; }
+
+        /* 8. Phase Labels */
+        @keyframes phase1 { 0%, 24% { opacity: 1; } 25%, 100% { opacity: 0; } }
+        @keyframes phase2 { 0%, 24% { opacity: 0; } 25%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+        @keyframes phase3 { 0%, 49% { opacity: 0; } 50%, 65% { opacity: 1; } 66%, 100% { opacity: 0; } }
+        @keyframes phase4 { 0%, 65% { opacity: 0; } 66%, 91% { opacity: 1; } 92%, 100% { opacity: 0; } }
+        .phase1 { animation: phase1 12s infinite; }
+        .phase2 { animation: phase2 12s infinite; }
+        .phase3 { animation: phase3 12s infinite; }
+        .phase4 { animation: phase4 12s infinite; }
+
+        /* 9. Global Reset Fade (11-12s) */
+        @keyframes resetFade {
+            0%, 92% { opacity: 0; }
+            96% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        .reset-anim {
+            animation: resetFade 12s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 style="color: #2C3E50; margin-bottom: 20px; text-align: center; font-size: 28px;">
+        Natural Selection: The Mechanism of Evolutionary Change
+    </h1>
+
+    <div class="svg-container">
+        <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+            <title>Animated diagram showing natural selection</title>
+            <desc>Green beetles survive predation better than orange beetles due to camouflage, leading to a population shift over generations.</desc>
+
+            <defs>
+                <!-- Arrowhead Marker -->
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                    <polygon points="0 0, 10 3.5, 0 7" fill="#4A90D9" />
+                </marker>
+
+                <!-- DNA Icon -->
+                <g id="dna">
+                    <path d="M-4,-12 C 6,-6 -6,6 4,12" stroke="#FF6B6B" stroke-width="2" fill="none"/>
+                    <path d="M4,-12 C -6,-6 6,6 -4,12" stroke="#FF6B6B" stroke-width="2" fill="none"/>
+                    <line x1="-3" y1="-9" x2="3" y2="-9" stroke="#FF6B6B" stroke-width="1"/>
+                    <line x1="-4" y1="-4" x2="4" y2="-4" stroke="#FF6B6B" stroke-width="1"/>
+                    <line x1="-4" y1="4" x2="4" y2="4" stroke="#FF6B6B" stroke-width="1"/>
+                    <line x1="-3" y1="9" x2="3" y2="9" stroke="#FF6B6B" stroke-width="1"/>
+                </g>
+
+                <!-- Base Beetle Template -->
+                <g id="beetle-base">
+                    <!-- Legs -->
+                    <path d="M-15,-10 L-25,-20 M15,-10 L25,-20 M-18,0 L-30,0 M18,0 L30,0 M-15,10 L-25,20 M15,10 L25,20" stroke="#2C3E50" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <!-- Antennae -->
+                    <path d="M-5,-33 Q-10,-45 -20,-40 M5,-33 Q10,-45 20,-40" stroke="#2C3E50" stroke-width="2" fill="none" stroke-linecap="round"/>
+                    <!-- Body -->
+                    <ellipse cx="0" cy="0" rx="18" ry="25" stroke="#2C3E50" stroke-width="2"/>
+                    <!-- Head -->
+                    <circle cx="0" cy="-25" r="10" fill="#2C3E50"/>
+                    <!-- Eyes -->
+                    <circle cx="-4" cy="-28" r="2" fill="#ffffff"/>
+                    <circle cx="4" cy="-28" r="2" fill="#ffffff"/>
+                    <!-- Wing Split -->
+                    <line x1="0" y1="-25" x2="0" y2="25" stroke="#2C3E50" stroke-width="2"/>
+                    <!-- DNA Trait -->
+                    <use href="#dna" x="0" y="5"/>
+                </g>
+
+                <!-- Green Beetle (Camouflaged) -->
+                <g id="beetle-green">
+                    <use href="#beetle-base" fill="#2ECC71"/>
+                </g>
+
+                <!-- Orange Beetle (Conspicuous) -->
+                <g id="beetle-orange">
+                    <use href="#beetle-base" fill="#F39C12"/>
+                </g>
+
+                <!-- Survival Checkmark -->
+                <g id="check">
+                    <circle cx="0" cy="0" r="14" fill="#27AE60" stroke="#ffffff" stroke-width="2"/>
+                    <path d="M-6,0 L-2,4 L6,-5" stroke="#ffffff" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+            </defs>
+
+            <!-- 1. Background Environment -->
+            <rect width="100%" height="100%" fill="#E8F4FD" />
+            
+            <!-- Leaf Canopy (Camouflage Context) -->
+            <path d="M0,0 L250,0 C250,120 120,250 0,250 Z" fill="#27AE60" opacity="0.25"/>
+            <path d="M800,0 L550,0 C550,120 680,250 800,250 Z" fill="#27AE60" opacity="0.25"/>
+            <path d="M0,500 L250,500 C250,380 120,250 0,250 Z" fill="#27AE60" opacity="0.25"/>
+            <path d="M800,500 L550,500 C550,380 680,250 800,250 Z" fill="#27AE60" opacity="0.25"/>
+            <path d="M300,0 C350,80 450,80 500,0 Z" fill="#27AE60" opacity="0.25"/>
+            <path d="M300,500 C350,420 450,420 500,500 Z" fill="#27AE60" opacity="0.25"/>
+
+            <!-- Cycle Arrows (Generational Flow) -->
+            <path d="M 350,450 C 150,450 80,350 120,200" stroke="#4A90D9" stroke-width="3" stroke-dasharray="8,8" fill="none" marker-end="url(#arrowhead)" opacity="0.4"/>
+            <path d="M 450,450 C 650,450 720,350 680,200" stroke="#4A90D9" stroke-width="3" stroke-dasharray="8,8" fill="none" marker-end="url(#arrowhead)" opacity="0.4"/>
+
+            <!-- 2. Static Labels & Annotations -->
+            <text x="400" y="40" font-family="Inter" font-size="22" font-weight="bold" fill="#2C3E50" text-anchor="middle">
+                Natural Selection in <tspan font-family="Roboto Mono" font-style="italic">Coleoptera</tspan> (Beetles)
+            </text>
+
+            <!-- Anatomical Pointers -->
+            <polyline points="100,350 140,350 170,350" stroke="#2C3E50" stroke-width="1.5" stroke-dasharray="4,2" fill="none"/>
+            <text x="95" y="354" font-family="Inter" font-size="13" font-weight="600" fill="#27AE60" text-anchor="end">Camouflaged Phenotype</text>
+
+            <polyline points="150,200 190,200 220,200" stroke="#2C3E50" stroke-width="1.5" stroke-dasharray="4,2" fill="none"/>
+            <text x="145" y="204" font-family="Inter" font-size="13" font-weight="600" fill="#E74C3C" text-anchor="end">Conspicuous Phenotype</text>
+
+            <!-- Legend -->
+            <g transform="translate(620, 20)">
+                <rect x="0" y="0" width="160" height="100" rx="6" fill="#ffffff" stroke="#2C3E50" stroke-width="1" opacity="0.95"/>
+                <text x="10" y="20" font-family="Inter" font-size="13" font-weight="bold" fill="#2C3E50">Legend</text>
+                
+                <circle cx="20" cy="40" r="7" fill="#2ECC71" stroke="#2C3E50" stroke-width="1"/>
+                <text x="35" y="44" font-family="Inter" font-size="12" fill="#2C3E50">High Fitness</text>
+                
+                <circle cx="20" cy="65" r="7" fill="#F39C12" stroke="#2C3E50" stroke-width="1"/>
+                <text x="35" y="69" font-family="Inter" font-size="12" fill="#2C3E50">Low Fitness</text>
+                
+                <g transform="translate(20, 85) scale(0.8)"><use href="#dna"/></g>
+                <text x="35" y="89" font-family="Inter" font-size="12" fill="#2C3E50">Heritable Trait</text>
+            </g>
+
+            <!-- 3. Organisms (Beetles) -->
+            
+            <!-- Group 1 -->
+            <g style="transform: translate(200px, 350px) rotate(15deg);">
+                <g class="pulse">
+                    <g class="jitter"><use href="#beetle-green"/></g>
+                </g>
+                <g class="check-anim" style="transform: translate(25px, -25px);"><use href="#check"/></g>
+                <g class="offspring-left"><g class="jitter"><use href="#beetle-green"/></g></g>
+                <g class="offspring-right"><g class="jitter"><use href="#beetle-green"/></g></g>
+            </g>
+
+            <g style="transform: translate(250px, 200px) rotate(-20deg);">
+                <g class="die1">
+                    <g class="jitter"><use href="#beetle-orange"/></g>
+                </g>
+            </g>
+
+            <!-- Group 2 -->
+            <g style="transform: translate(400px, 380px) rotate(-10deg);">
+                <g class="pulse">
+                    <g class="jitter"><use href="#beetle-green"/></g>
+                </g>
+                <g class="check-anim" style="transform: translate(25px, -25px);"><use href="#check"/></g>
+                <g class="offspring-left"><g class="jitter"><use href="#beetle-green"/></g></g>
+                <g class="offspring-right"><g class="jitter"><use href="#beetle-green"/></g></g>
+            </g>
+
+            <g style="transform: translate(450px, 220px) rotate(25deg);">
+                <g class="die2">
+                    <g class="jitter"><use href="#beetle-orange"/></g>
+                </g>
+            </g>
+
+            <!-- Group 3 -->
+            <g style="transform: translate(600px, 360px) rotate(5deg);">
+                <g class="pulse">
+                    <g class="jitter"><use href="#beetle-green"/></g>
+                </g>
+                <g class="check-anim" style="transform: translate(25px, -25px);"><use href="#check"/></g>
+                <g class="offspring-left"><g class="jitter"><use href="#beetle-green"/></g></g>
+                <g class="offspring-right"><g class="jitter"><use href="#beetle-green"/></g></g>
+            </g>
+
+            <g style="transform: translate(650px, 190px) rotate(-15deg);">
+                <g class="die3">
+                    <g class="jitter"><use href="#beetle-orange"/></g>
+                </g>
+            </g>
+
+            <!-- 4. Selective Agent (Predator Beak) -->
+            <g class="beak-anim">
+                <!-- Upper Mandible -->
+                <path d="M -20,-80 L 0,0 L 20,-80 Z" fill="#2C3E50"/>
+                <!-- Lower Mandible (Animated Snap) -->
+                <g class="snap-anim">
+                    <path d="M 10,-70 L 0,0 L 30,-60 Z" fill="#1A252F"/>
+                </g>
+            </g>
+
+            <!-- 5. Reset Overlay (Fades in at the end of the loop to mask the reset) -->
+            <rect class="reset-anim" width="100%" height="100%" fill="#E8F4FD" pointer-events="none"/>
+
+            <!-- 6. Animated Phase Labels (Placed above the reset overlay so they remain visible) -->
+            <g transform="translate(400, 475)" font-family="Inter" font-size="22" font-weight="bold" text-anchor="middle">
+                <text class="phase1" fill="#2C3E50">1. Genetic Variation in Population</text>
+                <text class="phase2" fill="#E74C3C">2. Selective Pressure (Predation)</text>
+                <text class="phase3" fill="#27AE60">3. Differential Survival</text>
+                <text class="phase4" fill="#4A90D9">4. Inheritance of Favorable Traits</text>
+            </g>
+
+        </svg>
+    </div>
+
+</body>
+</html>
