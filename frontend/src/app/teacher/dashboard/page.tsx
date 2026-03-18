@@ -505,28 +505,47 @@ export default function TeacherDashboardPage() {
           </div>
 
           <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "1rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.9rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
               <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Content Hotspots</h2>
-              <span style={{ color: "#94a3b8", fontWeight: 700, fontSize: "0.78rem" }}>Low → High friction</span>
+              <div style={{ display: "flex", gap: "0.6rem", fontSize: "0.68rem", fontWeight: 700 }}>
+                <span style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}><span style={{ width: 8, height: 8, borderRadius: 2, background: "#f87171" }} />≥10</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}><span style={{ width: 8, height: 8, borderRadius: 2, background: "#facc15" }} />≥5</span>
+                <span style={{ display: "flex", alignItems: "center", gap: "0.2rem" }}><span style={{ width: 8, height: 8, borderRadius: 2, background: "#34d399" }} />&lt;5</span>
+              </div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.4rem" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
               {sourceHotspots.map((s, idx) => {
-                const intensity = s.count / maxSourceCount;
-                const bg = intensity >= 0.75 ? "#f87171" : intensity >= 0.45 ? "#facc15" : "#9be7eb";
-                const fg = intensity >= 0.75 ? "#fff" : "#0f172a";
+                const barPct = Math.max(4, Math.round((s.count / maxSourceCount) * 100));
+                const barColor = s.count >= 10 ? "#f87171" : s.count >= 5 ? "#facc15" : "#34d399";
+                const textColor = s.count >= 10 ? "#991b1b" : s.count >= 5 ? "#854d0e" : "#065f46";
                 return (
-                  <div key={`${s.source_id}-${idx}`} title={`${s.source_title} (${s.count})`} style={{ aspectRatio: "1 / 1", borderRadius: 10, background: bg, color: fg, display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0.3rem", fontSize: "0.68rem", fontWeight: 800, lineHeight: 1.2 }}>
-                    {s.source_title || s.source_id}
+                  <div key={`${s.source_id}-${idx}`} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                    <div style={{ width: 130, fontSize: "0.78rem", fontWeight: 700, color: "#334155", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flexShrink: 0 }} title={s.source_title || s.source_id}>
+                      {s.source_title || s.source_id}
+                    </div>
+                    <div style={{ flex: 1, height: 18, background: "#f1f5f9", borderRadius: 6, overflow: "hidden", position: "relative" }}>
+                      <div style={{ width: `${barPct}%`, height: "100%", background: barColor, borderRadius: 6, transition: "width 300ms ease" }} />
+                    </div>
+                    <div style={{ width: 32, textAlign: "right", fontSize: "0.78rem", fontWeight: 800, color: textColor, flexShrink: 0 }}>
+                      {s.count}
+                    </div>
                   </div>
                 );
               })}
-              {loading && Array.from({ length: 4 }).map((_, i) => (
-                <div key={`hsk-${i}`} style={{ aspectRatio: "1 / 1", borderRadius: 10, background: "#e2e8f0" }} />
+              {!loading && sourceHotspots.length === 0 && (
+                <div style={{ color: "#94a3b8", fontWeight: 600, fontSize: "0.85rem", padding: "0.5rem 0" }}>No content friction data yet.</div>
+              )}
+              {loading && [1, 2, 3].map((k) => (
+                <div key={`hsk-${k}`} style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <div style={{ width: 130, height: 12, background: "#e2e8f0", borderRadius: 6 }} />
+                  <div style={{ flex: 1, height: 18, background: "#f1f5f9", borderRadius: 6 }} />
+                  <div style={{ width: 32, height: 12, background: "#e2e8f0", borderRadius: 6 }} />
+                </div>
               ))}
             </div>
-            <p style={{ marginTop: "0.7rem", color: "#94a3b8", fontWeight: 600, fontSize: "0.8rem" }}>
-              Heatmap currently uses misconception source frequency from teacher overview.
-            </p>
+            <div style={{ marginTop: "0.6rem", fontSize: "0.72rem", color: "#94a3b8", fontWeight: 600 }}>
+              Misconceptions by source content • Last {windowDays}
+            </div>
           </div>
         </div>
       </div>
