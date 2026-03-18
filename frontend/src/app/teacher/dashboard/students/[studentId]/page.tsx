@@ -187,8 +187,20 @@ export default function TeacherStudentDetailPage() {
                 </span>
               </div>
               {(data.risk.reasons || []).length > 0 && (
-                <div style={{ marginTop: "0.75rem", color: "#334155", fontWeight: 700, fontSize: "0.88rem" }}>
-                  Reason codes: {(data.risk.reasons || []).join(", ")}
+                <div style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.3rem" }}>
+                  {(data.risk.reasons || []).map((reason) => {
+                    const descriptions: Record<string, string> = {
+                      HIGH_MISCONCEPTION_COUNT: "Has 3+ active misconceptions",
+                      PERSISTENT_MISCONCEPTIONS: "Misconceptions have resurfaced across sessions",
+                      LOW_COMPETENCY_OFFSET: "No demonstrated competencies to offset misconceptions",
+                    };
+                    return (
+                      <div key={reason} style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.85rem" }}>
+                        <span style={{ color: "#f87171", fontSize: "0.9rem" }}>⚠</span>
+                        <span style={{ color: "#334155", fontWeight: 700 }}>{descriptions[reason] || reason}</span>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </section>

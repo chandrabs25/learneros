@@ -23,8 +23,8 @@ echo "📥 Step 2: Seeding into Neo4j..."
 echo ""
 
 for json_file in data/ncert_*.json; do
-    # Skip progress files
-    if [[ "$json_file" == *".progress."* ]]; then
+    # Skip progress and raw files
+    if [[ "$json_file" == *".progress."* ]] || [[ "$json_file" == *".raw."* ]]; then
         continue
     fi
 

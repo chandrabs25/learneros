@@ -392,10 +392,10 @@ def main() -> int:
     parser.add_argument("--institute-id", type=str, default=None)
     parser.add_argument("--all", action="store_true", help="Build for all institutes found on Student nodes")
     parser.add_argument("--k", type=int, default=None, help="Optional cluster count override")
-    parser.add_argument("--min-students", type=int, default=10)
+    parser.add_argument("--min-students", type=int, default=3)
     parser.add_argument("--min-insights-per-student", type=int, default=3)
     parser.add_argument("--min-vector-norm", type=float, default=0.001)
-    parser.add_argument("--hdbscan-min-cluster-size", type=int, default=4)
+    parser.add_argument("--hdbscan-min-cluster-size", type=int, default=2)
     parser.add_argument("--hdbscan-min-samples", type=int, default=None)
     args = parser.parse_args()
 

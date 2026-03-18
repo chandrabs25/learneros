@@ -58,6 +58,7 @@ type ClustersResponse = {
     size: number;
     avg_risk: number;
     top_concepts?: Array<{ id: string; name: string; count: number }>;
+    risk_band_counts?: Record<string, number>;
   }>;
 };
 
@@ -421,26 +422,57 @@ export default function TeacherDashboardPage() {
             </div>
           </div>
 
-          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.8rem" }}>
-            <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Knowledge Clusters</h2>
-            <div style={{ display: "flex", width: "100%", height: 14, borderRadius: 999, overflow: "hidden", background: "#e2e8f0" }}>
+          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.7rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Knowledge Clusters</h2>
+              <div style={{ border: "6px solid #f1f5f9", borderRadius: 999, width: 56, height: 56, display: "grid", placeItems: "center" }}>
+                <div style={{ textAlign: "center" }}>
+                  <div style={{ fontSize: "1rem", fontWeight: 900, lineHeight: 1.1 }}>{Math.round(100 - (overview?.totals?.high_risk_students || 0) * 2)}</div>
+                  <div style={{ fontSize: "0.5rem", color: "#64748b", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase" }}>Index</div>
+                </div>
+              </div>
+            </div>
+            {/* Stacked bar */}
+            <div style={{ display: "flex", width: "100%", height: 10, borderRadius: 999, overflow: "hidden", background: "#e2e8f0" }}>
               {clusterLegend.map((c) => (
                 <div key={c.cluster_id} style={{ width: `${Math.max(6, c.pct)}%`, background: c.color }} />
               ))}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.4rem 0.6rem" }}>
-              {clusterLegend.map((c) => (
-                <div key={`l-${c.cluster_id}`} style={{ display: "flex", alignItems: "center", gap: "0.35rem", fontSize: "0.82rem", fontWeight: 700 }}>
-                  <span style={{ width: 10, height: 10, borderRadius: 999, background: c.color }} />
-                  <span>{c.label} ({c.size})</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ marginTop: "auto", border: "6px solid #f1f5f9", borderRadius: 999, width: 150, height: 150, display: "grid", placeItems: "center", alignSelf: "center" }}>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "2rem", fontWeight: 900 }}>{Math.round(100 - (overview?.totals?.high_risk_students || 0) * 2)}</div>
-                <div style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>Index Score</div>
-              </div>
+            {/* Cluster cards */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", overflowY: "auto", maxHeight: 280 }}>
+              {clusterLegend.map((c) => {
+                const rbc = (c as Record<string, unknown>).risk_band_counts as Record<string, number> | undefined;
+                const topConcepts = ((c as Record<string, unknown>).top_concepts as Array<{ name: string }>) || [];
+                return (
+                  <div
+                    key={`l-${c.cluster_id}`}
+                    onClick={() => router.push(`/teacher/dashboard/clusters/${encodeURIComponent(c.cluster_id)}`)}
+                    style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.45rem 0.55rem", border: "1px solid #f1f5f9", borderRadius: 10, cursor: "pointer", transition: "background 120ms ease" }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <span style={{ width: 10, height: 10, borderRadius: 999, background: c.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "0.78rem", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {c.label}
+                      </div>
+                      {topConcepts.length > 0 && (
+                        <div style={{ fontSize: "0.68rem", color: "#94a3b8", fontWeight: 600, marginTop: 1 }}>
+                          {topConcepts.slice(0, 2).map((tc) => tc.name).join(", ")}
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", flexShrink: 0 }}>
+                      {rbc && (rbc.HIGH || 0) > 0 && <span style={{ width: 6, height: 6, borderRadius: 999, background: "#f87171" }} title={`${rbc.HIGH} high risk`} />}
+                      {rbc && (rbc.MEDIUM || 0) > 0 && <span style={{ width: 6, height: 6, borderRadius: 999, background: "#facc15" }} title={`${rbc.MEDIUM} medium risk`} />}
+                      <span style={{ fontSize: "0.72rem", fontWeight: 800, color: "#64748b" }}>{c.size}</span>
+                    </div>
+                  </div>
+                );
+              })}
+              {clusterLegend.length === 0 && !loading && (
+                <div style={{ color: "#94a3b8", fontWeight: 600, fontSize: "0.85rem" }}>No clusters built yet.</div>
+              )}
             </div>
           </div>
         </div>
