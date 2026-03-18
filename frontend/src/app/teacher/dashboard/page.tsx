@@ -427,8 +427,8 @@ export default function TeacherDashboardPage() {
               <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Knowledge Clusters</h2>
               <div style={{ border: "6px solid #f1f5f9", borderRadius: 999, width: 56, height: 56, display: "grid", placeItems: "center" }}>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontSize: "1rem", fontWeight: 900, lineHeight: 1.1 }}>{Math.round(100 - (overview?.totals?.high_risk_students || 0) * 2)}</div>
-                  <div style={{ fontSize: "0.5rem", color: "#64748b", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase" }}>Index</div>
+                  <div style={{ fontSize: "1rem", fontWeight: 900, lineHeight: 1.1 }}>{Math.round((1 - (overview?.totals?.high_risk_students || 0) / Math.max(1, overview?.totals?.students || 1)) * 100)}</div>
+                  <div style={{ fontSize: "0.5rem", color: "#64748b", fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase" }}>Health</div>
                 </div>
               </div>
             </div>
