@@ -81,6 +81,17 @@ export default function ClusterDetailPage() {
   const [error, setError] = useState("");
   const [data, setData] = useState<ClusterDetailResponse | null>(null);
 
+  // AI Suggestions state
+  const [teacherContext, setTeacherContext] = useState("");
+  const [filterRiskBands, setFilterRiskBands] = useState<string[]>(["HIGH", "MEDIUM"]);
+  const [filterInsightTypes, setFilterInsightTypes] = useState<string[]>(["MISCONCEPTION", "PARTIAL_UNDERSTANDING"]);
+  const [filterConceptIds, setFilterConceptIds] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState("");
+  const [aiInsightsUsed, setAiInsightsUsed] = useState(0);
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -115,6 +126,45 @@ export default function ClusterDetailPage() {
       cancelled = true;
     };
   }, [getIdToken, router, clusterId, role, authLoading]);
+
+  const generateSuggestions = async () => {
+    setAiLoading(true);
+    setAiError("");
+    setAiSuggestions([]);
+    try {
+      const token = await getIdToken();
+      if (!token) return;
+      const decodedId = decodeURIComponent(String(clusterId));
+      const res = await fetch(
+        `${API_URL}/api/teachers/me/dashboard/clusters/${encodeURIComponent(decodedId)}/generate-suggestions?snapshot=latest`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            teacher_context: teacherContext,
+            filters: {
+              risk_bands: filterRiskBands.length > 0 ? filterRiskBands : null,
+              insight_types: filterInsightTypes.length > 0 ? filterInsightTypes : null,
+              concept_ids: filterConceptIds.length > 0 ? filterConceptIds : null,
+              max_insights: 15,
+            },
+          }),
+        }
+      );
+      const j = await res.json();
+      if (!res.ok) throw new Error(j?.detail || "Failed to generate suggestions");
+      setAiSuggestions(j.suggestions || []);
+      setAiInsightsUsed(j.insights_used || 0);
+    } catch (e: unknown) {
+      setAiError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const toggleFilter = (arr: string[], val: string, setter: (v: string[]) => void) => {
+    setter(arr.includes(val) ? arr.filter((x) => x !== val) : [...arr, val]);
+  };
 
   const cluster = data?.cluster;
   const riskCounts = data?.member_count_by_risk_band || {};
@@ -201,36 +251,134 @@ export default function ClusterDetailPage() {
 
             {/* 3-column body */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.9rem" }}>
-              {/* Recommended Actions */}
+              {/* AI Teaching Suggestions */}
               <section style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "1rem", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
-                <h2 style={{ margin: 0, fontSize: "1.05rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
-                  <span style={{ fontSize: "1.1rem" }}>📋</span> Recommended Actions
-                </h2>
-                {(data.recommended_actions || []).length === 0 && (
-                  <div style={{ color: "#94a3b8", fontWeight: 600 }}>No actions generated yet.</div>
-                )}
-                {(data.recommended_actions || []).map((action, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      gap: "0.55rem",
-                      padding: "0.65rem 0.75rem",
-                      background: "#f0fdfa",
-                      border: "1px solid #ccfbf1",
-                      borderRadius: 10,
-                      fontSize: "0.88rem",
-                      lineHeight: 1.45,
-                      fontWeight: 600,
-                      color: "#134e4a",
-                    }}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <h2 style={{ margin: 0, fontSize: "1.05rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                    <span style={{ fontSize: "1.1rem" }}>✨</span> AI Teaching Suggestions
+                  </h2>
+                  <button
+                    onClick={() => setShowFilters(!showFilters)}
+                    style={{ border: "1px solid #e2e8f0", background: showFilters ? "#f1f5f9" : "#fff", borderRadius: 8, padding: "0.25rem 0.5rem", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", color: "#64748b" }}
                   >
-                    <span style={{ flexShrink: 0, fontSize: "1rem" }}>
-                      {i === 0 ? "🎯" : i === 1 ? "📝" : "🔁"}
-                    </span>
-                    <span>{action}</span>
+                    {showFilters ? "▴ Hide Filters" : "▾ Filters"}
+                  </button>
+                </div>
+
+                {/* Teacher context input */}
+                <textarea
+                  value={teacherContext}
+                  onChange={(e) => setTeacherContext(e.target.value)}
+                  placeholder="Add context for the AI (e.g. 'We have a test on Friday', 'Focus on Newton\'s Laws')"
+                  rows={2}
+                  style={{ width: "100%", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.55rem 0.7rem", fontSize: "0.85rem", fontFamily: "inherit", resize: "vertical", outline: "none", color: "#334155" }}
+                />
+
+                {/* Collapsible filters */}
+                {showFilters && (
+                  <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "0.6rem 0.7rem", display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.8rem" }}>
+                    <div>
+                      <div style={{ fontWeight: 800, color: "#64748b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Risk Bands</div>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        {["HIGH", "MEDIUM", "LOW"].map((band) => (
+                          <label key={band} style={{ display: "flex", alignItems: "center", gap: "0.25rem", cursor: "pointer", fontWeight: 600 }}>
+                            <input type="checkbox" checked={filterRiskBands.includes(band)} onChange={() => toggleFilter(filterRiskBands, band, setFilterRiskBands)} />
+                            {band}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, color: "#64748b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Insight Types</div>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        {["MISCONCEPTION", "PARTIAL_UNDERSTANDING"].map((t) => (
+                          <label key={t} style={{ display: "flex", alignItems: "center", gap: "0.25rem", cursor: "pointer", fontWeight: 600 }}>
+                            <input type="checkbox" checked={filterInsightTypes.includes(t)} onChange={() => toggleFilter(filterInsightTypes, t, setFilterInsightTypes)} />
+                            {t === "MISCONCEPTION" ? "Misconceptions" : "Partial Understanding"}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    {(cluster.top_concepts || []).length > 0 && (
+                      <div>
+                        <div style={{ fontWeight: 800, color: "#64748b", fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Concepts</div>
+                        <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+                          {cluster.top_concepts.slice(0, 6).map((c) => {
+                            const active = filterConceptIds.includes(c.id);
+                            return (
+                              <button
+                                key={c.id}
+                                onClick={() => toggleFilter(filterConceptIds, c.id, setFilterConceptIds)}
+                                style={{ border: `1px solid ${active ? "#22d3ee" : "#e2e8f0"}`, background: active ? "#ecfeff" : "#fff", borderRadius: 999, padding: "0.18rem 0.5rem", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", color: active ? "#0e7490" : "#64748b" }}
+                              >
+                                {c.name || c.id}
+                              </button>
+                            );
+                          })}
+                          {filterConceptIds.length > 0 && (
+                            <button onClick={() => setFilterConceptIds([])} style={{ border: "none", background: "none", fontSize: "0.72rem", color: "#94a3b8", cursor: "pointer", fontWeight: 600 }}>Clear</button>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ))}
+                )}
+
+                {/* Generate button */}
+                <button
+                  onClick={generateSuggestions}
+                  disabled={aiLoading}
+                  style={{
+                    width: "100%",
+                    padding: "0.6rem",
+                    border: "none",
+                    borderRadius: 10,
+                    background: aiLoading ? "#94a3b8" : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                    color: "#fff",
+                    fontWeight: 800,
+                    fontSize: "0.88rem",
+                    cursor: aiLoading ? "not-allowed" : "pointer",
+                    transition: "all 150ms ease",
+                  }}
+                >
+                  {aiLoading ? "⏳ Generating..." : "✨ Generate Suggestions"}
+                </button>
+
+                {/* Error */}
+                {aiError && (
+                  <div style={{ color: "#be123c", background: "#fff1f2", border: "1px solid #fecdd3", borderRadius: 8, padding: "0.5rem 0.6rem", fontSize: "0.82rem", fontWeight: 700 }}>
+                    {aiError}
+                  </div>
+                )}
+
+                {/* Results */}
+                {aiSuggestions.length > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+                    {aiSuggestions.map((s, i) => (
+                      <div key={i} style={{ display: "flex", gap: "0.5rem", padding: "0.6rem 0.7rem", background: "#f0fdfa", border: "1px solid #ccfbf1", borderRadius: 10, fontSize: "0.85rem", lineHeight: 1.45, fontWeight: 600, color: "#134e4a" }}>
+                        <span style={{ flexShrink: 0, fontSize: "0.95rem" }}>
+                          {["🎯", "📝", "🔁", "💡", "🧪"][i] || "📌"}
+                        </span>
+                        <span>{s}</span>
+                      </div>
+                    ))}
+                    <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: 600, textAlign: "right" }}>
+                      Based on {aiInsightsUsed} insight{aiInsightsUsed !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+                )}
+
+                {/* Fallback: show static actions if no AI suggestions yet */}
+                {aiSuggestions.length === 0 && !aiLoading && (data.recommended_actions || []).length > 0 && (
+                  <div style={{ borderTop: "1px solid #e2e8f0", paddingTop: "0.5rem", marginTop: "0.2rem" }}>
+                    <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Pre-generated suggestions</div>
+                    {(data.recommended_actions || []).map((action, i) => (
+                      <div key={i} style={{ fontSize: "0.82rem", color: "#64748b", fontWeight: 600, padding: "0.2rem 0", lineHeight: 1.4 }}>
+                        • {action}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
 
               {/* Top Misconceptions */}

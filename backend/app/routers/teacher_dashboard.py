@@ -6,11 +6,14 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Literal
+from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from openai import OpenAI
+from pydantic import BaseModel
 
 from app.auth import CurrentTeacher, get_current_teacher
+from app.config import settings
 from app.database import read_query
 from app.services.teacher_analytics import compute_risk
 
@@ -1083,3 +1086,247 @@ async def teacher_cluster_detail(
     }
     _cache_set(cache_key, payload)
     return payload
+
+
+# ---------------------------------------------------------------------------
+# LLM-powered cluster suggestions
+# ---------------------------------------------------------------------------
+
+_llm_client: OpenAI | None = None
+_suggestion_rate: dict[str, list[float]] = {}
+
+
+def _get_llm_client() -> OpenAI:
+    global _llm_client
+    if _llm_client is None:
+        if not settings.FIREWORKS_API_KEY:
+            raise HTTPException(status_code=500, detail="FIREWORKS_API_KEY not configured")
+        _llm_client = OpenAI(api_key=settings.FIREWORKS_API_KEY, base_url=settings.FIREWORKS_BASE_URL)
+    return _llm_client
+
+
+def _check_suggestion_rate(teacher_id: str, limit: int = 10, window: int = 60) -> None:
+    now = time.time()
+    timestamps = _suggestion_rate.get(teacher_id, [])
+    timestamps = [t for t in timestamps if now - t < window]
+    if len(timestamps) >= limit:
+        raise HTTPException(status_code=429, detail="Rate limit exceeded — try again in a minute")
+    timestamps.append(now)
+    _suggestion_rate[teacher_id] = timestamps
+
+
+class SuggestionFilters(BaseModel):
+    risk_bands: list[str] | None = None
+    insight_types: list[str] | None = None
+    concept_ids: list[str] | None = None
+    max_insights: int = 15
+
+
+class GenerateSuggestionsPayload(BaseModel):
+    teacher_context: str = ""
+    filters: SuggestionFilters = SuggestionFilters()
+
+
+@router.post("/clusters/{cluster_id:path}/generate-suggestions")
+async def generate_cluster_suggestions(
+    cluster_id: str,
+    body: GenerateSuggestionsPayload,
+    request: Request,
+    snapshot: str = Query(default="latest"),
+    teacher: CurrentTeacher = Depends(get_current_teacher),
+):
+    _check_suggestion_rate(teacher.institute_id)
+
+    snap = _resolve_snapshot(teacher.institute_id, snapshot)
+    if not snap:
+        raise HTTPException(status_code=404, detail="No cluster snapshot found")
+
+    # Fetch cluster metadata
+    cluster_rows = read_query(
+        """
+        MATCH (c:StudentCluster {id: $cluster_id, snapshot_id: $snapshot_id, institute_id: $institute_id})
+        RETURN c.id AS cluster_id,
+               c.label AS label,
+               c.size AS size,
+               c.avg_risk AS avg_risk,
+               c.top_concepts_json AS top_concepts_json,
+               c.risk_band_counts_json AS risk_band_counts_json,
+               c.top_misconceptions_json AS top_misconceptions_json
+        LIMIT 1
+        """,
+        cluster_id=cluster_id,
+        snapshot_id=snap["id"],
+        institute_id=teacher.institute_id,
+    )
+    if not cluster_rows:
+        raise HTTPException(status_code=404, detail="Cluster not found")
+    c = cluster_rows[0]
+
+    # Fetch members + their insights
+    member_rows = read_query(
+        """
+        MATCH (s:Student)-[r:IN_CLUSTER {snapshot_id: $snapshot_id}]->(cl:StudentCluster {id: $cluster_id})
+        WHERE s.institute_id = $institute_id
+        RETURN s.id AS student_id, s.name AS student_name
+        """,
+        snapshot_id=snap["id"],
+        cluster_id=cluster_id,
+        institute_id=teacher.institute_id,
+    )
+    member_ids = [m["student_id"] for m in member_rows]
+    all_insights = _fetch_active_insights_for_students(member_ids)
+
+    # Compute per-student risk bands for filtering
+    by_student: dict[str, list[dict]] = {sid: [] for sid in member_ids}
+    for ins in all_insights:
+        by_student.setdefault(ins["student_id"], []).append(ins)
+
+    student_risk_bands: dict[str, str] = {}
+    for sid in member_ids:
+        risk = compute_risk(by_student.get(sid, []))
+        student_risk_bands[sid] = str(risk.get("risk_band", "LOW"))
+
+    # Apply filters
+    filters = body.filters
+    filtered_insights: list[dict] = []
+    for ins in all_insights:
+        itype = str(ins.get("type") or "").upper()
+        sid = ins.get("student_id", "")
+
+        if filters.risk_bands:
+            if student_risk_bands.get(sid, "LOW") not in [rb.upper() for rb in filters.risk_bands]:
+                continue
+        if filters.insight_types:
+            if itype not in [it.upper() for it in filters.insight_types]:
+                continue
+        if filters.concept_ids:
+            if ins.get("concept_id") not in filters.concept_ids:
+                continue
+
+        filtered_insights.append(ins)
+
+    filtered_insights = filtered_insights[: filters.max_insights]
+
+    # Parse cluster metadata
+    try:
+        top_concepts = json.loads(c.get("top_concepts_json") or "[]")
+    except Exception:
+        top_concepts = []
+    try:
+        risk_band_counts = json.loads(c.get("risk_band_counts_json") or "{}")
+    except Exception:
+        risk_band_counts = {}
+    try:
+        top_misconceptions = json.loads(c.get("top_misconceptions_json") or "[]")
+    except Exception:
+        top_misconceptions = []
+
+    concept_names = [str(tc.get("name") or tc.get("id", "")) for tc in top_concepts[:5]]
+    misconception_lines = []
+    for m in top_misconceptions[:8]:
+        stmt = m.get("statement") or m.get("content") or "unknown"
+        concept = m.get("concept") or m.get("concept_name") or ""
+        count = m.get("count", 1)
+        misconception_lines.append(f"- \"{stmt}\" (concept: {concept}, count: {count})")
+
+    insight_lines = []
+    for ins in filtered_insights:
+        student_name = ""
+        for mr in member_rows:
+            if mr["student_id"] == ins.get("student_id"):
+                student_name = mr.get("student_name") or ins.get("student_id", "")
+                break
+        concept = ins.get("concept_name") or ins.get("concept_id") or "general"
+        source = ins.get("source_title") or ins.get("source_id") or ""
+        content = ins.get("content") or ""
+        itype = ins.get("type", "")
+        insight_lines.append(
+            f"- [{itype}] Student: {student_name}, Concept: {concept}, "
+            f"Source: {source}, Detail: {content}"
+        )
+
+    high = risk_band_counts.get("HIGH", 0)
+    medium = risk_band_counts.get("MEDIUM", 0)
+    low = risk_band_counts.get("LOW", 0)
+
+    system_prompt = (
+        "You are an expert teaching assistant analyzing student cluster data for a teacher. "
+        "Generate 3-5 specific, actionable teaching suggestions based on the cluster data below. "
+        "Each suggestion should:\n"
+        "1. Reference specific concepts or misconceptions from the data\n"
+        "2. Suggest a concrete classroom activity or intervention\n"
+        "3. Be prioritized by urgency (high-risk patterns first)\n"
+        "4. Be practical and immediately usable\n\n"
+        "Return ONLY a JSON array of suggestion strings, no other text. Example:\n"
+        '[\"suggestion 1\", \"suggestion 2\", \"suggestion 3\"]'
+    )
+
+    user_prompt = (
+        f"CLUSTER SUMMARY:\n"
+        f"- Students in cluster: {len(member_ids)}\n"
+        f"- Top concepts: {', '.join(concept_names) if concept_names else 'none identified'}\n"
+        f"- Risk distribution: {high} high, {medium} medium, {low} low risk\n\n"
+        f"TOP MISCONCEPTIONS IN CLUSTER:\n"
+        f"{chr(10).join(misconception_lines) if misconception_lines else '(none)'}\n\n"
+        f"FILTERED STUDENT INSIGHTS ({len(insight_lines)} insights):\n"
+        f"{chr(10).join(insight_lines) if insight_lines else '(none)'}\n\n"
+    )
+
+    if body.teacher_context.strip():
+        user_prompt += f"TEACHER'S CONTEXT:\n{body.teacher_context.strip()}\n\n"
+
+    filters_desc = []
+    if filters.risk_bands:
+        filters_desc.append(f"risk_bands={filters.risk_bands}")
+    if filters.insight_types:
+        filters_desc.append(f"types={filters.insight_types}")
+    if filters.concept_ids:
+        filters_desc.append(f"concepts={filters.concept_ids}")
+    if filters_desc:
+        user_prompt += f"ACTIVE FILTERS: {', '.join(filters_desc)}\n\n"
+
+    user_prompt += "Generate your teaching suggestions now."
+
+    client = _get_llm_client()
+    resp = client.chat.completions.create(
+        model=settings.FIREWORKS_MODEL,
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        temperature=0.4,
+        timeout=60,
+    )
+    raw = resp.choices[0].message.content or "[]"
+    if isinstance(raw, list):
+        raw = "".join(
+            p.get("text", "") for p in raw if isinstance(p, dict) and p.get("type") == "text"
+        )
+    raw = str(raw).strip()
+
+    # Parse the JSON array from the LLM response
+    suggestions: list[str] = []
+    try:
+        # Strip markdown code fences if present
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+        parsed = json.loads(raw)
+        if isinstance(parsed, list):
+            suggestions = [str(s) for s in parsed[:5]]
+        else:
+            suggestions = [str(raw)]
+    except json.JSONDecodeError:
+        suggestions = [line.lstrip("- ").strip() for line in raw.split("\n") if line.strip()]
+        suggestions = suggestions[:5]
+
+    return {
+        "suggestions": suggestions,
+        "model": settings.FIREWORKS_MODEL,
+        "insights_used": len(filtered_insights),
+        "filters_applied": {
+            "risk_bands": filters.risk_bands,
+            "insight_types": filters.insight_types,
+            "concept_ids": filters.concept_ids,
+            "max_insights": filters.max_insights,
+        },
+    }
