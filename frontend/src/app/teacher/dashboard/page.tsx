@@ -76,12 +76,31 @@ type ClusterTrendsResponse = {
     medium_risk_count: number;
     low_risk_count: number;
   }>;
+  columns: Array<{
+    snapshot_id: string;
+    run_at: string;
+    clusters: Array<{
+      cluster_id: string;
+      label: string;
+      size: number;
+      avg_risk: number;
+    }>;
+  }>;
+  flows: Array<{
+    from_snapshot: string;
+    to_snapshot: string;
+    from_cluster_id: string;
+    from_label: string;
+    to_cluster_id: string;
+    to_label: string;
+    count: number;
+    direction: "improved" | "declined" | "stable" | "lateral";
+  }>;
   migrations: Array<{
-    student_id: string;
     student_name: string;
     from_cluster_label: string;
     to_cluster_label: string;
-    direction: "improved" | "declined" | "lateral";
+    direction: "improved" | "declined" | "lateral" | "stable";
   }>;
   summary: {
     total_snapshots: number;
@@ -518,60 +537,130 @@ export default function TeacherDashboardPage() {
           </div>
         </div>
 
-        {/* Cluster Evolution / Trends */}
-        {clusterTrends && clusterTrends.snapshots.length >= 2 && (
+        {/* Cluster Evolution – Alluvial Flow Diagram */}
+        {clusterTrends && clusterTrends.columns && clusterTrends.columns.length >= 2 && (
           <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "1rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.7rem" }}>
               <h2 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
                 <span style={{ fontSize: "1.1rem" }}>📈</span> Cluster Evolution
               </h2>
               <span style={{ color: "#94a3b8", fontWeight: 700, fontSize: "0.78rem" }}>
-                {clusterTrends.snapshots.length} snapshots
+                {clusterTrends.columns.length} snapshots
               </span>
             </div>
 
-            {/* SVG Sparkline: high risk count over time */}
+            {/* Alluvial / Sankey diagram */}
             {(() => {
-              const snaps = clusterTrends.snapshots;
-              const highRiskValues = snaps.map((s) => s.high_risk_count);
-              const maxVal = Math.max(1, ...highRiskValues);
-              const w = 400;
-              const h = 48;
-              const padY = 4;
-              const step = w / Math.max(1, snaps.length - 1);
-              const points = highRiskValues
-                .map((v, i) => `${i * step},${h - padY - ((v / maxVal) * (h - 2 * padY))}`)
-                .join(" ");
+              const cols = clusterTrends.columns;
+              const allFlows = clusterTrends.flows;
+
+              // Layout constants
+              const colW = 100;         // width of each cluster rect column
+              const gap = 140;          // horizontal gap between columns for flow paths
+              const svgW = cols.length * colW + (cols.length - 1) * gap;
+              const unitH = 28;         // height per student in a cluster rect
+              const clusterGap = 8;     // vertical gap between clusters in a column
+              const padTop = 28;        // top padding for date labels
+
+              // Colour by avg_risk
+              const riskColor = (r: number) =>
+                r >= 10 ? "#f87171" : r >= 5 ? "#facc15" : "#4ade80";
+
+              // Build position map: { [cluster_id]: { x, y, w, h } }
+              type Rect = { x: number; y: number; w: number; h: number; label: string; risk: number; size: number };
+              const rectMap: Record<string, Rect> = {};
+              let maxColH = 0;
+
+              cols.forEach((col, ci) => {
+                const x = ci * (colW + gap);
+                let y = padTop;
+                col.clusters.forEach((cl) => {
+                  const h = Math.max(unitH, cl.size * unitH);
+                  rectMap[cl.cluster_id] = { x, y, w: colW, h, label: cl.label, risk: cl.avg_risk, size: cl.size };
+                  y += h + clusterGap;
+                });
+                if (y > maxColH) maxColH = y;
+              });
+
+              const svgH = maxColH + 16;
+
+              // Flow colour
+              const flowColor = (dir: string) =>
+                dir === "improved" ? "rgba(74,222,128,0.35)" : dir === "declined" ? "rgba(248,113,113,0.35)" : "rgba(148,163,184,0.2)";
+              const flowStroke = (dir: string) =>
+                dir === "improved" ? "#16a34a" : dir === "declined" ? "#ef4444" : "#94a3b8";
+
+              // Compute flow path offsets so they stack within each cluster rect
+              // Build offset trackers per cluster_id side (left=outgoing, right=incoming)
+              const outOffset: Record<string, number> = {};
+              const inOffset: Record<string, number> = {};
+
               return (
-                <div style={{ marginBottom: "0.7rem" }}>
-                  <div style={{ fontSize: "0.68rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
-                    High-Risk Students Over Time
-                  </div>
-                  <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={48} style={{ overflow: "visible" }}>
-                    <polyline
-                      fill="none"
-                      stroke="#f87171"
-                      strokeWidth={2.5}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      points={points}
-                    />
-                    {highRiskValues.map((v, i) => (
-                      <circle
-                        key={i}
-                        cx={i * step}
-                        cy={h - padY - ((v / maxVal) * (h - 2 * padY))}
-                        r={3}
-                        fill="#fff"
-                        stroke="#f87171"
-                        strokeWidth={2}
-                      />
+                <div style={{ overflowX: "auto", marginBottom: "0.7rem" }}>
+                  <svg width={svgW} height={svgH} style={{ display: "block", minWidth: svgW }}>
+                    {/* Date labels */}
+                    {cols.map((col, ci) => {
+                      const x = ci * (colW + gap);
+                      const date = col.run_at ? new Date(col.run_at) : null;
+                      const label = date ? `${date.getMonth() + 1}/${date.getDate()}` : "";
+                      return (
+                        <text key={`d-${ci}`} x={x + colW / 2} y={14} textAnchor="middle" fontSize={11} fontWeight={700} fill="#94a3b8">
+                          {label}
+                        </text>
+                      );
+                    })}
+
+                    {/* Flow paths (drawn first so rects overlap) */}
+                    {allFlows.map((f, fi) => {
+                      const from = rectMap[f.from_cluster_id];
+                      const to = rectMap[f.to_cluster_id];
+                      if (!from || !to) return null;
+
+                      const thickness = Math.max(2, f.count * unitH * 0.8);
+
+                      // Stack offsets
+                      const oKey = f.from_cluster_id;
+                      const iKey = f.to_cluster_id;
+                      outOffset[oKey] = outOffset[oKey] || 0;
+                      inOffset[iKey] = inOffset[iKey] || 0;
+
+                      const y1 = from.y + outOffset[oKey] + thickness / 2;
+                      const y2 = to.y + inOffset[iKey] + thickness / 2;
+                      outOffset[oKey] += thickness + 1;
+                      inOffset[iKey] += thickness + 1;
+
+                      const x1 = from.x + from.w;
+                      const x2 = to.x;
+                      const cx = (x1 + x2) / 2;
+
+                      return (
+                        <path
+                          key={`f-${fi}`}
+                          d={`M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`}
+                          fill="none"
+                          stroke={f.direction === "stable" ? flowColor(f.direction) : flowStroke(f.direction)}
+                          strokeWidth={thickness}
+                          opacity={f.direction === "stable" ? 0.5 : 0.7}
+                          strokeLinecap="round"
+                        >
+                          <title>{f.count} student{f.count !== 1 ? "s" : ""}: {f.from_label} → {f.to_label} ({f.direction})</title>
+                        </path>
+                      );
+                    })}
+
+                    {/* Cluster rectangles */}
+                    {Object.entries(rectMap).map(([cid, r]) => (
+                      <g key={cid}>
+                        <rect x={r.x} y={r.y} width={r.w} height={r.h} rx={6} fill={riskColor(r.risk)} opacity={0.85} stroke="#fff" strokeWidth={1.5} />
+                        <text x={r.x + r.w / 2} y={r.y + r.h / 2 - 4} textAnchor="middle" fontSize={9} fontWeight={800} fill="#0f172a">
+                          {r.label.length > 16 ? r.label.slice(0, 14) + "…" : r.label}
+                        </text>
+                        <text x={r.x + r.w / 2} y={r.y + r.h / 2 + 8} textAnchor="middle" fontSize={9} fontWeight={700} fill="#334155">
+                          {r.size} students
+                        </text>
+                      </g>
                     ))}
                   </svg>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.68rem", color: "#94a3b8", fontWeight: 600, marginTop: 2 }}>
-                    <span>{highRiskValues[0]} high risk</span>
-                    <span>{highRiskValues[highRiskValues.length - 1]} high risk</span>
-                  </div>
                 </div>
               );
             })()}

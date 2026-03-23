@@ -902,67 +902,126 @@ async def cluster_trends(
             "low_risk_count": int(r.get("low_risk_count") or 0),
         })
 
-    # Compute migrations between consecutive snapshot pairs
+    # Find snapshots that actually have IN_CLUSTER relationships
+    valid_snaps = read_query(
+        """
+        MATCH (snap:StudentClusterSnapshot {institute_id: $institute_id})
+        WHERE snap.run_at >= datetime() - duration({days: $days})
+        MATCH (c:StudentCluster {snapshot_id: snap.id})<-[:IN_CLUSTER {snapshot_id: snap.id}]-(s:Student)
+        WITH snap, count(DISTINCT s) AS stu_count
+        WHERE stu_count > 0
+        RETURN snap.id AS snapshot_id
+        ORDER BY snap.run_at ASC
+        """,
+        institute_id=teacher.institute_id,
+        days=days,
+    )
+    valid_ids = [r.get("snapshot_id") for r in valid_snaps]
+
+    # Per-snapshot cluster details (for the alluvial columns)
+    columns: list[dict] = []
+    for snap_id in valid_ids:
+        cluster_rows = read_query(
+            """
+            MATCH (c:StudentCluster {snapshot_id: $snap_id, institute_id: $institute_id})
+            WHERE c.is_noise_cluster = false OR c.is_noise_cluster IS NULL
+            RETURN c.id AS cluster_id, c.label AS label, c.size AS size,
+                   c.avg_risk AS avg_risk
+            ORDER BY c.size DESC
+            """,
+            snap_id=snap_id,
+            institute_id=teacher.institute_id,
+        )
+        # Find run_at from snapshots list
+        run_at = ""
+        for s in snapshots:
+            if s["snapshot_id"] == snap_id:
+                run_at = s["run_at"]
+                break
+        columns.append({
+            "snapshot_id": snap_id,
+            "run_at": run_at,
+            "clusters": [
+                {
+                    "cluster_id": r.get("cluster_id"),
+                    "label": r.get("label") or "Unknown",
+                    "size": int(r.get("size") or 0),
+                    "avg_risk": round(float(r.get("avg_risk") or 0), 2),
+                }
+                for r in cluster_rows
+            ],
+        })
+
+    # Compute flows between consecutive valid snapshot pairs
+    flows: list[dict] = []
     migrations: list[dict] = []
     students_improved = 0
     students_declined = 0
     students_stable = 0
 
-    if len(snapshots) >= 2:
-        prev_snap = snapshots[-2]
-        curr_snap = snapshots[-1]
-        prev_id = prev_snap["snapshot_id"]
-        curr_id = curr_snap["snapshot_id"]
-
-        migration_rows = read_query(
+    for i in range(len(valid_ids) - 1):
+        prev_id = valid_ids[i]
+        curr_id = valid_ids[i + 1]
+        flow_rows = read_query(
             """
             MATCH (s:Student)-[:IN_CLUSTER {snapshot_id: $prev_id}]->(old:StudentCluster)
             MATCH (s)-[:IN_CLUSTER {snapshot_id: $curr_id}]->(new:StudentCluster)
             WHERE s.institute_id = $institute_id
-            RETURN s.id AS student_id,
-                   s.name AS student_name,
-                   old.id AS from_cluster_id,
-                   old.label AS from_cluster_label,
-                   old.avg_risk AS from_avg_risk,
-                   new.id AS to_cluster_id,
-                   new.label AS to_cluster_label,
-                   new.avg_risk AS to_avg_risk
+            RETURN old.id AS from_id, old.label AS from_label, old.avg_risk AS from_risk,
+                   new.id AS to_id, new.label AS to_label, new.avg_risk AS to_risk,
+                   count(s) AS count,
+                   collect(s.name)[0..5] AS sample_names
             """,
             prev_id=prev_id,
             curr_id=curr_id,
             institute_id=teacher.institute_id,
         )
+        for f in flow_rows:
+            cnt = int(f.get("count") or 0)
+            from_risk = float(f.get("from_risk") or 0)
+            to_risk = float(f.get("to_risk") or 0)
+            from_id = f.get("from_id")
+            to_id = f.get("to_id")
+            is_same = from_id == to_id
 
-        for m in migration_rows:
-            from_risk = float(m.get("from_avg_risk") or 0)
-            to_risk = float(m.get("to_avg_risk") or 0)
-            from_cid = m.get("from_cluster_id")
-            to_cid = m.get("to_cluster_id")
-
-            if from_cid == to_cid:
-                students_stable += 1
-                continue
-
-            if to_risk < from_risk:
+            if is_same:
+                direction = "stable"
+                students_stable += cnt
+            elif to_risk < from_risk:
                 direction = "improved"
-                students_improved += 1
+                students_improved += cnt
             elif to_risk > from_risk:
                 direction = "declined"
-                students_declined += 1
+                students_declined += cnt
             else:
                 direction = "lateral"
-                students_stable += 1
+                students_stable += cnt
 
-            migrations.append({
-                "student_id": m.get("student_id"),
-                "student_name": m.get("student_name") or m.get("student_id"),
-                "from_cluster_label": m.get("from_cluster_label"),
-                "to_cluster_label": m.get("to_cluster_label"),
+            flows.append({
+                "from_snapshot": prev_id,
+                "to_snapshot": curr_id,
+                "from_cluster_id": from_id,
+                "from_label": f.get("from_label"),
+                "to_cluster_id": to_id,
+                "to_label": f.get("to_label"),
+                "count": cnt,
                 "direction": direction,
             })
 
+            if not is_same:
+                names = f.get("sample_names") or []
+                for name in names[:3]:
+                    migrations.append({
+                        "student_name": name or "Unknown",
+                        "from_cluster_label": f.get("from_label"),
+                        "to_cluster_label": f.get("to_label"),
+                        "direction": direction,
+                    })
+
     payload = {
         "snapshots": snapshots,
+        "columns": columns,
+        "flows": flows,
         "migrations": migrations[:20],
         "summary": {
             "total_snapshots": len(snapshots),
