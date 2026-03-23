@@ -841,6 +841,140 @@ def _resolve_snapshot(institute_id: str, snapshot: str) -> dict | None:
     return rows[0] if rows else None
 
 
+# ---------------------------------------------------------------------------
+# Cluster trends — temporal analysis
+# ---------------------------------------------------------------------------
+
+@router.get("/cluster-trends")
+async def cluster_trends(
+    window: str = Query(default="30d"),
+    teacher: CurrentTeacher = Depends(get_current_teacher),
+):
+    cache_key = "|".join(["cluster_trends", teacher.institute_id, window])
+    cached = _cache_get(cache_key)
+    if cached is not None:
+        return cached
+
+    days = _window_days(window)
+    # Fetch all snapshots within the window, ordered by time
+    snapshot_rows = read_query(
+        """
+        MATCH (snap:StudentClusterSnapshot {institute_id: $institute_id})
+        WHERE snap.run_at >= datetime() - duration({days: $days})
+        OPTIONAL MATCH (c:StudentCluster {snapshot_id: snap.id, institute_id: $institute_id})
+        WITH snap, count(c) AS cluster_count
+        RETURN snap.id AS snapshot_id,
+               toString(snap.run_at) AS run_at,
+               snap.algorithm AS algorithm,
+               snap.student_count AS student_count,
+               snap.noise_students AS noise_students,
+               snap.k AS k,
+               snap.quality_json AS quality_json,
+               snap.high_risk_count AS high_risk_count,
+               snap.medium_risk_count AS medium_risk_count,
+               snap.low_risk_count AS low_risk_count,
+               cluster_count
+        ORDER BY snap.run_at ASC
+        """,
+        institute_id=teacher.institute_id,
+        days=days,
+    )
+
+    snapshots = []
+    for r in snapshot_rows:
+        silhouette = 0.0
+        try:
+            q = json.loads(r.get("quality_json") or "{}")
+            silhouette = float(q.get("silhouette", 0.0))
+        except Exception:
+            pass
+        snapshots.append({
+            "snapshot_id": r.get("snapshot_id"),
+            "run_at": r.get("run_at"),
+            "algorithm": r.get("algorithm"),
+            "student_count": int(r.get("student_count") or 0),
+            "noise_students": int(r.get("noise_students") or 0),
+            "cluster_count": int(r.get("cluster_count") or 0),
+            "k": int(r.get("k") or 0),
+            "silhouette": silhouette,
+            "high_risk_count": int(r.get("high_risk_count") or 0),
+            "medium_risk_count": int(r.get("medium_risk_count") or 0),
+            "low_risk_count": int(r.get("low_risk_count") or 0),
+        })
+
+    # Compute migrations between consecutive snapshot pairs
+    migrations: list[dict] = []
+    students_improved = 0
+    students_declined = 0
+    students_stable = 0
+
+    if len(snapshots) >= 2:
+        prev_snap = snapshots[-2]
+        curr_snap = snapshots[-1]
+        prev_id = prev_snap["snapshot_id"]
+        curr_id = curr_snap["snapshot_id"]
+
+        migration_rows = read_query(
+            """
+            MATCH (s:Student)-[:IN_CLUSTER {snapshot_id: $prev_id}]->(old:StudentCluster)
+            MATCH (s)-[:IN_CLUSTER {snapshot_id: $curr_id}]->(new:StudentCluster)
+            WHERE s.institute_id = $institute_id
+            RETURN s.id AS student_id,
+                   s.name AS student_name,
+                   old.id AS from_cluster_id,
+                   old.label AS from_cluster_label,
+                   old.avg_risk AS from_avg_risk,
+                   new.id AS to_cluster_id,
+                   new.label AS to_cluster_label,
+                   new.avg_risk AS to_avg_risk
+            """,
+            prev_id=prev_id,
+            curr_id=curr_id,
+            institute_id=teacher.institute_id,
+        )
+
+        for m in migration_rows:
+            from_risk = float(m.get("from_avg_risk") or 0)
+            to_risk = float(m.get("to_avg_risk") or 0)
+            from_cid = m.get("from_cluster_id")
+            to_cid = m.get("to_cluster_id")
+
+            if from_cid == to_cid:
+                students_stable += 1
+                continue
+
+            if to_risk < from_risk:
+                direction = "improved"
+                students_improved += 1
+            elif to_risk > from_risk:
+                direction = "declined"
+                students_declined += 1
+            else:
+                direction = "lateral"
+                students_stable += 1
+
+            migrations.append({
+                "student_id": m.get("student_id"),
+                "student_name": m.get("student_name") or m.get("student_id"),
+                "from_cluster_label": m.get("from_cluster_label"),
+                "to_cluster_label": m.get("to_cluster_label"),
+                "direction": direction,
+            })
+
+    payload = {
+        "snapshots": snapshots,
+        "migrations": migrations[:20],
+        "summary": {
+            "total_snapshots": len(snapshots),
+            "students_improved": students_improved,
+            "students_declined": students_declined,
+            "students_stable": students_stable,
+        },
+    }
+    _cache_set(cache_key, payload)
+    return payload
+
+
 @router.get("/clusters")
 async def teacher_clusters(
     snapshot: str = Query(default="latest"),

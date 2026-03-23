@@ -62,6 +62,35 @@ type ClustersResponse = {
   }>;
 };
 
+type ClusterTrendsResponse = {
+  snapshots: Array<{
+    snapshot_id: string;
+    run_at: string;
+    algorithm: string;
+    student_count: number;
+    noise_students: number;
+    cluster_count: number;
+    k: number;
+    silhouette: number;
+    high_risk_count: number;
+    medium_risk_count: number;
+    low_risk_count: number;
+  }>;
+  migrations: Array<{
+    student_id: string;
+    student_name: string;
+    from_cluster_label: string;
+    to_cluster_label: string;
+    direction: "improved" | "declined" | "lateral";
+  }>;
+  summary: {
+    total_snapshots: number;
+    students_improved: number;
+    students_declined: number;
+    students_stable: number;
+  };
+};
+
 type SubjectOption = {
   id: string;
   name: string;
@@ -111,6 +140,7 @@ export default function TeacherDashboardPage() {
   const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [students, setStudents] = useState<StudentsResponse | null>(null);
   const [clusters, setClusters] = useState<ClustersResponse | null>(null);
+  const [clusterTrends, setClusterTrends] = useState<ClusterTrendsResponse | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -179,6 +209,17 @@ export default function TeacherDashboardPage() {
         if (!cancelled) setClusters(cData);
       } catch {
         if (!cancelled) setClusters(null);
+      }
+      // Also fetch cluster trends
+      try {
+        const token = await getIdToken();
+        if (!token) return;
+        const headers = { Authorization: `Bearer ${token}` };
+        const tRes = await fetch(`${API_URL}/api/teachers/me/dashboard/cluster-trends?window=30d`, { headers });
+        const tData = await tRes.json();
+        if (!cancelled && tRes.ok) setClusterTrends(tData);
+      } catch {
+        // trends are non-critical, silently fail
       }
     })();
     return () => {
@@ -476,6 +517,101 @@ export default function TeacherDashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Cluster Evolution / Trends */}
+        {clusterTrends && clusterTrends.snapshots.length >= 2 && (
+          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "1rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.7rem" }}>
+              <h2 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                <span style={{ fontSize: "1.1rem" }}>📈</span> Cluster Evolution
+              </h2>
+              <span style={{ color: "#94a3b8", fontWeight: 700, fontSize: "0.78rem" }}>
+                {clusterTrends.snapshots.length} snapshots
+              </span>
+            </div>
+
+            {/* SVG Sparkline: high risk count over time */}
+            {(() => {
+              const snaps = clusterTrends.snapshots;
+              const highRiskValues = snaps.map((s) => s.high_risk_count);
+              const maxVal = Math.max(1, ...highRiskValues);
+              const w = 400;
+              const h = 48;
+              const padY = 4;
+              const step = w / Math.max(1, snaps.length - 1);
+              const points = highRiskValues
+                .map((v, i) => `${i * step},${h - padY - ((v / maxVal) * (h - 2 * padY))}`)
+                .join(" ");
+              return (
+                <div style={{ marginBottom: "0.7rem" }}>
+                  <div style={{ fontSize: "0.68rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
+                    High-Risk Students Over Time
+                  </div>
+                  <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={48} style={{ overflow: "visible" }}>
+                    <polyline
+                      fill="none"
+                      stroke="#f87171"
+                      strokeWidth={2.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      points={points}
+                    />
+                    {highRiskValues.map((v, i) => (
+                      <circle
+                        key={i}
+                        cx={i * step}
+                        cy={h - padY - ((v / maxVal) * (h - 2 * padY))}
+                        r={3}
+                        fill="#fff"
+                        stroke="#f87171"
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </svg>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.68rem", color: "#94a3b8", fontWeight: 600, marginTop: 2 }}>
+                    <span>{highRiskValues[0]} high risk</span>
+                    <span>{highRiskValues[highRiskValues.length - 1]} high risk</span>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Migration summary badges */}
+            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.6rem", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "#dcfce7", border: "1px solid #bbf7d0", borderRadius: 999, padding: "0.25rem 0.6rem", fontSize: "0.78rem", fontWeight: 800, color: "#16a34a" }}>
+                ↑ {clusterTrends.summary.students_improved} improved
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "#ffe7e7", border: "1px solid #fecaca", borderRadius: 999, padding: "0.25rem 0.6rem", fontSize: "0.78rem", fontWeight: 800, color: "#ef4444" }}>
+                ↓ {clusterTrends.summary.students_declined} declined
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.3rem", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: 999, padding: "0.25rem 0.6rem", fontSize: "0.78rem", fontWeight: 800, color: "#64748b" }}>
+                → {clusterTrends.summary.students_stable} stable
+              </div>
+            </div>
+
+            {/* Migration details */}
+            {clusterTrends.migrations.length > 0 && (
+              <div>
+                <div style={{ fontSize: "0.68rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>
+                  Recent Movements
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", maxHeight: 160, overflowY: "auto" }}>
+                  {clusterTrends.migrations.slice(0, 10).map((m, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.35rem 0.5rem", background: m.direction === "improved" ? "#f0fdf4" : m.direction === "declined" ? "#fff5f5" : "#f8fafc", border: `1px solid ${m.direction === "improved" ? "#bbf7d0" : m.direction === "declined" ? "#fecaca" : "#e2e8f0"}`, borderRadius: 8, fontSize: "0.78rem" }}>
+                      <span style={{ fontWeight: 800, fontSize: "0.85rem" }}>
+                        {m.direction === "improved" ? "↑" : m.direction === "declined" ? "↓" : "→"}
+                      </span>
+                      <span style={{ fontWeight: 700, color: "#334155" }}>{m.student_name}</span>
+                      <span style={{ color: "#94a3b8", fontWeight: 600, fontSize: "0.72rem" }}>
+                        {m.from_cluster_label} → {m.to_cluster_label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.9rem" }}>
           <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, padding: "1rem" }}>

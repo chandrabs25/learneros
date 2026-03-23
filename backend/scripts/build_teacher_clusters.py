@@ -187,6 +187,9 @@ def persist_snapshot(
     quality: dict[str, float | int],
     eligible_students: int,
     noise_students: int,
+    high_risk_count: int = 0,
+    medium_risk_count: int = 0,
+    low_risk_count: int = 0,
     engine_version: str = "semantic_v2",
 ) -> str:
     snapshot_id = f"cluster_snapshot:{uuid.uuid4().hex}"
@@ -203,6 +206,9 @@ def persist_snapshot(
             student_count: $student_count,
             eligible_students: $eligible_students,
             noise_students: $noise_students,
+            high_risk_count: $high_risk_count,
+            medium_risk_count: $medium_risk_count,
+            low_risk_count: $low_risk_count,
             quality_json: $quality_json,
             engine_version: $engine_version,
             created_at: datetime()
@@ -216,6 +222,9 @@ def persist_snapshot(
         student_count=student_count,
         eligible_students=eligible_students,
         noise_students=noise_students,
+        high_risk_count=high_risk_count,
+        medium_risk_count=medium_risk_count,
+        low_risk_count=low_risk_count,
         quality_json=json.dumps(quality),
         engine_version=engine_version,
     )
@@ -356,6 +365,9 @@ def build_for_institute(
         }
 
     noise_students = len(cluster_result.members_by_cluster.get(-1, []))
+    # Aggregate risk counts across all students for the snapshot
+    all_member_ids = [sid for sids in cluster_result.members_by_cluster.values() for sid in sids]
+    agg_risk_counts, _ = _risk_band_counts_for_students(all_member_ids, insights_by_student)
     snapshot_id = persist_snapshot(
         institute_id,
         algorithm=str(cluster_result.algorithm or "kmeans_fallback"),
@@ -366,6 +378,9 @@ def build_for_institute(
         quality=cluster_result.quality,
         eligible_students=len(cluster_result.eligible_students),
         noise_students=noise_students,
+        high_risk_count=agg_risk_counts.get("HIGH", 0),
+        medium_risk_count=agg_risk_counts.get("MEDIUM", 0),
+        low_risk_count=agg_risk_counts.get("LOW", 0),
         engine_version="semantic_v2",
     )
     return {
