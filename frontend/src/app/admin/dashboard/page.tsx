@@ -462,6 +462,40 @@ export default function AdminDashboardPage() {
             >
               🔄 Rebuild All Clusters
             </button>
+            <button
+              onClick={async () => {
+                setErr("");
+                setMsg("");
+                try {
+                  const token = await getIdToken();
+                  if (!token) throw new Error("Missing token");
+                  const sRes = await fetch(`${API_URL}/api/admin/rebuild-clusters/status`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const sData = await sRes.json();
+                  if (sData.state === "error") {
+                    setErr(`Rebuild error:\n${sData.error || "unknown"}`);
+                  } else if (sData.state === "done") {
+                    const results = sData.results || [];
+                    const hasErrors = results.some((r: Record<string, unknown>) => r.status === "error");
+                    if (hasErrors) {
+                      const errDetails = results.filter((r: Record<string, unknown>) => r.status === "error").map((r: Record<string, unknown>) => `${r.institute_id}: ${r.error}`).join("\n");
+                      setErr(`Some institutes failed:\n${errDetails}`);
+                    } else {
+                      const summary = results.map((r: Record<string, unknown>) => `${r.institute_id}: ${r.status}`).join(", ");
+                      setMsg(`Last rebuild: ${sData.state}. ${summary}`);
+                    }
+                  } else {
+                    setMsg(`Rebuild state: ${sData.state}`);
+                  }
+                } catch (e: unknown) {
+                  setErr(e instanceof Error ? e.message : "Failed to check status");
+                }
+              }}
+              style={{ border: "1px solid #cbd5e1", borderRadius: 8, background: "#fff", color: "#334155", padding: "0.6rem 1rem", fontWeight: 800, cursor: "pointer", fontSize: "0.88rem" }}
+            >
+              📋 Check Status
+            </button>
           </div>
         </section>
       </div>

@@ -147,11 +147,13 @@ async def admin_rebuild_clusters(
     import threading
 
     def _run():
-        from scripts.build_teacher_clusters import build_for_institute, fetch_institute_ids
-
         _cluster_status["state"] = "running"
         _cluster_status["results"] = []
+        _cluster_status.pop("error", None)
         try:
+            import traceback as tb
+            from scripts.build_teacher_clusters import build_for_institute, fetch_institute_ids
+
             ids = [institute_id] if institute_id else fetch_institute_ids()
             for iid in ids:
                 try:
@@ -166,11 +168,12 @@ async def admin_rebuild_clusters(
                     )
                     _cluster_status["results"].append(result)
                 except Exception as exc:
-                    _cluster_status["results"].append({"institute_id": iid, "status": "error", "error": str(exc)})
+                    _cluster_status["results"].append({"institute_id": iid, "status": "error", "error": tb.format_exc()})
             _cluster_status["state"] = "done"
         except Exception as exc:
+            import traceback as tb
             _cluster_status["state"] = "error"
-            _cluster_status["error"] = str(exc)
+            _cluster_status["error"] = tb.format_exc()
 
     if _cluster_status.get("state") == "running":
         return {"status": "already_running", "message": "A cluster rebuild is already in progress."}
