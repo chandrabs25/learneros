@@ -129,3 +129,64 @@ async def admin_get_user_claims(
         "display_name": user.display_name,
         "custom_claims": user.custom_claims or {},
     }
+
+
+# ---------------------------------------------------------------------------
+# Rebuild student clusters
+# ---------------------------------------------------------------------------
+
+_cluster_status: dict[str, dict] = {}
+
+
+@router.post("/rebuild-clusters")
+async def admin_rebuild_clusters(
+    institute_id: str | None = Query(default=None),
+    _: CurrentAdmin = Depends(get_current_admin),
+):
+    """Trigger a cluster rebuild for one or all institutes."""
+    import threading
+
+    def _run():
+        from scripts.build_teacher_clusters import build_for_institute, fetch_institute_ids
+
+        _cluster_status["state"] = "running"
+        _cluster_status["results"] = []
+        try:
+            ids = [institute_id] if institute_id else fetch_institute_ids()
+            for iid in ids:
+                try:
+                    result = build_for_institute(
+                        iid,
+                        k_override=None,
+                        min_students=3,
+                        min_insights_per_student=3,
+                        min_vector_norm=0.001,
+                        hdbscan_min_cluster_size=2,
+                        hdbscan_min_samples=None,
+                    )
+                    _cluster_status["results"].append(result)
+                except Exception as exc:
+                    _cluster_status["results"].append({"institute_id": iid, "status": "error", "error": str(exc)})
+            _cluster_status["state"] = "done"
+        except Exception as exc:
+            _cluster_status["state"] = "error"
+            _cluster_status["error"] = str(exc)
+
+    if _cluster_status.get("state") == "running":
+        return {"status": "already_running", "message": "A cluster rebuild is already in progress."}
+
+    threading.Thread(target=_run, daemon=True).start()
+    return {"status": "started", "message": "Cluster rebuild started in background."}
+
+
+@router.get("/rebuild-clusters/status")
+async def admin_rebuild_clusters_status(
+    _: CurrentAdmin = Depends(get_current_admin),
+):
+    """Check the status of the latest cluster rebuild."""
+    return {
+        "state": _cluster_status.get("state", "idle"),
+        "results": _cluster_status.get("results", []),
+        "error": _cluster_status.get("error"),
+    }
+

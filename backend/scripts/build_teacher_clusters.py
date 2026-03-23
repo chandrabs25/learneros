@@ -111,7 +111,7 @@ def _top_misconceptions(cluster_insights: list[dict], limit: int = 5) -> list[di
         key = content.lower()
         score[key] += 1
         # Keep richest metadata for the statement.
-        if key not in latest or (ins.get("created_at") or "") > (latest[key].get("created_at") or ""):
+        if key not in latest or str(ins.get("created_at") or "") > str(latest[key].get("created_at") or ""):
             latest[key] = {
                 "statement": content,
                 "count": 0,

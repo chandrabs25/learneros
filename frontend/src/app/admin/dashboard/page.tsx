@@ -409,6 +409,61 @@ export default function AdminDashboardPage() {
             </div>
           )}
         </section>
+
+        {/* Rebuild Student Clusters */}
+        <section style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "1rem" }}>
+          <h2 style={{ marginTop: 0, display: "flex", alignItems: "center", gap: "0.4rem" }}>
+            <span style={{ fontSize: "1.1rem" }}>🔄</span> Rebuild Student Clusters
+          </h2>
+          <p style={{ color: "#64748b", fontWeight: 600, fontSize: "0.88rem", margin: "0 0 0.7rem" }}>
+            Trigger HDBSCAN/K-Means clustering for all institutes. Creates a new snapshot for the teacher dashboard.
+          </p>
+          <div style={{ display: "flex", gap: "0.6rem", alignItems: "center", flexWrap: "wrap" }}>
+            <button
+              id="rebuild-clusters-btn"
+              onClick={async () => {
+                setErr("");
+                setMsg("");
+                try {
+                  const token = await getIdToken();
+                  if (!token) throw new Error("Missing token");
+                  const res = await fetch(`${API_URL}/api/admin/rebuild-clusters`, {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+                  const data = await res.json();
+                  if (!res.ok) throw new Error(data?.detail || "Failed to start rebuild");
+                  setMsg(data.message || "Rebuild started");
+                  // Poll for status
+                  const poll = setInterval(async () => {
+                    try {
+                      const sRes = await fetch(`${API_URL}/api/admin/rebuild-clusters/status`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                      });
+                      const sData = await sRes.json();
+                      if (sData.state === "done") {
+                        clearInterval(poll);
+                        const results = sData.results || [];
+                        const summary = results.map((r: Record<string, unknown>) => `${r.institute_id}: ${r.status}`).join(", ");
+                        setMsg(`Clusters rebuilt! ${summary}`);
+                      } else if (sData.state === "error") {
+                        clearInterval(poll);
+                        setErr(`Rebuild failed: ${sData.error || "unknown"}`);
+                      }
+                    } catch {
+                      clearInterval(poll);
+                    }
+                  }, 3000);
+                } catch (e: unknown) {
+                  setErr(e instanceof Error ? e.message : "Failed");
+                }
+              }}
+              style={{ border: "none", borderRadius: 8, background: "linear-gradient(135deg, #6366f1, #8b5cf6)", color: "#fff", padding: "0.6rem 1rem", fontWeight: 800, cursor: "pointer", fontSize: "0.88rem" }}
+            >
+              🔄 Rebuild All Clusters
+            </button>
+          </div>
+        </section>
       </div>
     </main>
   );
