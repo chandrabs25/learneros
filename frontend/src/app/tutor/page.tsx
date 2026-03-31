@@ -17,6 +17,7 @@ interface InsightItem {
   source_id?: string;
   source_title?: string;
   similarity?: number;
+  is_active?: boolean;
 }
 
 interface ChatMessage {
@@ -136,6 +137,7 @@ export default function TutorPage() {
   ]);
 
   const [matchedInsights, setMatchedInsights] = useState<InsightItem[]>([]);
+  const [includeHistory, setIncludeHistory] = useState(false);
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
   const [pastSessions, setPastSessions] = useState<SessionItem[]>([]);
@@ -249,7 +251,7 @@ export default function TutorPage() {
       const res = await fetch(`${API_URL}/api/tutor/chat`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ message, session_id: sessionId || undefined }),
+        body: JSON.stringify({ message, session_id: sessionId || undefined, include_history: includeHistory }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
@@ -403,15 +405,19 @@ export default function TutorPage() {
                 <div
                   key={ins.id}
                   style={{
-                    border: "1px solid #fb923c",
-                    background: "#fff7ed",
+                    border: ins.is_active === false ? "1px solid #94a3b8" : "1px solid #fb923c",
+                    background: ins.is_active === false ? "#f1f5f9" : "#fff7ed",
                     borderRadius: 10,
                     padding: "0.6rem",
+                    opacity: ins.is_active === false ? 0.7 : 1,
                   }}
                 >
                   <div style={{ display: "flex", gap: "0.35rem", alignItems: "center", marginBottom: "0.25rem" }}>
-                    <span style={{ fontSize: "0.62rem", fontWeight: 800, textTransform: "uppercase", color: "#c2410c" }}>{ins.type.replace(/_/g, " ")}</span>
+                    <span style={{ fontSize: "0.62rem", fontWeight: 800, textTransform: "uppercase", color: ins.is_active === false ? "#64748b" : "#c2410c" }}>{ins.type.replace(/_/g, " ")}</span>
                     <span style={{ fontSize: "0.62rem", color: "#94a3b8" }}>{ins.category}</span>
+                    {ins.is_active === false && (
+                      <span style={{ fontSize: "0.56rem", fontWeight: 800, textTransform: "uppercase", color: "#fff", background: "#94a3b8", borderRadius: 4, padding: "1px 5px", marginLeft: "auto" }}>Historical</span>
+                    )}
                   </div>
                   <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#0f172a", marginBottom: "0.2rem" }}>{ins.concept_name || ins.concept_id || "General"}</div>
                   <div style={{ fontSize: "0.76rem", color: "#334155", lineHeight: 1.4 }}>{ins.content}</div>
@@ -459,6 +465,34 @@ export default function TutorPage() {
 
         <div style={{ borderTop: "1px solid #e2e8f0", background: "#f8f6f5", padding: "0.85rem 1.25rem 1rem", flexShrink: 0 }}>
           <div style={{ maxWidth: 900, margin: "0 auto" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.45rem" }}>
+              <button
+                type="button"
+                onClick={() => setIncludeHistory((v) => !v)}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                  border: includeHistory ? "1.5px solid #f45c25" : "1.5px solid #cbd5e1",
+                  borderRadius: 20,
+                  background: includeHistory ? "#fff7ed" : "#fff",
+                  color: includeHistory ? "#c2410c" : "#64748b",
+                  padding: "0.3rem 0.7rem",
+                  fontSize: "0.74rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  fontFamily: "var(--font-body)",
+                }}
+                title="When enabled, the tutor also considers your past (superseded) insights to understand how your learning has evolved"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{includeHistory ? "history_toggle_off" : "history"}</span>
+                Include History
+              </button>
+              {includeHistory && (
+                <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>Past insights included</span>
+              )}
+            </div>
             <div style={{ display: "flex", gap: "0.5rem", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 20, padding: "0.45rem" }}>
               <input
                 value={input}
