@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 # ── Fireworks OpenAI-compatible client (lazy singleton) ─────────────────
 _client: OpenAI | None = None
 _embedding_client: OpenAI | None = None
+_cerebras_client: OpenAI | None = None
 
 
 def _get_client() -> OpenAI:
@@ -46,6 +47,20 @@ def _get_client() -> OpenAI:
             base_url=settings.FIREWORKS_BASE_URL,
         )
     return _client
+
+
+def _get_cerebras_client() -> OpenAI:
+    """Lazy singleton for Cerebras inference (fast generation)."""
+    global _cerebras_client
+    if _cerebras_client is None:
+        api_key = settings.CEREBRAS_API_KEY
+        if not api_key:
+            raise HTTPException(status_code=500, detail="CEREBRAS_API_KEY not configured")
+        _cerebras_client = OpenAI(
+            api_key=api_key,
+            base_url=settings.CEREBRAS_BASE_URL,
+        )
+    return _cerebras_client
 
 
 def _get_embedding_client() -> OpenAI:
@@ -66,6 +81,7 @@ def _get_embedding_client() -> OpenAI:
 
 MODEL = settings.FIREWORKS_MODEL
 EVAL_MODEL = settings.FIREWORKS_MODEL
+CEREBRAS_MODEL = settings.CEREBRAS_MODEL
 EXERCISE_EVAL_MODEL = "gemini-3.1-pro-preview"
 GEN_BROWSER_TTL_SECONDS = 300
 GEN_EDGE_TTL_SECONDS = 604800
@@ -89,8 +105,9 @@ def _generate_with_fireworks(
     model: str,
     temperature: float = 0.0,
     json_mode: bool = False,
+    use_cerebras: bool = False,
 ) -> str:
-    client = _get_client()
+    client = _get_cerebras_client() if use_cerebras else _get_client()
     kwargs = {
         "model": model,
         "messages": [
@@ -119,10 +136,10 @@ def _generate_with_fireworks(
     return str(content or "").strip()
 
 
-def _generate_json_with_retry(prompt: str, *, model: str, retries: int = 2) -> dict:
+def _generate_json_with_retry(prompt: str, *, model: str, retries: int = 2, use_cerebras: bool = False) -> dict:
     data = None
     for attempt in range(retries):
-        raw = _generate_with_fireworks(prompt, model=model, temperature=0.0, json_mode=True)
+        raw = _generate_with_fireworks(prompt, model=model, temperature=0.0, json_mode=True, use_cerebras=use_cerebras)
         try:
             if raw.startswith("```"):
                 raw = raw.split("\n", 1)[1]
@@ -425,7 +442,8 @@ The key_terms should be 3-6 important concepts from this subsection that the stu
 Return ONLY valid JSON, no markdown fences, no extra text."""
 
     try:
-        data = _generate_json_with_retry(prompt, model=MODEL, retries=2)
+        gen_model = CEREBRAS_MODEL if settings.CEREBRAS_API_KEY else MODEL
+        data = _generate_json_with_retry(prompt, model=gen_model, retries=2, use_cerebras=bool(settings.CEREBRAS_API_KEY))
     except Exception:
         raise HTTPException(
             status_code=502,
@@ -938,7 +956,8 @@ RULES:
 - Return ONLY valid JSON, no markdown fences, no extra text."""
 
     try:
-        data = _generate_json_with_retry(prompt, model=MODEL, retries=2)
+        gen_model = CEREBRAS_MODEL if settings.CEREBRAS_API_KEY else MODEL
+        data = _generate_json_with_retry(prompt, model=gen_model, retries=2, use_cerebras=bool(settings.CEREBRAS_API_KEY))
     except Exception:
         raise HTTPException(
             status_code=502,

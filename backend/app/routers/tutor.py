@@ -40,6 +40,7 @@ class TutorState(TypedDict, total=False):
 class GlobalTutorState(TypedDict, total=False):
     student_id: str
     user_message: str
+    include_history: bool
     matched_insights: list[dict]
     history: list[dict]
     assistant_response: str
@@ -60,6 +61,7 @@ class TutorChatResponse(BaseModel):
 class GlobalTutorChatPayload(BaseModel):
     message: str
     session_id: str | None = None
+    include_history: bool = False
 
 
 class GlobalTutorChatResponse(BaseModel):
@@ -93,9 +95,11 @@ class TutorSessionListResponse(BaseModel):
 def _get_llm_client() -> OpenAI:
     global _llm_client
     if _llm_client is None:
-        if not settings.FIREWORKS_API_KEY:
-            raise HTTPException(status_code=500, detail="FIREWORKS_API_KEY not configured")
-        _llm_client = OpenAI(api_key=settings.FIREWORKS_API_KEY, base_url=settings.FIREWORKS_BASE_URL)
+        api_key = settings.CEREBRAS_API_KEY or settings.FIREWORKS_API_KEY
+        base_url = settings.CEREBRAS_BASE_URL if settings.CEREBRAS_API_KEY else settings.FIREWORKS_BASE_URL
+        if not api_key:
+            raise HTTPException(status_code=500, detail="CEREBRAS_API_KEY (or FIREWORKS_API_KEY) not configured")
+        _llm_client = OpenAI(api_key=api_key, base_url=base_url)
     return _llm_client
 
 
@@ -160,23 +164,28 @@ def _fetch_subsection_context(section_id: str, subsection_id: str) -> str:
     )
 
 
-def _search_top_insights(student_id: str, query: str, k: int = 4) -> list[dict]:
+def _search_top_insights(student_id: str, query: str, k: int = 4, include_history: bool = False) -> list[dict]:
     emb = _embed_query(query)
     if not emb:
         return []
+
+    active_filter = "" if include_history else "WHERE node.is_active = true"
+    active_filter_fb = "" if include_history else "{is_active: true}"
+
     try:
         rows = read_query(
-            """
+            f"""
             CALL db.index.vector.queryNodes('insight_embedding_index', $n, $embedding)
             YIELD node, score
-            MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(node)
-            WHERE node.is_active = true
+            MATCH (s:Student {{id: $student_id}})-[:HAS_INSIGHT]->(node)
+            {active_filter}
             OPTIONAL MATCH (node)-[:ABOUT_CONCEPT]->(c:Concept)
             OPTIONAL MATCH (node)-[:ABOUT_SOURCE]->(src)
             RETURN node.id AS id,
                    node.type AS type,
                    node.category AS category,
                    node.content AS content,
+                   node.is_active AS is_active,
                    c.id AS concept_id,
                    c.name AS concept_name,
                    src.id AS source_id,
@@ -191,9 +200,8 @@ def _search_top_insights(student_id: str, query: str, k: int = 4) -> list[dict]:
             k=k,
         )
     except Exception:
-        rows = read_query(
-            """
-            MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true})
+        cypher_fb = f"""
+            MATCH (s:Student {{id: $student_id}})-[:HAS_INSIGHT]->(i:Insight {active_filter_fb})
             WHERE i.embedding IS NOT NULL
             WITH i, vector.similarity.cosine(i.embedding, $embedding) AS score
             OPTIONAL MATCH (i)-[:ABOUT_CONCEPT]->(c:Concept)
@@ -202,6 +210,7 @@ def _search_top_insights(student_id: str, query: str, k: int = 4) -> list[dict]:
                    i.type AS type,
                    i.category AS category,
                    i.content AS content,
+                   i.is_active AS is_active,
                    c.id AS concept_id,
                    c.name AS concept_name,
                    src.id AS source_id,
@@ -209,7 +218,9 @@ def _search_top_insights(student_id: str, query: str, k: int = 4) -> list[dict]:
                    score AS similarity
             ORDER BY score DESC
             LIMIT $k
-            """,
+            """
+        rows = read_query(
+            cypher_fb,
             student_id=student_id,
             embedding=emb,
             k=k,
@@ -414,7 +425,7 @@ def _node_respond(state: TutorState) -> TutorState:
     )
 
     resp = client.chat.completions.create(
-        model=settings.FIREWORKS_MODEL,
+        model=settings.CEREBRAS_MODEL if settings.CEREBRAS_API_KEY else settings.FIREWORKS_MODEL,
         messages=messages,
         temperature=0.3,
         timeout=60,
@@ -436,8 +447,13 @@ def _node_respond(state: TutorState) -> TutorState:
 def _node_retrieve_global_context(state: GlobalTutorState) -> GlobalTutorState:
     insights = []
     student_id = state.get("student_id")
+    include_history = bool(state.get("include_history"))
     if student_id:
-        insights = _search_top_insights(student_id, state["user_message"], k=5)
+        insights = _search_top_insights(
+            student_id, state["user_message"],
+            k=6 if include_history else 5,
+            include_history=include_history,
+        )
     return {"matched_insights": insights}
 
 
@@ -456,11 +472,18 @@ def _node_respond_global(state: GlobalTutorState) -> GlobalTutorState:
             f"- [{ins.get('type')}/{ins.get('category')}] concept={concept}, source={src}, note={ins.get('content')}"
         )
 
+    include_history = bool(state.get("include_history"))
+    history_note = (
+        " Some insights may be superseded (historical). "
+        "Use historical insights to understand how the student's understanding evolved over time. "
+        "Clearly distinguish between what the student currently understands vs what they previously believed."
+    ) if include_history else ""
+
     system_prompt = (
         "You are the student's main LearnerOS tutor. "
         "You are textbook-agnostic and can explain concepts generally. "
-        "If matched active insights are provided, use them as personalization hints only when relevant. "
-        "Do not force unrelated insights into the answer. "
+        "If matched insights are provided, use them as personalization hints only when relevant. "
+        "Do not force unrelated insights into the answer." + history_note + " "
         "If the user asks a very domain-specific question without enough context, ask one clarifying question. "
         "Use markdown formatting when it improves clarity (headings, bullets, short tables, emphasis)."
     )
@@ -474,7 +497,7 @@ def _node_respond_global(state: GlobalTutorState) -> GlobalTutorState:
         {
             "role": "user",
             "content": (
-                "TOP MATCHED ACTIVE INSIGHTS (semantic):\n"
+                f"TOP MATCHED {'ACTIVE + HISTORICAL' if include_history else 'ACTIVE'} INSIGHTS (semantic):\n"
                 f"{chr(10).join(insight_lines) if insight_lines else '(none)'}\n\n"
                 "Respond to the student's latest message now."
             ),
@@ -482,7 +505,7 @@ def _node_respond_global(state: GlobalTutorState) -> GlobalTutorState:
     )
 
     resp = client.chat.completions.create(
-        model=settings.FIREWORKS_MODEL,
+        model=settings.CEREBRAS_MODEL if settings.CEREBRAS_API_KEY else settings.FIREWORKS_MODEL,
         messages=messages,
         temperature=0.3,
         timeout=60,
@@ -626,6 +649,7 @@ async def global_tutor_chat(
         {
             "student_id": user.student_id if user else "",
             "user_message": msg,
+            "include_history": body.include_history,
             "history": history,
         }
     )

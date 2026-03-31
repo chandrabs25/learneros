@@ -152,7 +152,7 @@ async def admin_rebuild_clusters(
         _cluster_status.pop("error", None)
         try:
             import traceback as tb
-            from scripts.build_teacher_clusters import build_for_institute, fetch_institute_ids
+            from app.services.clustering_runner import build_for_institute, fetch_institute_ids
 
             ids = [institute_id] if institute_id else fetch_institute_ids()
             for iid in ids:
