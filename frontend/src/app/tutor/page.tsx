@@ -487,10 +487,10 @@ export default function TutorPage() {
                 title="When enabled, the tutor also considers your past (superseded) insights to understand how your learning has evolved"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>{includeHistory ? "history_toggle_off" : "history"}</span>
-                Include History
+                Include Inactive Insights
               </button>
               {includeHistory && (
-                <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>Past insights included</span>
+                <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>Inactive insights included</span>
               )}
             </div>
             <div style={{ display: "flex", gap: "0.5rem", background: "#fff", border: "1px solid #e2e8f0", borderRadius: 20, padding: "0.45rem" }}>
