@@ -32,6 +32,10 @@ class Settings(BaseSettings):
     FIREWORKS_BASE_URL: str = "https://api.fireworks.ai/inference/v1"
     FIREWORKS_MODEL: str = "accounts/fireworks/models/kimi-k2p5"
     FIREWORKS_EMBEDDING_MODEL: str = "fireworks/qwen3-embedding-8b"
+    # Cerebras — ultra-fast inference for tutor chat & question generation
+    CEREBRAS_API_KEY: str = ""
+    CEREBRAS_BASE_URL: str = "https://api.cerebras.ai/v1"
+    CEREBRAS_MODEL: str = "qwen-3-235b-a22b-instruct-2507"
     GEN_CACHE_TTL_SECONDS: int = 604800
     GEN_CACHE_MAX_ENTRIES: int = 5000
     GEN_PROMPT_VERSION: str = "v2"
