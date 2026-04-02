@@ -338,7 +338,7 @@ export default function TutorPage() {
       <aside className="tutor-left" style={{ borderRight: "1px solid #e2e8f0", background: "#fff", padding: "1rem", display: "flex", flexDirection: "column", gap: "0", minHeight: 0 }}>
         {/* ── Past Sessions ── */}
         <div style={{ fontSize: "0.68rem", letterSpacing: "0.12em", fontWeight: 800, textTransform: "uppercase", color: "#94a3b8", marginBottom: "0.5rem" }}>Chat History</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", overflowY: "auto", flex: 1, minHeight: 0, marginBottom: "0.75rem" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.3rem", overflowY: "auto", maxHeight: "40%", minHeight: 0, marginBottom: "0.75rem" }}>
           {sessionsLoading ? (
             <div style={{ fontSize: "0.82rem", color: "#94a3b8" }}>Loading sessions...</div>
           ) : pastSessions.length === 0 ? (
