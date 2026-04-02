@@ -398,7 +398,7 @@ export default function TutorPage() {
 
         <button
           onClick={newExploration}
-          style={{ border: "2px dashed #cbd5e1", borderRadius: 10, background: "transparent", padding: "0.7rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer", fontFamily: "var(--font-display)", marginTop: "auto", flexShrink: 0 }}
+          style={{ border: "2px dashed #cbd5e1", borderRadius: 10, background: "transparent", padding: "0.7rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer", fontFamily: "var(--font-display)", flexShrink: 0 }}
         >
           + New Exploration
         </button>
