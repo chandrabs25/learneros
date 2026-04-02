@@ -396,11 +396,18 @@ export default function TutorPage() {
           )}
         </div>
 
+        <button
+          onClick={newExploration}
+          style={{ border: "2px dashed #cbd5e1", borderRadius: 10, background: "transparent", padding: "0.7rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer", fontFamily: "var(--font-display)", marginTop: "auto", flexShrink: 0 }}
+        >
+          + New Exploration
+        </button>
+
         {/* ── Matched Insights ── */}
         {matchedInsights.length > 0 && (
           <>
             <div style={{ fontSize: "0.68rem", letterSpacing: "0.12em", fontWeight: 800, textTransform: "uppercase", color: "#94a3b8", marginBottom: "0.5rem", borderTop: "1px solid #e2e8f0", paddingTop: "0.75rem" }}>Matched Insights</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", overflowY: "auto", minHeight: 0, maxHeight: 200 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", overflowY: "auto", minHeight: 0, maxHeight: 360 }}>
               {matchedInsights.map((ins) => (
                 <div
                   key={ins.id}
@@ -426,13 +433,6 @@ export default function TutorPage() {
             </div>
           </>
         )}
-
-        <button
-          onClick={newExploration}
-          style={{ marginTop: "auto", border: "2px dashed #cbd5e1", borderRadius: 10, background: "transparent", padding: "0.7rem", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer", fontFamily: "var(--font-display)" }}
-        >
-          + New Exploration
-        </button>
       </aside>
 
       <section className="tutor-center" style={{ display: "flex", flexDirection: "column", minWidth: 0, minHeight: 0, overflow: "hidden" }}>
