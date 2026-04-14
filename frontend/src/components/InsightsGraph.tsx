@@ -126,7 +126,7 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
           if (!graph.hasNode(edge.source) || !graph.hasNode(edge.target)) continue;
           edgeSet.add(key);
           graph.addEdge(edge.source, edge.target, {
-            color: "#1e293b",
+            color: "#cbd5e1",
             size: 0.5,
           });
         }
@@ -163,8 +163,8 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
           labelWeight: "600",
           labelColor: { color: "#0f172a" },
           labelRenderedSizeThreshold: 6,
-          defaultEdgeColor: "#1e293b",
-          defaultNodeColor: "#475569",
+          defaultEdgeColor: "#cbd5e1",
+          defaultNodeColor: "#64748b",
           minCameraRatio: 0.1,
           maxCameraRatio: 10,
           stagePadding: 40,
@@ -188,7 +188,7 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
               if (source !== hoveredNode && target !== hoveredNode) {
                 res.hidden = true;
               } else {
-                res.color = "#475569";
+                res.color = "#94a3b8";
                 res.size = 1.5;
               }
             }
@@ -271,7 +271,7 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
           if (source !== hoveredNode && target !== hoveredNode) {
             res.hidden = true;
           } else {
-            res.color = "#475569";
+            res.color = "#94a3b8";
             res.size = 1.5;
           }
         }
@@ -285,11 +285,11 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
   return (
     <div
       style={{
-        background: "linear-gradient(135deg, #0b1739 0%, #0f2540 100%)",
+        background: "#f8fafb",
         borderRadius: 20,
         overflow: "hidden",
         marginBottom: "2rem",
-        border: "1px solid #1e293b",
+        border: "1px solid #e2e8f0",
       }}
     >
       {/* Header */}
@@ -309,7 +309,7 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
               margin: 0,
               fontSize: "1.25rem",
               fontWeight: 800,
-              color: "#f1f5f9",
+              color: "#0f172a",
               letterSpacing: "-0.02em",
             }}
           >
@@ -388,7 +388,7 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
             justifyContent: "center",
             gap: "2rem",
             padding: "0.6rem 1.25rem 0.8rem",
-            borderTop: "1px solid #1e293b",
+            borderTop: "1px solid #e2e8f0",
           }}
         >
           <Stat label="Chapters" value={stats.chapters} />
@@ -403,7 +403,7 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div style={{ textAlign: "center" }}>
-      <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 900, color: "#f1f5f9" }}>{value}</p>
+      <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 900, color: "#0f172a" }}>{value}</p>
       <p style={{ margin: 0, fontSize: "0.68rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
         {label}
       </p>
