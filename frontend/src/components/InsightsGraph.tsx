@@ -92,11 +92,11 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
           let color: string;
 
           if (isChapter) {
-            color = getSubjectColor(node.subject);
+            color = "#64748b"; // Grey for all chapters
           } else if (node.insight_type) {
-            color = INSIGHT_COLORS[node.insight_type] || "#475569";
+            color = INSIGHT_COLORS[node.insight_type] || "#64748b";
           } else {
-            color = "#475569";
+            color = "#64748b"; // Grey for concepts without insights
           }
 
           const label = isChapter
@@ -161,7 +161,7 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
           labelFont: "Inter, system-ui, sans-serif",
           labelSize: 11,
           labelWeight: "600",
-          labelColor: { color: "#e2e8f0" },
+          labelColor: { color: "#0f172a" },
           labelRenderedSizeThreshold: 6,
           defaultEdgeColor: "#1e293b",
           defaultNodeColor: "#475569",
@@ -335,22 +335,6 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
           </div>
         )}
       </div>
-
-      {/* Subject legend */}
-      {!loading && !error && (
-        <div
-          style={{
-            display: "flex",
-            gap: "0.75rem",
-            padding: "0 1.25rem 0.5rem",
-            flexWrap: "wrap",
-          }}
-        >
-          {Object.entries(SUBJECT_COLORS).map(([subj, color]) => (
-            <LegendDot key={subj} color={color} label={subj.charAt(0).toUpperCase() + subj.slice(1)} square />
-          ))}
-        </div>
-      )}
 
       {/* Graph container */}
       <div
