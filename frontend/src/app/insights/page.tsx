@@ -1,9 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import TutorMarkdown from "@/components/TutorMarkdown";
+
+const InsightsGraph = dynamic(() => import("@/components/InsightsGraph"), { ssr: false });
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -45,6 +48,8 @@ export default function InsightsAnalyticsPage() {
   const [error, setError] = useState("");
   const [insights, setInsights] = useState<InsightItem[]>([]);
   const [selectedType, setSelectedType] = useState<InsightType | "ALL">("ALL");
+  const [token, setToken] = useState<string | null>(null);
+  const conceptRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [explainById, setExplainById] = useState<Record<string, { loading: boolean; text?: string; points?: string[]; error?: string }>>({});
   const [testById, setTestById] = useState<Record<string, {
     loading: boolean;
@@ -63,14 +68,15 @@ export default function InsightsAnalyticsPage() {
     setLoading(true);
     setError("");
     try {
-      const token = await getIdToken();
-      if (!token) {
+      const idToken = await getIdToken();
+      setToken(idToken);
+      if (!idToken) {
         setInsights([]);
         setError("Sign in to view your learning analysis.");
         return;
       }
       const res = await fetch(`${API_URL}/api/students/me/insights`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${idToken}` },
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
@@ -81,6 +87,18 @@ export default function InsightsAnalyticsPage() {
       setLoading(false);
     }
   };
+
+  const handleConceptClick = useCallback((conceptId: string) => {
+    // Find the matching concept group and scroll to it
+    const el = conceptRefs.current[conceptId];
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.style.boxShadow = "0 0 0 3px #13ecda, 0 8px 32px rgba(19, 236, 218, 0.2)";
+      setTimeout(() => {
+        el.style.boxShadow = "0 6px 22px rgba(15, 23, 42, 0.04)";
+      }, 2000);
+    }
+  }, []);
 
   useEffect(() => {
     loadInsights();
@@ -259,6 +277,9 @@ export default function InsightsAnalyticsPage() {
           />
         </div>
 
+        {/* Knowledge Graph */}
+        <InsightsGraph token={token} onConceptClick={handleConceptClick} />
+
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "1rem", marginBottom: "1rem" }}>
           <h2 style={{ margin: 0, fontSize: "1.65rem", fontWeight: 800, letterSpacing: "-0.02em" }}>Concept-wise Insights</h2>
           <div style={{ fontSize: "0.84rem", color: "#64748b", background: "#eef2ff", borderRadius: 9999, padding: "0.45rem 0.9rem", fontWeight: 600 }}>
@@ -279,12 +300,14 @@ export default function InsightsAnalyticsPage() {
             {conceptGroups.map((group) => (
               <div
                 key={group.key}
+                ref={(el) => { conceptRefs.current[group.key] = el; }}
                 style={{
                   background: "#fff",
                   border: "1px solid #e2e8f0",
                   borderRadius: 16,
                   padding: "1.1rem 1.2rem",
                   boxShadow: "0 6px 22px rgba(15, 23, 42, 0.04)",
+                  transition: "box-shadow 0.3s ease",
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "center", marginBottom: "0.7rem" }}>

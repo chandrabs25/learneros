@@ -59,12 +59,25 @@ CONSTRAINTS: list[tuple[str, str, str, str]] = [
 ]
 
 INDEXES: list[tuple[str, str, str]] = [
+    # ── Student ────────────────────────────────────────────────────────
     ("Student", "institute_id", "student_institute_idx"),
     ("Student", "grade", "student_grade_idx"),
     ("Student", "role", "student_role_idx"),
+
+    # ── Insight ────────────────────────────────────────────────────────
     ("Insight", "is_active", "insight_is_active_idx"),
     ("Insight", "type", "insight_type_idx"),
     ("Insight", "created_at", "insight_created_at_idx"),
+    ("Insight", "category", "insight_category_idx"),          # NEW: filtered in reconcile + MCQ eval
+
+    # ── TutorSession ──────────────────────────────────────────────────
+    ("TutorSession", "mode", "tutor_session_mode_idx"),       # NEW: WHERE sess.mode = 'global' (3 queries)
+    ("TutorSession", "section_id", "tutor_session_section_idx"),  # NEW: WHERE sess.section_id = $id
+    ("TutorSession", "created_at", "tutor_session_created_at_idx"),  # NEW: ORDER BY created_at DESC
+
+    # ── TutorMessage ──────────────────────────────────────────────────
+    ("TutorMessage", "role", "tutor_message_role_idx"),       # NEW: WHERE role = 'user' (session list)
+    ("TutorMessage", "created_at", "tutor_message_created_at_idx"),  # NEW: ORDER BY created_at ASC (4 queries)
 ]
 
 

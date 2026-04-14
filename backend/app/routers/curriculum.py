@@ -377,10 +377,12 @@ async def chapter_graph(
     else:
         _set_public_cache_headers(response)
 
-    # ── Nodes: sections + concepts ────────────────────────────────────
-    node_rows = read_query("""
+    # ── Nodes + Edges in a single query (saves ~160ms RTT) ──────────────
+    graph_rows = read_query("""
         MATCH (ch:Chapter {id: $chapter_id})-[:CONTAINS]->(sec:Section)
         OPTIONAL MATCH (sec)-[:REQUIRES]->(concept:Concept)
+        OPTIONAL MATCH (sec)-[:NEXT]->(next_sec:Section)
+        OPTIONAL MATCH (sec)-[:REQUIRES]->(target)
         WITH collect(DISTINCT {
             id:     sec.id,
             label:  sec.title,
@@ -391,22 +393,31 @@ async def chapter_graph(
             id:    concept.id,
             label: concept.name,
             type:  'concept'
-        } END) AS concept_nodes
+        } END) AS concept_nodes,
+        collect(DISTINCT CASE WHEN next_sec IS NOT NULL
+            THEN {source: sec.id, target: next_sec.id, type: 'NEXT'}
+            END) AS next_edges,
+        collect(DISTINCT CASE WHEN target IS NOT NULL
+            THEN {source: sec.id, target: target.id, type: 'REQUIRES'}
+            END) AS req_edges
         RETURN section_nodes,
-               [c IN concept_nodes WHERE c IS NOT NULL] AS concept_nodes
+               [c IN concept_nodes WHERE c IS NOT NULL] AS concept_nodes,
+               [e IN next_edges + req_edges WHERE e IS NOT NULL] AS edges
     """, chapter_id=chapter_id)
 
     nodes: list[dict] = []
     section_ids: list[str] = []
     concept_ids: list[str] = []
+    edges: list[dict] = []
 
-    if node_rows:
-        for n in node_rows[0].get("section_nodes", []):
+    if graph_rows:
+        for n in graph_rows[0].get("section_nodes", []):
             nodes.append(n)
             section_ids.append(n["id"])
-        for n in node_rows[0].get("concept_nodes", []):
+        for n in graph_rows[0].get("concept_nodes", []):
             nodes.append(n)
             concept_ids.append(n["id"])
+        edges = graph_rows[0].get("edges", [])
 
     # ── Overlay insights if student is authenticated ───────────────────
     if user and (section_ids or concept_ids):
@@ -447,23 +458,9 @@ async def chapter_graph(
         for node in nodes:
             node["insight"] = insight_by_node.get(node["id"])
 
-    # ── Edges: NEXT + REQUIRES ────────────────────────────────────────
-    edge_rows = read_query("""
-        MATCH (ch:Chapter {id: $chapter_id})-[:CONTAINS]->(sec:Section)
-        OPTIONAL MATCH (sec)-[n:NEXT]->(next_sec:Section)
-        OPTIONAL MATCH (sec)-[r:REQUIRES]->(target)
-        WITH collect(DISTINCT CASE WHEN next_sec IS NOT NULL
-            THEN {source: sec.id, target: next_sec.id, type: 'NEXT'}
-            END) AS next_edges,
-        collect(DISTINCT CASE WHEN target IS NOT NULL
-            THEN {source: sec.id, target: target.id, type: 'REQUIRES'}
-            END) AS req_edges
-        RETURN [e IN next_edges + req_edges WHERE e IS NOT NULL] AS edges
-    """, chapter_id=chapter_id)
-
     return {
         "nodes": nodes,
-        "edges": edge_rows[0]["edges"] if edge_rows else [],
+        "edges": edges,
         "section_ids": section_ids,
         "concept_ids": concept_ids,
     }
@@ -486,17 +483,7 @@ async def concept_lineage(
     if cached is not None:
         return cached
 
-    concept_rows = read_query(
-        """
-        MATCH (c:Concept {id: $concept_id})
-        RETURN c.id AS id, c.name AS name
-        LIMIT 1
-        """,
-        concept_id=concept_id,
-    )
-    if not concept_rows:
-        raise HTTPException(status_code=404, detail="Concept not found")
-
+    # Single batched query: concept lookup + chapter traversal (saves ~160ms RTT)
     chapter_rows = read_query(
         """
         MATCH (c:Concept {id: $concept_id})
@@ -511,7 +498,9 @@ async def concept_lineage(
         WHERE ch IS NOT NULL
         MATCH (t:Textbook)-[:CONTAINS]->(ch)
         MATCH (s:Subject)-[:CONTAINS]->(t)
-        RETURN t.grade AS grade,
+        RETURN c.id AS concept_id,
+               c.name AS concept_name,
+               t.grade AS grade,
                s.name AS subject_name,
                ch.id AS chapter_id,
                ch.number AS chapter_number,
@@ -521,13 +510,27 @@ async def concept_lineage(
         concept_id=concept_id,
     )
 
+    # If no rows at all, the concept itself might not exist or has no chapters.
+    # Verify concept exists with a cheap fallback.
+    if not chapter_rows:
+        verify = read_query(
+            "MATCH (c:Concept {id: $concept_id}) RETURN c.id AS id LIMIT 1",
+            concept_id=concept_id,
+        )
+        if not verify:
+            raise HTTPException(status_code=404, detail="Concept not found")
+        # Concept exists but has no linked chapters — empty lineage
+        concept_name = concept_id
+    else:
+        concept_name = chapter_rows[0].get("concept_name") or concept_id
+
     chapter_total = len(chapter_rows)
     limited_rows = chapter_rows[:chapter_limit]
     truncated = chapter_total > chapter_limit
 
     concept = {
-        "id": concept_rows[0]["id"],
-        "name": (concept_rows[0].get("name") or concept_rows[0]["id"]).replace("_", " ").title(),
+        "id": concept_id,
+        "name": (concept_name or concept_id).replace("_", " ").title(),
     }
 
     nodes: list[dict] = []
@@ -611,3 +614,82 @@ async def concept_lineage(
     }
     _cache_set(key, payload)
     return payload
+
+
+# ─── Insights Knowledge Graph ───────────────────────────────────────
+@router.get("/insights/graph")
+async def insights_graph(
+    response: Response,
+    user=Depends(get_optional_user),
+):
+    """
+    Returns ALL chapters + concepts across every grade/subject,
+    annotated with the student's active insight status per concept.
+
+    Used by the insights page sigma.js graph visualisation.
+    """
+    response.headers["Vary"] = "Authorization"
+    if user:
+        _set_no_store_headers(response)
+    else:
+        _set_public_cache_headers(response)
+
+    student_id = user.student_id if user else None
+
+    # Single query: subjects → textbooks → chapters → sections → concepts, with optional insight overlay
+    rows = read_query("""
+        MATCH (subj:Subject)-[:CONTAINS]->(t:Textbook)-[:CONTAINS]->(ch:Chapter)
+              -[:CONTAINS]->(sec:Section)-[:REQUIRES]->(c:Concept)
+        WITH subj, t, ch, c, count(DISTINCT sec) AS section_count
+        OPTIONAL MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true})
+                      -[:ABOUT_CONCEPT]->(c)
+        WITH subj, t, ch, c, section_count, collect(i.type) AS insight_types
+        RETURN t.grade         AS grade,
+               subj.name      AS subject,
+               ch.id           AS chapter_id,
+               ch.title        AS chapter_title,
+               ch.number       AS chapter_number,
+               c.id            AS concept_id,
+               c.name          AS concept_name,
+               section_count,
+               CASE
+                 WHEN any(x IN insight_types WHERE x = 'MISCONCEPTION')          THEN 'MISCONCEPTION'
+                 WHEN any(x IN insight_types WHERE x = 'PARTIAL_UNDERSTANDING')  THEN 'PARTIAL_UNDERSTANDING'
+                 WHEN any(x IN insight_types WHERE x = 'COMPETENCY')             THEN 'COMPETENCY'
+                 ELSE null
+               END             AS insight_type
+        ORDER BY t.grade, subj.name, ch.number, c.name
+    """, student_id=student_id or "")
+
+    # Build unique nodes + edges
+    seen_nodes: set[str] = set()
+    nodes: list[dict] = []
+    edges: list[dict] = []
+
+    for row in rows:
+        ch_id = row["chapter_id"]
+        c_id = row["concept_id"]
+
+        if ch_id not in seen_nodes:
+            seen_nodes.add(ch_id)
+            nodes.append({
+                "id": ch_id,
+                "label": row["chapter_title"],
+                "type": "chapter",
+                "grade": row["grade"],
+                "subject": row["subject"],
+                "number": row["chapter_number"],
+            })
+
+        if c_id not in seen_nodes:
+            seen_nodes.add(c_id)
+            nodes.append({
+                "id": c_id,
+                "label": row["concept_name"],
+                "type": "concept",
+                "insight_type": row["insight_type"],
+            })
+
+        edges.append({"source": ch_id, "target": c_id})
+
+    return {"nodes": nodes, "edges": edges}
