@@ -1,26 +1,25 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { OrbitControls, Html } from "@react-three/drei";
-import * as THREE from "three";
+import { useEffect, useRef, useState, useCallback } from "react";
+import Graph from "graphology";
+import forceAtlas2 from "graphology-layout-forceatlas2";
+import Sigma from "sigma";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-/* ─── Types ───────────────────────────────────────────────────────── */
-
-interface ConceptPosition {
+interface GraphNodeData {
   id: string;
-  name: string;
-  x: number;
-  y: number;
-  z: number;
-  chapter_ids: string[];
-  subject: string | null;
+  label: string;
+  type: "chapter" | "concept";
+  grade?: number;
+  subject?: string;
+  number?: number;
+  insight_type?: "COMPETENCY" | "PARTIAL_UNDERSTANDING" | "MISCONCEPTION" | null;
 }
 
-interface InsightOverlay {
-  [conceptId: string]: "COMPETENCY" | "PARTIAL_UNDERSTANDING" | "MISCONCEPTION";
+interface GraphEdgeData {
+  source: string;
+  target: string;
 }
 
 interface InsightsGraphProps {
@@ -28,276 +27,260 @@ interface InsightsGraphProps {
   onConceptClick?: (conceptId: string) => void;
 }
 
-/* ─── Colors ──────────────────────────────────────────────────────── */
-
 const INSIGHT_COLORS: Record<string, string> = {
   COMPETENCY: "#10b981",
   PARTIAL_UNDERSTANDING: "#f59e0b",
   MISCONCEPTION: "#ef4444",
 };
 
-const DEFAULT_COLOR = "#94a3b8"; // grey for unassessed
-const SPHERE_RADIUS = 4.2;
+const SUBJECT_COLORS: Record<string, string> = {
+  physics: "#3b82f6",
+  chemistry: "#8b5cf6",
+  biology: "#06b6d4",
+  mathematics: "#f97316",
+};
 
-/* ─── Concept Points (instanced for perf) ─────────────────────────── */
-
-function ConceptNodes({
-  concepts,
-  insightOverlay,
-  onHover,
-  onClick,
-}: {
-  concepts: ConceptPosition[];
-  insightOverlay: InsightOverlay;
-  onHover: (index: number | null) => void;
-  onClick: (index: number) => void;
-}) {
-  const meshRef = useRef<THREE.InstancedMesh>(null);
-  const tempObject = useMemo(() => new THREE.Object3D(), []);
-  const tempColor = useMemo(() => new THREE.Color(), []);
-
-  // Set positions + colors
-  useEffect(() => {
-    if (!meshRef.current) return;
-
-    const colorArray = new Float32Array(concepts.length * 3);
-
-    concepts.forEach((c, i) => {
-      tempObject.position.set(
-        c.x * SPHERE_RADIUS,
-        c.y * SPHERE_RADIUS,
-        c.z * SPHERE_RADIUS
-      );
-      tempObject.scale.setScalar(1);
-      tempObject.updateMatrix();
-      meshRef.current!.setMatrixAt(i, tempObject.matrix);
-
-      const insightType = insightOverlay[c.id];
-      const hex = insightType ? INSIGHT_COLORS[insightType] || DEFAULT_COLOR : DEFAULT_COLOR;
-      tempColor.set(hex);
-      colorArray[i * 3] = tempColor.r;
-      colorArray[i * 3 + 1] = tempColor.g;
-      colorArray[i * 3 + 2] = tempColor.b;
-    });
-
-    meshRef.current.instanceMatrix.needsUpdate = true;
-    meshRef.current.geometry.setAttribute(
-      "color",
-      new THREE.InstancedBufferAttribute(colorArray, 3)
-    );
-  }, [concepts, insightOverlay, tempObject, tempColor]);
-
-  return (
-    <instancedMesh
-      ref={meshRef}
-      args={[undefined, undefined, concepts.length]}
-      onPointerMove={(e) => {
-        e.stopPropagation();
-        if (e.instanceId !== undefined) onHover(e.instanceId);
-      }}
-      onPointerLeave={() => onHover(null)}
-      onClick={(e) => {
-        e.stopPropagation();
-        if (e.instanceId !== undefined) onClick(e.instanceId);
-      }}
-    >
-      <sphereGeometry args={[0.06, 12, 12]} />
-      <meshStandardMaterial vertexColors toneMapped={false} />
-    </instancedMesh>
-  );
+function getSubjectColor(subject: string | undefined): string {
+  if (!subject) return "#64748b";
+  return SUBJECT_COLORS[subject.toLowerCase()] || "#64748b";
 }
-
-/* ─── Wireframe Sphere Shell ──────────────────────────────────────── */
-
-function SphereShell() {
-  return (
-    <mesh>
-      <sphereGeometry args={[SPHERE_RADIUS + 0.02, 32, 32]} />
-      <meshBasicMaterial
-        color="#e2e8f0"
-        wireframe
-        transparent
-        opacity={0.08}
-      />
-    </mesh>
-  );
-}
-
-/* ─── Gentle auto-rotate ──────────────────────────────────────────── */
-
-function AutoRotate({ enabled }: { enabled: boolean }) {
-  const { scene } = useThree();
-  useFrame((_, delta) => {
-    if (enabled) {
-      scene.rotation.y += delta * 0.08;
-    }
-  });
-  return null;
-}
-
-/* ─── Tooltip ─────────────────────────────────────────────────────── */
-
-function Tooltip({
-  concept,
-  insightType,
-}: {
-  concept: ConceptPosition;
-  insightType?: string;
-}) {
-  const prettyName = concept.name.replace(/_/g, " ");
-  const dotColor = insightType ? INSIGHT_COLORS[insightType] || DEFAULT_COLOR : DEFAULT_COLOR;
-  const typeLabel = insightType
-    ? insightType.replace(/_/g, " ")
-    : "Not assessed";
-
-  return (
-    <Html
-      position={[
-        concept.x * SPHERE_RADIUS,
-        concept.y * SPHERE_RADIUS + 0.25,
-        concept.z * SPHERE_RADIUS,
-      ]}
-      center
-      style={{ pointerEvents: "none" }}
-    >
-      <div
-        style={{
-          background: "#fff",
-          border: "1px solid #e2e8f0",
-          borderRadius: 10,
-          padding: "6px 10px",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.10)",
-          whiteSpace: "nowrap",
-          minWidth: 100,
-        }}
-      >
-        <div
-          style={{
-            fontSize: "0.78rem",
-            fontWeight: 700,
-            color: "#0f172a",
-            marginBottom: 2,
-          }}
-        >
-          {prettyName}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: "50%",
-              background: dotColor,
-              display: "inline-block",
-            }}
-          />
-          <span
-            style={{
-              fontSize: "0.65rem",
-              fontWeight: 600,
-              color: "#64748b",
-              textTransform: "capitalize",
-            }}
-          >
-            {typeLabel}
-          </span>
-        </div>
-        {concept.subject && (
-          <div
-            style={{
-              fontSize: "0.6rem",
-              color: "#94a3b8",
-              marginTop: 2,
-            }}
-          >
-            {concept.subject}
-          </div>
-        )}
-      </div>
-    </Html>
-  );
-}
-
-/* ─── Main Component ──────────────────────────────────────────────── */
 
 export default function InsightsGraph({ token, onConceptClick }: InsightsGraphProps) {
-  const [concepts, setConcepts] = useState<ConceptPosition[]>([]);
-  const [insightOverlay, setInsightOverlay] = useState<InsightOverlay>({});
+  const containerRef = useRef<HTMLDivElement>(null);
+  const sigmaRef = useRef<Sigma | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [stats, setStats] = useState({ chapters: 0, concepts: 0, withInsights: 0 });
 
-  const stats = useMemo(() => {
-    const total = concepts.length;
-    const withInsights = Object.keys(insightOverlay).length;
-    return { total, withInsights };
-  }, [concepts, insightOverlay]);
+  const buildGraph = useCallback(
+    async (container: HTMLDivElement) => {
+      setLoading(true);
+      setError("");
 
-  // 1. Load static positions
-  useEffect(() => {
-    setLoading(true);
-    fetch("/concept-positions.json")
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data) => {
-        setConcepts(data.concepts || []);
+      try {
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
+        const res = await fetch(`${API_URL}/api/insights/graph`, { headers });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const data = await res.json();
+        const nodes: GraphNodeData[] = data.nodes || [];
+        const edges: GraphEdgeData[] = data.edges || [];
+
+        if (nodes.length === 0) {
+          setError("No curriculum data available.");
+          setLoading(false);
+          return;
+        }
+
+        // Stats
+        const chapterCount = nodes.filter((n) => n.type === "chapter").length;
+        const conceptCount = nodes.filter((n) => n.type === "concept").length;
+        const withInsights = nodes.filter(
+          (n) => n.type === "concept" && n.insight_type
+        ).length;
+        setStats({ chapters: chapterCount, concepts: conceptCount, withInsights });
+
+        // Build graphology graph
+        const graph = new Graph();
+
+        for (const node of nodes) {
+          const isChapter = node.type === "chapter";
+          const size = isChapter ? 8 : 5;
+          let color: string;
+
+          if (isChapter) {
+            color = "#64748b"; // Grey for all chapters
+          } else if (node.insight_type) {
+            color = INSIGHT_COLORS[node.insight_type] || "#64748b";
+          } else {
+            color = "#64748b"; // Grey for concepts without insights
+          }
+
+          const label = isChapter
+            ? node.label
+            : (node.label || "").replace(/_/g, " ");
+
+          graph.addNode(node.id, {
+            label,
+            size,
+            color,
+            x: Math.random() * 100,
+            y: Math.random() * 100,
+            type: isChapter ? "circle" : "circle",
+            // Store metadata for hover/click
+            nodeType: node.type,
+            insightType: node.insight_type || null,
+            subject: node.subject || "",
+            grade: node.grade || 0,
+          });
+        }
+
+        // Deduplicate edges
+        const edgeSet = new Set<string>();
+        for (const edge of edges) {
+          const key = `${edge.source}→${edge.target}`;
+          if (edgeSet.has(key)) continue;
+          if (!graph.hasNode(edge.source) || !graph.hasNode(edge.target)) continue;
+          edgeSet.add(key);
+          graph.addEdge(edge.source, edge.target, {
+            color: "#cbd5e1",
+            size: 0.5,
+          });
+        }
+
+        // Run ForceAtlas2 layout
+        forceAtlas2.assign(graph, {
+          iterations: 100,
+          settings: {
+            gravity: 1.5,
+            scalingRatio: 3,
+            strongGravityMode: false,
+            barnesHutOptimize: true,
+            barnesHutTheta: 0.5,
+            adjustSizes: true,
+            linLogMode: false,
+            outboundAttractionDistribution: false,
+            edgeWeightInfluence: 1,
+            slowDown: 5,
+          },
+        });
+
+        // Cleanup previous instance
+        if (sigmaRef.current) {
+          sigmaRef.current.kill();
+          sigmaRef.current = null;
+        }
+
+        // Create sigma renderer
+        const renderer = new Sigma(graph, container, {
+          renderLabels: true,
+          renderEdgeLabels: false,
+          labelFont: "Inter, system-ui, sans-serif",
+          labelSize: 11,
+          labelWeight: "600",
+          labelColor: { color: "#0f172a" },
+          labelRenderedSizeThreshold: 6,
+          defaultEdgeColor: "#cbd5e1",
+          defaultNodeColor: "#64748b",
+          minCameraRatio: 0.1,
+          maxCameraRatio: 10,
+          stagePadding: 40,
+          nodeReducer: (node, data) => {
+            const res = { ...data };
+            if (hoveredNode) {
+              if (node === hoveredNode || graph.hasEdge(node, hoveredNode) || graph.hasEdge(hoveredNode, node)) {
+                res.highlighted = true;
+              } else {
+                res.color = `${data.color}44`;
+                res.label = "";
+              }
+            }
+            return res;
+          },
+          edgeReducer: (edge, data) => {
+            const res = { ...data };
+            if (hoveredNode) {
+              const source = graph.source(edge);
+              const target = graph.target(edge);
+              if (source !== hoveredNode && target !== hoveredNode) {
+                res.hidden = true;
+              } else {
+                res.color = "#94a3b8";
+                res.size = 1.5;
+              }
+            }
+            return res;
+          },
+        });
+
+        sigmaRef.current = renderer;
+
+        // Event handlers
+        renderer.on("enterNode", ({ node }) => {
+          setHoveredNode(node);
+          renderer.refresh();
+        });
+
+        renderer.on("leaveNode", () => {
+          setHoveredNode(null);
+          renderer.refresh();
+        });
+
+        renderer.on("clickNode", ({ node }) => {
+          const attrs = graph.getNodeAttributes(node);
+          if (attrs.nodeType === "concept" && onConceptClick) {
+            onConceptClick(node);
+          }
+        });
+
         setLoading(false);
-      })
-      .catch((e) => {
-        setError(e instanceof Error ? e.message : "Failed to load positions.");
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : "Failed to load graph.");
         setLoading(false);
-      });
-  }, []);
+      }
+    },
+    [token, onConceptClick]
+  );
 
-  // 2. Load dynamic insight overlay
   useEffect(() => {
-    if (!token) return;
+    if (!containerRef.current) return;
+    buildGraph(containerRef.current);
 
-    fetch(`${API_URL}/api/students/me/insights`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (!Array.isArray(data)) return;
-        const overlay: InsightOverlay = {};
-        for (const ins of data) {
-          const cid = ins.concept_id;
-          if (!cid) continue;
-          // Priority: MISCONCEPTION > PARTIAL > COMPETENCY
-          const existing = overlay[cid];
-          if (!existing) {
-            overlay[cid] = ins.type;
-          } else if (ins.type === "MISCONCEPTION") {
-            overlay[cid] = "MISCONCEPTION";
-          } else if (ins.type === "PARTIAL_UNDERSTANDING" && existing !== "MISCONCEPTION") {
-            overlay[cid] = "PARTIAL_UNDERSTANDING";
+    return () => {
+      if (sigmaRef.current) {
+        sigmaRef.current.kill();
+        sigmaRef.current = null;
+      }
+    };
+  }, [buildGraph]);
+
+  // Keep hover state in sync with sigma reducers
+  useEffect(() => {
+    if (sigmaRef.current) {
+      sigmaRef.current.setSetting("nodeReducer", (node, data) => {
+        const res = { ...data };
+        const graph = sigmaRef.current?.getGraph();
+        if (!graph) return res;
+
+        if (hoveredNode) {
+          if (
+            node === hoveredNode ||
+            graph.hasEdge(node, hoveredNode) ||
+            graph.hasEdge(hoveredNode, node)
+          ) {
+            res.highlighted = true;
+          } else {
+            res.color = `${data.color}44`;
+            res.label = "";
           }
         }
-        setInsightOverlay(overlay);
-      })
-      .catch(() => {});
-  }, [token]);
+        return res;
+      });
 
-  const handleHover = useCallback(
-    (index: number | null) => {
-      setHoveredIndex(index);
-      setAutoRotate(index === null);
-    },
-    []
-  );
+      sigmaRef.current.setSetting("edgeReducer", (edge, data) => {
+        const res = { ...data };
+        const graph = sigmaRef.current?.getGraph();
+        if (!graph) return res;
 
-  const handleClick = useCallback(
-    (index: number) => {
-      const c = concepts[index];
-      if (c && onConceptClick) onConceptClick(c.id);
-    },
-    [concepts, onConceptClick]
-  );
+        if (hoveredNode) {
+          const source = graph.source(edge);
+          const target = graph.target(edge);
+          if (source !== hoveredNode && target !== hoveredNode) {
+            res.hidden = true;
+          } else {
+            res.color = "#94a3b8";
+            res.size = 1.5;
+          }
+        }
+        return res;
+      });
 
-  const hoveredConcept = hoveredIndex !== null ? concepts[hoveredIndex] : null;
+      sigmaRef.current.refresh();
+    }
+  }, [hoveredNode]);
 
   return (
     <div
@@ -339,13 +322,13 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
             Knowledge Graph
           </h2>
           <p style={{ margin: "0.2rem 0 0", fontSize: "0.78rem", color: "#64748b" }}>
-            465 concepts in 3D semantic space • Hover to inspect, click to scroll
+            Chapters → Concepts • Click a concept to see insights
           </p>
         </div>
 
         {!loading && !error && (
           <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
-            <LegendDot color={DEFAULT_COLOR} label={`${stats.total - stats.withInsights} Not assessed`} />
+            <LegendDot color="#475569" label={`${stats.concepts - stats.withInsights} Not assessed`} />
             <LegendDot color="#10b981" label="Competency" />
             <LegendDot color="#f59e0b" label="Partial" />
             <LegendDot color="#ef4444" label="Misconception" />
@@ -353,46 +336,47 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
         )}
       </div>
 
-      {/* 3D Canvas */}
-      <div style={{ width: "100%", height: 500, position: "relative", cursor: "grab" }}>
-        {loading ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#64748b", fontSize: "0.9rem", fontWeight: 600 }}>
-            Loading concept sphere…
+      {/* Graph container */}
+      <div
+        ref={containerRef}
+        style={{
+          width: "100%",
+          height: 460,
+          position: "relative",
+          cursor: loading ? "wait" : "default",
+        }}
+      >
+        {loading && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#64748b",
+              fontSize: "0.9rem",
+              fontWeight: 600,
+            }}
+          >
+            Loading graph…
           </div>
-        ) : error ? (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#ef4444", fontSize: "0.9rem", fontWeight: 600 }}>
+        )}
+        {error && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ef4444",
+              fontSize: "0.9rem",
+              fontWeight: 600,
+            }}
+          >
             {error}
           </div>
-        ) : (
-          <Canvas camera={{ position: [0, 0, 10], fov: 50 }} style={{ background: "#f8fafb" }}>
-            <ambientLight intensity={0.8} />
-            <pointLight position={[10, 10, 10]} intensity={1} />
-            <pointLight position={[-10, -5, -10]} intensity={0.4} />
-
-            <SphereShell />
-            <ConceptNodes
-              concepts={concepts}
-              insightOverlay={insightOverlay}
-              onHover={handleHover}
-              onClick={handleClick}
-            />
-
-            {hoveredConcept && (
-              <Tooltip
-                concept={hoveredConcept}
-                insightType={insightOverlay[hoveredConcept.id]}
-              />
-            )}
-
-            <AutoRotate enabled={autoRotate} />
-            <OrbitControls
-              enablePan={false}
-              minDistance={6}
-              maxDistance={18}
-              enableDamping
-              dampingFactor={0.05}
-            />
-          </Canvas>
         )}
       </div>
 
@@ -407,15 +391,14 @@ export default function InsightsGraph({ token, onConceptClick }: InsightsGraphPr
             borderTop: "1px solid #e2e8f0",
           }}
         >
-          <Stat label="Concepts" value={stats.total} />
+          <Stat label="Chapters" value={stats.chapters} />
+          <Stat label="Concepts" value={stats.concepts} />
           <Stat label="With Insights" value={stats.withInsights} />
         </div>
       )}
     </div>
   );
 }
-
-/* ─── Small Components ────────────────────────────────────────────── */
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
@@ -428,22 +411,28 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+
+
+function LegendDot({ color, label, square = false }: { color: string; label: string; square?: boolean }) {
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
       <span
         style={{
-          width: 8,
-          height: 8,
-          borderRadius: "50%",
+          width: square ? 10 : 8,
+          height: square ? 10 : 8,
+          borderRadius: square ? 2 : "50%",
           background: color,
           display: "inline-block",
           flexShrink: 0,
         }}
       />
-      <span style={{ fontSize: "0.68rem", color: "#94a3b8", fontWeight: 600 }}>
-        {label}
-      </span>
+      <span style={legendLabelStyle}>{label}</span>
     </div>
   );
 }
+
+const legendLabelStyle: React.CSSProperties = {
+  fontSize: "0.68rem",
+  color: "#94a3b8",
+  fontWeight: 600,
+};
