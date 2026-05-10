@@ -234,7 +234,7 @@ export default function TeacherDashboardPage() {
         const token = await getIdToken();
         if (!token) return;
         const headers = { Authorization: `Bearer ${token}` };
-        const tRes = await fetch(`${API_URL}/api/teachers/me/dashboard/cluster-trends?window=30d`, { headers });
+        const tRes = await fetch(`${API_URL}/api/teachers/me/dashboard/cluster-trends?window=90d`, { headers });
         const tData = await tRes.json();
         if (!cancelled && tRes.ok) setClusterTrends(tData);
       } catch {
