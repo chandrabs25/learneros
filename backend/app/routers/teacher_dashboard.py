@@ -14,7 +14,7 @@ from pydantic import BaseModel
 
 from app.auth import CurrentTeacher, get_current_teacher
 from app.config import settings
-from app.database import read_query, write_query
+from app.database import read_query
 from app.services.teacher_analytics import compute_risk
 
 router = APIRouter(prefix="/api/teachers/me/dashboard", tags=["teacher-dashboard"])
@@ -131,16 +131,6 @@ def _fetch_active_insights_for_students(student_ids: list[str]) -> list[dict]:
         """,
         student_ids=student_ids,
     )
-
-
-def _risk_by_student(student_ids: list[str]) -> dict[str, dict]:
-    insights = _fetch_active_insights_for_students(student_ids)
-    by_student: dict[str, list[dict]] = {sid: [] for sid in student_ids}
-    for ins in insights:
-        sid = ins.get("student_id")
-        if sid in by_student:
-            by_student[sid].append(ins)
-    return {sid: compute_risk(rows) for sid, rows in by_student.items()}
 
 
 def _insights_filtered(
@@ -1136,176 +1126,6 @@ async def teacher_clusters(
         "noise_students": snap.get("noise_students"),
         "quality": quality,
         "clusters": clusters,
-    }
-    _cache_set(cache_key, payload)
-    return payload
-
-
-@router.post("/student-map/compute")
-async def compute_student_map(
-    teacher: CurrentTeacher = Depends(get_current_teacher),
-):
-    rows = read_query(
-        """
-        MATCH (s:Student)
-        WHERE s.institute_id = $institute_id
-          AND coalesce(s.role, 'student') = 'student'
-          AND s.embedding IS NOT NULL
-        RETURN s.id AS student_id,
-               s.embedding AS embedding
-        ORDER BY coalesce(s.name, s.id) ASC
-        """,
-        institute_id=teacher.institute_id,
-    )
-
-    student_ids: list[str] = []
-    vectors: list[list[float]] = []
-    dim: int | None = None
-    for row in rows:
-        emb = row.get("embedding")
-        if not isinstance(emb, list) or not emb:
-            continue
-        try:
-            vec = [float(v) for v in emb]
-        except Exception:
-            continue
-        if dim is None:
-            dim = len(vec)
-        if len(vec) != dim:
-            continue
-        student_ids.append(str(row.get("student_id")))
-        vectors.append(vec)
-
-    if not vectors:
-        raise HTTPException(status_code=400, detail="No students with stored embeddings found. Run student embedding backfill first.")
-
-    if len(vectors) == 1:
-        coords = [[0.0, 0.0, 0.0]]
-        explained_variance = [0.0, 0.0, 0.0]
-    else:
-        try:
-            import numpy as np  # type: ignore
-        except Exception as exc:
-            raise HTTPException(status_code=500, detail="numpy is required to compute PCA projections") from exc
-
-        matrix = np.asarray(vectors, dtype=float)
-        centered = matrix - matrix.mean(axis=0, keepdims=True)
-        _, singular_values, vt = np.linalg.svd(centered, full_matrices=False)
-        components = vt[:3].copy()
-
-        # Stabilize SVD sign ambiguity so repeated computes do not randomly mirror the scene.
-        for idx in range(components.shape[0]):
-            largest = int(np.argmax(np.abs(components[idx])))
-            if components[idx, largest] < 0:
-                components[idx] *= -1
-
-        projected = centered @ components.T
-        if projected.shape[1] < 3:
-            projected = np.pad(projected, ((0, 0), (0, 3 - projected.shape[1])), mode="constant")
-
-        max_abs = float(np.max(np.abs(projected))) if projected.size else 0.0
-        if max_abs > 1e-12:
-            projected = projected / max_abs
-
-        coords = [[round(float(x), 6), round(float(y), 6), round(float(z), 6)] for x, y, z in projected[:, :3]]
-
-        denom = max(1e-12, float(np.sum(singular_values * singular_values)))
-        explained_variance = [
-            round(float((singular_values[i] * singular_values[i]) / denom), 6)
-            if i < len(singular_values)
-            else 0.0
-            for i in range(3)
-        ]
-
-    coord_rows = [
-        {
-            "student_id": sid,
-            "x": coord[0],
-            "y": coord[1],
-            "z": coord[2],
-        }
-        for sid, coord in zip(student_ids, coords)
-    ]
-    write_query(
-        """
-        UNWIND $rows AS row
-        MATCH (s:Student {id: row.student_id})
-        SET s.embedding_projection_x = row.x,
-            s.embedding_projection_y = row.y,
-            s.embedding_projection_z = row.z,
-            s.embedding_projection_method = 'pca_svd_v1',
-            s.embedding_projection_updated_at = datetime()
-        """,
-        rows=coord_rows,
-    )
-    _dashboard_cache.clear()
-
-    return {
-        "status": "ok",
-        "method": "pca_svd_v1",
-        "student_count": len(coord_rows),
-        "explained_variance": explained_variance,
-    }
-
-
-@router.get("/student-map")
-async def teacher_student_map(
-    teacher: CurrentTeacher = Depends(get_current_teacher),
-):
-    cache_key = "|".join(["student_map", teacher.institute_id])
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        return cached
-
-    rows = read_query(
-        """
-        MATCH (s:Student)
-        WHERE s.institute_id = $institute_id
-          AND coalesce(s.role, 'student') = 'student'
-          AND s.embedding_projection_x IS NOT NULL
-          AND s.embedding_projection_y IS NOT NULL
-          AND s.embedding_projection_z IS NOT NULL
-        RETURN s.id AS student_id,
-               s.name AS student_name,
-               s.email AS student_email,
-               s.grade AS grade,
-               s.embedding_projection_x AS x,
-               s.embedding_projection_y AS y,
-               s.embedding_projection_z AS z,
-               s.embedding_projection_method AS method,
-               s.embedding_projection_updated_at AS projection_updated_at,
-               coalesce(s.embedding_source_count, 0) AS embedding_source_count
-        ORDER BY coalesce(s.name, s.id) ASC
-        """,
-        institute_id=teacher.institute_id,
-    )
-
-    ids = [str(row.get("student_id")) for row in rows if row.get("student_id")]
-    risks = _risk_by_student(ids)
-    students = []
-    for row in rows:
-        sid = str(row.get("student_id"))
-        risk = risks.get(sid) or {"risk_score": 0.0, "risk_band": "LOW", "reasons": []}
-        students.append(
-            {
-                "student_id": sid,
-                "name": row.get("student_name") or sid,
-                "email": row.get("student_email"),
-                "grade": row.get("grade"),
-                "x": float(row.get("x") or 0.0),
-                "y": float(row.get("y") or 0.0),
-                "z": float(row.get("z") or 0.0),
-                "risk_score": float(risk.get("risk_score") or 0.0),
-                "risk_band": risk.get("risk_band") or "LOW",
-                "embedding_source_count": int(row.get("embedding_source_count") or 0),
-            }
-        )
-
-    payload = {
-        "method": rows[0].get("method") if rows else None,
-        "projection_updated_at": str(rows[0].get("projection_updated_at")) if rows and rows[0].get("projection_updated_at") else None,
-        "student_count": len(students),
-        "students": students,
     }
     _cache_set(cache_key, payload)
     return payload

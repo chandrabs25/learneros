@@ -5,8 +5,7 @@ from dataclasses import dataclass
 import math
 from typing import Any
 
-from app.services.student_embeddings import build_student_embedding, coerce_embedding
-from app.services.teacher_analytics import choose_k, kmeans
+from app.services.teacher_analytics import TYPE_EMBED_WEIGHTS, choose_k, kmeans, recency_multiplier
 
 
 @dataclass
@@ -109,10 +108,47 @@ def _build_student_vector(
     *,
     min_vector_norm: float,
 ) -> tuple[list[float], float] | None:
-    built = build_student_embedding(insights, min_vector_norm=min_vector_norm)
-    if built is None:
+    weighted: list[tuple[list[float], float]] = []
+    for ins in insights:
+        emb = ins.get("embedding")
+        if not isinstance(emb, list) or not emb:
+            continue
+        try:
+            vec = [float(v) for v in emb]
+        except Exception:
+            continue
+        t = str(ins.get("type") or "").upper()
+        type_weight = float(TYPE_EMBED_WEIGHTS.get(t, 0.0))
+        if type_weight <= 0.0:
+            continue
+        rec_weight = float(recency_multiplier(ins.get("created_at")))
+        w = type_weight * rec_weight
+        if w <= 0.0:
+            continue
+        weighted.append((vec, w))
+
+    if not weighted:
         return None
-    return built.embedding, built.norm
+
+    dim = len(weighted[0][0])
+    acc = [0.0] * dim
+    total_w = 0.0
+    for vec, w in weighted:
+        if len(vec) != dim:
+            continue
+        total_w += w
+        for i in range(dim):
+            acc[i] += vec[i] * w
+
+    if total_w <= 1e-12:
+        return None
+
+    mean_vec = [v / total_w for v in acc]
+    norm = _vector_norm(mean_vec)
+    if norm < min_vector_norm:
+        return None
+
+    return _normalize(mean_vec), norm
 
 
 def _run_hdbscan(points: list[list[float]], *, min_cluster_size: int, min_samples: int | None) -> tuple[list[int], list[float]]:
@@ -141,8 +177,6 @@ def semantic_cluster_students(
     min_students: int,
     min_insights_per_student: int,
     min_vector_norm: float,
-    student_embeddings_by_student: dict[str, list[float]] | None = None,
-    student_embedding_counts_by_student: dict[str, int] | None = None,
     k_override: int | None = None,
     hdbscan_min_cluster_size: int = 4,
     hdbscan_min_samples: int | None = None,
@@ -153,27 +187,12 @@ def semantic_cluster_students(
 
     for sid in ordered_student_ids:
         s_insights = insights_by_student.get(sid, [])
-        stored_source_count = (student_embedding_counts_by_student or {}).get(sid)
-        has_enough_stored_sources = stored_source_count is not None and stored_source_count >= min_insights_per_student
-        has_enough_insights = len(s_insights) >= min_insights_per_student
-        if not has_enough_stored_sources and not has_enough_insights:
+        if len(s_insights) < min_insights_per_student:
             continue
-
-        stored_vec = None
-        if has_enough_stored_sources or stored_source_count is None:
-            stored_vec = coerce_embedding(
-                (student_embeddings_by_student or {}).get(sid),
-                min_vector_norm=min_vector_norm,
-            )
-
-        if stored_vec is not None:
-            vec, _ = stored_vec
-        else:
-            built = _build_student_vector(s_insights, min_vector_norm=min_vector_norm)
-            if built is None:
-                continue
-            vec, _ = built
-
+        built = _build_student_vector(s_insights, min_vector_norm=min_vector_norm)
+        if built is None:
+            continue
+        vec, _ = built
         eligible_students.append(sid)
         vectors.append(vec)
 
