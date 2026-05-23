@@ -32,3 +32,23 @@ CREATE INDEX insight_category IF NOT EXISTS FOR (i:Insight) ON (i.category);
 CREATE INDEX subsection_order IF NOT EXISTS FOR (ss:Subsection) ON (ss.order);
 CREATE INDEX chapter_number IF NOT EXISTS FOR (c:Chapter) ON (c.number);
 CREATE INDEX exercise_number IF NOT EXISTS FOR (e:Exercise) ON (e.number);
+
+// Vector indexes
+// Keep `vector.dimensions` aligned with FIREWORKS_EMBEDDING_MODEL.
+CREATE VECTOR INDEX insight_embedding_index IF NOT EXISTS
+FOR (i:Insight) ON (i.embedding)
+OPTIONS {
+  indexConfig: {
+    `vector.dimensions`: 4096,
+    `vector.similarity_function`: 'cosine'
+  }
+};
+
+CREATE VECTOR INDEX student_embedding_index IF NOT EXISTS
+FOR (s:Student) ON (s.embedding)
+OPTIONS {
+  indexConfig: {
+    `vector.dimensions`: 4096,
+    `vector.similarity_function`: 'cosine'
+  }
+};

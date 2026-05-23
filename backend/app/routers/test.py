@@ -27,6 +27,7 @@ from app.config import settings
 from app.database import read_query, write_query
 from app.services.generation_cache import build_generation_cache, stable_cache_key
 from app.services.rate_limit import enforce_rate_limit
+from app.services.student_embeddings import update_student_embedding
 
 router = APIRouter(prefix="/api", tags=["test"])
 logger = logging.getLogger(__name__)
@@ -786,6 +787,8 @@ def _persist_insight(student_id: str, ins: dict) -> None:
         concept_id=concept_id,
     )
     ins["persisted"] = bool(rows)
+    if ins["persisted"]:
+        update_student_embedding(student_id)
 
 
 def _record_persistence_failure(student_id: str, ins: dict, error: str) -> None:

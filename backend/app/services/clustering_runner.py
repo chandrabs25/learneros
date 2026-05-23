@@ -47,7 +47,11 @@ def fetch_students(institute_id: str) -> list[dict]:
         MATCH (s:Student)
         WHERE s.institute_id = $institute_id
           AND coalesce(s.role, 'student') = 'student'
-        RETURN s.id AS student_id, s.name AS student_name, s.email AS student_email
+        RETURN s.id AS student_id,
+               s.name AS student_name,
+               s.email AS student_email,
+               s.embedding AS student_embedding,
+               coalesce(s.embedding_source_count, 0) AS student_embedding_source_count
         ORDER BY coalesce(s.name, s.id) ASC
         """,
         institute_id=institute_id,
@@ -351,6 +355,15 @@ def build_for_institute(
     insights_by_student: dict[str, list[dict]] = defaultdict(list)
     for ins in insights:
         insights_by_student[ins["student_id"]].append(ins)
+    student_embeddings_by_student = {
+        s["student_id"]: s["student_embedding"]
+        for s in students
+        if s.get("student_embedding")
+    }
+    student_embedding_counts_by_student = {
+        s["student_id"]: int(s.get("student_embedding_source_count") or 0)
+        for s in students
+    }
 
     cluster_result = semantic_cluster_students(
         ordered_student_ids=student_ids,
@@ -358,6 +371,8 @@ def build_for_institute(
         min_students=min_students,
         min_insights_per_student=min_insights_per_student,
         min_vector_norm=min_vector_norm,
+        student_embeddings_by_student=student_embeddings_by_student,
+        student_embedding_counts_by_student=student_embedding_counts_by_student,
         k_override=k_override,
         hdbscan_min_cluster_size=hdbscan_min_cluster_size,
         hdbscan_min_samples=hdbscan_min_samples,

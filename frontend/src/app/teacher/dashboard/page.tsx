@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Canvas } from "@react-three/fiber";
+import { Html, OrbitControls } from "@react-three/drei";
 import { useAuth } from "@/lib/auth-context";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -110,6 +112,26 @@ type ClusterTrendsResponse = {
   };
 };
 
+type StudentMapPoint = {
+  student_id: string;
+  name: string;
+  email?: string | null;
+  grade?: number | null;
+  x: number;
+  y: number;
+  z: number;
+  risk_score: number;
+  risk_band: "LOW" | "MEDIUM" | "HIGH";
+  embedding_source_count: number;
+};
+
+type StudentMapResponse = {
+  method: string | null;
+  projection_updated_at: string | null;
+  student_count: number;
+  students: StudentMapPoint[];
+};
+
 type SubjectOption = {
   id: string;
   name: string;
@@ -131,6 +153,12 @@ function riskChip(risk: string) {
   return { bg: "#dcfce7", color: "#16a34a", label: "Low" };
 }
 
+function riskColor(risk: string) {
+  if (risk === "HIGH") return "#ef4444";
+  if (risk === "MEDIUM") return "#facc15";
+  return "#22c55e";
+}
+
 function sparkPath(values: number[]) {
   if (!values.length) return "M0 10 L100 10";
   const step = 100 / Math.max(1, values.length - 1);
@@ -142,6 +170,48 @@ function sparkPath(values: number[]) {
       return `${i === 0 ? "M" : "L"}${x} ${y}`;
     })
     .join(" ");
+}
+
+function StudentMapScene({ students }: { students: StudentMapPoint[] }) {
+  return (
+    <Canvas camera={{ position: [4.8, 4.2, 6], fov: 48 }} style={{ height: 420, width: "100%" }}>
+      <color attach="background" args={["#f8fafc"]} />
+      <ambientLight intensity={0.75} />
+      <directionalLight position={[4, 6, 4]} intensity={1.1} />
+      <gridHelper args={[8, 8, "#cbd5e1", "#e2e8f0"]} />
+      <axesHelper args={[4.2]} />
+      {students.map((student) => {
+        const pos: [number, number, number] = [student.x * 3.2, student.y * 3.2, student.z * 3.2];
+        const color = riskColor(student.risk_band);
+        return (
+          <group key={student.student_id} position={pos}>
+            <mesh>
+              <sphereGeometry args={[0.13, 24, 24]} />
+              <meshStandardMaterial color={color} roughness={0.45} metalness={0.05} />
+            </mesh>
+            <Html position={[0, 0.24, 0]} center distanceFactor={8}>
+              <div
+                style={{
+                  background: "rgba(255,255,255,0.92)",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 999,
+                  color: "#0f172a",
+                  fontSize: 10,
+                  fontWeight: 800,
+                  padding: "2px 7px",
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 6px 16px rgba(15,23,42,0.08)",
+                }}
+              >
+                {student.name}
+              </div>
+            </Html>
+          </group>
+        );
+      })}
+      <OrbitControls makeDefault enableDamping dampingFactor={0.08} />
+    </Canvas>
+  );
 }
 
 export default function TeacherDashboardPage() {
@@ -160,6 +230,56 @@ export default function TeacherDashboardPage() {
   const [students, setStudents] = useState<StudentsResponse | null>(null);
   const [clusters, setClusters] = useState<ClustersResponse | null>(null);
   const [clusterTrends, setClusterTrends] = useState<ClusterTrendsResponse | null>(null);
+  const [studentMap, setStudentMap] = useState<StudentMapResponse | null>(null);
+  const [studentMapLoading, setStudentMapLoading] = useState(false);
+  const [studentMapComputing, setStudentMapComputing] = useState(false);
+  const [studentMapError, setStudentMapError] = useState("");
+
+  const fetchStudentMap = useCallback(
+    async (opts?: { silent?: boolean }) => {
+      if (authLoading || role !== "teacher") return;
+      if (!opts?.silent) setStudentMapLoading(true);
+      setStudentMapError("");
+      try {
+        const token = await getIdToken();
+        if (!token) return;
+        const res = await fetch(`${API_URL}/api/teachers/me/dashboard/student-map`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.detail || "Failed to load student map");
+        setStudentMap(data);
+      } catch (e: unknown) {
+        setStudentMapError(e instanceof Error ? e.message : "Failed to load student map");
+      } finally {
+        if (!opts?.silent) setStudentMapLoading(false);
+      }
+    },
+    [authLoading, getIdToken, role]
+  );
+
+  const computeStudentMap = useCallback(async () => {
+    setStudentMapComputing(true);
+    setStudentMapError("");
+    try {
+      const token = await getIdToken();
+      if (!token) {
+        router.push("/auth");
+        return;
+      }
+      const res = await fetch(`${API_URL}/api/teachers/me/dashboard/student-map/compute`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.detail || "Failed to compute student map");
+      await fetchStudentMap({ silent: true });
+    } catch (e: unknown) {
+      setStudentMapError(e instanceof Error ? e.message : "Failed to compute student map");
+    } finally {
+      setStudentMapComputing(false);
+    }
+  }, [fetchStudentMap, getIdToken, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -245,6 +365,10 @@ export default function TeacherDashboardPage() {
       cancelled = true;
     };
   }, [getIdToken, role, authLoading]);
+
+  useEffect(() => {
+    void fetchStudentMap();
+  }, [fetchStudentMap]);
 
   useEffect(() => {
     let cancelled = false;
@@ -410,6 +534,93 @@ export default function TeacherDashboardPage() {
               </svg>
             </div>
           ))}
+        </div>
+
+        <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 14, overflow: "hidden" }}>
+          <div style={{ padding: "0.9rem 1rem", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "0.8rem", flexWrap: "wrap" }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: "1.1rem" }}>3D Student Embedding Map</h2>
+              <div style={{ color: "#64748b", fontSize: "0.82rem", fontWeight: 600, marginTop: 4 }}>
+                PCA projection of stored student embeddings into three coordinates.
+                {studentMap?.projection_updated_at ? ` Updated ${timeAgo(studentMap.projection_updated_at)}.` : ""}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+              {studentMap && (
+                <span style={{ color: "#64748b", fontWeight: 800, fontSize: "0.78rem" }}>
+                  {studentMap.student_count} mapped
+                </span>
+              )}
+              <button
+                onClick={() => void computeStudentMap()}
+                disabled={studentMapComputing}
+                style={{
+                  border: "1px solid #0891b2",
+                  background: studentMapComputing ? "#cffafe" : "#06b6d4",
+                  color: studentMapComputing ? "#0e7490" : "#fff",
+                  borderRadius: 10,
+                  padding: "0.52rem 0.8rem",
+                  fontWeight: 900,
+                  cursor: studentMapComputing ? "wait" : "pointer",
+                }}
+              >
+                {studentMapComputing ? "Computing…" : "Compute 3D Map"}
+              </button>
+            </div>
+          </div>
+          {studentMapError && (
+            <div style={{ margin: "0.8rem 1rem 0", background: "#fff1f2", border: "1px solid #fecdd3", color: "#be123c", borderRadius: 10, padding: "0.65rem 0.8rem", fontWeight: 700 }}>
+              {studentMapError}
+            </div>
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 240px", gap: "0.8rem", padding: "1rem" }}>
+            <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, overflow: "hidden", minHeight: 420, background: "#f8fafc" }}>
+              {studentMapLoading ? (
+                <div style={{ height: 420, display: "grid", placeItems: "center", color: "#64748b", fontWeight: 800 }}>Loading map…</div>
+              ) : studentMap && studentMap.students.length > 0 ? (
+                <StudentMapScene students={studentMap.students} />
+              ) : (
+                <div style={{ height: 420, display: "grid", placeItems: "center", color: "#64748b", fontWeight: 700, textAlign: "center", padding: "1rem" }}>
+                  No 3D projection has been computed yet. Click Compute 3D Map to populate coordinates from student embeddings.
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.65rem" }}>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "0.75rem" }}>
+                <div style={{ fontSize: "0.72rem", color: "#94a3b8", fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>Legend</div>
+                {[
+                  ["LOW", "Low risk"],
+                  ["MEDIUM", "Moderate"],
+                  ["HIGH", "High risk"],
+                ].map(([risk, label]) => (
+                  <div key={risk} style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginTop: 8, fontSize: "0.82rem", fontWeight: 700 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 999, background: riskColor(risk) }} />
+                    {label}
+                  </div>
+                ))}
+              </div>
+              <div style={{ border: "1px solid #e2e8f0", borderRadius: 12, padding: "0.75rem", color: "#64748b", fontSize: "0.8rem", lineHeight: 1.45, fontWeight: 600 }}>
+                Each dot is a student. Nearby dots have more similar active insight embeddings. Drag to orbit, scroll to zoom.
+              </div>
+              <div style={{ maxHeight: 210, overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+                {(studentMap?.students || []).slice(0, 12).map((student) => (
+                  <button
+                    key={`map-row-${student.student_id}`}
+                    onClick={() => router.push(`/teacher/dashboard/students/${encodeURIComponent(student.student_id)}`)}
+                    style={{ textAlign: "left", border: "1px solid #f1f5f9", background: "#fff", borderRadius: 10, padding: "0.45rem 0.55rem", cursor: "pointer" }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      <span style={{ width: 8, height: 8, borderRadius: 999, background: riskColor(student.risk_band), flexShrink: 0 }} />
+                      <span style={{ fontWeight: 800, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{student.name}</span>
+                    </div>
+                    <div style={{ color: "#94a3b8", fontSize: "0.7rem", fontWeight: 700, marginTop: 2 }}>
+                      {student.embedding_source_count} insight vector{student.embedding_source_count === 1 ? "" : "s"} • score {student.risk_score}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: "0.9rem" }}>
@@ -781,6 +992,7 @@ export default function TeacherDashboardPage() {
             grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
           }
           main :global(div[style*="grid-template-columns: 2fr 1fr"]),
+          main :global(div[style*="grid-template-columns: minmax(0, 1fr) 240px"]),
           main :global(div[style*="grid-template-columns: 1fr 1fr"]) {
             grid-template-columns: 1fr !important;
           }
