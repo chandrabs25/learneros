@@ -7,7 +7,6 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
           { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
           { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
@@ -22,7 +21,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: blob: https:",
               "connect-src 'self' https: wss:",
               "frame-src 'self' https://teacher-b2cd9.firebaseapp.com https://*.firebaseapp.com https://accounts.google.com https://api.learneros.me https://learneros-backend.fly.dev https://assets.learneros.me",
-              "frame-ancestors 'none'",
+              "frame-ancestors 'self' https://srichandra-portfolio.srichandra321.chatgpt.site",
               "base-uri 'self'",
               "form-action 'self'",
             ].join("; "),
