@@ -6,12 +6,12 @@ Metrics:
 - Speed (request latency)
 
 Models under test (defaults):
-- kimi-2.5-fireworks (served via Fireworks OpenAI-compatible endpoint)
+- minimax-m3-fireworks (served via Fireworks OpenAI-compatible endpoint)
 
 Env vars:
 - FIREWORKS_API_KEY
 - FIREWORKS_BASE_URL (default: https://api.fireworks.ai/inference/v1)
-- FIREWORKS_KIMI_MODEL (default: accounts/fireworks/models/kimi-k2p5)
+- FIREWORKS_MODEL (default: accounts/fireworks/models/minimax-m3)
 """
 
 from __future__ import annotations
@@ -36,8 +36,8 @@ except Exception:
 
 
 MODEL_ALIASES = {
-    "kimi-2.5": {"provider": "fireworks_kimi", "model_id": None},
-    "kimi-2.5-fireworks": {"provider": "fireworks_kimi", "model_id": None},
+    "minimax-m3": {"provider": "fireworks", "model_id": None},
+    "minimax-m3-fireworks": {"provider": "fireworks", "model_id": None},
 }
 
 VALID_INSIGHT_TYPES = {"COMPETENCY", "PARTIAL_UNDERSTANDING", "MISCONCEPTION"}
@@ -194,18 +194,18 @@ class LLMRunner:
             raise ValueError(f"Unknown model alias: {model_alias}")
         spec = MODEL_ALIASES[model_alias]
         provider = spec["provider"]
-        if provider == "fireworks_kimi":
-            return self._generate_fireworks_kimi(prompt)
+        if provider == "fireworks":
+            return self._generate_fireworks(prompt)
         raise ValueError(f"Unsupported provider: {provider}")
 
-    def _generate_fireworks_kimi(self, prompt: str) -> str:
+    def _generate_fireworks(self, prompt: str) -> str:
         if OpenAI is None:
             raise RuntimeError("openai SDK is not installed. Run: pip install openai")
         api_key = os.getenv("FIREWORKS_API_KEY", "")
         if not api_key:
             raise RuntimeError("FIREWORKS_API_KEY is missing.")
         base_url = os.getenv("FIREWORKS_BASE_URL", "https://api.fireworks.ai/inference/v1")
-        model_id = os.getenv("FIREWORKS_KIMI_MODEL", "accounts/fireworks/models/kimi-k2p5")
+        model_id = os.getenv("FIREWORKS_MODEL", "accounts/fireworks/models/minimax-m3")
 
         if self._fireworks_client is None:
             self._fireworks_client = OpenAI(api_key=api_key, base_url=base_url)
@@ -391,7 +391,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--models",
         nargs="+",
-        default=[ "kimi-2.5"],
+        default=["minimax-m3"],
         help=f"Model aliases. Supported: {', '.join(MODEL_ALIASES.keys())}",
     )
     parser.add_argument("--runs", type=int, default=3, help="Runs per mock case per model.")

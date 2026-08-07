@@ -1,7 +1,7 @@
 """
 LearnerOS — Test Me Router
 ─────────────────────────
-Generates comprehension questions from section content using Fireworks-hosted Kimi 2.5,
+Generates comprehension questions from section content using configured model providers
 and evaluates student answers. Returns structured insight data for
 the frontend and persists insights automatically for authenticated users
 in the background (guest flow can keep local fallback storage).
@@ -14,70 +14,20 @@ import logging
 import time
 import uuid
 from typing import Literal
-from urllib import error as urlerror
-from urllib import parse as urlparse
-from urllib import request as urlrequest
 from pydantic import BaseModel
 
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request, Response
 from app.auth import get_optional_user, CurrentUser
-from openai import OpenAI
 
 from app.config import settings
 from app.database import read_query, write_query
+from app.observability import fingerprint, trace_event, trace_exception
 from app.services.generation_cache import build_generation_cache, stable_cache_key
+from app.services.llm import ModelTarget, default_generation_targets, llm_service
 from app.services.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/api", tags=["test"])
 logger = logging.getLogger(__name__)
-
-# ── Fireworks OpenAI-compatible client (lazy singleton) ─────────────────
-_client: OpenAI | None = None
-_embedding_client: OpenAI | None = None
-_cerebras_client: OpenAI | None = None
-
-
-def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        if not settings.FIREWORKS_API_KEY:
-            raise HTTPException(status_code=500, detail="FIREWORKS_API_KEY not configured")
-        _client = OpenAI(
-            api_key=settings.FIREWORKS_API_KEY,
-            base_url=settings.FIREWORKS_BASE_URL,
-        )
-    return _client
-
-
-def _get_cerebras_client() -> OpenAI:
-    """Lazy singleton for Cerebras inference (fast generation)."""
-    global _cerebras_client
-    if _cerebras_client is None:
-        api_key = settings.CEREBRAS_API_KEY
-        if not api_key:
-            raise HTTPException(status_code=500, detail="CEREBRAS_API_KEY not configured")
-        _cerebras_client = OpenAI(
-            api_key=api_key,
-            base_url=settings.CEREBRAS_BASE_URL,
-        )
-    return _cerebras_client
-
-
-def _get_embedding_client() -> OpenAI:
-    global _embedding_client
-    if _embedding_client is None:
-        api_key = settings.FIREWORKS_API_KEY_EMBEDDINGS or settings.FIREWORKS_API_KEY
-        if not api_key:
-            raise HTTPException(
-                status_code=500,
-                detail="FIREWORKS_API_KEY_EMBEDDINGS (or FIREWORKS_API_KEY) not configured",
-            )
-        _embedding_client = OpenAI(
-            api_key=api_key,
-            base_url=settings.FIREWORKS_BASE_URL,
-        )
-    return _embedding_client
-
 
 MODEL = settings.FIREWORKS_MODEL
 EVAL_MODEL = settings.FIREWORKS_MODEL
@@ -95,7 +45,7 @@ _generation_cache = build_generation_cache(
 
 
 def _generate_reconcile_text(prompt: str) -> str:
-    """Generate reconciliation output text via Fireworks Kimi."""
+    """Generate reconciliation output text via the configured Fireworks model."""
     return _generate_with_fireworks(prompt, model=EVAL_MODEL, temperature=0.1, json_mode=True)
 
 
@@ -107,85 +57,60 @@ def _generate_with_fireworks(
     json_mode: bool = False,
     use_cerebras: bool = False,
 ) -> str:
-    client = _get_cerebras_client() if use_cerebras else _get_client()
-    kwargs = {
-        "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": "Return only valid JSON matching the requested schema."
-                if json_mode
-                else "You are a helpful educational assistant.",
-            },
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": temperature,
-        "timeout": 60,
-    }
-    if json_mode:
-        kwargs["response_format"] = {"type": "json_object"}
-
-    response = client.chat.completions.create(**kwargs)
-    content = response.choices[0].message.content
-    if isinstance(content, list):
-        content = "".join(
-            part.get("text", "")
-            for part in content
-            if isinstance(part, dict) and part.get("type") == "text"
-        )
-    return str(content or "").strip()
+    fallbacks = (
+        [ModelTarget("fireworks", settings.FIREWORKS_MODEL)]
+        if use_cerebras and settings.FIREWORKS_API_KEY
+        else []
+    )
+    return llm_service.generate_text(
+        provider="cerebras" if use_cerebras else "fireworks",
+        model=model,
+        prompt=prompt,
+        system=(
+            "Return only valid JSON matching the requested schema."
+            if json_mode
+            else "You are a helpful educational assistant."
+        ),
+        temperature=temperature,
+        json_mode=json_mode,
+        timeout=60,
+        operation="test_generation",
+        fallbacks=fallbacks,
+    )
 
 
-def _generate_json_with_retry(prompt: str, *, model: str, retries: int = 2, use_cerebras: bool = False) -> dict:
-    data = None
-    for attempt in range(retries):
-        raw = _generate_with_fireworks(prompt, model=model, temperature=0.0, json_mode=True, use_cerebras=use_cerebras)
-        try:
-            if raw.startswith("```"):
-                raw = raw.split("\n", 1)[1]
-                raw = raw.rsplit("```", 1)[0]
-            data = json.loads(raw)
-            break
-        except (json.JSONDecodeError, IndexError):
-            if attempt == retries - 1:
-                raise
-    return data
+def _generate_json_with_retry(
+    prompt: str,
+    *,
+    model: str,
+    retries: int = 2,
+    use_cerebras: bool = False,
+    operation: str = "json_generation",
+) -> dict:
+    fallbacks = (
+        [ModelTarget("fireworks", settings.FIREWORKS_MODEL)]
+        if use_cerebras and settings.FIREWORKS_API_KEY
+        else []
+    )
+    return llm_service.generate_json(
+        provider="cerebras" if use_cerebras else "fireworks",
+        model=model,
+        prompt=prompt,
+        retries=retries,
+        operation=operation,
+        fallbacks=fallbacks,
+    )
 
 
 def _embed_text_with_fireworks(text: str, retries: int = 2) -> list[float]:
     """Create an embedding vector for text using Fireworks embeddings API."""
-    clean_text = (text or "").strip()
-    if not clean_text:
-        raise ValueError("Cannot embed empty insight content")
-
-    last_err: Exception | None = None
-    for _ in range(retries):
-        try:
-            client = _get_embedding_client()
-            resp = client.embeddings.create(
-                model=settings.FIREWORKS_EMBEDDING_MODEL,
-                input=clean_text,
-            )
-            vector = resp.data[0].embedding if resp.data else None
-            if not vector:
-                raise ValueError("Embedding API returned empty vector")
-            return [float(x) for x in vector]
-        except Exception as exc:  # pragma: no cover
-            last_err = exc
-    raise RuntimeError(f"Embedding generation failed: {last_err}")
-
-
-def _parse_data_url_image(image_data_url: str) -> tuple[str, str]:
-    """Parse a data URL image into (mime_type, base64_data)."""
-    if not image_data_url.startswith("data:"):
-        raise ValueError("image must be a data URL")
-    header, b64_data = image_data_url.split(",", 1)
-    if ";base64" not in header:
-        raise ValueError("image data URL must be base64 encoded")
-    mime_type = header[5:].split(";")[0] or "image/jpeg"
-    if not b64_data.strip():
-        raise ValueError("image base64 payload is empty")
-    return mime_type, b64_data
+    return llm_service.embed(
+        provider="fireworks",
+        model=settings.FIREWORKS_EMBEDDING_MODEL,
+        text=text,
+        retries=retries,
+        operation="insight_embedding",
+    )
 
 
 def _generate_gemini_json_with_retry(
@@ -195,61 +120,16 @@ def _generate_gemini_json_with_retry(
     image_data_urls: list[str] | None = None,
     retries: int = 2,
 ) -> dict:
-    """Generate strict JSON via Gemini REST API; supports optional image inputs."""
-    if not settings.GEMINI_API_KEY:
-        raise HTTPException(status_code=500, detail="GEMINI_API_KEY not configured")
-
-    parts: list[dict] = [{"text": prompt}]
-    for data_url in image_data_urls or []:
-        mime_type, b64_data = _parse_data_url_image(data_url)
-        parts.append(
-            {
-                "inline_data": {
-                    "mime_type": mime_type,
-                    "data": b64_data,
-                }
-            }
-        )
-
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{urlparse.quote(model, safe='')}:generateContent?key={settings.GEMINI_API_KEY}"
+    """Generate strict JSON via Gemini's OpenAI-compatible API."""
+    return llm_service.generate_json(
+        provider="gemini",
+        model=model,
+        prompt=prompt,
+        images=image_data_urls,
+        retries=retries,
+        timeout=90,
+        operation="exercise_evaluation",
     )
-    payload = {
-        "contents": [{"role": "user", "parts": parts}],
-        "generationConfig": {
-            "temperature": 0.0,
-            "responseMimeType": "application/json",
-        },
-    }
-    body = json.dumps(payload).encode("utf-8")
-
-    for attempt in range(retries):
-        try:
-            req = urlrequest.Request(
-                url,
-                data=body,
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with urlrequest.urlopen(req, timeout=90) as resp:
-                raw = resp.read().decode("utf-8")
-            parsed = json.loads(raw)
-            parts = (
-                parsed.get("candidates", [{}])[0]
-                .get("content", {})
-                .get("parts", [])
-            )
-            text = "".join(p.get("text", "") for p in parts if isinstance(p, dict))
-            if text.startswith("```"):
-                text = text.split("\n", 1)[1]
-                text = text.rsplit("```", 1)[0]
-            return json.loads(text)
-        except (json.JSONDecodeError, KeyError, IndexError, urlerror.URLError, ValueError):
-            if attempt == retries - 1:
-                raise
-
-    raise RuntimeError("Gemini call failed after retries")
 
 
 # ── Helpers ────────────────────────────────────────────────────────────
@@ -378,7 +258,33 @@ async def generate_question(
     The subsection_id is required — the question is always about one specific subsection.
     If authenticated, incorporates the student's known misconceptions
     on prerequisite concepts to target weak areas."""
-    meta = _fetch_section_meta(section_id)
+    trace_event(
+        logger,
+        "question.request.started",
+        section_id=section_id,
+        subsection_id=subsection_id,
+        variant=variant,
+    )
+    metadata_started = time.monotonic()
+    try:
+        meta = _fetch_section_meta(section_id)
+    except Exception as exc:
+        trace_exception(
+            logger,
+            "question.metadata_fetch.failed",
+            exc,
+            section_id=section_id,
+            latency_ms=round((time.monotonic() - metadata_started) * 1000, 2),
+        )
+        raise
+    trace_event(
+        logger,
+        "question.metadata_fetch.completed",
+        section_id=section_id,
+        latency_ms=round((time.monotonic() - metadata_started) * 1000, 2),
+        subsection_count=len(meta["subsections"]),
+        context_chars=len(meta["full_text"]),
+    )
     context = meta["full_text"]
 
     # Resolve target subsection
@@ -390,6 +296,9 @@ async def generate_question(
         )
     enforce_rate_limit(request, scope="test_question_generation", limit=30, window_seconds=60)
     target_sub = next(s for s in meta["subsections"] if s["id"] == subsection_id)
+    generation_targets = default_generation_targets()
+    provider = generation_targets[0].provider
+    gen_model = generation_targets[0].model
 
     cache_key = stable_cache_key(
         "test_question",
@@ -397,11 +306,21 @@ async def generate_question(
             "section_id": section_id,
             "subsection_id": target_sub["id"],
             "variant": variant,
-            "model": MODEL,
+            "provider": provider,
+            "model": gen_model,
+            "fallbacks": [f"{target.provider}:{target.model}" for target in generation_targets[1:]],
             "prompt_version": settings.GEN_PROMPT_VERSION,
         },
     )
+    cache_started = time.monotonic()
     cached = _generation_cache.get(cache_key)
+    trace_event(
+        logger,
+        "question.cache_lookup.completed",
+        cache_key_fingerprint=cache_key[:16],
+        status="hit" if cached is not None else "miss",
+        latency_ms=round((time.monotonic() - cache_started) * 1000, 2),
+    )
     if cached is not None:
         if not _valid_question_payload(cached):
             _generation_cache.delete(cache_key)
@@ -409,7 +328,14 @@ async def generate_question(
             _set_generation_cache_headers(response, "HIT", cache_key)
             logger.info(
                 "Generation cache hit",
-                extra={"endpoint": "test_question", "cache_key": cache_key[:16], "model": MODEL},
+                extra={"endpoint": "test_question", "cache_key": cache_key[:16], "model": gen_model},
+            )
+            trace_event(
+                logger,
+                "question.request.completed",
+                cache_status="hit",
+                section_id=section_id,
+                subsection_id=target_sub["id"],
             )
             return cached
 
@@ -439,14 +365,37 @@ Respond in STRICT JSON with exactly these keys:
 The key_terms should be 3-6 important concepts from this subsection that the student should mention.
 Return ONLY valid JSON, no markdown fences, no extra text."""
 
+    trace_event(
+        logger,
+        "question.provider.selected",
+        provider=provider,
+        model=gen_model,
+        cache_key_fingerprint=cache_key[:16],
+    )
     try:
-        gen_model = CEREBRAS_MODEL if settings.CEREBRAS_API_KEY else MODEL
-        data = _generate_json_with_retry(prompt, model=gen_model, retries=2, use_cerebras=bool(settings.CEREBRAS_API_KEY))
-    except Exception:
+        data = _generate_json_with_retry(
+            prompt,
+            model=gen_model,
+            retries=2,
+            use_cerebras=bool(settings.CEREBRAS_API_KEY),
+            operation="question_generation",
+        )
+    except Exception as exc:
+        trace_exception(
+            logger,
+            "question.generation.failed",
+            exc,
+            provider=provider,
+            model=gen_model,
+            section_id=section_id,
+            subsection_id=target_sub["id"],
+            cache_key_fingerprint=cache_key[:16],
+            latency_ms=round((time.monotonic() - started) * 1000, 2),
+        )
         raise HTTPException(
             status_code=502,
             detail="Failed to generate question. The AI returned an invalid response. Please try again.",
-        )
+        ) from exc
 
     # Validate subsection_id — fall back to first subsection if invalid
     valid_sub_ids = {s["id"] for s in meta["subsections"]}
@@ -464,12 +413,21 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
     }
     _generation_cache.set(cache_key, payload)
     _set_generation_cache_headers(response, "MISS", cache_key)
+    trace_event(
+        logger,
+        "question.payload.completed",
+        cache_status="miss",
+        section_id=section_id,
+        subsection_id=subsection_id,
+        question_chars=len(payload["question"]),
+        latency_ms=round((time.monotonic() - started) * 1000, 2),
+    )
     logger.info(
         "Generation cache miss",
         extra={
             "endpoint": "test_question",
             "cache_key": cache_key[:16],
-            "model": MODEL,
+            "model": gen_model,
             "latency_ms": round((time.monotonic() - started) * 1000, 2),
         },
     )
@@ -856,7 +814,35 @@ async def generate_mcq(
     variant: int = 0,
 ):
     """Generate a conceptual MCQ from full section context, targeted to one subsection."""
-    meta = _fetch_section_meta(section_id)
+    trace_event(
+        logger,
+        "mcq.request.started",
+        section_id=section_id,
+        subsection_id=subsection_id,
+        concept_id=concept_id,
+        variant=variant,
+    )
+    metadata_started = time.monotonic()
+    try:
+        meta = _fetch_section_meta(section_id)
+    except Exception as exc:
+        trace_exception(
+            logger,
+            "mcq.metadata_fetch.failed",
+            exc,
+            section_id=section_id,
+            latency_ms=round((time.monotonic() - metadata_started) * 1000, 2),
+        )
+        raise
+    trace_event(
+        logger,
+        "mcq.metadata_fetch.completed",
+        section_id=section_id,
+        latency_ms=round((time.monotonic() - metadata_started) * 1000, 2),
+        subsection_count=len(meta["subsections"]),
+        concept_count=len(meta["concepts"]),
+        context_chars=len(meta["full_text"]),
+    )
     context = meta["full_text"]
 
     # Resolve target subsection
@@ -892,6 +878,10 @@ async def generate_mcq(
             "- Make distractors around common confusion related to this concept."
         )
 
+    generation_targets = default_generation_targets()
+    provider = generation_targets[0].provider
+    gen_model = generation_targets[0].model
+
     cache_key = stable_cache_key(
         "test_mcq",
         {
@@ -899,11 +889,21 @@ async def generate_mcq(
             "subsection_id": target_sub["id"],
             "concept_id": concept_id or "",
             "variant": variant,
-            "model": MODEL,
+            "provider": provider,
+            "model": gen_model,
+            "fallbacks": [f"{target.provider}:{target.model}" for target in generation_targets[1:]],
             "prompt_version": settings.GEN_PROMPT_VERSION,
         },
     )
+    cache_started = time.monotonic()
     cached = _generation_cache.get(cache_key)
+    trace_event(
+        logger,
+        "mcq.cache_lookup.completed",
+        cache_key_fingerprint=cache_key[:16],
+        status="hit" if cached is not None else "miss",
+        latency_ms=round((time.monotonic() - cache_started) * 1000, 2),
+    )
     if cached is not None:
         if not _valid_mcq_payload(cached):
             _generation_cache.delete(cache_key)
@@ -911,7 +911,14 @@ async def generate_mcq(
             _set_generation_cache_headers(response, "HIT", cache_key)
             logger.info(
                 "Generation cache hit",
-                extra={"endpoint": "test_mcq", "cache_key": cache_key[:16], "model": MODEL},
+                extra={"endpoint": "test_mcq", "cache_key": cache_key[:16], "model": gen_model},
+            )
+            trace_event(
+                logger,
+                "mcq.request.completed",
+                cache_status="hit",
+                section_id=section_id,
+                subsection_id=target_sub["id"],
             )
             return cached
 
@@ -953,14 +960,38 @@ RULES:
 - Keep the question anchored to the target subsection only.{concept_rule}
 - Return ONLY valid JSON, no markdown fences, no extra text."""
 
+    trace_event(
+        logger,
+        "mcq.provider.selected",
+        provider=provider,
+        model=gen_model,
+        cache_key_fingerprint=cache_key[:16],
+    )
     try:
-        gen_model = CEREBRAS_MODEL if settings.CEREBRAS_API_KEY else MODEL
-        data = _generate_json_with_retry(prompt, model=gen_model, retries=2, use_cerebras=bool(settings.CEREBRAS_API_KEY))
-    except Exception:
+        data = _generate_json_with_retry(
+            prompt,
+            model=gen_model,
+            retries=2,
+            use_cerebras=bool(settings.CEREBRAS_API_KEY),
+            operation="mcq_generation",
+        )
+    except Exception as exc:
+        trace_exception(
+            logger,
+            "mcq.generation.failed",
+            exc,
+            provider=provider,
+            model=gen_model,
+            section_id=section_id,
+            subsection_id=target_sub["id"],
+            concept_id=concept_id,
+            cache_key_fingerprint=cache_key[:16],
+            latency_ms=round((time.monotonic() - started) * 1000, 2),
+        )
         raise HTTPException(
             status_code=502,
             detail="Failed to generate MCQ. The AI returned an invalid response. Please try again.",
-        )
+        ) from exc
 
     # Validate subsection_id — force to requested subsection for safety.
     if data.get("subsection_id") != target_sub["id"]:
@@ -978,12 +1009,22 @@ RULES:
     }
     _generation_cache.set(cache_key, payload)
     _set_generation_cache_headers(response, "MISS", cache_key)
+    trace_event(
+        logger,
+        "mcq.payload.completed",
+        cache_status="miss",
+        section_id=section_id,
+        subsection_id=target_sub["id"],
+        question_chars=len(payload["question"]),
+        option_count=len(payload["options"]),
+        latency_ms=round((time.monotonic() - started) * 1000, 2),
+    )
     logger.info(
         "Generation cache miss",
         extra={
             "endpoint": "test_mcq",
             "cache_key": cache_key[:16],
-            "model": MODEL,
+            "model": gen_model,
             "latency_ms": round((time.monotonic() - started) * 1000, 2),
         },
     )

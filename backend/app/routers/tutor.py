@@ -11,18 +11,16 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
-from openai import OpenAI
 from langgraph.graph import StateGraph, END
 
 from app.auth import get_optional_user, CurrentUser
 from app.config import settings
 from app.database import read_query, write_query
+from app.services.llm import default_generation_targets, llm_service
 from app.services.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/api", tags=["tutor"])
 
-_llm_client: OpenAI | None = None
-_embedding_client: OpenAI | None = None
 _graph = None
 
 
@@ -92,37 +90,13 @@ class TutorSessionListResponse(BaseModel):
 
 
 
-def _get_llm_client() -> OpenAI:
-    global _llm_client
-    if _llm_client is None:
-        api_key = settings.CEREBRAS_API_KEY or settings.FIREWORKS_API_KEY
-        base_url = settings.CEREBRAS_BASE_URL if settings.CEREBRAS_API_KEY else settings.FIREWORKS_BASE_URL
-        if not api_key:
-            raise HTTPException(status_code=500, detail="CEREBRAS_API_KEY (or FIREWORKS_API_KEY) not configured")
-        _llm_client = OpenAI(api_key=api_key, base_url=base_url)
-    return _llm_client
-
-
-def _get_embedding_client() -> OpenAI:
-    global _embedding_client
-    if _embedding_client is None:
-        api_key = settings.FIREWORKS_API_KEY_EMBEDDINGS or settings.FIREWORKS_API_KEY
-        if not api_key:
-            raise HTTPException(status_code=500, detail="FIREWORKS_API_KEY_EMBEDDINGS (or FIREWORKS_API_KEY) not configured")
-        _embedding_client = OpenAI(api_key=api_key, base_url=settings.FIREWORKS_BASE_URL)
-    return _embedding_client
-
-
 def _embed_query(text: str) -> list[float]:
-    client = _get_embedding_client()
-    resp = client.embeddings.create(
+    return llm_service.embed(
+        provider="fireworks",
         model=settings.FIREWORKS_EMBEDDING_MODEL,
-        input=text.strip(),
+        text=text,
+        operation="tutor_query_embedding",
     )
-    vec = resp.data[0].embedding if resp.data else None
-    if not vec:
-        return []
-    return [float(v) for v in vec]
 
 
 def _fetch_subsection_context(section_id: str, subsection_id: str) -> str:
@@ -381,8 +355,6 @@ def _node_retrieve_context(state: TutorState) -> TutorState:
 
 
 def _node_respond(state: TutorState) -> TutorState:
-    client = _get_llm_client()
-
     history = list(state.get("history", []))
     user_message = state.get("user_message", "")
     history.append({"role": "user", "content": user_message})
@@ -424,18 +396,17 @@ def _node_respond(state: TutorState) -> TutorState:
         }
     )
 
-    resp = client.chat.completions.create(
-        model=settings.CEREBRAS_MODEL if settings.CEREBRAS_API_KEY else settings.FIREWORKS_MODEL,
+    targets = default_generation_targets()
+    target = targets[0]
+    answer = llm_service.generate_text(
+        provider=target.provider,
+        model=target.model,
         messages=messages,
         temperature=0.3,
         timeout=60,
+        operation="subsection_tutor",
+        fallbacks=targets[1:],
     )
-    content = resp.choices[0].message.content or ""
-    if isinstance(content, list):
-        content = "".join(
-            p.get("text", "") for p in content if isinstance(p, dict) and p.get("type") == "text"
-        )
-    answer = str(content).strip()
 
     history.append({"role": "assistant", "content": answer})
     return {
@@ -458,8 +429,6 @@ def _node_retrieve_global_context(state: GlobalTutorState) -> GlobalTutorState:
 
 
 def _node_respond_global(state: GlobalTutorState) -> GlobalTutorState:
-    client = _get_llm_client()
-
     history = list(state.get("history", []))
     user_message = state.get("user_message", "")
     history.append({"role": "user", "content": user_message})
@@ -504,18 +473,17 @@ def _node_respond_global(state: GlobalTutorState) -> GlobalTutorState:
         }
     )
 
-    resp = client.chat.completions.create(
-        model=settings.CEREBRAS_MODEL if settings.CEREBRAS_API_KEY else settings.FIREWORKS_MODEL,
+    targets = default_generation_targets()
+    target = targets[0]
+    answer = llm_service.generate_text(
+        provider=target.provider,
+        model=target.model,
         messages=messages,
         temperature=0.3,
         timeout=60,
+        operation="global_tutor",
+        fallbacks=targets[1:],
     )
-    content = resp.choices[0].message.content or ""
-    if isinstance(content, list):
-        content = "".join(
-            p.get("text", "") for p in content if isinstance(p, dict) and p.get("type") == "text"
-        )
-    answer = str(content).strip()
 
     history.append({"role": "assistant", "content": answer})
     return {

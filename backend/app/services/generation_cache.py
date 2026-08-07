@@ -12,6 +12,8 @@ from typing import Any
 from urllib import parse as urlparse
 from urllib import request as urlrequest
 
+from app.observability import trace_exception
+
 
 logger = logging.getLogger(__name__)
 
@@ -163,9 +165,14 @@ class HybridGenerationCache(GenerationCache):
             self.local.set(key, payload, self.default_ttl_seconds)
             self._remote_hits += 1
             return payload
-        except Exception:
+        except Exception as exc:
             self._remote_errors += 1
-            logger.exception("Upstash get failed for generation cache")
+            trace_exception(
+                logger,
+                "generation_cache.remote_get.failed",
+                exc,
+                cache_key_fingerprint=key[:16],
+            )
             return None
 
     def set(self, key: str, payload: Any, ttl_seconds: int | None = None) -> None:
@@ -175,9 +182,14 @@ class HybridGenerationCache(GenerationCache):
             return
         try:
             self.remote.setex(key, json.dumps(payload, separators=(",", ":"), ensure_ascii=False), ttl)
-        except Exception:
+        except Exception as exc:
             self._remote_errors += 1
-            logger.exception("Upstash set failed for generation cache")
+            trace_exception(
+                logger,
+                "generation_cache.remote_set.failed",
+                exc,
+                cache_key_fingerprint=key[:16],
+            )
 
     def delete(self, key: str) -> None:
         self.local.delete(key)
@@ -185,9 +197,14 @@ class HybridGenerationCache(GenerationCache):
             return
         try:
             self.remote.delete(key)
-        except Exception:
+        except Exception as exc:
             self._remote_errors += 1
-            logger.exception("Upstash delete failed for generation cache")
+            trace_exception(
+                logger,
+                "generation_cache.remote_delete.failed",
+                exc,
+                cache_key_fingerprint=key[:16],
+            )
 
     def stats(self) -> dict[str, Any]:
         base = self.local.stats()

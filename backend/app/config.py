@@ -23,19 +23,28 @@ class Settings(BaseSettings):
 
     # LLM
     GEMINI_API_KEY: str = ""
-    # Fireworks-hosted Kimi 2.5 (OpenAI-compatible API)
+    # OpenAI-compatible model providers
     FIREWORKS_API_KEY: str = ""
     FIREWORKS_API_KEY_EMBEDDINGS: str = Field(
         default="",
         validation_alias=AliasChoices("FIREWORKS_API_KEY_EMBEDDINGS", "FIREWORKS_API_KEY_embeddings"),
     )
     FIREWORKS_BASE_URL: str = "https://api.fireworks.ai/inference/v1"
-    FIREWORKS_MODEL: str = "accounts/fireworks/models/kimi-k2p5"
+    FIREWORKS_MODEL: str = "accounts/fireworks/models/minimax-m3"
     FIREWORKS_EMBEDDING_MODEL: str = "fireworks/qwen3-embedding-8b"
     # Cerebras — ultra-fast inference for tutor chat & question generation
     CEREBRAS_API_KEY: str = ""
     CEREBRAS_BASE_URL: str = "https://api.cerebras.ai/v1"
-    CEREBRAS_MODEL: str = "qwen-3-235b-a22b-instruct-2507"
+    CEREBRAS_MODEL: str = "gemma-4-31b"
+    GEMINI_OPENAI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
+
+    # Optional OpenTelemetry/OpenInference export (Phoenix or any OTLP collector).
+    OTEL_ENABLED: bool = False
+    OTEL_SERVICE_NAME: str = "learneros-backend"
+    OTEL_EXPORTER_OTLP_ENDPOINT: str = ""
+    OTEL_EXPORTER_OTLP_HEADERS: str = ""
+    OTEL_SAMPLE_RATIO: float = Field(default=1.0, ge=0.0, le=1.0)
+    OTEL_CAPTURE_CONTENT: bool = False
     GEN_CACHE_TTL_SECONDS: int = 604800
     GEN_CACHE_MAX_ENTRIES: int = 5000
     GEN_PROMPT_VERSION: str = "v2"

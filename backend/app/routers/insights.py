@@ -15,15 +15,13 @@ import time
 
 from fastapi import APIRouter, Depends, Query, HTTPException
 from pydantic import BaseModel
-from openai import OpenAI
 
 from app.auth import get_current_user, CurrentUser
 from app.config import settings
 from app.database import read_query
+from app.services.llm import llm_service
 
 router = APIRouter(prefix="/api", tags=["insights"])
-_client: OpenAI | None = None
-_embedding_client: OpenAI | None = None
 _insights_cache: dict[str, tuple[float, object]] = {}
 _INSIGHTS_CACHE_TTL_SECONDS = 20.0
 
@@ -56,68 +54,28 @@ def _invalidate_student_cache(student_id: str) -> None:
         _insights_cache.pop(k, None)
 
 
-def _get_client() -> OpenAI:
-    global _client
-    if _client is None:
-        if not settings.FIREWORKS_API_KEY:
-            raise RuntimeError("FIREWORKS_API_KEY not configured")
-        _client = OpenAI(
-            api_key=settings.FIREWORKS_API_KEY,
-            base_url=settings.FIREWORKS_BASE_URL,
-        )
-    return _client
-
-
-def _get_embedding_client() -> OpenAI:
-    global _embedding_client
-    if _embedding_client is None:
-        api_key = settings.FIREWORKS_API_KEY_EMBEDDINGS or settings.FIREWORKS_API_KEY
-        if not api_key:
-            raise RuntimeError("FIREWORKS_API_KEY_EMBEDDINGS (or FIREWORKS_API_KEY) not configured")
-        _embedding_client = OpenAI(
-            api_key=api_key,
-            base_url=settings.FIREWORKS_BASE_URL,
-        )
-    return _embedding_client
-
-
 def _embed_text(text: str) -> list[float]:
     text = (text or "").strip()
     if not text:
         raise HTTPException(status_code=400, detail="query text is required")
-    client = _get_embedding_client()
-    resp = client.embeddings.create(
+    return llm_service.embed(
+        provider="fireworks",
         model=settings.FIREWORKS_EMBEDDING_MODEL,
-        input=text,
+        text=text,
+        operation="insight_search_embedding",
     )
-    vec = resp.data[0].embedding if resp.data else None
-    if not vec:
-        raise HTTPException(status_code=502, detail="Embedding provider returned empty vector")
-    return [float(v) for v in vec]
 
 
 def _llm_json(prompt: str, model: str | None = None) -> dict:
-    client = _get_client()
-    response = client.chat.completions.create(
+    return llm_service.generate_json(
+        provider="fireworks",
         model=model or settings.FIREWORKS_MODEL,
-        messages=[
-            {"role": "system", "content": "Return only valid JSON matching the requested schema."},
-            {"role": "user", "content": prompt},
-        ],
+        prompt=prompt,
         temperature=0.1,
-        response_format={"type": "json_object"},
         timeout=60,
+        retries=2,
+        operation="insight_action",
     )
-    content = response.choices[0].message.content or "{}"
-    if isinstance(content, list):
-        content = "".join(
-            p.get("text", "")
-            for p in content
-            if isinstance(p, dict) and p.get("type") == "text"
-        )
-    if content.startswith("```"):
-        content = content.split("\n", 1)[1].rsplit("```", 1)[0]
-    return json.loads(content)
 
 
 def _get_insight_context(student_id: str, insight_id: str) -> dict | None:

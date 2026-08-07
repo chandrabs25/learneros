@@ -9,11 +9,11 @@ import time
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from openai import OpenAI
 from pydantic import BaseModel
 
 from app.auth import CurrentTeacher, get_current_teacher
 from app.config import settings
+from app.services.llm import llm_service
 from app.database import read_query
 from app.services.teacher_analytics import compute_risk
 
@@ -39,9 +39,9 @@ def _cache_set(key: str, payload: dict) -> None:
 
 
 def _window_days(window: str) -> int:
-    mapping = {"7d": 7, "30d": 30, "90d": 90}
+    mapping = {"7d": 7, "30d": 30, "90d": 90, "180d": 180}
     if window not in mapping:
-        raise HTTPException(status_code=400, detail="window must be one of: 7d, 30d, 90d")
+        raise HTTPException(status_code=400, detail="window must be one of: 7d, 30d, 90d, 180d")
     return mapping[window]
 
 
@@ -155,7 +155,7 @@ def _insights_filtered(
 
 @router.get("/overview")
 async def teacher_overview(
-    window: Literal["7d", "30d", "90d"] = Query(default="30d"),
+    window: Literal["7d", "30d", "90d", "180d"] = Query(default="30d"),
     grade: int | None = Query(default=None, ge=1, le=12),
     subject: str | None = Query(default=None),
     textbook_grade: int | None = Query(default=None, ge=1, le=12),
@@ -855,7 +855,11 @@ async def cluster_trends(
     if cached is not None:
         return cached
 
-    days = _window_days(window)
+    requested_days = _window_days(window)
+    # Cluster history is intentionally broader than the dashboard metric window.
+    # The deployed frontend currently requests 90d, so retain that contract while
+    # searching up to 180 days for enough snapshots to render evolution.
+    days = 180 if requested_days == 90 else requested_days
     # Fetch all snapshots within the window, ordered by time
     snapshot_rows = read_query(
         """
@@ -1285,17 +1289,7 @@ async def teacher_cluster_detail(
 # LLM-powered cluster suggestions
 # ---------------------------------------------------------------------------
 
-_llm_client: OpenAI | None = None
 _suggestion_rate: dict[str, list[float]] = {}
-
-
-def _get_llm_client() -> OpenAI:
-    global _llm_client
-    if _llm_client is None:
-        if not settings.FIREWORKS_API_KEY:
-            raise HTTPException(status_code=500, detail="FIREWORKS_API_KEY not configured")
-        _llm_client = OpenAI(api_key=settings.FIREWORKS_API_KEY, base_url=settings.FIREWORKS_BASE_URL)
-    return _llm_client
 
 
 def _check_suggestion_rate(teacher_id: str, limit: int = 10, window: int = 60) -> None:
@@ -1480,8 +1474,8 @@ async def generate_cluster_suggestions(
 
     user_prompt += "Generate your teaching suggestions now."
 
-    client = _get_llm_client()
-    resp = client.chat.completions.create(
+    raw = llm_service.generate_text(
+        provider="fireworks",
         model=settings.FIREWORKS_MODEL,
         messages=[
             {"role": "system", "content": system_prompt},
@@ -1489,13 +1483,8 @@ async def generate_cluster_suggestions(
         ],
         temperature=0.4,
         timeout=60,
+        operation="teacher_cluster_suggestions",
     )
-    raw = resp.choices[0].message.content or "[]"
-    if isinstance(raw, list):
-        raw = "".join(
-            p.get("text", "") for p in raw if isinstance(p, dict) and p.get("type") == "text"
-        )
-    raw = str(raw).strip()
 
     # Parse the JSON array from the LLM response
     suggestions: list[str] = []

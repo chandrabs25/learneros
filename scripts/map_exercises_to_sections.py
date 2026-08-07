@@ -1,10 +1,10 @@
 """
-Map exercises to their most relevant section using Fireworks-hosted Kimi 2.5.
+Map exercises to their most relevant section using the configured Fireworks model.
 
 For each chapter:
   1. Fetch all sections (id + title + summary/content)
   2. Fetch all exercises (id + problem text)
-  3. For each exercise, call Kimi to determine the best matching section
+  3. For each exercise, call the model to determine the best matching section
   4. Update the TESTS relationship in Neo4j (delete old, create new)
 
 Usage:
@@ -36,7 +36,7 @@ NEO4J_USER = os.environ["NEO4J_USER"]
 NEO4J_PASSWORD = os.environ["NEO4J_PASSWORD"]
 FIREWORKS_API_KEY = os.environ["FIREWORKS_API_KEY"]
 FIREWORKS_BASE_URL = os.environ.get("FIREWORKS_BASE_URL", "https://api.fireworks.ai/inference/v1")
-FIREWORKS_MODEL = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/kimi-k2p5")
+FIREWORKS_MODEL = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/minimax-m3")
 
 MODEL = FIREWORKS_MODEL
 RATE_LIMIT_DELAY = 0.3  # seconds between API calls to avoid quota issues
