@@ -1,3 +1,6 @@
-// Compatibility route for the previously shared walkthrough URL.
-// Reuse the homepage so both URLs stay behaviorally identical.
-export { default } from "../page";
+import { redirect } from "next/navigation";
+
+// Preserve the previously shared URL while moving visitors to the real home page.
+export default function WalkthroughPage() {
+  redirect("/");
+}
