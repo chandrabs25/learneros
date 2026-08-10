@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
@@ -9,10 +9,6 @@ import { fetchGenerationJSON } from "@/lib/generation-cache";
 import TutorMarkdown from "@/components/TutorMarkdown";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
-interface SectionConcept {
-    id: string;
-}
 
 interface MCQData {
     question: string;
@@ -74,7 +70,6 @@ export default function MCQPracticePage() {
     const sectionId = `ncert:${subject}:${grade}:${chapter}:${section}`;
 
     const [questionIndex, setQuestionIndex] = useState(0);
-    const [questionPlan, setQuestionPlan] = useState<Array<string | null>>([]);
     const [mcq, setMcq] = useState<MCQData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<string | null>(null);
@@ -84,68 +79,32 @@ export default function MCQPracticePage() {
     const [allInsights, setAllInsights] = useState<MCQResult["insights"]>([]);
     const [persistenceMessage, setPersistenceMessage] = useState("");
     const [error, setError] = useState("");
-    const totalQuestions = questionPlan.length || 2;
+    const totalQuestions = 2;
 
-    // Fetch a new MCQ question
-    const fetchQuestion = useCallback(async () => {
-        if (!targetSubsection) {
-            setError("No subsection specified. Please navigate from a section page.");
-            setLoading(false);
-            return;
-        }
-        setLoading(true);
-        setError("");
-        setSelected(null);
-        setResult(null);
-        try {
-            const targetConceptId = questionPlan[questionIndex];
-            const conceptPart = targetConceptId ? `&concept_id=${encodeURIComponent(targetConceptId)}` : "";
-            const data = await fetchGenerationJSON<MCQData>(
-                `${API_URL}/api/sections/${sectionId}/test/mcq?subsection_id=${encodeURIComponent(targetSubsection)}${conceptPart}&variant=${questionIndex}`
-            );
-            setMcq(data);
-        } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : "Failed to load question");
-            setMcq(null);
-        }
-        setLoading(false);
-    }, [sectionId, targetSubsection, questionPlan, questionIndex]);
-
-    // Build question plan: minimum 2 questions, else one per concept.
+    // Questions are generated from subsection content only. Concepts are introduced
+    // later by the evaluation endpoint when it creates learning insights.
     useEffect(() => {
-        if (!targetSubsection) {
-            setError("No subsection specified. Please navigate from a section page.");
-            setLoading(false);
-            setQuestionPlan([]);
-            return;
-        }
+        if (!targetSubsection) return;
+        let cancelled = false;
         (async () => {
             try {
-                const res = await fetch(`${API_URL}/api/sections/${sectionId}/concepts`);
-                const data = await res.json();
-                const conceptIds = Array.isArray(data)
-                    ? Array.from(new Set((data as SectionConcept[]).map((c) => c.id).filter(Boolean)))
-                    : [];
-
-                if (conceptIds.length === 0) {
-                    setQuestionPlan([null, null]);
-                } else if (conceptIds.length === 1) {
-                    setQuestionPlan([conceptIds[0], conceptIds[0]]);
-                } else {
-                    setQuestionPlan(conceptIds);
+                const data = await fetchGenerationJSON<MCQData>(
+                    `${API_URL}/api/sections/${sectionId}/test/mcq?subsection_id=${encodeURIComponent(targetSubsection)}&variant=${questionIndex}`
+                );
+                if (!cancelled) setMcq(data);
+            } catch (e: unknown) {
+                if (!cancelled) {
+                    setError(e instanceof Error ? e.message : "Failed to load question");
+                    setMcq(null);
                 }
-                setQuestionIndex(0);
-            } catch {
-                setQuestionPlan([null, null]);
-                setQuestionIndex(0);
+            } finally {
+                if (!cancelled) setLoading(false);
             }
         })();
-    }, [sectionId, targetSubsection]);
-
-    useEffect(() => {
-        if (questionPlan.length === 0) return;
-        fetchQuestion();
-    }, [questionPlan, questionIndex, fetchQuestion]);
+        return () => {
+            cancelled = true;
+        };
+    }, [sectionId, targetSubsection, questionIndex]);
 
     // Submit answer
     const handleSubmit = async () => {
@@ -167,29 +126,31 @@ export default function MCQPracticePage() {
                     subsection_id: mcq.subsection_id,
                 }),
             });
-            const data: MCQResult = await res.json();
-            setResult(data);
+            const data = await res.json();
+            if (!res.ok) throw new Error(data?.detail || `Evaluation failed (${res.status})`);
+            const resultData = data as MCQResult;
+            setResult(resultData);
             setScore((s) => ({
-                correct: s.correct + (data.is_correct ? 1 : 0),
+                correct: s.correct + (resultData.is_correct ? 1 : 0),
                 total: s.total + 1,
             }));
-            if (data.insights?.length) {
-                setAllInsights((prev) => [...prev, ...data.insights]);
-                if (data.persistence_status === "queued") {
+            if (resultData.insights?.length) {
+                setAllInsights((prev) => [...prev, ...resultData.insights]);
+                if (resultData.persistence_status === "queued") {
                     setPersistenceMessage("Insights saved to your profile.");
                 } else if (!token) {
                     const existing = loadGuestInsights();
-                    const timestamped = data.insights.map((ins) => ({
+                    const timestamped = resultData.insights.map((ins) => ({
                         ...ins,
                         created_at: new Date().toISOString(),
                     }));
                     saveGuestInsights([...existing, ...timestamped]);
                     setPersistenceMessage("Insights saved locally. Sign in to sync to your profile.");
-                } else if (data.persistence_status === "skipped_invalid_auth") {
+                } else if (resultData.persistence_status === "skipped_invalid_auth") {
                     setPersistenceMessage(
                         "Insights were generated but backend rejected your auth token, so they were not saved."
                     );
-                } else if (data.persistence_status === "skipped_unauthenticated") {
+                } else if (resultData.persistence_status === "skipped_unauthenticated") {
                     setPersistenceMessage(
                         "Insights were generated but this request reached backend as unauthenticated."
                     );
@@ -207,6 +168,11 @@ export default function MCQPracticePage() {
             router.push(`/${grade}/${subject}/${chapter}/${section}`);
             return;
         }
+        setLoading(true);
+        setError("");
+        setMcq(null);
+        setSelected(null);
+        setResult(null);
         setQuestionIndex((i) => i + 1);
     };
 
@@ -264,8 +230,8 @@ export default function MCQPracticePage() {
                             <div className="spinner" />
                             <p>Generating question...</p>
                         </div>
-                    ) : error ? (
-                        <p>{error}</p>
+                    ) : !targetSubsection || error ? (
+                        <p>{!targetSubsection ? "No subsection specified. Please navigate from a section page." : error}</p>
                     ) : mcq ? (
                         <>
                             <div className="mcq-card-badge">MULTIPLE CHOICE</div>

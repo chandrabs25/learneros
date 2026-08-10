@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
+const PRODUCTION_API_URL = "https://learneros-backend.fly.dev";
+const buildApiUrl = process.env.NEXT_PUBLIC_API_URL
+  || (process.env.NODE_ENV === "production" ? PRODUCTION_API_URL : undefined);
+
 const nextConfig: NextConfig = {
+  env: buildApiUrl ? { NEXT_PUBLIC_API_URL: buildApiUrl } : undefined,
   async redirects() {
     return [
       {

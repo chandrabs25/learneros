@@ -155,6 +155,7 @@ export default function SectionViewerPage() {
     const [subsections, setSubsections] = useState<Subsection[]>([]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [contentError, setContentError] = useState("");
     const [conceptCount, setConceptCount] = useState(0);
     const [chapterExerciseCount, setChapterExerciseCount] = useState(0);
     const [chapterSections, setChapterSections] = useState<SectionNavItem[]>([]);
@@ -180,12 +181,25 @@ export default function SectionViewerPage() {
 
     useEffect(() => {
         fetch(`${API_URL}/api/sections/${sectionId}/subsections`)
-            .then((r) => r.json())
+            .then(async (r) => {
+                const data = await r.json().catch(() => null);
+                if (!r.ok) {
+                    throw new Error(data?.detail || `Content request failed (${r.status})`);
+                }
+                return data;
+            })
             .then((data) => {
                 setSubsections(Array.isArray(data) ? data : []);
+                setContentError("");
                 setLoading(false);
             })
-            .catch(() => setLoading(false));
+            .catch((error: unknown) => {
+                setSubsections([]);
+                setContentError(
+                    error instanceof Error ? error.message : "Could not load this section."
+                );
+                setLoading(false);
+            });
 
         // Check how many concept animations exist for this section
         fetch(`${API_URL}/api/sections/${sectionId}/concepts`)
@@ -469,6 +483,14 @@ export default function SectionViewerPage() {
             <div className="loading-container">
                 <div className="spinner" />
                 Loading content...
+            </div>
+        );
+    }
+
+    if (contentError) {
+        return (
+            <div className="loading-container">
+                Could not load this section: {contentError}
             </div>
         );
     }
