@@ -72,11 +72,9 @@ export default function MCQPracticePage() {
     const targetSubsection = searchParams.get("subsection") || "";
 
     const sectionId = `ncert:${subject}:${grade}:${chapter}:${section}`;
-    const assessmentScope = `${sectionId}|${targetSubsection}`;
 
     const [questionIndex, setQuestionIndex] = useState(0);
     const [questionPlan, setQuestionPlan] = useState<Array<string | null>>([]);
-    const [questionPlanScope, setQuestionPlanScope] = useState("");
     const [mcq, setMcq] = useState<MCQData | null>(null);
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState<string | null>(null);
@@ -90,9 +88,6 @@ export default function MCQPracticePage() {
 
     // Fetch a new MCQ question
     const fetchQuestion = useCallback(async () => {
-        if (questionPlanScope !== assessmentScope || questionPlan.length === 0) {
-            return;
-        }
         if (!targetSubsection) {
             setError("No subsection specified. Please navigate from a section page.");
             setLoading(false);
@@ -114,27 +109,20 @@ export default function MCQPracticePage() {
             setMcq(null);
         }
         setLoading(false);
-    }, [assessmentScope, questionPlanScope, sectionId, targetSubsection, questionPlan, questionIndex]);
+    }, [sectionId, targetSubsection, questionPlan, questionIndex]);
 
     // Build question plan: minimum 2 questions, else one per concept.
     useEffect(() => {
-        let cancelled = false;
-        setQuestionPlan([]);
-        setQuestionPlanScope("");
-        setQuestionIndex(0);
-        setMcq(null);
-
         if (!targetSubsection) {
             setError("No subsection specified. Please navigate from a section page.");
             setLoading(false);
-            return () => { cancelled = true; };
+            setQuestionPlan([]);
+            return;
         }
         (async () => {
             try {
-                const res = await fetch(`${API_URL}/api/sections/${sectionId}/test/concepts`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const res = await fetch(`${API_URL}/api/sections/${sectionId}/concepts`);
                 const data = await res.json();
-                if (cancelled) return;
                 const conceptIds = Array.isArray(data)
                     ? Array.from(new Set((data as SectionConcept[]).map((c) => c.id).filter(Boolean)))
                     : [];
@@ -146,22 +134,18 @@ export default function MCQPracticePage() {
                 } else {
                     setQuestionPlan(conceptIds);
                 }
-                setQuestionPlanScope(assessmentScope);
                 setQuestionIndex(0);
             } catch {
-                if (cancelled) return;
                 setQuestionPlan([null, null]);
-                setQuestionPlanScope(assessmentScope);
                 setQuestionIndex(0);
             }
         })();
-        return () => { cancelled = true; };
-    }, [assessmentScope, sectionId, targetSubsection]);
+    }, [sectionId, targetSubsection]);
 
     useEffect(() => {
-        if (questionPlan.length === 0 || questionPlanScope !== assessmentScope) return;
+        if (questionPlan.length === 0) return;
         fetchQuestion();
-    }, [assessmentScope, questionPlanScope, questionPlan, questionIndex, fetchQuestion]);
+    }, [questionPlan, questionIndex, fetchQuestion]);
 
     // Submit answer
     const handleSubmit = async () => {
