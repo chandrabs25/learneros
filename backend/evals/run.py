@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -14,24 +15,12 @@ from opentelemetry import trace
 from app.config import settings
 from app.services.llm import LLMProvider, llm_service
 from app.telemetry import configure_telemetry, shutdown_telemetry
+from evals.dataset_contract import is_runnable, load_jsonl, validate_case
 from evals.scorers import score_output
 
 
 ROOT = Path(__file__).resolve().parent
 DEFAULT_DATASET = ROOT / "datasets" / "smoke.jsonl"
-
-
-def _load_jsonl(path: Path) -> list[dict[str, Any]]:
-    records: list[dict[str, Any]] = []
-    with path.open(encoding="utf-8") as handle:
-        for line_number, line in enumerate(handle, start=1):
-            if not line.strip():
-                continue
-            value = json.loads(line)
-            if not isinstance(value, dict):
-                raise ValueError(f"{path}:{line_number} must contain a JSON object")
-            records.append(value)
-    return records
 
 
 def _default_model(provider: LLMProvider) -> str:
@@ -47,14 +36,61 @@ def _captured_responses(path: Path | None) -> dict[str, dict[str, Any]]:
         return {}
     return {
         str(record["id"]): record["output"]
-        for record in _load_jsonl(path)
+        for record in load_jsonl(path)
         if isinstance(record.get("output"), dict)
+    }
+
+
+def _cosine_similarity(left: list[float], right: list[float]) -> float:
+    if len(left) != len(right) or not left:
+        raise ValueError("Embedding vectors must have equal, non-zero dimensions")
+    dot = sum(a * b for a, b in zip(left, right, strict=True))
+    left_norm = math.sqrt(sum(value * value for value in left))
+    right_norm = math.sqrt(sum(value * value for value in right))
+    if left_norm == 0 or right_norm == 0:
+        return 0.0
+    return dot / (left_norm * right_norm)
+
+
+def _run_retrieval(case: dict[str, Any]) -> dict[str, Any]:
+    inputs = case["input"]
+    query = str(inputs["query"])
+    candidates = inputs["candidates"]
+    top_k = max(1, min(int(inputs.get("top_k", 4)), len(candidates)))
+    query_embedding = llm_service.embed(
+        provider="fireworks",
+        model=settings.FIREWORKS_EMBEDDING_MODEL,
+        text=query,
+        operation="eval_retrieval_query",
+    )
+    ranked: list[tuple[float, str]] = []
+    for candidate in candidates:
+        candidate_embedding = llm_service.embed(
+            provider="fireworks",
+            model=settings.FIREWORKS_EMBEDDING_MODEL,
+            text=str(candidate["content"]),
+            operation="eval_retrieval_candidate",
+        )
+        ranked.append(
+            (
+                _cosine_similarity(query_embedding, candidate_embedding),
+                str(candidate["id"]),
+            )
+        )
+    ranked.sort(key=lambda item: (-item[0], item[1]))
+    return {
+        "selected_ids": [candidate_id for _, candidate_id in ranked[:top_k]],
+        "scores": {candidate_id: round(score, 6) for score, candidate_id in ranked[:top_k]},
     }
 
 
 def run(args: argparse.Namespace) -> dict[str, Any]:
     configure_telemetry()
-    cases = _load_jsonl(args.dataset)
+    loaded_cases = load_jsonl(args.dataset)
+    for case in loaded_cases:
+        validate_case(case)
+    cases = [case for case in loaded_cases if is_runnable(case)]
+    skipped_unreviewed = len(loaded_cases) - len(cases)
     captured = _captured_responses(args.responses)
     model = args.model or _default_model(args.provider)
     tracer = trace.get_tracer("learneros.evals")
@@ -73,6 +109,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             if case_id in captured:
                 output = captured[case_id]
                 source = "captured"
+            elif task == "retrieval":
+                output = _run_retrieval(case)
+                source = "embedding"
             elif task == "tutor":
                 text = llm_service.generate_text(
                     provider=args.provider,
@@ -118,6 +157,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "overall_score": overall,
         "case_threshold": args.case_threshold,
         "minimum_score": args.minimum_score,
+        "case_count": len(results),
+        "skipped_unreviewed": skipped_unreviewed,
         "passed": overall >= args.minimum_score and all(item["score"] >= args.case_threshold for item in results),
         "results": results,
     }

@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, Query
 
 from app.auth import get_optional_user
 from app.config import settings
-from app.database import read_query
+from app.database import async_read_query
 
 router = APIRouter(prefix="/api", tags=["curriculum"])
 _cache: dict[str, tuple[float, object]] = {}
@@ -65,6 +65,16 @@ def _set_public_cache_headers(
 def _set_no_store_headers(response: Response) -> None:
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["CDN-Cache-Control"] = "no-store"
+
+
+def _set_section_concepts_cache_headers(response: Response) -> None:
+    """Keep relationship-derived concept data fresh during schema migrations."""
+    response.headers["Cache-Control"] = (
+        "public, max-age=300, s-maxage=3600, stale-while-revalidate=3600"
+    )
+    response.headers["CDN-Cache-Control"] = (
+        "public, max-age=3600, stale-while-revalidate=3600"
+    )
 
 
 def _cache_get(key: str):
@@ -117,7 +127,7 @@ async def list_grades(response: Response):
     cached = _cache_get(key)
     if cached is not None:
         return cached
-    rows = read_query("""
+    rows = await async_read_query("""
         MATCH (t:Textbook)-[:CONTAINS]->(ch:Chapter)
         WITH t.grade AS grade, t.id AS tid, count(ch) AS ch_count
         WITH grade, sum(ch_count) AS chapter_count, collect(tid)[0] AS textbook_id
@@ -126,7 +136,7 @@ async def list_grades(response: Response):
                chapter_count,
                textbook_id
         ORDER BY grade
-    """)
+    """, _query_name="curriculum.grades")
 
     if not rows:
         raise HTTPException(status_code=404, detail="No grades found")
@@ -143,7 +153,7 @@ async def list_subjects(grade: int, response: Response):
     cached = _cache_get(key)
     if cached is not None:
         return cached
-    rows = read_query("""
+    rows = await async_read_query("""
         MATCH (s:Subject)-[:CONTAINS]->(t:Textbook {grade: $grade})
         OPTIONAL MATCH (t)-[:CONTAINS]->(ch:Chapter)
         WITH s, t, count(ch) AS chapter_count
@@ -152,7 +162,7 @@ async def list_subjects(grade: int, response: Response):
                t.id AS textbook_id,
                chapter_count
         ORDER BY s.name
-    """, grade=grade)
+    """, _query_name="curriculum.subjects", grade=grade)
     if not rows:
         raise HTTPException(status_code=404, detail=f"No subjects found for grade {grade}")
     _cache_set(key, rows)
@@ -168,7 +178,7 @@ async def list_chapters(grade: int, subject: str, response: Response):
     cached = _cache_get(key)
     if cached is not None:
         return cached
-    rows = read_query("""
+    rows = await async_read_query("""
         MATCH (t:Textbook {grade: $grade})<-[:CONTAINS]-(s:Subject {name: $subject})
         MATCH (t)-[:CONTAINS]->(ch:Chapter)
         OPTIONAL MATCH (ch)-[:CONTAINS]->(sec:Section)
@@ -187,7 +197,7 @@ async def list_chapters(grade: int, subject: str, response: Response):
                exercise_count,
                concept_count
         ORDER BY ch.number
-    """, grade=grade, subject=subject)
+    """, _query_name="curriculum.chapters", grade=grade, subject=subject)
     if not rows:
         raise HTTPException(
             status_code=404,
@@ -213,7 +223,7 @@ async def list_sections(chapter_id: str, response: Response):
     cached = _cache_get(key)
     if cached is not None:
         return cached
-    rows = read_query("""
+    rows = await async_read_query("""
         MATCH (ch:Chapter {id: $chapter_id})-[:CONTAINS]->(sec:Section)
         OPTIONAL MATCH (sec)-[:CONTAINS]->(ss:Subsection)
         OPTIONAL MATCH (sec)-[:REQUIRES]->(prereq)
@@ -226,7 +236,7 @@ async def list_sections(chapter_id: str, response: Response):
                subsection_count,
                prerequisite_count
         ORDER BY toInteger(parts[0]), coalesce(toInteger(parts[1]), -1), coalesce(toInteger(parts[2]), -1)
-    """, chapter_id=chapter_id)
+    """, _query_name="curriculum.sections", chapter_id=chapter_id)
     if not rows:
         raise HTTPException(status_code=404, detail=f"No sections found for {chapter_id}")
     _cache_set(key, rows)
@@ -242,7 +252,7 @@ async def list_subsections(section_id: str, response: Response):
     cached = _cache_get(key)
     if cached is not None:
         return cached
-    rows = read_query("""
+    rows = await async_read_query("""
         MATCH (sec:Section {id: $section_id})-[:CONTAINS]->(ss:Subsection)
         OPTIONAL MATCH (ss)-[:HAS_WORKED_EXAMPLE]->(we:WorkedExample)
         OPTIONAL MATCH (ss)-[:HAS_DIAGRAM]->(d:Diagram)
@@ -260,7 +270,7 @@ async def list_subsections(section_id: str, response: Response):
                diagrams,
                tables
         ORDER BY ss.order
-    """, section_id=section_id)
+    """, _query_name="curriculum.subsections", section_id=section_id)
     if not rows:
         raise HTTPException(status_code=404, detail=f"No subsections found for {section_id}")
     _cache_set(key, rows)
@@ -276,7 +286,7 @@ async def list_section_exercises(section_id: str, response: Response):
     cached = _cache_get(key)
     if cached is not None:
         return cached
-    rows = read_query("""
+    rows = await async_read_query("""
         MATCH (e:Exercise)-[:TESTS]->(sec:Section {id: $section_id})
         OPTIONAL MATCH (es:ExerciseSet)-[:CONTAINS]->(e)
         RETURN e.id AS id,
@@ -287,13 +297,13 @@ async def list_section_exercises(section_id: str, response: Response):
                e.exercise_type AS exercise_type,
                es.title AS exercise_set
         ORDER BY e.number
-    """, section_id=section_id)
+    """, _query_name="curriculum.section_exercises", section_id=section_id)
     _cache_set(key, rows)
     return rows
 
 
 # ─── Concepts for a Section ──────────────────────────────────────────
-@router.get("/sections/{section_id:path}/concepts")
+@router.get("/sections/{section_id}/concepts")
 async def list_section_concepts(section_id: str, response: Response):
     """Return concepts related to a section (with animation URLs).
 
@@ -303,18 +313,18 @@ async def list_section_concepts(section_id: str, response: Response):
     Returns concepts that have a matching local animation file, or all
     concept assets when R2 animation hosting is configured.
     """
-    _set_public_cache_headers(response)
+    _set_section_concepts_cache_headers(response)
     from pathlib import Path
 
     animations_dir = Path(__file__).resolve().parent.parent.parent.parent / "data" / "animations"
     use_r2_assets = bool(settings.ANIMATIONS_R2_PUBLIC_BASE_URL)
 
-    key = f"section_concepts|{section_id}"
+    key = f"section_concepts:v2|{section_id}"
     cached = _cache_get(key)
     if cached is not None:
         return cached
 
-    rows = read_query("""
+    rows = await async_read_query("""
         MATCH (sec:Section {id: $section_id})
         OPTIONAL MATCH (sec)-[:REQUIRES]->(c:Concept)
         OPTIONAL MATCH (sec)-[:REQUIRES]->(:Section)-[:REQUIRES]->(c2:Concept)
@@ -324,7 +334,7 @@ async def list_section_concepts(section_id: str, response: Response):
         WHERE concept IS NOT NULL
         RETURN concept.id AS id, concept.name AS name
         ORDER BY concept.name
-    """, section_id=section_id)
+    """, _query_name="curriculum.section_concepts", section_id=section_id)
 
     seen_keys: set[str] = set()
     result = []
@@ -378,7 +388,7 @@ async def chapter_graph(
         _set_public_cache_headers(response)
 
     # ── Nodes + Edges in a single query (saves ~160ms RTT) ──────────────
-    graph_rows = read_query("""
+    graph_rows = await async_read_query("""
         MATCH (ch:Chapter {id: $chapter_id})-[:CONTAINS]->(sec:Section)
         OPTIONAL MATCH (sec)-[:REQUIRES]->(concept:Concept)
         OPTIONAL MATCH (sec)-[:NEXT]->(next_sec:Section)
@@ -403,7 +413,7 @@ async def chapter_graph(
         RETURN section_nodes,
                [c IN concept_nodes WHERE c IS NOT NULL] AS concept_nodes,
                [e IN next_edges + req_edges WHERE e IS NOT NULL] AS edges
-    """, chapter_id=chapter_id)
+    """, _query_name="curriculum.chapter_graph", chapter_id=chapter_id)
 
     nodes: list[dict] = []
     section_ids: list[str] = []
@@ -421,7 +431,7 @@ async def chapter_graph(
 
     # ── Overlay insights if student is authenticated ───────────────────
     if user and (section_ids or concept_ids):
-        insight_rows = read_query("""
+        insight_rows = await async_read_query("""
             MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true})
             WHERE any(sid IN $section_ids WHERE (i)-[:ABOUT_SOURCE]->(:Section {id: sid}))
                OR any(cid IN $concept_ids WHERE (i)-[:ABOUT_CONCEPT]->(:Concept {id: cid}))
@@ -433,6 +443,7 @@ async def chapter_graph(
                    [(i)-[:ABOUT_CONCEPT]->(c)  | c.id][0]            AS concept_id
             ORDER BY i.created_at DESC
         """,
+            _query_name="curriculum.chapter_graph_insights",
             student_id=user.student_id,
             section_ids=section_ids,
             concept_ids=concept_ids,
@@ -484,7 +495,7 @@ async def concept_lineage(
         return cached
 
     # Single batched query: concept lookup + chapter traversal (saves ~160ms RTT)
-    chapter_rows = read_query(
+    chapter_rows = await async_read_query(
         """
         MATCH (c:Concept {id: $concept_id})
         OPTIONAL MATCH (sec:Section)-[:REQUIRES]->(c)
@@ -507,14 +518,16 @@ async def concept_lineage(
                ch.title AS chapter_title
         ORDER BY toInteger(t.grade), s.name, toInteger(ch.number), ch.number, ch.title
         """,
+        _query_name="curriculum.concept_lineage",
         concept_id=concept_id,
     )
 
     # If no rows at all, the concept itself might not exist or has no chapters.
     # Verify concept exists with a cheap fallback.
     if not chapter_rows:
-        verify = read_query(
+        verify = await async_read_query(
             "MATCH (c:Concept {id: $concept_id}) RETURN c.id AS id LIMIT 1",
+            _query_name="curriculum.concept_exists",
             concept_id=concept_id,
         )
         if not verify:
@@ -637,7 +650,7 @@ async def insights_graph(
     student_id = user.student_id if user else None
 
     # Single query: subjects → textbooks → chapters → sections → concepts, with optional insight overlay
-    rows = read_query("""
+    rows = await async_read_query("""
         MATCH (subj:Subject)-[:CONTAINS]->(t:Textbook)-[:CONTAINS]->(ch:Chapter)
               -[:CONTAINS]->(sec:Section)-[:REQUIRES]->(c:Concept)
         WITH subj, t, ch, c, count(DISTINCT sec) AS section_count
@@ -659,7 +672,7 @@ async def insights_graph(
                  ELSE null
                END             AS insight_type
         ORDER BY t.grade, subj.name, ch.number, c.name
-    """, student_id=student_id or "")
+    """, _query_name="curriculum.insights_graph", student_id=student_id or "")
 
     # Build unique nodes + edges
     seen_nodes: set[str] = set()

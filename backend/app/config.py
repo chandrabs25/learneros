@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     NEO4J_URI: str = ""
     NEO4J_USER: str = ""
     NEO4J_PASSWORD: str = ""
+    # Leave empty to use the Neo4j account's configured home database.
+    NEO4J_DATABASE: str = ""
 
     # LLM
     GEMINI_API_KEY: str = ""
@@ -42,7 +44,9 @@ class Settings(BaseSettings):
     OTEL_ENABLED: bool = False
     OTEL_SERVICE_NAME: str = "learneros-backend"
     OTEL_EXPORTER_OTLP_ENDPOINT: str = ""
+    OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: str = ""
     OTEL_EXPORTER_OTLP_HEADERS: str = ""
+    OTEL_METRIC_EXPORT_INTERVAL_MS: int = Field(default=60000, ge=1000)
     OTEL_SAMPLE_RATIO: float = Field(default=1.0, ge=0.0, le=1.0)
     OTEL_CAPTURE_CONTENT: bool = False
     GEN_CACHE_TTL_SECONDS: int = 604800

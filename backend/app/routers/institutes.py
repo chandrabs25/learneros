@@ -20,7 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from app.auth import CurrentAdmin, CurrentUser, get_current_admin, get_current_user
-from app.database import read_query, write_query
+from app.database import async_read_query, async_write_query
 
 router = APIRouter(prefix="/api", tags=["institutes"])
 _bootstrap_cache: dict[str, tuple[float, dict]] = {}
@@ -61,8 +61,9 @@ class InstituteUpdateBody(BaseModel):
 @router.get("/institutes")
 async def list_institutes():
     """Return active institutes from Neo4j. No auth required."""
-    return read_query(
-        """
+    return await async_read_query(
+        """,
+        _query_name="institutes.list",
         MATCH (i:Institute)
         WHERE coalesce(i.is_active, true) = true
         RETURN i.id AS id,
@@ -81,19 +82,20 @@ async def set_student_institute(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Set student's institute to a real, active Institute node."""
-    exists = read_query(
+    exists = await async_read_query(
         """
         MATCH (i:Institute {id: $institute_id})
         WHERE coalesce(i.is_active, true) = true
         RETURN i.id AS id
         LIMIT 1
         """,
+        _query_name="student.institute_exists",
         institute_id=body.institute_id,
     )
     if not exists:
         raise HTTPException(status_code=404, detail="Institute not found or inactive")
 
-    rows = write_query(
+    rows = await async_write_query(
         """
         MATCH (s:Student {id: $student_id})
         MATCH (i:Institute {id: $institute_id})
@@ -104,6 +106,7 @@ async def set_student_institute(
         MERGE (s)-[:ENROLLED_IN]->(i)
         RETURN s.institute_id AS institute_id
         """,
+        _query_name="student.set_institute",
         student_id=user.student_id,
         institute_id=body.institute_id,
     )
@@ -115,7 +118,7 @@ async def get_student_institute(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Return student's currently selected institute details, if set."""
-    rows = read_query(
+    rows = await async_read_query(
         """
         MATCH (s:Student {id: $student_id})
         OPTIONAL MATCH (s)-[:ENROLLED_IN]->(i:Institute)
@@ -128,6 +131,7 @@ async def get_student_institute(
                i.is_active AS is_active
         LIMIT 1
         """,
+        _query_name="student.get_institute",
         student_id=user.student_id,
     )
     if not rows:
@@ -151,7 +155,7 @@ async def get_student_institute(
         }
 
     # Legacy fallback: institute_id exists on Student but no ENROLLED_IN edge yet.
-    fallback = read_query(
+    fallback = await async_read_query(
         """
         MATCH (i:Institute {id: $institute_id})
         RETURN i.id AS id,
@@ -162,6 +166,7 @@ async def get_student_institute(
                i.is_active AS is_active
         LIMIT 1
         """,
+        _query_name="student.get_institute_fallback",
         institute_id=institute_id,
     )
     if fallback:
@@ -174,7 +179,7 @@ async def get_student_profile(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Return student's profile settings: institute + grade."""
-    rows = read_query(
+    rows = await async_read_query(
         """
         MATCH (s:Student {id: $student_id})
         OPTIONAL MATCH (s)-[:ENROLLED_IN]->(i:Institute)
@@ -191,6 +196,7 @@ async def get_student_profile(
                i.is_active AS institute_is_active
         LIMIT 1
         """,
+        _query_name="student.profile",
         student_id=user.student_id,
     )
     if not rows:
@@ -236,8 +242,9 @@ async def get_student_dashboard_bootstrap(
         _bootstrap_cache.pop(cache_key, None)
 
     profile = await get_student_profile(user)
-    grades = read_query(
-        """
+    grades = await async_read_query(
+        """,
+        _query_name="dashboard.grades",
         MATCH (t:Textbook)-[:CONTAINS]->(ch:Chapter)
         WITH t.grade AS grade, t.id AS tid, count(ch) AS ch_count
         WITH grade, sum(ch_count) AS chapter_count, collect(tid)[0] AS textbook_id
@@ -275,7 +282,7 @@ async def update_student_profile(
             raise HTTPException(status_code=400, detail="grade must be between 1 and 12")
 
     if "institute_id" in fields_set and body.institute_id:
-        exists = read_query(
+        exists = await async_read_query(
             """
             MATCH (i:Institute {id: $institute_id})
             WHERE coalesce(i.is_active, true) = true
@@ -289,7 +296,7 @@ async def update_student_profile(
 
     if "institute_id" in fields_set:
         if body.institute_id is None:
-            write_query(
+            await async_write_query(
                 """
                 MATCH (s:Student {id: $student_id})
                 OPTIONAL MATCH (s)-[rel:ENROLLED_IN]->(:Institute)
@@ -299,7 +306,7 @@ async def update_student_profile(
                 student_id=user.student_id,
             )
         else:
-            write_query(
+            await async_write_query(
                 """
                 MATCH (s:Student {id: $student_id})
                 MATCH (i:Institute {id: $institute_id})
@@ -315,7 +322,7 @@ async def update_student_profile(
 
     if "grade" in fields_set:
         if body.grade is None:
-            write_query(
+            await async_write_query(
                 """
                 MATCH (s:Student {id: $student_id})
                 REMOVE s.grade
@@ -323,7 +330,7 @@ async def update_student_profile(
                 student_id=user.student_id,
             )
         else:
-            write_query(
+            await async_write_query(
                 """
                 MATCH (s:Student {id: $student_id})
                 SET s.grade = $grade
@@ -342,7 +349,7 @@ async def admin_create_institute(
 ):
     """Create an institute record (or upsert when same id is reused)."""
     inst_id = body.id or f"institute:{_slugify(body.name)}"
-    rows = write_query(
+    rows = await async_write_query(
         """
         MERGE (i:Institute {id: $id})
         ON CREATE SET i.created_at = datetime()
@@ -376,14 +383,14 @@ async def admin_update_institute(
     _: CurrentAdmin = Depends(get_current_admin),
 ):
     """Update institute metadata."""
-    existing = read_query(
+    existing = await async_read_query(
         "MATCH (i:Institute {id: $id}) RETURN i.id AS id LIMIT 1",
         id=institute_id,
     )
     if not existing:
         raise HTTPException(status_code=404, detail="Institute not found")
 
-    rows = write_query(
+    rows = await async_write_query(
         """
         MATCH (i:Institute {id: $id})
         SET i.updated_at = datetime(),
@@ -418,7 +425,7 @@ async def admin_delete_institute(
     _: CurrentAdmin = Depends(get_current_admin),
 ):
     """Soft-delete by marking institute inactive."""
-    rows = write_query(
+    rows = await async_write_query(
         """
         MATCH (i:Institute {id: $id})
         SET i.is_active = false,

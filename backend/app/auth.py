@@ -12,7 +12,6 @@ from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.firebase import verify_id_token
-from app.database import write_query
 
 # Extracts "Bearer <token>" from Authorization header
 _bearer_scheme = HTTPBearer(auto_error=False)
@@ -80,55 +79,6 @@ class CurrentAdmin:
         return f"CurrentAdmin(uid={self.uid}, email={self.email}, role={self.role})"
 
 
-def ensure_student(user: "CurrentUser") -> None:
-    """
-    Idempotent MERGE of Student node in Neo4j.
-    Called on every authenticated request — safe to call repeatedly.
-    Creates the node on first login; updates name/email on subsequent logins.
-    """
-    write_query(
-        """
-        MERGE (s:Student {id: $student_id})
-        ON CREATE SET s.name = $name,
-                      s.email = $email,
-                      s.role = 'student',
-                      s.created_at = datetime()
-        ON MATCH SET  s.name = $name,
-                      s.email = $email,
-                      s.role = 'student'
-        """,
-        student_id=user.student_id,
-        name=user.name or "",
-        email=user.email or "",
-    )
-
-
-def ensure_teacher(teacher: "CurrentTeacher") -> None:
-    """
-    Idempotent MERGE of Teacher node for auditability and ownership trace.
-    Auth still relies on Firebase claims.
-    """
-    write_query(
-        """
-        MERGE (t:Teacher {id: $teacher_id})
-        ON CREATE SET t.uid = $uid,
-                      t.name = $name,
-                      t.email = $email,
-                      t.institute_id = $institute_id,
-                      t.created_at = datetime()
-        ON MATCH SET  t.name = $name,
-                      t.email = $email,
-                      t.institute_id = $institute_id,
-                      t.updated_at = datetime()
-        """,
-        teacher_id=teacher.teacher_id,
-        uid=teacher.uid,
-        name=teacher.name or "",
-        email=teacher.email or "",
-        institute_id=teacher.institute_id,
-    )
-
-
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer_scheme),
 ) -> CurrentUser:
@@ -157,7 +107,6 @@ async def get_current_user(
         name=decoded.get("name"),
         role="student",
     )
-    ensure_student(user)
     return user
 
 
@@ -216,7 +165,6 @@ async def get_optional_user(
         name=decoded.get("name"),
         role="student",
     )
-    ensure_student(user)
     return user
 
 
@@ -251,7 +199,6 @@ async def get_current_teacher(
         name=decoded.get("name"),
         institute_id=str(institute_id),
     )
-    ensure_teacher(teacher)
     return teacher
 
 

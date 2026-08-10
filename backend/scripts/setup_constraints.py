@@ -41,6 +41,7 @@ CONSTRAINTS: list[tuple[str, str, str, str]] = [
     ("TeacherApplication", "id", "teacher_application_id_unique", "UNIQUE"),
     ("StudentClusterSnapshot", "id", "student_cluster_snapshot_id_unique", "UNIQUE"),
     ("StudentCluster", "id", "student_cluster_id_unique", "UNIQUE"),
+    ("AssessmentAttempt", "id", "assessment_attempt_id_unique", "UNIQUE"),
 
     # ── NOT NULL guards on critical properties ─────────────────────────
     ("Student",   "id",    "student_id_exists",   "NOT NULL"),
@@ -56,6 +57,10 @@ CONSTRAINTS: list[tuple[str, str, str, str]] = [
     ("TeacherApplication", "status", "teacher_application_status_exists", "NOT NULL"),
     ("StudentClusterSnapshot", "id", "student_cluster_snapshot_id_exists", "NOT NULL"),
     ("StudentCluster", "id", "student_cluster_id_exists", "NOT NULL"),
+    ("AssessmentAttempt", "id", "assessment_attempt_id_exists", "NOT NULL"),
+    ("AssessmentAttempt", "kind", "assessment_attempt_kind_exists", "NOT NULL"),
+    ("AssessmentAttempt", "evaluation_status", "assessment_attempt_evaluation_status_exists", "NOT NULL"),
+    ("AssessmentAttempt", "insight_status", "assessment_attempt_insight_status_exists", "NOT NULL"),
 ]
 
 INDEXES: list[tuple[str, str, str]] = [
@@ -78,6 +83,12 @@ INDEXES: list[tuple[str, str, str]] = [
     # ── TutorMessage ──────────────────────────────────────────────────
     ("TutorMessage", "role", "tutor_message_role_idx"),       # NEW: WHERE role = 'user' (session list)
     ("TutorMessage", "created_at", "tutor_message_created_at_idx"),  # NEW: ORDER BY created_at ASC (4 queries)
+
+    # ── AssessmentAttempt ─────────────────────────────────────────────
+    ("AssessmentAttempt", "created_at", "assessment_attempt_created_at_idx"),
+    ("AssessmentAttempt", "evaluation_status", "assessment_attempt_evaluation_status_idx"),
+    ("AssessmentAttempt", "insight_status", "assessment_attempt_insight_status_idx"),
+    ("AssessmentAttempt", "section_id", "assessment_attempt_section_idx"),
 ]
 
 

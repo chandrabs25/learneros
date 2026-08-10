@@ -7,6 +7,7 @@ from typing import Any
 
 
 VALID_INSIGHT_TYPES = {"COMPETENCY", "PARTIAL_UNDERSTANDING", "MISCONCEPTION"}
+VALID_RECONCILIATION_ACTIONS = {"MERGE", "REPLACE"}
 
 
 @dataclass(frozen=True)
@@ -115,12 +116,59 @@ def score_tutor(output: dict[str, Any], expected: dict[str, Any]) -> Score:
     )
 
 
+def _normalized_text(value: Any) -> str:
+    return " ".join(str(value or "").casefold().split())
+
+
+def score_reconciliation(output: dict[str, Any], expected: dict[str, Any]) -> Score:
+    action = str(output.get("action") or "").upper()
+    insight_type = str(output.get("type") or "").upper()
+    content = output.get("content")
+    normalized = _normalized_text(content)
+    required_facts = [_normalized_text(item) for item in expected.get("required_facts") or []]
+    forbidden_facts = [_normalized_text(item) for item in expected.get("forbidden_facts") or []]
+    expected_action = str(expected.get("action") or "").upper()
+    expected_type = str(expected.get("type") or "").upper()
+    return _finalize(
+        [
+            Check("action_valid", action in VALID_RECONCILIATION_ACTIONS),
+            Check("action_matches", not expected_action or action == expected_action),
+            Check("type_valid", insight_type in VALID_INSIGHT_TYPES),
+            Check("type_matches", not expected_type or insight_type == expected_type),
+            Check("content_present", _nonempty(content, 20)),
+            Check("required_facts_preserved", all(fact in normalized for fact in required_facts)),
+            Check("forbidden_facts_absent", all(fact not in normalized for fact in forbidden_facts)),
+        ]
+    )
+
+
+def score_retrieval(output: dict[str, Any], expected: dict[str, Any]) -> Score:
+    raw_ids = output.get("selected_ids")
+    selected = [str(value) for value in raw_ids] if isinstance(raw_ids, list) else []
+    relevant = {str(value) for value in expected.get("relevant_ids") or []}
+    forbidden = {str(value) for value in expected.get("forbidden_ids") or []}
+    minimum_recall = float(expected.get("minimum_recall", 1.0 if relevant else 0.0))
+    recall = len(relevant.intersection(selected)) / len(relevant) if relevant else 1.0
+    max_results = int(expected.get("max_results", len(selected) or 1))
+    return _finalize(
+        [
+            Check("selected_ids_is_list", isinstance(raw_ids, list)),
+            Check("selected_ids_unique", len(selected) == len(set(selected))),
+            Check("minimum_recall", recall >= minimum_recall, f"recall={recall:.3f}"),
+            Check("forbidden_ids_absent", forbidden.isdisjoint(selected)),
+            Check("result_limit_respected", len(selected) <= max_results),
+        ]
+    )
+
+
 def score_output(task: str, output: dict[str, Any], expected: dict[str, Any]) -> Score:
     scorers = {
         "question": score_question,
         "mcq": score_mcq,
         "insight": score_insight,
         "tutor": score_tutor,
+        "reconciliation": score_reconciliation,
+        "retrieval": score_retrieval,
     }
     try:
         scorer = scorers[task]

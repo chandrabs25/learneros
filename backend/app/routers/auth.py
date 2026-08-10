@@ -5,7 +5,7 @@ Auth router — endpoints for user authentication and profile.
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.auth import CurrentIdentity, get_authenticated_user
-from app.database import write_query
+from app.database import async_write_query
 from app.firebase import get_firebase_app
 from firebase_admin import auth as firebase_auth
 
@@ -27,6 +27,29 @@ async def get_me(current_user: CurrentIdentity = Depends(get_authenticated_user)
     }
 
 
+@router.post("/provision")
+async def provision_me(current_user: CurrentIdentity = Depends(get_authenticated_user)):
+    """Create a learner graph identity once after Firebase creates the account."""
+    if current_user.role not in {"", "student"}:
+        return {"status": "ok", "provisioned": False, "role": current_user.role}
+
+    rows = await async_write_query(
+        """
+        MERGE (s:Student {id: $student_id})
+        ON CREATE SET s.name = $name,
+                      s.email = $email,
+                      s.role = 'student',
+                      s.created_at = datetime()
+        RETURN s.id AS id
+        """,
+        _query_name="student.provision",
+        student_id=current_user.student_id,
+        name=current_user.name or "",
+        email=current_user.email or "",
+    )
+    return {"status": "ok", "provisioned": bool(rows), "role": "student"}
+
+
 @router.delete("/me")
 async def delete_me(current_user: CurrentIdentity = Depends(get_authenticated_user)):
     """
@@ -42,25 +65,28 @@ async def delete_me(current_user: CurrentIdentity = Depends(get_authenticated_us
 
     # First remove graph data. If this fails, keep Firebase account unchanged.
     try:
-        write_query(
+        await async_write_query(
             """
             OPTIONAL MATCH (s:Student {id: $student_id})
             DETACH DELETE s
             """,
+            _query_name="account.delete_student",
             student_id=student_id,
         )
-        write_query(
+        await async_write_query(
             """
             OPTIONAL MATCH (t:Teacher {uid: $uid})
             DETACH DELETE t
             """,
+            _query_name="account.delete_teacher",
             uid=uid,
         )
-        write_query(
+        await async_write_query(
             """
             OPTIONAL MATCH (ta:TeacherApplication {applicant_uid: $uid})
             DETACH DELETE ta
             """,
+            _query_name="account.delete_teacher_application",
             uid=uid,
         )
     except Exception:

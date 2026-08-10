@@ -17,11 +17,25 @@ from typing import Literal
 from pydantic import BaseModel
 
 from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Request, Response
+from fastapi.concurrency import run_in_threadpool
+from app.assessment_observability import (
+    AssessmentStatus,
+    assessment_event,
+    elapsed_ms,
+    new_assessment_id,
+)
 from app.auth import get_optional_user, CurrentUser
 
 from app.config import settings
-from app.database import read_query, write_query
+from app.database import async_read_query, read_query, write_query
 from app.observability import fingerprint, trace_event, trace_exception
+from app.services.assessment_attempts import (
+    create_assessment_attempt,
+    mark_assessment_insights_queued,
+    mark_assessment_insights_skipped,
+    record_assessment_evaluation,
+    record_assessment_insight_result,
+)
 from app.services.generation_cache import build_generation_cache, stable_cache_key
 from app.services.llm import ModelTarget, default_generation_targets, llm_service
 from app.services.rate_limit import enforce_rate_limit
@@ -134,32 +148,43 @@ def _generate_gemini_json_with_retry(
 
 # ── Helpers ────────────────────────────────────────────────────────────
 
-def _fetch_section_meta(section_id: str) -> dict:
-    """Return all relevant section data for prompts and insight creation.
-    Uses a single batched query to fetch subsection content AND chapter concepts
-    in one round-trip (saves ~160ms of Neo4j RTT).
-    """
-    rows = read_query(
+async def _fetch_section_meta(section_id: str) -> dict:
+    """Return section content and the narrowest available assessment concepts."""
+    rows = await async_read_query(
         """
-        // ── Part 1: subsection content ────────────────────────────────
         MATCH (sec:Section {id: $section_id})-[:CONTAINS]->(ss:Subsection)
         WITH sec, ss ORDER BY ss.order
         WITH sec,
              collect({sub_id: ss.id, sub_title: ss.title, content: ss.content_text}) AS subsections
-
-        // ── Part 2: chapter-wide concepts ─────────────────────────────
-        MATCH (sec)<-[:CONTAINS]-(ch:Chapter)-[:CONTAINS]->(sec2:Section)
-        OPTIONAL MATCH (sec2)-[:CONTAINS]->(:Subsection)-[:REQUIRES]->(c_sub:Concept)
-        OPTIONAL MATCH (sec2)-[:REQUIRES]->(c_sec:Concept)
+        OPTIONAL MATCH (sec)-[:REQUIRES]->(direct:Concept)
+        WITH sec, subsections, collect(DISTINCT direct) AS direct_concepts
+        OPTIONAL MATCH (sec)<-[:CONTAINS]-(ch:Chapter)
+        OPTIONAL MATCH (ch)-[:CONTAINS]->(chapter_sec:Section)-[:REQUIRES]->(chapter_c:Concept)
+        WITH sec, subsections, direct_concepts,
+             collect(DISTINCT chapter_c) AS chapter_concepts
         WITH sec, subsections,
-             collect(DISTINCT c_sub) + collect(DISTINCT c_sec) AS all_concepts
-        UNWIND (CASE WHEN size(all_concepts) = 0 THEN [null] ELSE all_concepts END) AS c
-        WITH sec, subsections,
+             CASE
+                 WHEN size(direct_concepts) > 0 THEN direct_concepts
+                 ELSE chapter_concepts
+             END AS assessment_concepts,
+             CASE
+                 WHEN size(direct_concepts) > 0 THEN "section"
+                 ELSE "chapter_fallback"
+             END AS concept_scope
+        UNWIND (
+            CASE
+                WHEN size(assessment_concepts) = 0 THEN [null]
+                ELSE assessment_concepts
+            END
+        ) AS c
+        WITH sec, subsections, concept_scope,
              collect(DISTINCT CASE WHEN c IS NOT NULL THEN {id: c.id, name: c.name} END) AS raw_concepts
         RETURN sec.title AS section_title,
                subsections,
+               concept_scope,
                [x IN raw_concepts WHERE x IS NOT NULL] AS concepts
         """,
+        _query_name="assessment.section_context",
         section_id=section_id,
     )
     if not rows or not rows[0].get("subsections"):
@@ -169,9 +194,14 @@ def _fetch_section_meta(section_id: str) -> dict:
     section_title = row.get("section_title") or section_id
     sub_list = row.get("subsections") or []
     concept_list = row.get("concepts") or []
+    concept_scope = row.get("concept_scope") or "section"
 
     subsections = [
-        {"id": s["sub_id"], "title": s.get("sub_title") or s["sub_id"]}
+        {
+            "id": s["sub_id"],
+            "title": s.get("sub_title") or s["sub_id"],
+            "content": s.get("content") or "",
+        }
         for s in sub_list if s.get("sub_id")
     ]
     text_blocks: list[str] = []
@@ -200,8 +230,38 @@ def _fetch_section_meta(section_id: str) -> dict:
         "subsections": subsections,
         "full_text": full_text,
         "concepts": concepts,
+        "concept_scope": concept_scope,
         "key_terms": key_terms,
     }
+
+
+def _resolve_target_subsection(meta: dict, subsection_id: str, section_id: str) -> dict:
+    """Resolve and validate the subsection used as the assessment source."""
+    target = next(
+        (subsection for subsection in meta["subsections"] if subsection["id"] == subsection_id),
+        None,
+    )
+    if target is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"subsection_id '{subsection_id}' not found in section '{section_id}'",
+        )
+    return target
+
+
+def _assessment_concept_prompt(meta: dict) -> tuple[str, str]:
+    """Format evaluation-only concept candidates and disclose their scope."""
+    scope = meta.get("concept_scope", "section")
+    heading = (
+        "CHAPTER CONCEPT CANDIDATES (used because this section has no direct concepts)"
+        if scope == "chapter_fallback"
+        else "CONCEPTS DIRECTLY LINKED TO THIS SECTION"
+    )
+    concept_list = "\n".join(
+        f'  - concept_id: "{concept["id"]}", name: "{concept["name"]}"'
+        for concept in meta["concepts"]
+    ) or "  (no concepts linked)"
+    return heading, concept_list
 
 
 def _set_generation_cache_headers(response: Response, cache_status: str, cache_key: str) -> None:
@@ -221,6 +281,112 @@ def _set_generation_cache_headers(response: Response, cache_status: str, cache_k
 def _set_no_store_headers(response: Response) -> None:
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["CDN-Cache-Control"] = "no-store"
+
+
+def _begin_assessment(
+    *,
+    assessment_kind: str,
+    section_id: str,
+    user: CurrentUser | None,
+) -> tuple[str, float]:
+    """Start a privacy-safe lifecycle record for one production assessment."""
+    assessment_started_at = time.monotonic()
+    assessment_id = new_assessment_id()
+    assessment_event(
+        logger,
+        assessment_id,
+        AssessmentStatus.RECEIVED,
+        assessment_kind=assessment_kind,
+        section_id=section_id,
+        authenticated=user is not None,
+        student_fingerprint=fingerprint(user.student_id) if user else "anonymous",
+    )
+    return assessment_id, assessment_started_at
+
+
+async def _queue_assessment_insights(
+    *,
+    background_tasks: BackgroundTasks,
+    request: Request,
+    user: CurrentUser | None,
+    insights: list[dict],
+    assessment_id: str,
+    assessment_kind: str,
+    assessment_started_at: float,
+) -> str:
+    """Queue validated insights and record why persistence did or did not run."""
+    queue_started_at = time.monotonic()
+    auth_header_present = bool(request.headers.get("authorization"))
+    if user and insights:
+        insight_total = len(insights)
+        await run_in_threadpool(
+            mark_assessment_insights_queued,
+            assessment_id=assessment_id,
+            expected_count=insight_total,
+        )
+        queued_at = time.monotonic()
+        for insight_index, insight in enumerate(insights, start=1):
+            background_tasks.add_task(
+                _persist_insight_safe,
+                user.student_id,
+                dict(insight),
+                assessment_id=assessment_id,
+                insight_index=insight_index,
+                insight_total=insight_total,
+                assessment_kind=assessment_kind,
+                assessment_started_at=assessment_started_at,
+                queued_at=queued_at,
+            )
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.PERSISTENCE_QUEUED,
+            assessment_kind=assessment_kind,
+            insight_count=insight_total,
+            stage="queue_setup",
+            duration_ms=elapsed_ms(queue_started_at),
+            result="success",
+        )
+        persistence_status = "queued"
+    else:
+        if user:
+            reason = "no_valid_insights"
+            persistence_status = "skipped_no_insights"
+        elif auth_header_present:
+            reason = "invalid_or_non_student_auth"
+            persistence_status = "skipped_invalid_auth"
+        else:
+            reason = "unauthenticated"
+            persistence_status = "skipped_unauthenticated"
+        if user:
+            await run_in_threadpool(
+                mark_assessment_insights_skipped,
+                assessment_id=assessment_id,
+                reason=reason,
+            )
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.PERSISTENCE_SKIPPED,
+            assessment_kind=assessment_kind,
+            reason=reason,
+            insight_count=len(insights),
+            stage="queue_setup",
+            duration_ms=elapsed_ms(queue_started_at),
+            result="skipped",
+        )
+
+    assessment_event(
+        logger,
+        assessment_id,
+        AssessmentStatus.REQUEST_COMPLETED,
+        assessment_kind=assessment_kind,
+        stage="request_total",
+        duration_ms=elapsed_ms(assessment_started_at),
+        result="success",
+        persistence_status=persistence_status,
+    )
+    return persistence_status
 
 
 def _valid_question_payload(data: dict) -> bool:
@@ -254,10 +420,7 @@ async def generate_question(
     response: Response,
     variant: int = 0,
 ):
-    """Generate an AI question from section content, targeting the given subsection.
-    The subsection_id is required — the question is always about one specific subsection.
-    If authenticated, incorporates the student's known misconceptions
-    on prerequisite concepts to target weak areas."""
+    """Generate a question from one subsection, with its section as reference context."""
     trace_event(
         logger,
         "question.request.started",
@@ -267,7 +430,7 @@ async def generate_question(
     )
     metadata_started = time.monotonic()
     try:
-        meta = _fetch_section_meta(section_id)
+        meta = await _fetch_section_meta(section_id)
     except Exception as exc:
         trace_exception(
             logger,
@@ -286,22 +449,14 @@ async def generate_question(
         context_chars=len(meta["full_text"]),
     )
     context = meta["full_text"]
-
-    # Resolve target subsection
-    valid_sub_ids = {s["id"] for s in meta["subsections"]}
-    if subsection_id not in valid_sub_ids:
-        raise HTTPException(
-            status_code=400,
-            detail=f"subsection_id '{subsection_id}' not found in section '{section_id}'",
-        )
+    target_sub = _resolve_target_subsection(meta, subsection_id, section_id)
     enforce_rate_limit(request, scope="test_question_generation", limit=30, window_seconds=60)
-    target_sub = next(s for s in meta["subsections"] if s["id"] == subsection_id)
     generation_targets = default_generation_targets()
     provider = generation_targets[0].provider
     gen_model = generation_targets[0].model
 
     cache_key = stable_cache_key(
-        "test_question",
+        "test_question:v2",
         {
             "section_id": section_id,
             "subsection_id": target_sub["id"],
@@ -346,13 +501,22 @@ The student is currently studying the subsection "{target_sub["title"]}"
 (subsection_id: "{target_sub["id"]}").
 
 Generate ONE thought-provoking comprehension question that tests deep understanding 
-(not simple recall) about THIS SPECIFIC SUBSECTION ONLY. The question should require 
-the student to explain, analyze, or connect concepts from this subsection.
+(not simple recall) of THIS SPECIFIC SUBSECTION ONLY. The question must be answerable
+from the target subsection content below. It should require the student to explain,
+analyze, or connect ideas from this subsection.
 
-Do NOT generate a question about any other subsection or topic outside this subsection.
+TARGET SUBSECTION CONTENT (primary assessment scope):
+{target_sub["content"]}
 
-FULL STUDY MATERIAL (for reference context):
+FULL SECTION REFERENCE CONTEXT (definitions and surrounding context only):
 {context}
+
+SCOPE RULES:
+- Assess only ideas stated in the TARGET SUBSECTION CONTENT.
+- Use the full section only to clarify notation, definitions, or context needed to
+  understand the target subsection.
+- Do not test a sibling subsection or any linked concept that is absent from the
+  target subsection.
 
 Respond in STRICT JSON with exactly these keys:
 {{
@@ -362,7 +526,7 @@ Respond in STRICT JSON with exactly these keys:
   "key_terms": ["term1", "term2", "term3"]
 }}
 
-The key_terms should be 3-6 important concepts from this subsection that the student should mention.
+The key_terms should be 3-6 important terms present in the target subsection.
 Return ONLY valid JSON, no markdown fences, no extra text."""
 
     trace_event(
@@ -397,11 +561,8 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
             detail="Failed to generate question. The AI returned an invalid response. Please try again.",
         ) from exc
 
-    # Validate subsection_id — fall back to first subsection if invalid
-    valid_sub_ids = {s["id"] for s in meta["subsections"]}
-    subsection_id = data.get("subsection_id", "")
-    if subsection_id not in valid_sub_ids:
-        subsection_id = meta["subsections"][0]["id"] if meta["subsections"] else section_id
+    # The requested subsection is authoritative even if the model echoes another ID.
+    subsection_id = target_sub["id"]
 
     payload = {
         "section_id": section_id,
@@ -409,7 +570,7 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
         "subsection_id": subsection_id,
         "question": data.get("question", ""),
         "hint": data.get("hint", ""),
-        "key_terms": data.get("key_terms", meta["key_terms"][:5]),
+        "key_terms": data.get("key_terms") if isinstance(data.get("key_terms"), list) else [],
     }
     _generation_cache.set(cache_key, payload)
     _set_generation_cache_headers(response, "MISS", cache_key)
@@ -453,6 +614,12 @@ async def evaluate_answer(
     """Evaluate a student's answer and return structured insights.
     If authenticated, auto-persists insights to Neo4j."""
     _set_no_store_headers(response)
+    assessment_kind = "written_answer"
+    assessment_id, assessment_started_at = _begin_assessment(
+        assessment_kind=assessment_kind,
+        section_id=section_id,
+        user=user,
+    )
     enforce_rate_limit(
         request,
         scope="test_question_evaluation",
@@ -460,28 +627,51 @@ async def evaluate_answer(
         window_seconds=60,
         user_key=user.student_id if user else None,
     )
-    meta = _fetch_section_meta(section_id)
+    context_started_at = time.monotonic()
+    meta = await _fetch_section_meta(section_id)
+    assessment_event(
+        logger,
+        assessment_id,
+        AssessmentStatus.CONTEXT_LOADED,
+        assessment_kind=assessment_kind,
+        stage="context_fetch",
+        duration_ms=elapsed_ms(context_started_at),
+        result="success",
+        concept_count=len(meta["concepts"]),
+        concept_scope=meta.get("concept_scope", "section"),
+        subsection_count=len(meta["subsections"]),
+    )
     context = meta["full_text"]
+    target_sub = _resolve_target_subsection(meta, body.subsection_id, section_id)
+    source_id = target_sub["id"]
+    if user:
+        await run_in_threadpool(
+            create_assessment_attempt,
+            assessment_id=assessment_id,
+            student_id=user.student_id,
+            assessment_kind=assessment_kind,
+            section_id=section_id,
+            subsection_id=source_id,
+            question=body.question,
+            answer_mode="text",
+            answer_text=body.answer,
+        )
 
-    # The subsection_id comes from the question generation step — no guessing
-    source_id = body.subsection_id
-
-    # Build concept list for the LLM
-    concept_list = "\n".join(
-        f'  - concept_id: "{c["id"]}", name: "{c["name"]}"'
-        for c in meta["concepts"]
-    ) or "  (no concepts linked)"
+    concept_heading, concept_list = _assessment_concept_prompt(meta)
 
     prompt = f"""You are an expert teacher evaluating a student's answer.
 
-STUDY MATERIAL (ground truth):
+TARGET SUBSECTION CONTENT (primary ground truth):
+{target_sub["content"]}
+
+FULL SECTION REFERENCE CONTEXT (definitions and surrounding context only):
 {context}
 
 QUESTION: {body.question}
 
 STUDENT'S ANSWER: {body.answer}
 
-CONCEPTS LINKED TO THIS SECTION:
+{concept_heading}:
 {concept_list}
 
 ─── TASK ───
@@ -489,6 +679,11 @@ CONCEPTS LINKED TO THIS SECTION:
 1. Evaluate the student's answer for accuracy, completeness, and depth.
 2. Generate learning insights ONLY for concepts that the QUESTION DIRECTLY 
    tests and the ANSWER meaningfully addresses (correctly or incorrectly).
+
+ASSESSMENT SCOPE:
+- Judge the answer against the target subsection content.
+- Use the full section only to clarify notation, definitions, or surrounding context.
+- Do not require facts that appear only in sibling subsections.
    
 CRITICAL RULES FOR INSIGHTS:
 - Do NOT create an insight for a concept unless the question specifically 
@@ -523,9 +718,38 @@ Respond in STRICT JSON:
 
 Return ONLY valid JSON, no markdown fences, no extra text."""
 
+    model_started = time.monotonic()
+    fallback_used = False
     try:
         data = _generate_json_with_retry(prompt, model=EVAL_MODEL, retries=1)
-    except Exception:
+        model_duration_ms = elapsed_ms(model_started)
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.MODEL_COMPLETED,
+            assessment_kind=assessment_kind,
+            model=EVAL_MODEL,
+            latency_ms=model_duration_ms,
+            duration_ms=model_duration_ms,
+            stage="model",
+            result="success",
+        )
+    except Exception as exc:
+        fallback_used = True
+        model_duration_ms = elapsed_ms(model_started)
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.MODEL_FAILED,
+            assessment_kind=assessment_kind,
+            model=EVAL_MODEL,
+            latency_ms=model_duration_ms,
+            duration_ms=model_duration_ms,
+            stage="model",
+            result="failure",
+            error_type=type(exc).__name__,
+            fallback_used=True,
+        )
         data = {
             "score": 50,
             "grade": "C",
@@ -536,11 +760,17 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
             "insights": [],
         }
 
+    validation_started_at = time.monotonic()
     # Validate insight entries
     valid_concept_ids = {c["id"] for c in meta["concepts"]}
 
+    raw_insights = data.get("insights", [])
+    if not isinstance(raw_insights, list):
+        raw_insights = []
     insights = []
-    for ins in data.get("insights", []):
+    for ins in raw_insights:
+        if not isinstance(ins, dict):
+            continue
         concept_id = ins.get("concept_id", "")
         ins_type = ins.get("type", "")
         ins_category = ins.get("category", "conceptual")
@@ -564,21 +794,46 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
             "source_id": source_id,  # deterministic, from question generation
         })
 
-    # Auto-persist insights in the background so evaluation response is not blocked.
-    auth_header_present = bool(request.headers.get("authorization"))
-    persistence_status = "skipped_no_insights"
-    if user and insights:
-        persistence_status = "queued"
-        for ins in insights:
-            background_tasks.add_task(_persist_insight_safe, user.student_id, dict(ins))
-    elif not user:
-        persistence_status = (
-            "skipped_invalid_auth" if auth_header_present else "skipped_unauthenticated"
+    assessment_event(
+        logger,
+        assessment_id,
+        AssessmentStatus.OUTPUT_VALIDATED,
+        assessment_kind=assessment_kind,
+        candidate_insight_count=len(raw_insights),
+        accepted_insight_count=len(insights),
+        rejected_insight_count=len(raw_insights) - len(insights),
+        stage="output_validation",
+        duration_ms=elapsed_ms(validation_started_at),
+        result="success",
+    )
+    if user:
+        await run_in_threadpool(
+            record_assessment_evaluation,
+            assessment_id=assessment_id,
+            evaluation_model=EVAL_MODEL,
+            fallback_used=fallback_used,
+            score=data.get("score"),
+            grade=data.get("grade"),
+            feedback=data.get("feedback"),
+            strengths=data.get("strengths"),
+            improvements=data.get("improvements"),
+            model_answer=data.get("model_answer"),
+            concept_ids=[insight["concept_id"] for insight in insights],
         )
+    persistence_status = await _queue_assessment_insights(
+        background_tasks=background_tasks,
+        request=request,
+        user=user,
+        insights=insights,
+        assessment_id=assessment_id,
+        assessment_kind=assessment_kind,
+        assessment_started_at=assessment_started_at,
+    )
 
     data["insights"] = insights
     data["section_id"] = section_id
     data["persistence_status"] = persistence_status
+    data["assessment_id"] = assessment_id
 
     return data
 
@@ -664,14 +919,36 @@ Decision policy:
         return {"action": "REPLACE", "type": new_type, "content": new_content}
 
 
-def _persist_insight(student_id: str, ins: dict) -> None:
+def _persist_insight(
+    student_id: str,
+    ins: dict,
+    *,
+    assessment_id: str | None = None,
+    assessment_kind: str = "unknown",
+    insight_index: int | None = None,
+    insight_total: int | None = None,
+) -> None:
     """Reconcile with any existing active insight, then persist to Neo4j.
     Modifies `ins` in-place with the reconciled type/content and sets `persisted`."""
     concept_id = ins.get("concept_id", "")
     if not concept_id:
         ins["persisted"] = False
-        return
+        if assessment_id:
+            assessment_event(
+                logger,
+                assessment_id,
+                AssessmentStatus.INVARIANT_FAILED,
+                assessment_kind=assessment_kind,
+                stage="precondition",
+                duration_ms=0.0,
+                result="failure",
+                reason="missing_concept_id",
+                insight_index=insight_index,
+                insight_total=insight_total,
+            )
+        raise ValueError("Cannot persist an insight without concept_id")
 
+    db_read_started_at = time.monotonic()
     old_rows = read_query(
         """
         MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true, category: $category})
@@ -680,13 +957,28 @@ def _persist_insight(student_id: str, ins: dict) -> None:
         RETURN i.id AS id, i.type AS type, i.content AS content, i.created_at AS created_at
         ORDER BY i.created_at DESC
         """,
+        _query_name="insight.lookup_active",
         student_id=student_id,
         concept_id=concept_id,
         source_id=ins["source_id"],
         category=ins["category"],
     )
+    if assessment_id:
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.DB_READ_COMPLETED,
+            assessment_kind=assessment_kind,
+            stage="db_read",
+            duration_ms=elapsed_ms(db_read_started_at),
+            result="success",
+            insight_index=insight_index,
+            insight_total=insight_total,
+            prior_active_count=len(old_rows),
+        )
 
     # Reconcile with existing insights (MERGE or REPLACE via LLM)
+    reconciliation_started_at = time.monotonic()
     reconciled = _reconcile_insight(
         old_insights=old_rows,
         new_type=ins["type"],
@@ -694,11 +986,47 @@ def _persist_insight(student_id: str, ins: dict) -> None:
     )
     ins["type"] = reconciled["type"]
     ins["content"] = reconciled["content"]
+    if assessment_id:
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.RECONCILED,
+            assessment_kind=assessment_kind,
+            stage="reconciliation",
+            duration_ms=elapsed_ms(reconciliation_started_at),
+            result="success",
+            concept_id=concept_id,
+            source_id=ins.get("source_id"),
+            insight_index=insight_index,
+            insight_total=insight_total,
+            prior_active_count=len(old_rows),
+            reconcile_action=reconciled.get("action", "NEW"),
+            reconciled_type=ins["type"],
+        )
+    embedding_started_at = time.monotonic()
     ins["embedding"] = _embed_text_with_fireworks(ins["content"], retries=2)
+    if assessment_id:
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.EMBEDDED,
+            assessment_kind=assessment_kind,
+            stage="embedding",
+            duration_ms=elapsed_ms(embedding_started_at),
+            result="success",
+            model=settings.FIREWORKS_EMBEDDING_MODEL,
+            concept_id=concept_id,
+            insight_index=insight_index,
+            insight_total=insight_total,
+            embedding_dimensions=len(ins["embedding"]),
+            embedding_model=settings.FIREWORKS_EMBEDDING_MODEL,
+        )
 
     insight_id = f"insight:{uuid.uuid4().hex}"
-    rows = write_query(
-        """
+    db_write_started_at = time.monotonic()
+    try:
+        rows = write_query(
+            """
         MATCH (s:Student {id: $student_id})
         MATCH (source {id: $source_id})
         MATCH (concept:Concept {id: $concept_id})
@@ -707,9 +1035,12 @@ def _persist_insight(student_id: str, ins: dict) -> None:
         WHERE (old)-[:ABOUT_SOURCE]->({id: $source_id})
         SET old.is_active = false
         WITH s, source, concept, collect(old) AS old_insights
+        OPTIONAL MATCH (attempt:AssessmentAttempt {id: $assessment_id})
+        WITH s, source, concept, old_insights, attempt
 
         CREATE (new:Insight {
             id:         $insight_id,
+            assessment_id: $assessment_id,
             type:       $type,
             category:   $category,
             content:    $content,
@@ -720,9 +1051,11 @@ def _persist_insight(student_id: str, ins: dict) -> None:
         })
         CREATE (s)-[:HAS_INSIGHT]->(new)
 
-        WITH s, new, old_insights, source, concept
+        WITH s, new, old_insights, source, concept, attempt
         CREATE (new)-[:ABOUT_SOURCE]->(source)
         CREATE (new)-[:ABOUT_CONCEPT]->(concept)
+        FOREACH (_ IN CASE WHEN attempt IS NULL THEN [] ELSE [1] END |
+            MERGE (attempt)-[:PRODUCED]->(new))
 
         FOREACH (old IN old_insights | CREATE (new)-[:SUPERSEDES]->(old))
         // Concurrency safety: enforce only one active insight for this key.
@@ -732,27 +1065,88 @@ def _persist_insight(student_id: str, ins: dict) -> None:
         WHERE other.id <> new.id AND (other)-[:ABOUT_SOURCE]->({id: $source_id})
         SET other.is_active = false
         RETURN new.id AS id
-        """,
-        student_id=student_id,
-        insight_id=insight_id,
-        type=ins["type"],
-        category=ins["category"],
-        content=ins["content"],
-        embedding=ins["embedding"],
-        embedding_model=settings.FIREWORKS_EMBEDDING_MODEL,
-        source_id=ins["source_id"],
-        concept_id=concept_id,
-    )
+            """,
+            _query_name="insight.persist",
+            student_id=student_id,
+            insight_id=insight_id,
+            assessment_id=assessment_id,
+            type=ins["type"],
+            category=ins["category"],
+            content=ins["content"],
+            embedding=ins["embedding"],
+            embedding_model=settings.FIREWORKS_EMBEDDING_MODEL,
+            source_id=ins["source_id"],
+            concept_id=concept_id,
+        )
+    except Exception as exc:
+        if assessment_id:
+            assessment_event(
+                logger,
+                assessment_id,
+                AssessmentStatus.INVARIANT_FAILED,
+                assessment_kind=assessment_kind,
+                stage="db_write",
+                duration_ms=elapsed_ms(db_write_started_at),
+                result="failure",
+                reason="database_write_failed",
+                error_type=type(exc).__name__,
+                concept_id=concept_id,
+                insight_index=insight_index,
+                insight_total=insight_total,
+            )
+        raise
     ins["persisted"] = bool(rows)
+    if not rows:
+        if assessment_id:
+            assessment_event(
+                logger,
+                assessment_id,
+                AssessmentStatus.INVARIANT_FAILED,
+                assessment_kind=assessment_kind,
+                stage="db_write",
+                duration_ms=elapsed_ms(db_write_started_at),
+                result="failure",
+                reason="insight_create_returned_no_rows",
+                concept_id=concept_id,
+                insight_index=insight_index,
+                insight_total=insight_total,
+            )
+        raise RuntimeError("Insight write completed without creating a record")
+    if assessment_id:
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.PERSISTED,
+            assessment_kind=assessment_kind,
+            stage="db_write",
+            duration_ms=elapsed_ms(db_write_started_at),
+            result="success",
+            concept_id=concept_id,
+            source_id=ins.get("source_id"),
+            insight_id=rows[0].get("id"),
+            insight_index=insight_index,
+            insight_total=insight_total,
+        )
 
 
-def _record_persistence_failure(student_id: str, ins: dict, error: str) -> None:
+def _record_persistence_failure(
+    student_id: str,
+    ins: dict,
+    error: str,
+    *,
+    assessment_id: str | None = None,
+    assessment_kind: str = "unknown",
+    insight_index: int | None = None,
+    insight_total: int | None = None,
+) -> None:
     """Best-effort dead-letter record for failed background persistence."""
+    dead_letter_started_at = time.monotonic()
     try:
         write_query(
             """
             CREATE (f:InsightPersistenceFailure {
                 id: $failure_id,
+                assessment_id: $assessment_id,
                 student_id: $student_id,
                 concept_id: $concept_id,
                 source_id: $source_id,
@@ -763,7 +1157,9 @@ def _record_persistence_failure(student_id: str, ins: dict, error: str) -> None:
                 created_at: datetime()
             })
             """,
+            _query_name="insight.dead_letter",
             failure_id=f"insight_failure:{uuid.uuid4().hex}",
+            assessment_id=assessment_id,
             student_id=student_id,
             concept_id=ins.get("concept_id"),
             source_id=ins.get("source_id"),
@@ -772,22 +1168,139 @@ def _record_persistence_failure(student_id: str, ins: dict, error: str) -> None:
             content=ins.get("content"),
             error=error[:2000],
         )
-    except Exception:
+        if assessment_id:
+            assessment_event(
+                logger,
+                assessment_id,
+                AssessmentStatus.DEAD_LETTER_RECORDED,
+                assessment_kind=assessment_kind,
+                stage="dead_letter",
+                duration_ms=elapsed_ms(dead_letter_started_at),
+                result="success",
+                insight_index=insight_index,
+                insight_total=insight_total,
+            )
+    except Exception as exc:
+        if assessment_id:
+            assessment_event(
+                logger,
+                assessment_id,
+                AssessmentStatus.INVARIANT_FAILED,
+                assessment_kind=assessment_kind,
+                stage="dead_letter",
+                duration_ms=elapsed_ms(dead_letter_started_at),
+                result="failure",
+                reason="dead_letter_write_failed",
+                error_type=type(exc).__name__,
+                insight_index=insight_index,
+                insight_total=insight_total,
+            )
         logger.exception(
             "Failed to write insight persistence dead-letter record",
             extra={"student_id": student_id, "concept_id": ins.get("concept_id")},
         )
 
 
-def _persist_insight_safe(student_id: str, ins: dict) -> None:
+def _persist_insight_safe(
+    student_id: str,
+    ins: dict,
+    *,
+    assessment_id: str | None = None,
+    assessment_kind: str = "unknown",
+    assessment_started_at: float | None = None,
+    queued_at: float | None = None,
+    insight_index: int | None = None,
+    insight_total: int | None = None,
+) -> None:
     """Background wrapper: never let persistence errors fail the response path."""
+    persistence_started_at = time.monotonic()
+    if assessment_id:
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.PERSISTENCE_STARTED,
+            assessment_kind=assessment_kind,
+            stage="queue_wait",
+            duration_ms=elapsed_ms(queued_at) if queued_at is not None else 0.0,
+            result="success",
+            insight_index=insight_index,
+            insight_total=insight_total,
+        )
     last_error = ""
     for attempt in range(2):
+        attempt_started_at = time.monotonic()
         try:
-            _persist_insight(student_id, ins)
+            _persist_insight(
+                student_id,
+                ins,
+                assessment_id=assessment_id,
+                assessment_kind=assessment_kind,
+                insight_index=insight_index,
+                insight_total=insight_total,
+            )
+            if assessment_id:
+                record_assessment_insight_result(
+                    assessment_id=assessment_id,
+                    success=True,
+                )
+            if assessment_id:
+                assessment_event(
+                    logger,
+                    assessment_id,
+                    AssessmentStatus.PERSISTENCE_ATTEMPT_COMPLETED,
+                    assessment_kind=assessment_kind,
+                    stage="persistence_attempt",
+                    duration_ms=elapsed_ms(attempt_started_at),
+                    result="success",
+                    attempt=attempt + 1,
+                    attempt_limit=2,
+                    insight_index=insight_index,
+                    insight_total=insight_total,
+                )
+                assessment_event(
+                    logger,
+                    assessment_id,
+                    AssessmentStatus.PERSISTENCE_COMPLETED,
+                    assessment_kind=assessment_kind,
+                    stage="persistence_total",
+                    duration_ms=elapsed_ms(persistence_started_at),
+                    result="success",
+                    insight_index=insight_index,
+                    insight_total=insight_total,
+                )
+                if assessment_started_at is not None and insight_index == insight_total:
+                    assessment_event(
+                        logger,
+                        assessment_id,
+                        AssessmentStatus.ASSESSMENT_COMPLETED,
+                        assessment_kind=assessment_kind,
+                        stage="assessment_total",
+                        duration_ms=elapsed_ms(assessment_started_at),
+                        result="success",
+                        insight_total=insight_total,
+                    )
             return
         except Exception as exc:
             last_error = str(exc)
+            has_another_attempt = attempt + 1 < 2
+            if assessment_id and has_another_attempt:
+                assessment_event(
+                    logger,
+                    assessment_id,
+                    AssessmentStatus.PERSISTENCE_RETRY,
+                    assessment_kind=assessment_kind,
+                    stage="persistence_attempt",
+                    duration_ms=elapsed_ms(attempt_started_at),
+                    result="retry",
+                    failed_attempt=attempt + 1,
+                    next_attempt=attempt + 2,
+                    attempt_limit=2,
+                    concept_id=ins.get("concept_id"),
+                    source_id=ins.get("source_id"),
+                    insight_index=insight_index,
+                    insight_total=insight_total,
+                    error_type=type(exc).__name__,
+                )
             logger.exception(
                 "Insight persistence failed (attempt %s/2)",
                 attempt + 1,
@@ -799,7 +1312,58 @@ def _persist_insight_safe(student_id: str, ins: dict) -> None:
                     "error": last_error,
                 },
             )
-    _record_persistence_failure(student_id, ins, last_error or "unknown error")
+    if assessment_id:
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.PERSISTENCE_FAILED,
+            assessment_kind=assessment_kind,
+            stage="persistence_attempt",
+            duration_ms=elapsed_ms(attempt_started_at),
+            result="failure",
+            concept_id=ins.get("concept_id"),
+            source_id=ins.get("source_id"),
+            insight_index=insight_index,
+            insight_total=insight_total,
+        )
+    _record_persistence_failure(
+        student_id,
+        ins,
+        last_error or "unknown error",
+        assessment_id=assessment_id,
+        assessment_kind=assessment_kind,
+        insight_index=insight_index,
+        insight_total=insight_total,
+    )
+    if assessment_id:
+        record_assessment_insight_result(
+            assessment_id=assessment_id,
+            success=False,
+            error=last_error or "unknown error",
+        )
+    if assessment_id:
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.PERSISTENCE_COMPLETED,
+            assessment_kind=assessment_kind,
+            stage="persistence_total",
+            duration_ms=elapsed_ms(persistence_started_at),
+            result="failure",
+            insight_index=insight_index,
+            insight_total=insight_total,
+        )
+        if assessment_started_at is not None and insight_index == insight_total:
+            assessment_event(
+                logger,
+                assessment_id,
+                AssessmentStatus.ASSESSMENT_COMPLETED,
+                assessment_kind=assessment_kind,
+                stage="assessment_total",
+                duration_ms=elapsed_ms(assessment_started_at),
+                result="failure",
+                insight_total=insight_total,
+            )
 
 
 # ── MCQ Generation ─────────────────────────────────────────────────────
@@ -810,21 +1374,19 @@ async def generate_mcq(
     subsection_id: str,
     request: Request,
     response: Response,
-    concept_id: str | None = None,
     variant: int = 0,
 ):
-    """Generate a conceptual MCQ from full section context, targeted to one subsection."""
+    """Generate an MCQ from one subsection, with its section as reference context."""
     trace_event(
         logger,
         "mcq.request.started",
         section_id=section_id,
         subsection_id=subsection_id,
-        concept_id=concept_id,
         variant=variant,
     )
     metadata_started = time.monotonic()
     try:
-        meta = _fetch_section_meta(section_id)
+        meta = await _fetch_section_meta(section_id)
     except Exception as exc:
         trace_exception(
             logger,
@@ -845,49 +1407,18 @@ async def generate_mcq(
     )
     context = meta["full_text"]
 
-    # Resolve target subsection
-    valid_sub_ids = {s["id"] for s in meta["subsections"]}
-    if subsection_id not in valid_sub_ids:
-        raise HTTPException(
-            status_code=400,
-            detail=f"subsection_id '{subsection_id}' not found in section '{section_id}'",
-        )
+    target_sub = _resolve_target_subsection(meta, subsection_id, section_id)
     enforce_rate_limit(request, scope="test_mcq_generation", limit=30, window_seconds=60)
-    target_sub = next(s for s in meta["subsections"] if s["id"] == subsection_id)
-
-    focus_concept = None
-    if concept_id:
-        concept_map = {c["id"]: c for c in meta["concepts"]}
-        if concept_id not in concept_map:
-            raise HTTPException(
-                status_code=400,
-                detail=f"concept_id '{concept_id}' not linked to section '{section_id}'",
-            )
-        focus_concept = concept_map[concept_id]
-
-    concept_focus_block = ""
-    concept_rule = ""
-    if focus_concept:
-        concept_focus_block = (
-            "\nFOCUS CONCEPT:\n"
-            f'- concept_id: "{focus_concept["id"]}"\n'
-            f'- concept_name: "{focus_concept["name"]}"\n'
-        )
-        concept_rule = (
-            "\n- The question MUST directly test the FOCUS CONCEPT.\n"
-            "- Make distractors around common confusion related to this concept."
-        )
 
     generation_targets = default_generation_targets()
     provider = generation_targets[0].provider
     gen_model = generation_targets[0].model
 
     cache_key = stable_cache_key(
-        "test_mcq",
+        "test_mcq:v2",
         {
             "section_id": section_id,
             "subsection_id": target_sub["id"],
-            "concept_id": concept_id or "",
             "variant": variant,
             "provider": provider,
             "model": gen_model,
@@ -926,7 +1457,7 @@ async def generate_mcq(
     prompt = f"""You are an educational assessment AI. Based on the following study material,
 generate ONE conceptual multiple-choice question (MCQ) that tests deep understanding
 (not simple recall). The question should require the student to apply, analyze, or
-connect concepts.
+connect ideas that appear in the target subsection.
 
 The student is currently studying this subsection:
 - subsection_id: "{target_sub["id"]}"
@@ -935,8 +1466,11 @@ The student is currently studying this subsection:
 Generate the MCQ for THIS SUBSECTION ONLY.
 Do NOT generate a question about any other subsection.
 
-STUDY MATERIAL:
-{context}{concept_focus_block}
+TARGET SUBSECTION CONTENT (primary assessment scope):
+{target_sub["content"]}
+
+FULL SECTION REFERENCE CONTEXT (definitions and surrounding context only):
+{context}
 
 Respond in STRICT JSON with exactly these keys:
 {{
@@ -957,7 +1491,11 @@ RULES:
 - Make all 4 options plausible (no obviously silly answers)
 - The question should test understanding, NOT memorization
 - Distractors should reflect common misconceptions
-- Keep the question anchored to the target subsection only.{concept_rule}
+- The question must be answerable from the target subsection content.
+- Use the full section only to clarify notation, definitions, or context needed to
+  understand the target subsection.
+- Do not test a sibling subsection or any linked concept that is absent from the
+  target subsection.
 - Return ONLY valid JSON, no markdown fences, no extra text."""
 
     trace_event(
@@ -984,7 +1522,6 @@ RULES:
             model=gen_model,
             section_id=section_id,
             subsection_id=target_sub["id"],
-            concept_id=concept_id,
             cache_key_fingerprint=cache_key[:16],
             latency_ms=round((time.monotonic() - started) * 1000, 2),
         )
@@ -1005,7 +1542,7 @@ RULES:
         "options": data.get("options", {}),
         "correct_answer": data.get("correct_answer", "A"),
         "explanation": data.get("explanation", ""),
-        "key_terms": data.get("key_terms", meta["key_terms"][:5]),
+        "key_terms": data.get("key_terms") if isinstance(data.get("key_terms"), list) else [],
     }
     _generation_cache.set(cache_key, payload)
     _set_generation_cache_headers(response, "MISS", cache_key)
@@ -1052,6 +1589,12 @@ async def evaluate_mcq(
     """Evaluate an MCQ answer and return insights.
     If authenticated, auto-persists insights to Neo4j."""
     _set_no_store_headers(response)
+    assessment_kind = "mcq"
+    assessment_id, assessment_started_at = _begin_assessment(
+        assessment_kind=assessment_kind,
+        section_id=section_id,
+        user=user,
+    )
     enforce_rate_limit(
         request,
         scope="test_mcq_evaluation",
@@ -1059,22 +1602,49 @@ async def evaluate_mcq(
         window_seconds=60,
         user_key=user.student_id if user else None,
     )
-    meta = _fetch_section_meta(section_id)
+    context_started_at = time.monotonic()
+    meta = await _fetch_section_meta(section_id)
+    assessment_event(
+        logger,
+        assessment_id,
+        AssessmentStatus.CONTEXT_LOADED,
+        assessment_kind=assessment_kind,
+        stage="context_fetch",
+        duration_ms=elapsed_ms(context_started_at),
+        result="success",
+        concept_count=len(meta["concepts"]),
+        concept_scope=meta.get("concept_scope", "section"),
+        subsection_count=len(meta["subsections"]),
+    )
     context = meta["full_text"]
-    source_id = body.subsection_id
+    target_sub = _resolve_target_subsection(meta, body.subsection_id, section_id)
+    source_id = target_sub["id"]
+    if user:
+        await run_in_threadpool(
+            create_assessment_attempt,
+            assessment_id=assessment_id,
+            student_id=user.student_id,
+            assessment_kind=assessment_kind,
+            section_id=section_id,
+            subsection_id=source_id,
+            question=body.question,
+            answer_mode="mcq",
+            options=body.options,
+            selected_answer=body.selected,
+            correct_answer=body.correct_answer,
+        )
     is_correct = body.selected == body.correct_answer
 
-    # Build concept list for insight generation
-    concept_list = "\n".join(
-        f'  - concept_id: "{c["id"]}", name: "{c["name"]}"'
-        for c in meta["concepts"]
-    ) or "  (no concepts linked)"
+    concept_heading, concept_list = _assessment_concept_prompt(meta)
 
     options_str = "\n".join(f"  {k}: {v}" for k, v in body.options.items())
 
     prompt = f"""You are an expert teacher evaluating a student's MCQ answer.
 
-STUDY MATERIAL (ground truth):
+TARGET SUBSECTION CONTENT (primary ground truth):
+{target_sub["content"]}
+
+FULL SECTION REFERENCE CONTEXT (definitions and surrounding context only):
 {context}
 
 QUESTION: {body.question}
@@ -1086,7 +1656,7 @@ CORRECT ANSWER: {body.correct_answer}: {body.options.get(body.correct_answer, ''
 STUDENT SELECTED: {body.selected}: {body.options.get(body.selected, '')}
 IS CORRECT: {is_correct}
 
-CONCEPTS LINKED TO THIS SECTION:
+{concept_heading}:
 {concept_list}
 
 ─── TASK ───
@@ -1094,6 +1664,9 @@ CONCEPTS LINKED TO THIS SECTION:
 Generate learning insights based on what the student's choice reveals about their understanding.
 
 CRITICAL RULES:
+- Judge the answer against the target subsection content.
+- Use the full section only to clarify notation, definitions, or surrounding context.
+- Do not require facts that appear only in sibling subsections.
 - Generate insights ONLY for concepts directly tested by this question.
 - If the student answered correctly → COMPETENCY insights.
 - If wrong, determine if their choice suggests a MISCONCEPTION or PARTIAL_UNDERSTANDING.
@@ -1121,19 +1694,54 @@ Respond in STRICT JSON:
 
 Return ONLY valid JSON, no markdown fences, no extra text."""
 
+    model_started = time.monotonic()
+    fallback_used = False
     try:
         data = _generate_json_with_retry(prompt, model=EVAL_MODEL, retries=1)
-    except Exception:
+        model_duration_ms = elapsed_ms(model_started)
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.MODEL_COMPLETED,
+            assessment_kind=assessment_kind,
+            model=EVAL_MODEL,
+            latency_ms=model_duration_ms,
+            duration_ms=model_duration_ms,
+            stage="model",
+            result="success",
+        )
+    except Exception as exc:
+        fallback_used = True
+        model_duration_ms = elapsed_ms(model_started)
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.MODEL_FAILED,
+            assessment_kind=assessment_kind,
+            model=EVAL_MODEL,
+            latency_ms=model_duration_ms,
+            duration_ms=model_duration_ms,
+            stage="model",
+            result="failure",
+            error_type=type(exc).__name__,
+            fallback_used=True,
+        )
         data = {
             "feedback": "Correct!" if is_correct else "That's not quite right. Review the material and try again.",
             "explanation": "",
             "insights": [],
         }
 
+    validation_started_at = time.monotonic()
     # Validate insights
     valid_concept_ids = {c["id"] for c in meta["concepts"]}
+    raw_insights = data.get("insights", [])
+    if not isinstance(raw_insights, list):
+        raw_insights = []
     insights = []
-    for ins in data.get("insights", []):
+    for ins in raw_insights:
+        if not isinstance(ins, dict):
+            continue
         concept_id = ins.get("concept_id", "")
         ins_type = ins.get("type", "")
         ins_category = ins.get("category", "conceptual")
@@ -1152,19 +1760,41 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
             "source_id": source_id,
         })
 
-    # Auto-persist insights in the background so evaluation response is not blocked.
-    auth_header_present = bool(request.headers.get("authorization"))
-    persistence_status = "skipped_no_insights"
-    if user and insights:
-        persistence_status = "queued"
-        for ins in insights:
-            background_tasks.add_task(_persist_insight_safe, user.student_id, dict(ins))
-    elif not user:
-        persistence_status = (
-            "skipped_invalid_auth" if auth_header_present else "skipped_unauthenticated"
+    assessment_event(
+        logger,
+        assessment_id,
+        AssessmentStatus.OUTPUT_VALIDATED,
+        assessment_kind=assessment_kind,
+        candidate_insight_count=len(raw_insights),
+        accepted_insight_count=len(insights),
+        rejected_insight_count=len(raw_insights) - len(insights),
+        stage="output_validation",
+        duration_ms=elapsed_ms(validation_started_at),
+        result="success",
+    )
+    if user:
+        await run_in_threadpool(
+            record_assessment_evaluation,
+            assessment_id=assessment_id,
+            evaluation_model=EVAL_MODEL,
+            fallback_used=fallback_used,
+            is_correct=is_correct,
+            feedback=data.get("feedback", ""),
+            explanation=data.get("explanation", ""),
+            concept_ids=[ins["concept_id"] for ins in insights],
         )
+    persistence_status = await _queue_assessment_insights(
+        background_tasks=background_tasks,
+        request=request,
+        user=user,
+        insights=insights,
+        assessment_id=assessment_id,
+        assessment_kind=assessment_kind,
+        assessment_started_at=assessment_started_at,
+    )
 
     return {
+        "assessment_id": assessment_id,
         "section_id": section_id,
         "is_correct": is_correct,
         "selected": body.selected,
@@ -1195,17 +1825,6 @@ async def evaluate_exercise_answer(
 ):
     """Evaluate chapter-end exercise answers (text or image) and persist reconciled insights."""
     _set_no_store_headers(response)
-    enforce_rate_limit(
-        request,
-        scope="test_exercise_evaluation",
-        limit=20,
-        window_seconds=60,
-        user_key=user.student_id if user else None,
-    )
-    meta = _fetch_section_meta(section_id)
-    context = meta["full_text"]
-    source_id = section_id
-
     answer_text = (body.answer_text or "").strip()
     answer_images = body.answer_images or []
     if body.answer_mode == "text" and not answer_text:
@@ -1213,10 +1832,50 @@ async def evaluate_exercise_answer(
     if body.answer_mode == "image" and not answer_images:
         raise HTTPException(status_code=400, detail="answer_images is required for image mode")
 
-    concept_list = "\n".join(
-        f'  - concept_id: "{c["id"]}", name: "{c["name"]}"'
-        for c in meta["concepts"]
-    ) or "  (no concepts linked)"
+    assessment_kind = "exercise"
+    assessment_id, assessment_started_at = _begin_assessment(
+        assessment_kind=assessment_kind,
+        section_id=section_id,
+        user=user,
+    )
+    if user:
+        await run_in_threadpool(
+            create_assessment_attempt,
+            assessment_id=assessment_id,
+            student_id=user.student_id,
+            assessment_kind=assessment_kind,
+            section_id=section_id,
+            exercise_id=body.exercise_id,
+            question=body.problem,
+            answer_mode=body.answer_mode,
+            answer_text=answer_text if body.answer_mode == "text" else None,
+            answer_images=answer_images if body.answer_mode == "image" else None,
+        )
+    enforce_rate_limit(
+        request,
+        scope="test_exercise_evaluation",
+        limit=20,
+        window_seconds=60,
+        user_key=user.student_id if user else None,
+    )
+    context_started_at = time.monotonic()
+    meta = await _fetch_section_meta(section_id)
+    assessment_event(
+        logger,
+        assessment_id,
+        AssessmentStatus.CONTEXT_LOADED,
+        assessment_kind=assessment_kind,
+        stage="context_fetch",
+        duration_ms=elapsed_ms(context_started_at),
+        result="success",
+        concept_count=len(meta["concepts"]),
+        concept_scope=meta.get("concept_scope", "section"),
+        subsection_count=len(meta["subsections"]),
+    )
+    context = meta["full_text"]
+    source_id = section_id
+
+    concept_heading, concept_list = _assessment_concept_prompt(meta)
 
     answer_block = (
         f"STUDENT ANSWER (TEXT): {answer_text}"
@@ -1237,7 +1896,7 @@ EXERCISE QUESTION:
 {input_mode_line}
 {answer_block}
 
-CONCEPTS LINKED TO THIS SECTION:
+{concept_heading}:
 {concept_list}
 
 TASK:
@@ -1272,6 +1931,8 @@ Respond in STRICT JSON:
 
 Return ONLY valid JSON."""
 
+    model_started = time.monotonic()
+    fallback_used = False
     try:
         data = _generate_gemini_json_with_retry(
             prompt,
@@ -1279,7 +1940,34 @@ Return ONLY valid JSON."""
             image_data_urls=answer_images if body.answer_mode == "image" else None,
             retries=2,
         )
-    except Exception:
+        model_duration_ms = elapsed_ms(model_started)
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.MODEL_COMPLETED,
+            assessment_kind=assessment_kind,
+            model=EXERCISE_EVAL_MODEL,
+            latency_ms=model_duration_ms,
+            duration_ms=model_duration_ms,
+            stage="model",
+            result="success",
+        )
+    except Exception as exc:
+        fallback_used = True
+        model_duration_ms = elapsed_ms(model_started)
+        assessment_event(
+            logger,
+            assessment_id,
+            AssessmentStatus.MODEL_FAILED,
+            assessment_kind=assessment_kind,
+            model=EXERCISE_EVAL_MODEL,
+            latency_ms=model_duration_ms,
+            duration_ms=model_duration_ms,
+            stage="model",
+            result="failure",
+            error_type=type(exc).__name__,
+            fallback_used=True,
+        )
         data = {
             "score": 50,
             "grade": "C",
@@ -1290,9 +1978,15 @@ Return ONLY valid JSON."""
             "insights": [],
         }
 
+    validation_started_at = time.monotonic()
     valid_concept_ids = {c["id"] for c in meta["concepts"]}
+    raw_insights = data.get("insights", [])
+    if not isinstance(raw_insights, list):
+        raw_insights = []
     insights = []
-    for ins in data.get("insights", []):
+    for ins in raw_insights:
+        if not isinstance(ins, dict):
+            continue
         concept_id = ins.get("concept_id", "")
         ins_type = ins.get("type", "")
         ins_category = ins.get("category", "conceptual")
@@ -1311,18 +2005,44 @@ Return ONLY valid JSON."""
             "source_id": source_id,
         })
 
-    auth_header_present = bool(request.headers.get("authorization"))
-    persistence_status = "skipped_no_insights"
-    if user and insights:
-        persistence_status = "queued"
-        for ins in insights:
-            background_tasks.add_task(_persist_insight_safe, user.student_id, dict(ins))
-    elif not user:
-        persistence_status = (
-            "skipped_invalid_auth" if auth_header_present else "skipped_unauthenticated"
+    assessment_event(
+        logger,
+        assessment_id,
+        AssessmentStatus.OUTPUT_VALIDATED,
+        assessment_kind=assessment_kind,
+        candidate_insight_count=len(raw_insights),
+        accepted_insight_count=len(insights),
+        rejected_insight_count=len(raw_insights) - len(insights),
+        stage="output_validation",
+        duration_ms=elapsed_ms(validation_started_at),
+        result="success",
+    )
+    if user:
+        await run_in_threadpool(
+            record_assessment_evaluation,
+            assessment_id=assessment_id,
+            evaluation_model=EXERCISE_EVAL_MODEL,
+            fallback_used=fallback_used,
+            score=data.get("score"),
+            grade=data.get("grade"),
+            feedback=data.get("feedback", ""),
+            strengths=data.get("strengths", []),
+            improvements=data.get("improvements", []),
+            model_answer=data.get("model_answer", ""),
+            concept_ids=[ins["concept_id"] for ins in insights],
         )
+    persistence_status = await _queue_assessment_insights(
+        background_tasks=background_tasks,
+        request=request,
+        user=user,
+        insights=insights,
+        assessment_id=assessment_id,
+        assessment_kind=assessment_kind,
+        assessment_started_at=assessment_started_at,
+    )
 
     return {
+        "assessment_id": assessment_id,
         "section_id": section_id,
         "exercise_id": body.exercise_id,
         "model": EXERCISE_EVAL_MODEL,

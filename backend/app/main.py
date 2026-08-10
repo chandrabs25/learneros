@@ -26,7 +26,7 @@ from app.routers import (
     tutor,
     teacher_dashboard,
 )
-from app.database import close_driver
+from app.database import close_drivers
 from app.observability import new_request_id, reset_request_id, set_request_id, trace_event, trace_exception
 from app.telemetry import configure_telemetry, shutdown_telemetry
 
@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
     print(f"🚀 LearnerOS Backend starting up (env: {settings.ENVIRONMENT})")
     yield
     # Shutdown: close connections
-    close_driver()
+    await close_drivers()
     shutdown_telemetry()
     print("👋 LearnerOS Backend shutting down")
 

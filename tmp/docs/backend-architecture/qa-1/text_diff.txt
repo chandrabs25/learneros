@@ -1,0 +1,224 @@
+--- a
++++ b
+@@ -1,6 +1,6 @@
+ LEARNEROS
+ Backend Architecture& Operations
+-Routing, APIs, persistence, LLM orchestration, caching, telemetry, evaluation, and deployment
++Routing, APIs, persistence, assessment context, insight lifecycle, LLM orchestration, caching, and deployment
+ SYSTEM
+ LearnerOS adaptive learning backend
+ REPOSITORY
+@@ -8,9 +8,8 @@
+ REFERENCE DATE
+ 2026-08-10
+ STATUS
+-Code-grounded implementation reference; environment-dependent behavior is called out explicitly
+-Reading guide
+-This document describes the backend currently represented by the source tree. A behavior is marked as configuration-dependent when it requires environment variables, a scheduled/manual job, an external service, or a separate deployment step.
++Code-grounded implementation reference; assessment behavior updated after the subsection/concept-scope changes
++Reading guideThis document describes the backend currently represented by the source tree. Assessment behavior is grounded in the production router and its focused regression tests. Unrelated evaluation, export, promotion, and observability scripts are outside the scope of this revision.
+ Contents
+ 1. System role and architecture
+ 2. Runtime request lifecycle
+@@ -23,7 +22,7 @@
+ 9. Caching and content delivery
+ 10. AI tutor and LangGraph state
+ 11. Teacher analytics and semantic clustering
+-12. Telemetry, production assessments, and evaluations
++12. Assessment context, concept fallback, and insight scope
+ 13. Security and privacy controls
+ 14. Configuration and deployment
+ 15. Operational runbook and known gaps
+@@ -32,7 +31,7 @@
+ The backend is a FastAPI service backed by Neo4j. LLM calls use OpenAI-compatible clients for Fireworks, Cerebras, and Gemini. Firebase Authentication supplies identity and role claims. OpenTelemetry is optional and exports traces and metrics through OTLP when enabled. The service is deployed as a single Uvicorn process on Fly.io with a health check on port 8000.
+ Curriculum graph: stable, non-personalized learning structure used for textbook navigation, prerequisite-aware teaching, graph views, and retrieval.
+ Student evidence graph: student-scoped insights, supersession chains, embeddings, assessment attempts, and tutor conversations.
+-Generation layer: question/MCQ generation, assessment evaluation, explanation generation, insight reconciliation, embeddings, and tutor responses.
++Generation layer: written-question and MCQ generation are target-subsection scoped; evaluation uses the target subsection plus full-section reference context and then creates validated, concept-linked insights.
+ Analytics layer: risk scoring, institute-scoped teacher dashboards, active insight summaries, and semantic student clusters.
+ Runtime topology
+ FastAPI -> routers -> services -> Neo4j / LLM providers / OTLP
+@@ -55,8 +54,8 @@
+ Firebase bearer token verification and role/institute checks
+ 401 for missing/invalid token; 403 for insufficient role or missing institute claim
+ Context load
+-Neo4j read of curriculum, student evidence, or analytics state
+-Neo4j driver retries transactions; endpoint may return an error or a safe empty result depending on route
++Neo4j read of section/subsection content plus direct-section or chapter-fallback concept candidates
++Missing section content returns 404; a subsection outside the section returns 400; zero valid concept candidates is allowed
+ LLM stage
+ OpenAI-compatible provider request and schema parsing
+ Configured retries; provider fallback only where the operation supplies fallback targets
+@@ -67,7 +66,7 @@
+ JSON payload plus cache and request headers where applicable
+ Completion event includes status and latency
+ 3. Routing And API Surface
+-The route registration source of truth is backend/app/main.py. Router modules group endpoints by domain. Path parameters that contain Neo4j identifiers use the :path converter because IDs contain colons and other separators.
++The route registration source of truth is backend/app/main.py. Router modules group endpoints by domain. Most Neo4j identifiers use the :path converter. The section-concepts route deliberately uses /sections/{section_id}/concepts without :path so it cannot absorb the /sections/{id}/test/... namespace; section IDs contain colons but no slash.
+ DOMAIN
+ REPRESENTATIVE ROUTES
+ PURPOSE
+@@ -88,7 +87,7 @@
+ Active student insight retrieval
+ Insight actions
+ POST /api/students/me/insights/{id}/explain; /test/mcq; /test/mcq/evaluate
+-Remediation and insight-specific testing
++Target-subsection question/MCQ generation; personalized evaluation with validated insight scope
+ Assessment
+ GET /api/sections/{id}/test/question; /test/mcq; POST .../evaluate
+ Non-personalized generation and personalized evaluation
+@@ -148,7 +147,7 @@
+ Neo4j is the system of record for curriculum structure and learner state. backend/app/database.py creates one shared driver with 30-second connection and acquisition timeouts, a 30-second transaction retry window, one-hour connection lifetime, keep-alive, and a pool size of 50.
+ Core curriculum nodes and relationships
+ Grade -> Subject -> Textbook -> Chapter -> Section -> Subsection is the primary navigation hierarchy.
+-Section and/or subsection nodes connect to Concept nodes through REQUIRES and teaches/related relationships used by graph and prerequisite views.
++Sections connect to Concept nodes through REQUIRES. Assessment first uses concepts directly required by the active section; if none exist, it collects concepts required by sections in the same chapter as evaluation-only fallback candidates.
+ Exercises belong to sections and may be associated with concepts where the curriculum data provides that linkage.
+ Learner-state nodes and relationships
+ ENTITY
+@@ -178,16 +177,9 @@
+ Assessment attempts are privacy-conscious: image answers persist count and SHA-256 hashes rather than raw image bytes; text is not stored for image-mode answers.
+ Assessment persistence is queued/attempted outside the critical learner response path. A persistence failure is observable and should not make a successful model evaluation look like a model failure.
+ 6. Insight Lifecycle And Reconciliation
+-Insights are student-specific evidence attached to curriculum concepts and sources. The active state is a query projection over historical evidence, not a replacement for historical records. The normal MCQ flow is: answer -> model evaluation -> structured evidence -> insight creation -> reconciliation -> embedding -> persistence.
++Insights are student-specific evidence attached to curriculum concepts and sources. The active state is a query projection over historical evidence, not a replacement for historical records. The written-answer and MCQ flows are: resolve target subsection -> evaluate against subsection content -> select valid concept candidates -> validate structured evidence -> insight creation -> reconciliation -> embedding -> persistence.
+ Insight pipeline
+-Student answer
+-    -> evaluate against section/subsection context and prerequisite concepts
+-    -> validate structured result
+-    -> create candidate insight (type/category/content/source/concept links)
+-    -> reconcile against active insight(s) for the same student + source/concept key
+-    -> mark prior record superseded when appropriate; keep history
+-    -> embed newly active insight
+-    -> retrieve active insight later for teaching/tutor context
++Student answer  -> resolve and validate the requested subsection inside the section  -> evaluate against target subsection content; full section is reference context only  -> use direct section concepts, or chapter concepts when the section has none  -> reject insight IDs outside the resolved candidate set  -> attach accepted evidence to the target subsection/source and concept  -> reconcile against active insight(s) for the same student + source/concept key  -> preserve history, embed the active insight, and retrieve it later for teaching/tutor context
+ Evidence categories
+ TYPE
+ MEANING
+@@ -236,11 +228,11 @@
+ CONTEXT SENT
+ PERSONALIZATION
+ Section question/MCQ generation
+-Section context; MCQ generation is constrained to current subsection/concept logic
+-Non-personalized; eligible for shared caching
++Target subsection content as primary scope; complete parent section as definitions/surrounding reference only; no concept candidates in the generation prompt
++Non-personalized and share-cache eligible; requested subsection ID is authoritative
+ Section/test evaluation
+-Question, answer, correct answer/options, section/subsection context, prerequisite concepts
+-Student answer is personalized and writes evidence
++Question/answer, target subsection ground truth, full-section reference context, and direct-section or chapter-fallback concept candidates
++Personalized evaluation; accepted insights must use an exact candidate concept ID and the target subsection source ID
+ Exercise evaluation
+ Exercise question plus text or image input and chapter prerequisite concept context
+ Personalized; Gemini 3.1 Pro Preview path
+@@ -308,7 +300,7 @@
+ Chapter covers and animation HTML assets
+ Public deterministic URLs; not learner state
+ Generation cache key
+-The deterministic key includes endpoint type, section ID, subsection ID, concept ID where relevant, variant, generation model, and prompt schema version. It deliberately excludes auth identity. Bumping GEN_PROMPT_VERSION or changing the model naturally creates a new key namespace.
++The deterministic question/MCQ generation key includes endpoint type/version, section ID, requested subsection ID, variant, provider/model/fallback targets, and prompt schema version. It deliberately excludes auth identity and concept ID because concepts do not drive question generation. The v2 endpoint namespace prevents older, broader prompt results from being reused.
+ Generation response headers
+ Cache-Control: public, max-age=300, s-maxage=604800, stale-while-revalidate=86400
+ CDN-Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+@@ -377,44 +369,38 @@
+ Stores membership quality where the algorithm provides it
+ Why the dashboard can show no clusters
+ Snapshots are not created when an institute has no eligible students or when the cluster job has not run successfully. Cluster reads are snapshot reads; they do not build clusters synchronously during a dashboard request. The snapshot job must run against the same production Neo4j database used by the API.
+-12. Telemetry, Production Assessments, And Evaluations
+-The current observability path is OpenTelemetry plus structured logs, not MLflow. OpenTelemetry can instrument FastAPI, OpenAI-compatible calls, spans, and metrics. It exports through OTLP HTTP when enabled. The backend also has assessment-specific stage timing and lifecycle events.
+-TELEMETRY SURFACE
+-WHAT IS RECORDED
+-DEFAULT
+-Request middleware
+-request ID, route, method, status, total latency
+-Always structured logs; OTel depends on OTEL_ENABLED
+-LLM spans
+-provider/model, operation, token usage when available, duration, fingerprints
+-OpenAI instrumentation when telemetry enabled; content hidden by default
+-Assessment stages
+-context_loaded, model_completed/failed, output_validated, persistence, reconciled, embedded, persisted, retry/failure/dead-letter
+-Assessment lifecycle events and stage duration histogram
+-Neo4j operations
+-Driver failures/retries are observable through logs; route/request timing includes DB cost
+-No separate query-span layer currently documented
+-Cluster pipeline
+-per-institute duration, algorithm, counts, quality metrics, structured run report
+-Manual/cron script output; optional pipeline event integration
+-Backend evals
+-Question, MCQ, insight, tutor, reconciliation, and retrieval tasks through the same LLMService
+-Offline smoke/core plus online provider runs; separate from user requests
+-Where traces and assessments go
+-OTel traces and metrics go to the configured OTLP exporter endpoint, such as an observability backend or collector. The backend does not persist all telemetry in Neo4j.
+-Structured request and assessment events go to process/container logs and can be collected by Fly or a log sink.
+-AssessmentAttempt records and insight state go to Neo4j. These are product records, not an observability substitute.
+-Production eval code in backend/evals uses the same LLMService and contracts, while endpoint-focused tests exercise the production assessment path in backend/tests.
+-Telemetry configuration
+-Environment configuration shape
+-OTEL_ENABLED=false
+-OTEL_SERVICE_NAME=learneros-backend
+-OTEL_EXPORTER_OTLP_ENDPOINT=<collector-url>
+-OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=<optional-metrics-url>
+-OTEL_EXPORTER_OTLP_HEADERS=<optional-header-list>
+-OTEL_CAPTURE_CONTENT=false
+-Privacy default
+-Prompt, response, image content, student answers, and tutor text should remain hidden from traces unless there is an explicit debugging decision to enable content capture in a controlled environment. Fingerprints support correlation without storing the raw material.
++12. Assessment Context, Concept Fallback, And Insight Scope
++The production assessment contract separates question content from insight classification. Question and MCQ generation are controlled by the requested subsection content, with the full parent section supplied only as reference context. Concept candidates are introduced only during answer evaluation and insight creation.
++STAGE
++CONTENT BOUNDARY
++CONCEPT BEHAVIOR
++Metadata load
++Collect ordered subsection IDs, titles, and content; build complete section reference text
++Select concepts directly required by the section; if none, collect concepts required by sections in the same chapter
++Target resolution
++Require the submitted subsection ID to belong to the requested section
++No concept is needed to resolve or render the subsection; invalid membership returns 400
++Question / MCQ generation
++Target subsection content is primary; full section may clarify notation, definitions, or surrounding context
++Concept IDs and names are excluded from the generation prompt and cache identity
++Answer evaluation
++Judge only against the target subsection; do not require sibling-only facts
++Expose either direct-section candidates or explicitly labeled chapter-fallback candidates
++Insight validation
++Accept only evidence meaningfully supported by the tested question and learner answer
++Reject concept IDs outside the resolved candidate set and invalid type/category values; an empty insight list is valid
++Persistence
++Force source_id to the validated target subsection
++Persist only accepted concept links; unauthenticated or empty-insight cases are skipped without changing the evaluation result
++Concept-scope selection
++Direct scope: if the active section has one or more direct REQUIRES Concept relationships, only those concepts are candidates for assessment insights.
++Chapter fallback: if the active section has no direct concepts, concepts required by other sections in the same chapter become evaluation-only candidates. This is the section 10.3 case.
++No candidates: if neither direct nor chapter concepts exist, the answer can still be evaluated, but returned insights are filtered to an empty list.
++Source integrity: every accepted insight receives the validated target subsection as source_id, regardless of what the model returns.
++Focused regression coverage
++Current contract checks in backend/tests/test_assessment_context.py
++generation uses target content plus full-section reference and excludes conceptssubsection IDs outside the section are rejected before model evaluationa section with no valid concepts evaluates successfully with empty insightsMCQ evaluation accepts an insight from the declared chapter-fallback scopethe curriculum concept route does not shadow the /test namespaceverified locally: 7 focused tests passed
++Important boundaryThe full section is sent because an individual subsection may omit definitions or nearby context. It is reference material, not permission to test sibling subsections. Likewise, chapter concepts are fallback labels for evaluation and insight creation; they do not broaden question generation.
+ 13. Security And Privacy Controls
+ Firebase ID tokens are verified server-side; the backend never trusts a client-supplied UID, role, or institute for protected operations.
+ Teacher analytics always constrain Student and Insight queries by the teacher claim's institute_id.
+@@ -505,9 +491,9 @@
+ Cluster snapshots
+ Built by manual/cron pipeline, not synchronously by dashboard
+ A working dashboard does not imply a snapshot exists
+-Telemetry content
+-Content capture is off by default
+-Trace analysis is safer but less text-rich unless explicitly enabled
++Chapter concept fallback
++Fallback candidates can be broader than direct section links
++Strict prompt and exact-ID validation are required; empty insights are a valid outcome
+ Teacher/admin roles
+ Dependencies use a single role value
+ A user with only admin role cannot automatically pass teacher dependency
+@@ -521,8 +507,7 @@
+ Introduce a shared retry policy with exponential backoff, jitter, total deadline, and provider-specific retryability rules.
+ Add explicit OpenTelemetry spans around Neo4j reads/writes and cache layers so dependency time is separated from route time.
+ Add snapshot freshness and last-success metadata to the teacher API so the UI can distinguish empty data from stale pipeline data.
+-Add a schema/relationship audit job for concept-to-section, section-to-chapter, grade-to-subject, and cluster membership consistency.
+-Add end-to-end production-like tests that start FastAPI with test doubles only at external boundaries while exercising the actual router and service path.
++Add a schema/relationship audit for direct section concepts and chapter-fallback coverage, including sections that intentionally have no concept links.
++Keep production-like route tests for both direct-concept and chapter-fallback sections, including the no-candidate case and cache-version changes.
+ Keep public curriculum cache rules separate from authenticated API routes at the Cloudflare layer.
+-Source files
+-Primary implementation sources referenced by this document include backend/app/main.py, auth.py, config.py, database.py, routers/*, services/llm.py, services/generation_cache.py, services/semantic_clustering.py, services/clustering_runner.py, teacher_analytics.py, telemetry.py, assessment_observability.py, and assessment_attempts.py.
++Source filesPrimary implementation sources referenced by this document include backend/app/main.py, auth.py, config.py, database.py, routers/curriculum.py, routers/test.py, routers/tutor.py, services/llm.py, services/generation_cache.py, services/semantic_clustering.py, services/clustering_runner.py, teacher_analytics.py, and backend/tests/test_assessment_context.py. Unrelated eval/export/promotion/observability scripts are not used as behavioral evidence in this revision.

@@ -8,10 +8,13 @@ from urllib.parse import unquote
 
 from fastapi import FastAPI
 from openinference.instrumentation.openai import OpenAIInstrumentor
-from opentelemetry import trace
+from opentelemetry import metrics, trace
+from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.metrics import MeterProvider
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.trace.sampling import ParentBased, TraceIdRatioBased
@@ -21,6 +24,7 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 _provider: TracerProvider | None = None
+_meter_provider: MeterProvider | None = None
 
 
 def _headers(raw: str) -> dict[str, str] | None:
@@ -36,7 +40,7 @@ def _headers(raw: str) -> dict[str, str] | None:
 
 def configure_telemetry(app: FastAPI | None = None) -> None:
     """Configure tracing once. With OTEL_ENABLED=false this is a no-op."""
-    global _provider
+    global _meter_provider, _provider
     if not settings.OTEL_ENABLED or _provider is not None:
         return
 
@@ -64,6 +68,19 @@ def configure_telemetry(app: FastAPI | None = None) -> None:
     provider.add_span_processor(BatchSpanProcessor(OTLPSpanExporter(**exporter_kwargs)))
     trace.set_tracer_provider(provider)
 
+    metric_exporter_kwargs = dict(exporter_kwargs)
+    metrics_endpoint = settings.OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+    if not metrics_endpoint and settings.OTEL_EXPORTER_OTLP_ENDPOINT.endswith("/v1/traces"):
+        metrics_endpoint = settings.OTEL_EXPORTER_OTLP_ENDPOINT.removesuffix("/v1/traces") + "/v1/metrics"
+    if metrics_endpoint:
+        metric_exporter_kwargs["endpoint"] = metrics_endpoint
+    metric_reader = PeriodicExportingMetricReader(
+        OTLPMetricExporter(**metric_exporter_kwargs),
+        export_interval_millis=settings.OTEL_METRIC_EXPORT_INTERVAL_MS,
+    )
+    meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+    metrics.set_meter_provider(meter_provider)
+
     if app is not None:
         FastAPIInstrumentor.instrument_app(
             app,
@@ -72,13 +89,17 @@ def configure_telemetry(app: FastAPI | None = None) -> None:
         )
     OpenAIInstrumentor().instrument(tracer_provider=provider)
     _provider = provider
-    logger.info("OpenTelemetry tracing enabled for %s", settings.OTEL_SERVICE_NAME)
+    _meter_provider = meter_provider
+    logger.info("OpenTelemetry tracing and metrics enabled for %s", settings.OTEL_SERVICE_NAME)
 
 
 def shutdown_telemetry() -> None:
-    global _provider
-    if _provider is None:
-        return
-    _provider.force_flush(timeout_millis=5000)
-    _provider.shutdown()
-    _provider = None
+    global _meter_provider, _provider
+    if _provider is not None:
+        _provider.force_flush(timeout_millis=5000)
+        _provider.shutdown()
+        _provider = None
+    if _meter_provider is not None:
+        _meter_provider.force_flush(timeout_millis=5000)
+        _meter_provider.shutdown()
+        _meter_provider = None

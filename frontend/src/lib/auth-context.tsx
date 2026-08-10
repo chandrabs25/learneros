@@ -12,6 +12,7 @@ import {
     signInWithPopup,
     signInWithRedirect,
     getRedirectResult,
+    getAdditionalUserInfo,
     signOut as firebaseSignOut,
     GoogleAuthProvider,
     createUserWithEmailAndPassword,
@@ -40,6 +41,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 const googleProvider = new GoogleAuthProvider();
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+async function provisionGraphIdentity(user: User): Promise<void> {
+    const token = await user.getIdToken(true);
+    const response = await fetch(`${API_URL}/auth/provision`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+        throw new Error(`Account provisioning failed (${response.status})`);
+    }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -79,6 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         getRedirectResult(auth)
             .then(async (result) => {
                 if (result?.user) {
+                    if (getAdditionalUserInfo(result)?.isNewUser) {
+                        await provisionGraphIdentity(result.user);
+                    }
                     const route = await resolvePostLoginRoute({
                         user: result.user,
                         nextFromSession: consumePendingNext(),
@@ -96,6 +112,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         try {
             const result = await signInWithPopup(auth, googleProvider);
             if (result.user) {
+                if (getAdditionalUserInfo(result)?.isNewUser) {
+                    await provisionGraphIdentity(result.user);
+                }
                 const route = await resolvePostLoginRoute({
                     user: result.user,
                     nextFromQuery: nextPath || null,
@@ -136,6 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result = await createUserWithEmailAndPassword(auth, email, password);
         if (result.user) {
             await updateProfile(result.user, { displayName: name });
+            await provisionGraphIdentity(result.user);
             const route = await resolvePostLoginRoute({
                 user: result.user,
                 nextFromQuery: nextPath || null,
