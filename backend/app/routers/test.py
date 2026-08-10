@@ -1060,10 +1060,11 @@ def _persist_insight(
         FOREACH (old IN old_insights | CREATE (new)-[:SUPERSEDES]->(old))
         // Concurrency safety: enforce only one active insight for this key.
         WITH s, new
-        MATCH (s)-[:HAS_INSIGHT]->(other:Insight {is_active: true, category: $category})
-              -[:ABOUT_CONCEPT]->(:Concept {id: $concept_id})
+        OPTIONAL MATCH (s)-[:HAS_INSIGHT]->(other:Insight {is_active: true, category: $category})
+                       -[:ABOUT_CONCEPT]->(:Concept {id: $concept_id})
         WHERE other.id <> new.id AND (other)-[:ABOUT_SOURCE]->({id: $source_id})
-        SET other.is_active = false
+        WITH new, [candidate IN collect(other) WHERE candidate IS NOT NULL] AS competing_insights
+        FOREACH (other IN competing_insights | SET other.is_active = false)
         RETURN new.id AS id
             """,
             _query_name="insight.persist",

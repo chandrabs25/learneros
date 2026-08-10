@@ -484,3 +484,45 @@ def test_persistence_rejects_database_write_without_created_record(
     ]
     _assert_timed_stages(lifecycle_events)
     assert lifecycle_events[-1]["reason"] == "insight_create_returned_no_rows"
+
+
+def test_persistence_keeps_new_record_when_no_competing_insight(
+    monkeypatch: pytest.MonkeyPatch,
+    lifecycle_events: list[dict[str, Any]],
+) -> None:
+    captured: dict[str, Any] = {}
+
+    monkeypatch.setattr(test_router, "read_query", lambda *args, **kwargs: [])
+    monkeypatch.setattr(
+        test_router,
+        "_embed_text_with_fireworks",
+        lambda _text, retries=2: [0.1, 0.2],
+    )
+
+    def successful_write(query: str, **params: Any) -> list[dict[str, str]]:
+        captured["query"] = query
+        return [{"id": params["insight_id"]}]
+
+    monkeypatch.setattr(test_router, "write_query", successful_write)
+    insight = {
+        "concept_id": "concept:work",
+        "source_id": "subsection:work",
+        "category": "conceptual",
+        "type": "COMPETENCY",
+        "content": "The student understands work.",
+    }
+
+    test_router._persist_insight(
+        "student:student-1",
+        insight,
+        assessment_id="assessment:test",
+        assessment_kind="written_answer",
+        insight_index=1,
+        insight_total=1,
+    )
+
+    assert insight["persisted"] is True
+    assert "OPTIONAL MATCH" in captured["query"]
+    assert "collect(other)" in captured["query"]
+    assert "RETURN new.id AS id" in captured["query"]
+    assert _event_statuses(lifecycle_events)[-1] == "persisted"

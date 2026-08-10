@@ -62,8 +62,7 @@ class InstituteUpdateBody(BaseModel):
 async def list_institutes():
     """Return active institutes from Neo4j. No auth required."""
     return await async_read_query(
-        """,
-        _query_name="institutes.list",
+        """
         MATCH (i:Institute)
         WHERE coalesce(i.is_active, true) = true
         RETURN i.id AS id,
@@ -72,7 +71,8 @@ async def list_institutes():
                i.description AS description,
                i.logo AS logo
         ORDER BY coalesce(i.name, i.id) ASC
-        """
+        """,
+        _query_name="institutes.list",
     )
 
 
@@ -243,8 +243,7 @@ async def get_student_dashboard_bootstrap(
 
     profile = await get_student_profile(user)
     grades = await async_read_query(
-        """,
-        _query_name="dashboard.grades",
+        """
         MATCH (t:Textbook)-[:CONTAINS]->(ch:Chapter)
         WITH t.grade AS grade, t.id AS tid, count(ch) AS ch_count
         WITH grade, sum(ch_count) AS chapter_count, collect(tid)[0] AS textbook_id
@@ -253,7 +252,8 @@ async def get_student_dashboard_bootstrap(
                chapter_count,
                textbook_id
         ORDER BY grade
-        """
+        """,
+        _query_name="dashboard.grades",
     )
     payload = {
         "student": profile,
