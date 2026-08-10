@@ -26,14 +26,18 @@ const GRADE_LABELS: Record<number, string> = {
   12: "Senior",
 };
 const DEFAULT_START_GRADE = 11;
+// Preserve curriculum availability while Next.js navigates between client routes.
+// A transient authenticated bootstrap failure must not turn every card into
+// "Coming Soon" when the user returns to the hub.
+let cachedApiGrades: Grade[] | null = null;
 
 export default function HubPage() {
   const { user, getIdToken, role, loading: authLoading } = useAuth();
-  const [apiGrades, setApiGrades] = useState<Grade[]>([]);
+  const [apiGrades, setApiGrades] = useState<Grade[]>(() => cachedApiGrades ?? []);
   const [scrollIndex, setScrollIndex] = useState(
     Math.max(0, ALL_GRADES.findIndex((g) => g === DEFAULT_START_GRADE))
   );
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(cachedApiGrades === null);
   const [roleChecked, setRoleChecked] = useState(false);
   const carouselRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -70,6 +74,11 @@ export default function HubPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      const applyGrades = (grades: Grade[]) => {
+        cachedApiGrades = grades;
+        if (!cancelled) setApiGrades(grades);
+      };
+
       try {
         if (user) {
           const token = await getIdToken();
@@ -77,23 +86,32 @@ export default function HubPage() {
             const res = await fetch(`${API_URL}/api/students/me/dashboard/bootstrap`, {
               headers: { Authorization: `Bearer ${token}` },
             });
-            const data = await res.json();
-            if (!cancelled) {
+            if (res.ok) {
+              const data = await res.json();
               const grades = Array.isArray(data?.grades) ? data.grades : [];
-              setApiGrades(grades);
-              setLoading(false);
+              if (grades.length > 0) {
+                applyGrades(grades);
+                if (!cancelled) setLoading(false);
+                return;
+              }
             }
-            return;
           }
         }
+
+        // Public curriculum availability is the resilient fallback when the
+        // personalized dashboard bootstrap is interrupted during navigation.
         const r = await fetch(`${API_URL}/api/grades`);
+        if (!r.ok) throw new Error(`Grades request failed (${r.status})`);
         const data = await r.json();
         if (!cancelled) {
-          setApiGrades(Array.isArray(data) ? data : []);
+          applyGrades(Array.isArray(data) ? data : []);
           setLoading(false);
         }
       } catch {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          if (cachedApiGrades) setApiGrades(cachedApiGrades);
+          setLoading(false);
+        }
       }
     })();
     return () => {
