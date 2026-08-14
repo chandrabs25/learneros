@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import TutorMarkdown from "@/components/TutorMarkdown";
@@ -146,10 +146,13 @@ interface TutorMessage {
 export default function SectionViewerPage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const grade = params.grade as string;
     const subject = params.subject as string;
     const chapter = params.chapter as string;
     const section = params.section as string;
+    const requestedSubsection = searchParams.get("subsection") || "";
+    const refreshInsightsRequested = searchParams.get("refreshInsights") === "1";
     const { user, getIdToken } = useAuth();
 
     const [subsections, setSubsections] = useState<Subsection[]>([]);
@@ -175,6 +178,7 @@ export default function SectionViewerPage() {
     const [tutorMessages, setTutorMessages] = useState<TutorMessage[]>([
         { role: "assistant", text: "Ask me anything about this subsection. I will use the section context and your relevant active insights." },
     ]);
+    const insightRefreshTimers = useRef<number[]>([]);
 
     const sectionId = `ncert:${subject}:${grade}:${chapter}:${section}`;
     const chapterId = `ncert:${subject}:${grade}:${chapter}`;
@@ -246,6 +250,14 @@ export default function SectionViewerPage() {
 
     const current = subsections[currentIndex];
 
+    useEffect(() => {
+        if (!requestedSubsection || subsections.length === 0) return;
+        const requestedIndex = subsections.findIndex(
+            (subsection) => subsection.id === requestedSubsection
+        );
+        if (requestedIndex >= 0) setCurrentIndex(requestedIndex);
+    }, [requestedSubsection, subsections]);
+
     const loadSubsectionInsights = async (opts?: { silent?: boolean }) => {
         const silent = Boolean(opts?.silent);
         if (!current?.id) return;
@@ -268,7 +280,7 @@ export default function SectionViewerPage() {
             if (token) headers.Authorization = `Bearer ${token}`;
             const res = await fetch(
                 `${API_URL}/api/students/me/insights/subsection/${encodeURIComponent(current.id)}`,
-                { headers }
+                { headers, cache: "no-store" }
             );
             const data = await res.json();
             if (!res.ok) throw new Error(data?.detail || `HTTP ${res.status}`);
@@ -293,6 +305,20 @@ export default function SectionViewerPage() {
                 setInsightsLoading(false);
             }
         }
+    };
+
+    const clearScheduledInsightRefreshes = () => {
+        insightRefreshTimers.current.forEach((timer) => window.clearTimeout(timer));
+        insightRefreshTimers.current = [];
+    };
+
+    const scheduleSubsectionInsightRefresh = () => {
+        clearScheduledInsightRefreshes();
+        insightRefreshTimers.current = [750, 2500, 5500, 9000].map((delay) =>
+            window.setTimeout(() => {
+                void loadSubsectionInsights({ silent: true });
+            }, delay)
+        );
     };
 
     const runExplain = async (insightId: string) => {
@@ -382,6 +408,7 @@ export default function SectionViewerPage() {
                 },
             }));
             await loadSubsectionInsights();
+            scheduleSubsectionInsightRefresh();
         } catch (e: unknown) {
             setTestById((prev) => ({
                 ...prev,
@@ -447,6 +474,21 @@ export default function SectionViewerPage() {
         loadSubsectionInsights({ silent: true });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [current?.id, user]);
+
+    useEffect(() => {
+        if (
+            refreshInsightsRequested
+            && current?.id
+            && current.id === requestedSubsection
+            && user
+        ) {
+            scheduleSubsectionInsightRefresh();
+        }
+        return clearScheduledInsightRefreshes;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [refreshInsightsRequested, requestedSubsection, current?.id, user]);
+
+    useEffect(() => clearScheduledInsightRefreshes, []);
 
     useEffect(() => {
         if (!tutorOpen || !current?.id || !user) return;

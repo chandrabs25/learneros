@@ -142,6 +142,8 @@ class LLMService:
         images: Sequence[str] | None = None,
         temperature: float = 0.0,
         json_mode: bool = False,
+        json_schema: dict[str, Any] | None = None,
+        schema_name: str = "response",
         max_tokens: int | None = None,
         timeout: float = 60,
         operation: str = "generation",
@@ -165,6 +167,8 @@ class LLMService:
             span.set_attribute("learneros.image.count", len(images or []))
             if max_tokens is not None:
                 span.set_attribute("gen_ai.request.max_tokens", max_tokens)
+            if json_schema is not None:
+                span.set_attribute("learneros.response.schema_name", schema_name)
             if get_request_id():
                 span.set_attribute("learneros.request.id", get_request_id())
             trace_event(
@@ -185,7 +189,15 @@ class LLMService:
                     "temperature": temperature,
                     "timeout": timeout,
                 }
-                if json_mode:
+                if json_schema is not None:
+                    kwargs["response_format"] = {
+                        "type": "json_schema",
+                        "json_schema": {
+                            "name": schema_name,
+                            "schema": json_schema,
+                        },
+                    }
+                elif json_mode:
                     kwargs["response_format"] = {"type": "json_object"}
                 if max_tokens is not None:
                     kwargs["max_tokens"] = max_tokens
@@ -243,6 +255,8 @@ class LLMService:
                         images=images,
                         temperature=temperature,
                         json_mode=json_mode,
+                        json_schema=json_schema,
+                        schema_name=schema_name,
                         max_tokens=max_tokens,
                         timeout=timeout,
                         operation=operation,
@@ -271,6 +285,9 @@ class LLMService:
         timeout: float = 60,
         retries: int = 2,
         operation: str = "json_generation",
+        max_tokens: int | None = None,
+        json_schema: dict[str, Any] | None = None,
+        schema_name: str = "response",
         fallbacks: Sequence[ModelTarget] | None = None,
     ) -> dict[str, Any]:
         if retries < 1:
@@ -287,6 +304,9 @@ class LLMService:
                     images=images,
                     temperature=temperature,
                     json_mode=True,
+                    json_schema=json_schema,
+                    schema_name=schema_name,
+                    max_tokens=max_tokens,
                     timeout=timeout,
                     operation=operation,
                     fallbacks=fallbacks,

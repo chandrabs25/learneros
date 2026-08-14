@@ -20,6 +20,7 @@ interface MCQData {
 }
 
 interface MCQResult {
+    assessment_id?: string;
     is_correct: boolean;
     selected: string;
     correct_answer: string;
@@ -80,6 +81,10 @@ export default function MCQPracticePage() {
     const [persistenceMessage, setPersistenceMessage] = useState("");
     const [error, setError] = useState("");
     const totalQuestions = 2;
+    const lessonHref = `/${grade}/${subject}/${chapter}/${section}${targetSubsection
+        ? `?subsection=${encodeURIComponent(targetSubsection)}${result?.persistence_status === "queued" ? "&refreshInsights=1" : ""}`
+        : ""
+        }`;
 
     // Questions are generated from subsection content only. Concepts are introduced
     // later by the evaluation endpoint when it creates learning insights.
@@ -137,7 +142,7 @@ export default function MCQPracticePage() {
             if (resultData.insights?.length) {
                 setAllInsights((prev) => [...prev, ...resultData.insights]);
                 if (resultData.persistence_status === "queued") {
-                    setPersistenceMessage("Insights saved to your profile.");
+                    setPersistenceMessage("Insights are being saved to your profile.");
                 } else if (!token) {
                     const existing = loadGuestInsights();
                     const timestamped = resultData.insights.map((ins) => ({
@@ -165,7 +170,7 @@ export default function MCQPracticePage() {
     // Next question
     const handleNext = () => {
         if (questionIndex >= totalQuestions - 1) {
-            router.push(`/${grade}/${subject}/${chapter}/${section}`);
+            router.push(lessonHref);
             return;
         }
         setLoading(true);
@@ -193,7 +198,7 @@ export default function MCQPracticePage() {
                     </div>
                 </div>
                 <Link
-                    href={`/${grade}/${subject}/${chapter}/${section}`}
+                    href={lessonHref}
                     className="mcq-back-btn"
                 >
                     <span className="material-symbols-outlined" style={{ fontSize: "1rem" }}>arrow_back</span>

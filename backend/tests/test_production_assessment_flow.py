@@ -533,6 +533,42 @@ def test_background_persistence_reports_retry_then_terminal_dead_letter(
     ]
 
 
+def test_successful_assessment_persistence_invalidates_subsection_insight_cache(
+    monkeypatch: pytest.MonkeyPatch,
+    lifecycle_events: list[dict[str, Any]],
+) -> None:
+    from app.routers import insights as insights_router
+
+    student_id = "student:student-1"
+    subsection_id = "subsection:work"
+    cache_key = f"subsection_insights|{student_id}|{subsection_id}"
+    insights_router._cache_set(cache_key, [{"id": "insight:stale"}])
+    monkeypatch.setattr(
+        test_router,
+        "_persist_insight",
+        lambda *_args, **_kwargs: None,
+    )
+
+    test_router._persist_insight_safe(
+        student_id,
+        {
+            "concept_id": "concept:work",
+            "source_id": subsection_id,
+            "category": "conceptual",
+            "type": "COMPETENCY",
+            "content": "The student understands work.",
+        },
+        assessment_id="assessment:test",
+        assessment_kind="mcq",
+        assessment_started_at=time.monotonic(),
+        queued_at=time.monotonic(),
+        insight_index=1,
+        insight_total=1,
+    )
+
+    assert insights_router._cache_get(cache_key) is None
+
+
 def test_persistence_rejects_database_write_without_created_record(
     monkeypatch: pytest.MonkeyPatch,
     lifecycle_events: list[dict[str, Any]],

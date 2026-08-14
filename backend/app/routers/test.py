@@ -42,8 +42,14 @@ from app.services.assessment_execution import (
     WrittenAnswerSubmission,
 )
 from app.services.generation_cache import build_generation_cache, stable_cache_key
+from app.services.insight_cache import invalidate_student as invalidate_student_insight_cache
 from app.services.llm import default_generation_targets, llm_service
-from app.services.mcq import has_complete_mcq_options, normalize_mcq_options
+from app.services.mcq import (
+    MCQ_MAX_TOKENS,
+    SECTION_MCQ_JSON_SCHEMA,
+    mcq_validation_errors,
+    normalize_mcq_options,
+)
 from app.services.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/api", tags=["test"])
@@ -98,6 +104,9 @@ def _generate_json_with_retry(
     image_data_urls: list[str] | None = None,
     retries: int = 2,
     operation: str = "json_generation",
+    max_tokens: int | None = None,
+    json_schema: dict | None = None,
+    schema_name: str = "response",
 ) -> dict:
     return llm_service.generate_json(
         provider="fireworks",
@@ -107,6 +116,9 @@ def _generate_json_with_retry(
         retries=retries,
         timeout=90 if image_data_urls else 60,
         operation=operation,
+        max_tokens=max_tokens,
+        json_schema=json_schema,
+        schema_name=schema_name,
     )
 
 
@@ -338,17 +350,10 @@ def _valid_question_payload(data: dict) -> bool:
 
 
 def _valid_mcq_payload(data: dict) -> bool:
-    options = data.get("options")
-    return (
-        isinstance(data.get("question"), str)
-        and bool(data["question"].strip())
-        and has_complete_mcq_options(options)
-        and data.get("correct_answer") in ("A", "B", "C", "D")
-        and isinstance(data.get("explanation"), str)
-        and bool(data["explanation"].strip())
-        and isinstance(data.get("subsection_id"), str)
-        and bool(data["subsection_id"].strip())
-        and isinstance(data.get("key_terms"), list)
+    return not mcq_validation_errors(
+        data,
+        require_subsection=True,
+        require_key_terms=True,
     )
 
 
@@ -1040,6 +1045,7 @@ def _persist_insight_safe(
                 insight_index=insight_index,
                 insight_total=insight_total,
             )
+            invalidate_student_insight_cache(student_id)
             if assessment_id:
                 record_assessment_insight_result(
                     assessment_id=assessment_id,
@@ -1316,6 +1322,9 @@ RULES:
             model=gen_model,
             retries=2,
             operation="mcq_generation",
+            max_tokens=MCQ_MAX_TOKENS,
+            json_schema=SECTION_MCQ_JSON_SCHEMA,
+            schema_name="section_mcq",
         )
     except Exception as exc:
         trace_exception(
@@ -1350,7 +1359,12 @@ RULES:
         "explanation": data.get("explanation", ""),
         "key_terms": data.get("key_terms") if isinstance(data.get("key_terms"), list) else [],
     }
-    if not _valid_mcq_payload(payload):
+    validation_errors = mcq_validation_errors(
+        payload,
+        require_subsection=True,
+        require_key_terms=True,
+    )
+    if validation_errors:
         trace_event(
             logger,
             "mcq.payload.invalid",
@@ -1358,6 +1372,7 @@ RULES:
             subsection_id=target_sub["id"],
             model=gen_model,
             option_count=len(payload["options"]) if isinstance(payload["options"], dict) else 0,
+            validation_errors=validation_errors,
         )
         raise HTTPException(
             status_code=502,

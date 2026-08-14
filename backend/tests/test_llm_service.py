@@ -79,6 +79,45 @@ class LLMServiceTests(unittest.TestCase):
             {"chat_template_kwargs": {"enable_thinking": False}},
         )
 
+    def test_json_generation_forwards_schema_and_completion_limit(self) -> None:
+        create = Mock(
+            return_value=SimpleNamespace(
+                choices=[SimpleNamespace(message=SimpleNamespace(content='{"ok": true}'))],
+                usage=None,
+            )
+        )
+        client = SimpleNamespace(
+            chat=SimpleNamespace(completions=SimpleNamespace(create=create))
+        )
+        service = LLMService()
+        schema = {
+            "type": "object",
+            "properties": {"ok": {"type": "boolean"}},
+            "required": ["ok"],
+            "additionalProperties": False,
+        }
+
+        with patch.object(service, "client", return_value=client):
+            output = service.generate_json(
+                provider="fireworks",
+                model=settings.FIREWORKS_MODEL,
+                prompt="Return JSON",
+                max_tokens=1200,
+                json_schema=schema,
+                schema_name="mcq",
+                retries=1,
+            )
+
+        self.assertEqual(output, {"ok": True})
+        self.assertEqual(create.call_args.kwargs["max_tokens"], 1200)
+        self.assertEqual(
+            create.call_args.kwargs["response_format"],
+            {
+                "type": "json_schema",
+                "json_schema": {"name": "mcq", "schema": schema},
+            },
+        )
+
     def test_vision_generation_does_not_receive_nemotron_chat_template_options(self) -> None:
         create = Mock(
             return_value=SimpleNamespace(

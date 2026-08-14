@@ -42,7 +42,7 @@ def test_insight_mcq_generation_normalizes_flat_nemotron_options(
     monkeypatch.setattr(
         insights,
         "_llm_json",
-        lambda _prompt: {
+        lambda _prompt, **_kwargs: {
             "question": "When is mechanical work done?",
             "A": "Whenever force exists",
             "B": "When force causes displacement",
@@ -63,6 +63,63 @@ def test_insight_mcq_generation_normalizes_flat_nemotron_options(
         "C": "Only at rest",
         "D": "Without displacement",
     }
+
+
+def test_insight_mcq_generation_uses_bounded_schema_constrained_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    app = FastAPI()
+    app.include_router(insights.router)
+    app.dependency_overrides[get_current_user] = lambda: CurrentUser(
+        uid="student-1",
+        email="student@example.com",
+        name="Student One",
+        role="student",
+    )
+    monkeypatch.setattr(
+        insights,
+        "_get_insight_context",
+        lambda _student_id, _insight_id: {
+            "id": "insight:old",
+            "type": "MISCONCEPTION",
+            "category": "conceptual",
+            "content": "The student confuses force with work.",
+            "source_id": "subsection:work",
+            "section_id": "section:work",
+            "concept_id": "concept:work",
+            "concept_name": "Work",
+        },
+    )
+    generation_kwargs: dict[str, Any] = {}
+
+    def fake_generate(_prompt: str, **kwargs: Any) -> dict[str, Any]:
+        generation_kwargs.update(kwargs)
+        return {
+            "question": "When is mechanical work done?",
+            "options": {
+                "A": "Whenever force exists",
+                "B": "When force causes displacement",
+                "C": "Only at rest",
+                "D": "Without displacement",
+            },
+            "correct_answer": "B",
+            "explanation": "Work requires displacement.",
+        }
+
+    monkeypatch.setattr(insights, "_llm_json", fake_generate)
+
+    with TestClient(app) as client:
+        response = client.post("/api/students/me/insights/insight:old/test/mcq")
+
+    assert response.status_code == 200
+    assert generation_kwargs["max_tokens"] == 1200
+    assert generation_kwargs["schema_name"] == "insight_mcq"
+    assert generation_kwargs["json_schema"]["required"] == [
+        "question",
+        "options",
+        "correct_answer",
+        "explanation",
+    ]
 
 
 def test_insight_mcq_returns_feedback_before_persisting_learner_evidence(

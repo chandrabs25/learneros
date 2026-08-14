@@ -11,7 +11,7 @@ Routes:
 """
 
 import json
-import time
+import logging
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, HTTPException
 from pydantic import BaseModel
@@ -20,39 +20,29 @@ from app.auth import get_current_user, CurrentUser
 from app.config import settings
 from app.database import read_query
 from app.services.llm import llm_service
-from app.services.mcq import has_complete_mcq_options, normalize_mcq_options
+from app.observability import trace_event
+from app.services import insight_cache
+from app.services.mcq import (
+    INSIGHT_MCQ_JSON_SCHEMA,
+    MCQ_MAX_TOKENS,
+    mcq_validation_errors,
+    normalize_mcq_options,
+)
 
 router = APIRouter(prefix="/api", tags=["insights"])
-_insights_cache: dict[str, tuple[float, object]] = {}
-_INSIGHTS_CACHE_TTL_SECONDS = 20.0
+logger = logging.getLogger(__name__)
 
 
 def _cache_get(key: str):
-    row = _insights_cache.get(key)
-    if not row:
-        return None
-    ts, payload = row
-    if (time.time() - ts) > _INSIGHTS_CACHE_TTL_SECONDS:
-        _insights_cache.pop(key, None)
-        return None
-    return payload
+    return insight_cache.get(key)
 
 
 def _cache_set(key: str, payload):
-    _insights_cache[key] = (time.time(), payload)
+    insight_cache.set(key, payload)
 
 
 def _invalidate_student_cache(student_id: str) -> None:
-    to_delete = []
-    for k in list(_insights_cache.keys()):
-        if (
-            k.startswith(f"my_insights|{student_id}|")
-            or k.startswith(f"subsection_insights|{student_id}|")
-            or k.startswith(f"prereq_state|{student_id}|")
-        ):
-            to_delete.append(k)
-    for k in to_delete:
-        _insights_cache.pop(k, None)
+    insight_cache.invalidate_student(student_id)
 
 
 def _persist_insight_and_invalidate_cache(student_id: str, evidence: dict) -> None:
@@ -75,7 +65,14 @@ def _embed_text(text: str) -> list[float]:
     )
 
 
-def _llm_json(prompt: str, model: str | None = None) -> dict:
+def _llm_json(
+    prompt: str,
+    model: str | None = None,
+    *,
+    max_tokens: int | None = None,
+    json_schema: dict | None = None,
+    schema_name: str = "response",
+) -> dict:
     return llm_service.generate_json(
         provider="fireworks",
         model=model or settings.FIREWORKS_MODEL,
@@ -84,6 +81,9 @@ def _llm_json(prompt: str, model: str | None = None) -> dict:
         timeout=60,
         retries=2,
         operation="insight_action",
+        max_tokens=max_tokens,
+        json_schema=json_schema,
+        schema_name=schema_name,
     )
 
 
@@ -399,13 +399,26 @@ Return STRICT JSON:
 The four choices MUST be nested inside the "options" object. Do not return A,
 B, C, or D as top-level JSON keys.
 """
-    data = normalize_mcq_options(_llm_json(prompt))
-    if (
-        not isinstance(data.get("question"), str)
-        or not data["question"].strip()
-        or not has_complete_mcq_options(data.get("options"))
-        or data.get("correct_answer") not in ("A", "B", "C", "D")
-    ):
+    data = normalize_mcq_options(
+        _llm_json(
+            prompt,
+            max_tokens=MCQ_MAX_TOKENS,
+            json_schema=INSIGHT_MCQ_JSON_SCHEMA,
+            schema_name="insight_mcq",
+        )
+    )
+    validation_errors = mcq_validation_errors(data)
+    if validation_errors:
+        trace_event(
+            logger,
+            "insight_mcq.payload.invalid",
+            insight_id=insight_id,
+            model=settings.FIREWORKS_MODEL,
+            option_count=(
+                len(data["options"]) if isinstance(data.get("options"), dict) else 0
+            ),
+            validation_errors=validation_errors,
+        )
         raise HTTPException(
             status_code=502,
             detail="Failed to generate a complete MCQ. Please try again.",

@@ -211,6 +211,53 @@ def test_mcq_generation_normalizes_flat_nemotron_options(
     }
 
 
+def test_mcq_generation_uses_bounded_schema_constrained_output(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    section_meta: dict[str, Any],
+) -> None:
+    async def fake_section_meta(_section_id: str) -> dict[str, Any]:
+        return section_meta
+
+    monkeypatch.setattr(test_router, "_fetch_section_meta", fake_section_meta)
+    generation_kwargs: dict[str, Any] = {}
+
+    def fake_generate(_prompt: str, **kwargs: Any) -> dict[str, Any]:
+        generation_kwargs.update(kwargs)
+        return {
+            "question": "Which option explains the target fact?",
+            "options": {"A": "First", "B": "Second", "C": "Third", "D": "Fourth"},
+            "correct_answer": "A",
+            "explanation": "The first option uses the target fact.",
+            "subsection_id": "subsection:target",
+            "key_terms": ["target"],
+        }
+
+    monkeypatch.setattr(test_router, "_generate_json_with_retry", fake_generate)
+
+    response = client.get(
+        "/api/sections/section:scope/test/mcq",
+        params={"subsection_id": "subsection:target", "variant": 94},
+    )
+
+    assert response.status_code == 200
+    assert generation_kwargs["max_tokens"] == 1200
+    assert generation_kwargs["json_schema"]["required"] == [
+        "question",
+        "options",
+        "correct_answer",
+        "explanation",
+        "subsection_id",
+        "key_terms",
+    ]
+    assert generation_kwargs["json_schema"]["properties"]["options"]["required"] == [
+        "A",
+        "B",
+        "C",
+        "D",
+    ]
+
+
 def test_mcq_generation_rejects_incomplete_model_output(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
