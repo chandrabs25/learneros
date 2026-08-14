@@ -20,6 +20,7 @@ LLMProvider = Literal["fireworks"]
 Message = dict[str, Any]
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("learneros.llm")
+NEMOTRON_LIGHTNING_MODEL = "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
 
 
 class LLMConfigurationError(RuntimeError):
@@ -141,6 +142,7 @@ class LLMService:
         images: Sequence[str] | None = None,
         temperature: float = 0.0,
         json_mode: bool = False,
+        max_tokens: int | None = None,
         timeout: float = 60,
         operation: str = "generation",
         fallbacks: Sequence[ModelTarget] | None = None,
@@ -161,6 +163,8 @@ class LLMService:
             span.set_attribute("learneros.prompt.fingerprint", fingerprint(prompt_summary))
             span.set_attribute("learneros.prompt.chars", len(prompt_summary))
             span.set_attribute("learneros.image.count", len(images or []))
+            if max_tokens is not None:
+                span.set_attribute("gen_ai.request.max_tokens", max_tokens)
             if get_request_id():
                 span.set_attribute("learneros.request.id", get_request_id())
             trace_event(
@@ -172,6 +176,7 @@ class LLMService:
                 prompt_fingerprint=fingerprint(prompt_summary),
                 prompt_chars=len(prompt_summary),
                 image_count=len(images or []),
+                max_tokens=max_tokens,
             )
             try:
                 kwargs: dict[str, Any] = {
@@ -182,6 +187,14 @@ class LLMService:
                 }
                 if json_mode:
                     kwargs["response_format"] = {"type": "json_object"}
+                if max_tokens is not None:
+                    kwargs["max_tokens"] = max_tokens
+                if model == NEMOTRON_LIGHTNING_MODEL:
+                    # Nemotron emits its reasoning trace into `content` by default,
+                    # which breaks strict JSON responses and wastes learner-visible latency.
+                    kwargs["extra_body"] = {
+                        "chat_template_kwargs": {"enable_thinking": False}
+                    }
                 response = self.client(provider).chat.completions.create(**kwargs)
                 content = _text_content(response.choices[0].message.content)
                 usage = getattr(response, "usage", None)
@@ -230,6 +243,7 @@ class LLMService:
                         images=images,
                         temperature=temperature,
                         json_mode=json_mode,
+                        max_tokens=max_tokens,
                         timeout=timeout,
                         operation=operation,
                         fallbacks=remaining,

@@ -20,6 +20,7 @@ from app.services.llm import default_generation_targets, llm_service
 from app.services.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/api", tags=["tutor"])
+TUTOR_MAX_TOKENS = 700
 
 _graph = None
 
@@ -372,7 +373,8 @@ def _node_respond(state: TutorState) -> TutorState:
         "Teach based on section/subsection curriculum context. "
         "Use matched insights as personalized hints, not absolute truth. "
         "If uncertain, ask one clarifying question. "
-        "Keep answers crisp, concrete, and educational. "
+        "Keep answers crisp, concrete, and educational. Default to a concise answer; "
+        "only use the available length when the student explicitly requests detail. "
         "Use markdown formatting when it improves clarity (headings, bullets, short tables, emphasis)."
     )
 
@@ -403,6 +405,7 @@ def _node_respond(state: TutorState) -> TutorState:
         model=target.model,
         messages=messages,
         temperature=0.3,
+        max_tokens=TUTOR_MAX_TOKENS,
         timeout=60,
         operation="subsection_tutor",
         fallbacks=targets[1:],
@@ -454,6 +457,7 @@ def _node_respond_global(state: GlobalTutorState) -> GlobalTutorState:
         "If matched insights are provided, use them as personalization hints only when relevant. "
         "Do not force unrelated insights into the answer." + history_note + " "
         "If the user asks a very domain-specific question without enough context, ask one clarifying question. "
+        "Default to a concise answer; only use the available length when the student explicitly requests detail. "
         "Use markdown formatting when it improves clarity (headings, bullets, short tables, emphasis)."
     )
 
@@ -480,6 +484,7 @@ def _node_respond_global(state: GlobalTutorState) -> GlobalTutorState:
         model=target.model,
         messages=messages,
         temperature=0.3,
+        max_tokens=TUTOR_MAX_TOKENS,
         timeout=60,
         operation="global_tutor",
         fallbacks=targets[1:],

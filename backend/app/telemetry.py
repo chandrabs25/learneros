@@ -53,6 +53,8 @@ def configure_telemetry(app: FastAPI | None = None) -> None:
         os.environ.setdefault("OPENINFERENCE_HIDE_INPUTS", "true")
         os.environ.setdefault("OPENINFERENCE_HIDE_OUTPUTS", "true")
         os.environ.setdefault("OPENINFERENCE_HIDE_INPUT_IMAGES", "true")
+        os.environ.setdefault("OPENINFERENCE_HIDE_EMBEDDINGS_TEXT", "true")
+        os.environ.setdefault("OPENINFERENCE_HIDE_EMBEDDINGS_VECTORS", "true")
 
     resource = Resource.create(
         {

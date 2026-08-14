@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+from app.config import settings
 from app.services.assessment_execution import (
     AssessmentExecutor,
     ExerciseSubmission,
@@ -171,3 +172,36 @@ def test_exercise_submission_supports_image_mode() -> None:
     assert result["score"] == 75
     generated = next(values for name, values in runtime.calls if name == "generate")
     assert generated["images"] == ["data:image/png;base64,abc"]
+    assert generated["model"] == settings.FIREWORKS_VISION_MODEL
+    assert result["model"] == settings.FIREWORKS_VISION_MODEL
+
+
+def test_text_exercise_uses_default_text_model() -> None:
+    runtime = FakeRuntime(
+        {
+            "score": 80,
+            "grade": "B",
+            "feedback": "Correct approach.",
+            "strengths": [],
+            "improvements": [],
+            "model_answer": "W = Fd.",
+            "insights": [],
+        }
+    )
+    executor = AssessmentExecutor(runtime)
+
+    result = asyncio.run(
+        executor.execute(
+            ExerciseSubmission(
+                section_id="section:work",
+                exercise_id="exercise:work:2",
+                problem="Calculate work.",
+                answer_mode="text",
+                answer_text="W = Fd.",
+            )
+        )
+    )
+
+    generated = next(values for name, values in runtime.calls if name == "generate")
+    assert generated["model"] == settings.FIREWORKS_MODEL
+    assert result["model"] == settings.FIREWORKS_MODEL

@@ -31,7 +31,9 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("FIREWORKS_API_KEY_EMBEDDINGS", "FIREWORKS_API_KEY_embeddings"),
     )
     FIREWORKS_BASE_URL: str = "https://api.fireworks.ai/inference/v1"
-    FIREWORKS_MODEL: str = "accounts/fireworks/models/minimax-m3"
+    FIREWORKS_MODEL: str = "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
+    # Image/handwriting evaluation must stay on a multimodal model.
+    FIREWORKS_VISION_MODEL: str = "accounts/fireworks/models/minimax-m3"
     FIREWORKS_EMBEDDING_MODEL: str = "fireworks/qwen3-embedding-8b"
     # Optional OpenTelemetry/OpenInference export (Phoenix or any OTLP collector).
     OTEL_ENABLED: bool = False

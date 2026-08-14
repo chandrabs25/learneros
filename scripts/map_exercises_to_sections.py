@@ -36,7 +36,10 @@ NEO4J_USER = os.environ["NEO4J_USER"]
 NEO4J_PASSWORD = os.environ["NEO4J_PASSWORD"]
 FIREWORKS_API_KEY = os.environ["FIREWORKS_API_KEY"]
 FIREWORKS_BASE_URL = os.environ.get("FIREWORKS_BASE_URL", "https://api.fireworks.ai/inference/v1")
-FIREWORKS_MODEL = os.environ.get("FIREWORKS_MODEL", "accounts/fireworks/models/minimax-m3")
+FIREWORKS_MODEL = os.environ.get(
+    "FIREWORKS_MODEL",
+    "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+)
 
 MODEL = FIREWORKS_MODEL
 RATE_LIMIT_DELAY = 0.3  # seconds between API calls to avoid quota issues
@@ -156,6 +159,7 @@ def ask_kimi_for_section(exercise_problem: str, sections: list[dict]) -> str | N
             ],
             temperature=0,
             timeout=60,
+            extra_body={"chat_template_kwargs": {"enable_thinking": False}},
         )
         answer = (response.choices[0].message.content or "").strip().strip('"').strip("'").strip("`")
         # Basic validation: the answer should look like a section ID
@@ -168,7 +172,7 @@ def ask_kimi_for_section(exercise_problem: str, sections: list[dict]) -> str | N
         print(f"    ⚠ Unexpected response: {answer[:100]}")
         return None
     except Exception as e:
-        print(f"    ❌ Kimi error: {e}")
+        print(f"    ❌ Model error: {e}")
         return None
 
 

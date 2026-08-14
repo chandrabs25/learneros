@@ -52,6 +52,9 @@ def test_enabled_telemetry_exports_application_logs_to_derived_otlp_endpoint(
             return None
 
     monkeypatch.setattr(telemetry.settings, "OTEL_ENABLED", True)
+    monkeypatch.setattr(telemetry.settings, "OTEL_CAPTURE_CONTENT", False)
+    monkeypatch.delenv("OPENINFERENCE_HIDE_EMBEDDINGS_TEXT", raising=False)
+    monkeypatch.delenv("OPENINFERENCE_HIDE_EMBEDDINGS_VECTORS", raising=False)
     monkeypatch.setattr(
         telemetry.settings,
         "OTEL_EXPORTER_OTLP_ENDPOINT",
@@ -100,6 +103,8 @@ def test_enabled_telemetry_exports_application_logs_to_derived_otlp_endpoint(
         assert any(
             isinstance(handler, FakeLoggingHandler) for handler in app_logger.handlers
         )
+        assert telemetry.os.environ["OPENINFERENCE_HIDE_EMBEDDINGS_TEXT"] == "true"
+        assert telemetry.os.environ["OPENINFERENCE_HIDE_EMBEDDINGS_VECTORS"] == "true"
     finally:
         app_logger.handlers[:] = original_handlers
 

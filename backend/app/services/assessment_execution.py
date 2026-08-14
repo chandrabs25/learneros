@@ -27,6 +27,7 @@ from app.observability import fingerprint
 logger = logging.getLogger(__name__)
 EVAL_MODEL = settings.FIREWORKS_MODEL
 EXERCISE_EVAL_MODEL = settings.FIREWORKS_MODEL
+VISION_EXERCISE_EVAL_MODEL = settings.FIREWORKS_VISION_MODEL
 
 
 @dataclass(frozen=True)
@@ -285,6 +286,7 @@ class AssessmentExecutor:
         source_id: str,
         data: dict[str, Any],
         fallback_used: bool,
+        evaluation_model: str,
         evaluation_values: dict[str, Any],
     ) -> tuple[list[dict[str, Any]], str]:
         validation_started_at = time.monotonic()
@@ -308,9 +310,7 @@ class AssessmentExecutor:
         if self.runtime.student_id:
             await self.runtime.record_evaluation(
                 assessment_id=assessment_id,
-                evaluation_model=(
-                    EXERCISE_EVAL_MODEL if submission.kind == "exercise" else EVAL_MODEL
-                ),
+                evaluation_model=evaluation_model,
                 fallback_used=fallback_used,
                 concept_ids=[item["concept_id"] for item in evidence],
                 **evaluation_values,
@@ -415,6 +415,7 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
             source_id=source_id,
             data=data,
             fallback_used=fallback_used,
+            evaluation_model=EVAL_MODEL,
             evaluation_values={
                 "score": data.get("score"),
                 "grade": data.get("grade"),
@@ -520,6 +521,7 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
             source_id=source_id,
             data=data,
             fallback_used=fallback_used,
+            evaluation_model=EVAL_MODEL,
             evaluation_values={
                 "is_correct": is_correct,
                 "feedback": data.get("feedback", ""),
@@ -612,11 +614,16 @@ Respond in STRICT JSON:
 }}
 
 Return ONLY valid JSON."""
+        evaluation_model = (
+            VISION_EXERCISE_EVAL_MODEL
+            if submission.answer_mode == "image"
+            else EXERCISE_EVAL_MODEL
+        )
         data, fallback_used = await self._generate(
             submission=submission,
             assessment_id=assessment_id,
             prompt=prompt,
-            model=EXERCISE_EVAL_MODEL,
+            model=evaluation_model,
             operation="exercise_evaluation",
             images=answer_images if submission.answer_mode == "image" else None,
         )
@@ -628,6 +635,7 @@ Return ONLY valid JSON."""
             source_id=submission.section_id,
             data=data,
             fallback_used=fallback_used,
+            evaluation_model=evaluation_model,
             evaluation_values={
                 "score": data.get("score"),
                 "grade": data.get("grade"),
@@ -641,7 +649,7 @@ Return ONLY valid JSON."""
             "assessment_id": assessment_id,
             "section_id": submission.section_id,
             "exercise_id": submission.exercise_id,
-            "model": EXERCISE_EVAL_MODEL,
+            "model": evaluation_model,
             "answer_mode": submission.answer_mode,
             "score": data.get("score", 0),
             "grade": data.get("grade", ""),
