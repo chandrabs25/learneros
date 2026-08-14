@@ -20,6 +20,7 @@ from app.auth import get_current_user, CurrentUser
 from app.config import settings
 from app.database import read_query
 from app.services.llm import llm_service
+from app.services.mcq import has_complete_mcq_options, normalize_mcq_options
 
 router = APIRouter(prefix="/api", tags=["insights"])
 _insights_cache: dict[str, tuple[float, object]] = {}
@@ -394,8 +395,21 @@ Return STRICT JSON:
   "correct_answer": "A or B or C or D",
   "explanation": "Why correct option is correct"
 }}
+
+The four choices MUST be nested inside the "options" object. Do not return A,
+B, C, or D as top-level JSON keys.
 """
-    data = _llm_json(prompt)
+    data = normalize_mcq_options(_llm_json(prompt))
+    if (
+        not isinstance(data.get("question"), str)
+        or not data["question"].strip()
+        or not has_complete_mcq_options(data.get("options"))
+        or data.get("correct_answer") not in ("A", "B", "C", "D")
+    ):
+        raise HTTPException(
+            status_code=502,
+            detail="Failed to generate a complete MCQ. Please try again.",
+        )
     return {
         "insight_id": insight_id,
         "question": data.get("question", ""),

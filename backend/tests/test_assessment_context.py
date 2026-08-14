@@ -172,6 +172,75 @@ def test_generation_uses_target_content_and_not_concepts(
     assert "must-not-drive-generation" not in prompts[0]
 
 
+def test_mcq_generation_normalizes_flat_nemotron_options(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    section_meta: dict[str, Any],
+) -> None:
+    async def fake_section_meta(_section_id: str) -> dict[str, Any]:
+        return section_meta
+
+    monkeypatch.setattr(test_router, "_fetch_section_meta", fake_section_meta)
+    monkeypatch.setattr(
+        test_router,
+        "_generate_json_with_retry",
+        lambda *_args, **_kwargs: {
+            "question": "Which option explains the target fact?",
+            "A": "First",
+            "B": "Second",
+            "C": "Third",
+            "D": "Fourth",
+            "correct_answer": "A",
+            "explanation": "The first option uses the target fact.",
+            "subsection_id": "subsection:target",
+            "key_terms": ["target"],
+        },
+    )
+
+    response = client.get(
+        "/api/sections/section:scope/test/mcq",
+        params={"subsection_id": "subsection:target", "variant": 92},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["options"] == {
+        "A": "First",
+        "B": "Second",
+        "C": "Third",
+        "D": "Fourth",
+    }
+
+
+def test_mcq_generation_rejects_incomplete_model_output(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    section_meta: dict[str, Any],
+) -> None:
+    async def fake_section_meta(_section_id: str) -> dict[str, Any]:
+        return section_meta
+
+    monkeypatch.setattr(test_router, "_fetch_section_meta", fake_section_meta)
+    monkeypatch.setattr(
+        test_router,
+        "_generate_json_with_retry",
+        lambda *_args, **_kwargs: {
+            "question": "Which option explains the target fact?",
+            "correct_answer": "A",
+            "explanation": "Incomplete output.",
+            "subsection_id": "subsection:target",
+            "key_terms": ["target"],
+        },
+    )
+
+    response = client.get(
+        "/api/sections/section:scope/test/mcq",
+        params={"subsection_id": "subsection:target", "variant": 93},
+    )
+
+    assert response.status_code == 502
+    assert response.json()["detail"] == "Failed to generate a complete MCQ. Please try again."
+
+
 def test_written_evaluation_rejects_subsection_outside_section(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,

@@ -43,6 +43,7 @@ from app.services.assessment_execution import (
 )
 from app.services.generation_cache import build_generation_cache, stable_cache_key
 from app.services.llm import default_generation_targets, llm_service
+from app.services.mcq import has_complete_mcq_options, normalize_mcq_options
 from app.services.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/api", tags=["test"])
@@ -340,11 +341,13 @@ def _valid_mcq_payload(data: dict) -> bool:
     options = data.get("options")
     return (
         isinstance(data.get("question"), str)
-        and isinstance(options, dict)
-        and all(k in options for k in ("A", "B", "C", "D"))
+        and bool(data["question"].strip())
+        and has_complete_mcq_options(options)
         and data.get("correct_answer") in ("A", "B", "C", "D")
         and isinstance(data.get("explanation"), str)
+        and bool(data["explanation"].strip())
         and isinstance(data.get("subsection_id"), str)
+        and bool(data["subsection_id"].strip())
         and isinstance(data.get("key_terms"), list)
     )
 
@@ -1286,6 +1289,9 @@ Respond in STRICT JSON with exactly these keys:
   "key_terms": ["term1", "term2", "term3"]
 }}
 
+The four choices MUST be inside the "options" object. Do not return A, B, C,
+or D as top-level JSON keys.
+
 RULES:
 - Make all 4 options plausible (no obviously silly answers)
 - The question should test understanding, NOT memorization
@@ -1328,6 +1334,8 @@ RULES:
             detail="Failed to generate MCQ. The AI returned an invalid response. Please try again.",
         ) from exc
 
+    data = normalize_mcq_options(data)
+
     # Validate subsection_id — force to requested subsection for safety.
     if data.get("subsection_id") != target_sub["id"]:
         data["subsection_id"] = target_sub["id"]
@@ -1342,6 +1350,19 @@ RULES:
         "explanation": data.get("explanation", ""),
         "key_terms": data.get("key_terms") if isinstance(data.get("key_terms"), list) else [],
     }
+    if not _valid_mcq_payload(payload):
+        trace_event(
+            logger,
+            "mcq.payload.invalid",
+            section_id=section_id,
+            subsection_id=target_sub["id"],
+            model=gen_model,
+            option_count=len(payload["options"]) if isinstance(payload["options"], dict) else 0,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="Failed to generate a complete MCQ. Please try again.",
+        )
     _generation_cache.set(cache_key, payload)
     _set_generation_cache_headers(response, "MISS", cache_key)
     trace_event(
