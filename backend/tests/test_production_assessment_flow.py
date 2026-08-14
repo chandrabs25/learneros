@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from app.assessment_observability import AssessmentStatus
 from app.auth import CurrentUser, get_optional_user
 from app.routers import test as test_router
+from app.services import assessment_execution
 
 
 @pytest.fixture
@@ -62,6 +63,7 @@ def lifecycle_events(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
         )
 
     monkeypatch.setattr(test_router, "assessment_event", record_event)
+    monkeypatch.setattr(assessment_execution, "assessment_event", record_event)
     return events
 
 
@@ -289,6 +291,90 @@ def test_written_evaluation_model_failure_returns_safe_fallback(
     assert durable_assessment_calls["created"]
     assert durable_assessment_calls["evaluated"][0]["fallback_used"] is True
     assert durable_assessment_calls["skipped"][0]["reason"] == "no_valid_insights"
+
+
+def test_mcq_route_preserves_assessment_execution_contract(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    section_meta: dict[str, Any],
+    durable_assessment_calls: dict[str, list[dict[str, Any]]],
+) -> None:
+    _disable_route_boundaries(monkeypatch, section_meta)
+    monkeypatch.setattr(
+        test_router,
+        "_generate_json_with_retry",
+        lambda *args, **kwargs: {
+            "feedback": "Correct.",
+            "explanation": "Work requires displacement.",
+            "insights": [],
+        },
+    )
+
+    response = client.post(
+        "/api/sections/section:work/test/mcq/evaluate",
+        headers={"Authorization": "Bearer test-token"},
+        json={
+            "question": "When is work done?",
+            "options": {
+                "A": "No displacement",
+                "B": "With displacement",
+                "C": "Never",
+                "D": "Always",
+            },
+            "selected": "B",
+            "correct_answer": "B",
+            "subsection_id": "subsection:work",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["is_correct"] is True
+    assert payload["explanation"] == "Work requires displacement."
+    assert payload["persistence_status"] == "skipped_no_insights"
+    assert durable_assessment_calls["created"][0]["answer_mode"] == "mcq"
+    assert durable_assessment_calls["evaluated"][0]["is_correct"] is True
+
+
+def test_exercise_route_preserves_assessment_execution_contract(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+    section_meta: dict[str, Any],
+    durable_assessment_calls: dict[str, list[dict[str, Any]]],
+) -> None:
+    _disable_route_boundaries(monkeypatch, section_meta)
+    monkeypatch.setattr(
+        test_router,
+        "_generate_gemini_json_with_retry",
+        lambda *args, **kwargs: {
+            "score": 75,
+            "grade": "B",
+            "feedback": "Mostly correct.",
+            "strengths": [],
+            "improvements": ["Show units."],
+            "model_answer": "W = Fd.",
+            "insights": [],
+        },
+    )
+
+    response = client.post(
+        "/api/sections/section:work/test/exercises/evaluate",
+        headers={"Authorization": "Bearer test-token"},
+        json={
+            "exercise_id": "exercise:work:1",
+            "problem": "Calculate work.",
+            "answer_mode": "text",
+            "answer_text": "W = Fd",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["score"] == 75
+    assert payload["answer_mode"] == "text"
+    assert payload["persistence_status"] == "skipped_no_insights"
+    assert durable_assessment_calls["created"][0]["answer_mode"] == "text"
+    assert durable_assessment_calls["evaluated"][0]["grade"] == "B"
 
 
 def test_mcq_rejects_unlinked_and_invalid_insights_before_persistence(

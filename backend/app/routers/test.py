@@ -22,19 +22,24 @@ from app.assessment_observability import (
     AssessmentStatus,
     assessment_event,
     elapsed_ms,
-    new_assessment_id,
 )
 from app.auth import get_optional_user, CurrentUser
 
 from app.config import settings
 from app.database import async_read_query, read_query, write_query
-from app.observability import fingerprint, trace_event, trace_exception
+from app.observability import trace_event, trace_exception
 from app.services.assessment_attempts import (
     create_assessment_attempt,
     mark_assessment_insights_queued,
     mark_assessment_insights_skipped,
     record_assessment_evaluation,
     record_assessment_insight_result,
+)
+from app.services.assessment_execution import (
+    AssessmentExecutor,
+    ExerciseSubmission,
+    MCQSubmission,
+    WrittenAnswerSubmission,
 )
 from app.services.generation_cache import build_generation_cache, stable_cache_key
 from app.services.llm import ModelTarget, default_generation_targets, llm_service
@@ -249,21 +254,6 @@ def _resolve_target_subsection(meta: dict, subsection_id: str, section_id: str) 
     return target
 
 
-def _assessment_concept_prompt(meta: dict) -> tuple[str, str]:
-    """Format evaluation-only concept candidates and disclose their scope."""
-    scope = meta.get("concept_scope", "section")
-    heading = (
-        "CHAPTER CONCEPT CANDIDATES (used because this section has no direct concepts)"
-        if scope == "chapter_fallback"
-        else "CONCEPTS DIRECTLY LINKED TO THIS SECTION"
-    )
-    concept_list = "\n".join(
-        f'  - concept_id: "{concept["id"]}", name: "{concept["name"]}"'
-        for concept in meta["concepts"]
-    ) or "  (no concepts linked)"
-    return heading, concept_list
-
-
 def _set_generation_cache_headers(response: Response, cache_status: str, cache_key: str) -> None:
     response.headers["Cache-Control"] = (
         f"public, max-age={GEN_BROWSER_TTL_SECONDS}, "
@@ -281,27 +271,6 @@ def _set_generation_cache_headers(response: Response, cache_status: str, cache_k
 def _set_no_store_headers(response: Response) -> None:
     response.headers["Cache-Control"] = "private, no-store"
     response.headers["CDN-Cache-Control"] = "no-store"
-
-
-def _begin_assessment(
-    *,
-    assessment_kind: str,
-    section_id: str,
-    user: CurrentUser | None,
-) -> tuple[str, float]:
-    """Start a privacy-safe lifecycle record for one production assessment."""
-    assessment_started_at = time.monotonic()
-    assessment_id = new_assessment_id()
-    assessment_event(
-        logger,
-        assessment_id,
-        AssessmentStatus.RECEIVED,
-        assessment_kind=assessment_kind,
-        section_id=section_id,
-        authenticated=user is not None,
-        student_fingerprint=fingerprint(user.student_id) if user else "anonymous",
-    )
-    return assessment_id, assessment_started_at
 
 
 async def _queue_assessment_insights(
@@ -602,6 +571,84 @@ class AnswerPayload(BaseModel):
     subsection_id: str
 
 
+class _ProductionAssessmentRuntime:
+    """Request-scoped production adapter for Assessment Execution's internal seam."""
+
+    def __init__(
+        self,
+        *,
+        request: Request,
+        background_tasks: BackgroundTasks,
+        user: CurrentUser | None,
+    ) -> None:
+        self.request = request
+        self.background_tasks = background_tasks
+        self.user = user
+        self.student_id = user.student_id if user else None
+        self.authorization_present = bool(request.headers.get("authorization"))
+        self.event_logger = logger
+
+    def enforce_rate_limit(self, **values) -> None:
+        enforce_rate_limit(
+            self.request,
+            user_key=self.student_id,
+            **values,
+        )
+
+    async def load_context(self, section_id: str) -> dict:
+        return await _fetch_section_meta(section_id)
+
+    async def create_attempt(self, **values) -> None:
+        if not self.student_id:
+            return
+        await run_in_threadpool(
+            create_assessment_attempt,
+            student_id=self.student_id,
+            **values,
+        )
+
+    async def generate(self, **values) -> dict:
+        if values["kind"] == "exercise":
+            return _generate_gemini_json_with_retry(
+                values["prompt"],
+                model=values["model"],
+                image_data_urls=values.get("images"),
+                retries=values["retries"],
+            )
+        return _generate_json_with_retry(
+            values["prompt"],
+            model=values["model"],
+            retries=values["retries"],
+            operation=values["operation"],
+        )
+
+    async def record_evaluation(self, **values) -> None:
+        await run_in_threadpool(record_assessment_evaluation, **values)
+
+    async def queue_evidence(self, **values) -> str:
+        return await _queue_assessment_insights(
+            background_tasks=self.background_tasks,
+            request=self.request,
+            user=self.user,
+            **values,
+        )
+
+
+def _assessment_executor(
+    *,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    user: CurrentUser | None,
+) -> AssessmentExecutor:
+    return AssessmentExecutor(
+        _ProductionAssessmentRuntime(
+            request=request,
+            background_tasks=background_tasks,
+            user=user,
+        )
+    )
+
+
 @router.post("/sections/{section_id:path}/test/evaluate")
 async def evaluate_answer(
     section_id: str,
@@ -611,232 +658,21 @@ async def evaluate_answer(
     background_tasks: BackgroundTasks,
     user: CurrentUser | None = Depends(get_optional_user),
 ):
-    """Evaluate a student's answer and return structured insights.
-    If authenticated, auto-persists insights to Neo4j."""
+    """Evaluate a written submission through the Assessment Execution module."""
     _set_no_store_headers(response)
-    assessment_kind = "written_answer"
-    assessment_id, assessment_started_at = _begin_assessment(
-        assessment_kind=assessment_kind,
-        section_id=section_id,
-        user=user,
-    )
-    enforce_rate_limit(
-        request,
-        scope="test_question_evaluation",
-        limit=60,
-        window_seconds=60,
-        user_key=user.student_id if user else None,
-    )
-    context_started_at = time.monotonic()
-    meta = await _fetch_section_meta(section_id)
-    assessment_event(
-        logger,
-        assessment_id,
-        AssessmentStatus.CONTEXT_LOADED,
-        assessment_kind=assessment_kind,
-        stage="context_fetch",
-        duration_ms=elapsed_ms(context_started_at),
-        result="success",
-        concept_count=len(meta["concepts"]),
-        concept_scope=meta.get("concept_scope", "section"),
-        subsection_count=len(meta["subsections"]),
-    )
-    context = meta["full_text"]
-    target_sub = _resolve_target_subsection(meta, body.subsection_id, section_id)
-    source_id = target_sub["id"]
-    if user:
-        await run_in_threadpool(
-            create_assessment_attempt,
-            assessment_id=assessment_id,
-            student_id=user.student_id,
-            assessment_kind=assessment_kind,
-            section_id=section_id,
-            subsection_id=source_id,
-            question=body.question,
-            answer_mode="text",
-            answer_text=body.answer,
-        )
-
-    concept_heading, concept_list = _assessment_concept_prompt(meta)
-
-    prompt = f"""You are an expert teacher evaluating a student's answer.
-
-TARGET SUBSECTION CONTENT (primary ground truth):
-{target_sub["content"]}
-
-FULL SECTION REFERENCE CONTEXT (definitions and surrounding context only):
-{context}
-
-QUESTION: {body.question}
-
-STUDENT'S ANSWER: {body.answer}
-
-{concept_heading}:
-{concept_list}
-
-─── TASK ───
-
-1. Evaluate the student's answer for accuracy, completeness, and depth.
-2. Generate learning insights ONLY for concepts that the QUESTION DIRECTLY 
-   tests and the ANSWER meaningfully addresses (correctly or incorrectly).
-
-ASSESSMENT SCOPE:
-- Judge the answer against the target subsection content.
-- Use the full section only to clarify notation, definitions, or surrounding context.
-- Do not require facts that appear only in sibling subsections.
-   
-CRITICAL RULES FOR INSIGHTS:
-- Do NOT create an insight for a concept unless the question specifically 
-  asks about it AND the student's answer says something about it.
-- If a concept is only tangentially related to the question, do NOT include it.
-- It is perfectly fine to return an empty insights array if no concepts 
-  are directly tested.
-
-Insight types:
-- COMPETENCY: student demonstrates correct, solid understanding
-- PARTIAL_UNDERSTANDING: student has the right idea but misses key details
-- MISCONCEPTION: student shows a factually incorrect understanding
-
-Respond in STRICT JSON:
-{{
-  "score": <number 0-100>,
-  "grade": "<A/B/C/D/F>",
-  "feedback": "2-3 sentences of constructive feedback",
-  "strengths": ["point1", "point2"],
-  "improvements": ["point1", "point2"],
-  "model_answer": "A brief ideal answer in 2-3 sentences",
-  "insights": [
-    {{
-      "concept_id": "<exact concept_id from the list above>",
-      "concept_name": "<concept name>",
-      "type": "<COMPETENCY|PARTIAL_UNDERSTANDING|MISCONCEPTION>",
-      "category": "conceptual",
-      "content": "One sentence describing what the student understood or misunderstood about this concept"
-    }}
-  ]
-}}
-
-Return ONLY valid JSON, no markdown fences, no extra text."""
-
-    model_started = time.monotonic()
-    fallback_used = False
-    try:
-        data = _generate_json_with_retry(prompt, model=EVAL_MODEL, retries=1)
-        model_duration_ms = elapsed_ms(model_started)
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.MODEL_COMPLETED,
-            assessment_kind=assessment_kind,
-            model=EVAL_MODEL,
-            latency_ms=model_duration_ms,
-            duration_ms=model_duration_ms,
-            stage="model",
-            result="success",
-        )
-    except Exception as exc:
-        fallback_used = True
-        model_duration_ms = elapsed_ms(model_started)
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.MODEL_FAILED,
-            assessment_kind=assessment_kind,
-            model=EVAL_MODEL,
-            latency_ms=model_duration_ms,
-            duration_ms=model_duration_ms,
-            stage="model",
-            result="failure",
-            error_type=type(exc).__name__,
-            fallback_used=True,
-        )
-        data = {
-            "score": 50,
-            "grade": "C",
-            "feedback": "Could not fully evaluate. Please try again.",
-            "strengths": [],
-            "improvements": ["Try providing more detail"],
-            "model_answer": "",
-            "insights": [],
-        }
-
-    validation_started_at = time.monotonic()
-    # Validate insight entries
-    valid_concept_ids = {c["id"] for c in meta["concepts"]}
-
-    raw_insights = data.get("insights", [])
-    if not isinstance(raw_insights, list):
-        raw_insights = []
-    insights = []
-    for ins in raw_insights:
-        if not isinstance(ins, dict):
-            continue
-        concept_id = ins.get("concept_id", "")
-        ins_type = ins.get("type", "")
-        ins_category = ins.get("category", "conceptual")
-
-        # Skip if concept is not actually linked to this section
-        if concept_id not in valid_concept_ids:
-            continue
-        # Skip if type is invalid
-        if ins_type not in ("COMPETENCY", "PARTIAL_UNDERSTANDING", "MISCONCEPTION"):
-            continue
-        # Skip if category is invalid
-        if ins_category not in ("conceptual", "mathematical"):
-            continue
-
-        insights.append({
-            "concept_id": concept_id,
-            "concept_name": ins.get("concept_name", ""),
-            "type": ins_type,
-            "category": ins_category,
-            "content": ins.get("content", ""),
-            "source_id": source_id,  # deterministic, from question generation
-        })
-
-    assessment_event(
-        logger,
-        assessment_id,
-        AssessmentStatus.OUTPUT_VALIDATED,
-        assessment_kind=assessment_kind,
-        candidate_insight_count=len(raw_insights),
-        accepted_insight_count=len(insights),
-        rejected_insight_count=len(raw_insights) - len(insights),
-        stage="output_validation",
-        duration_ms=elapsed_ms(validation_started_at),
-        result="success",
-    )
-    if user:
-        await run_in_threadpool(
-            record_assessment_evaluation,
-            assessment_id=assessment_id,
-            evaluation_model=EVAL_MODEL,
-            fallback_used=fallback_used,
-            score=data.get("score"),
-            grade=data.get("grade"),
-            feedback=data.get("feedback"),
-            strengths=data.get("strengths"),
-            improvements=data.get("improvements"),
-            model_answer=data.get("model_answer"),
-            concept_ids=[insight["concept_id"] for insight in insights],
-        )
-    persistence_status = await _queue_assessment_insights(
-        background_tasks=background_tasks,
+    executor = _assessment_executor(
         request=request,
+        background_tasks=background_tasks,
         user=user,
-        insights=insights,
-        assessment_id=assessment_id,
-        assessment_kind=assessment_kind,
-        assessment_started_at=assessment_started_at,
     )
-
-    data["insights"] = insights
-    data["section_id"] = section_id
-    data["persistence_status"] = persistence_status
-    data["assessment_id"] = assessment_id
-
-    return data
-
+    return await executor.execute(
+        WrittenAnswerSubmission(
+            section_id=section_id,
+            subsection_id=body.subsection_id,
+            question=body.question,
+            answer=body.answer,
+        )
+    )
 
 # ── Smart Insight Reconciliation ───────────────────────────────────────
 
@@ -1587,224 +1423,23 @@ async def evaluate_mcq(
     background_tasks: BackgroundTasks,
     user: CurrentUser | None = Depends(get_optional_user),
 ):
-    """Evaluate an MCQ answer and return insights.
-    If authenticated, auto-persists insights to Neo4j."""
+    """Evaluate an MCQ submission through the Assessment Execution module."""
     _set_no_store_headers(response)
-    assessment_kind = "mcq"
-    assessment_id, assessment_started_at = _begin_assessment(
-        assessment_kind=assessment_kind,
-        section_id=section_id,
+    executor = _assessment_executor(
+        request=request,
+        background_tasks=background_tasks,
         user=user,
     )
-    enforce_rate_limit(
-        request,
-        scope="test_mcq_evaluation",
-        limit=60,
-        window_seconds=60,
-        user_key=user.student_id if user else None,
-    )
-    context_started_at = time.monotonic()
-    meta = await _fetch_section_meta(section_id)
-    assessment_event(
-        logger,
-        assessment_id,
-        AssessmentStatus.CONTEXT_LOADED,
-        assessment_kind=assessment_kind,
-        stage="context_fetch",
-        duration_ms=elapsed_ms(context_started_at),
-        result="success",
-        concept_count=len(meta["concepts"]),
-        concept_scope=meta.get("concept_scope", "section"),
-        subsection_count=len(meta["subsections"]),
-    )
-    context = meta["full_text"]
-    target_sub = _resolve_target_subsection(meta, body.subsection_id, section_id)
-    source_id = target_sub["id"]
-    if user:
-        await run_in_threadpool(
-            create_assessment_attempt,
-            assessment_id=assessment_id,
-            student_id=user.student_id,
-            assessment_kind=assessment_kind,
+    return await executor.execute(
+        MCQSubmission(
             section_id=section_id,
-            subsection_id=source_id,
+            subsection_id=body.subsection_id,
             question=body.question,
-            answer_mode="mcq",
             options=body.options,
-            selected_answer=body.selected,
+            selected=body.selected,
             correct_answer=body.correct_answer,
         )
-    is_correct = body.selected == body.correct_answer
-
-    concept_heading, concept_list = _assessment_concept_prompt(meta)
-
-    options_str = "\n".join(f"  {k}: {v}" for k, v in body.options.items())
-
-    prompt = f"""You are an expert teacher evaluating a student's MCQ answer.
-
-TARGET SUBSECTION CONTENT (primary ground truth):
-{target_sub["content"]}
-
-FULL SECTION REFERENCE CONTEXT (definitions and surrounding context only):
-{context}
-
-QUESTION: {body.question}
-
-OPTIONS:
-{options_str}
-
-CORRECT ANSWER: {body.correct_answer}: {body.options.get(body.correct_answer, '')}
-STUDENT SELECTED: {body.selected}: {body.options.get(body.selected, '')}
-IS CORRECT: {is_correct}
-
-{concept_heading}:
-{concept_list}
-
-─── TASK ───
-
-Generate learning insights based on what the student's choice reveals about their understanding.
-
-CRITICAL RULES:
-- Judge the answer against the target subsection content.
-- Use the full section only to clarify notation, definitions, or surrounding context.
-- Do not require facts that appear only in sibling subsections.
-- Generate insights ONLY for concepts directly tested by this question.
-- If the student answered correctly → COMPETENCY insights.
-- If wrong, determine if their choice suggests a MISCONCEPTION or PARTIAL_UNDERSTANDING.
-- It is fine to return an empty insights array if no concepts are directly tested.
-
-Insight types:
-- COMPETENCY: student picked correct answer, shows solid understanding
-- PARTIAL_UNDERSTANDING: student picked a partially reasonable wrong answer
-- MISCONCEPTION: student's choice reveals a factually incorrect understanding
-
-Respond in STRICT JSON:
-{{
-  "feedback": "2-3 sentences of constructive feedback explaining why their choice was right/wrong",
-  "explanation": "Brief explanation of the correct answer",
-  "insights": [
-    {{
-      "concept_id": "<exact concept_id from the list above>",
-      "concept_name": "<concept name>",
-      "type": "<COMPETENCY|PARTIAL_UNDERSTANDING|MISCONCEPTION>",
-      "category": "conceptual",
-      "content": "One sentence about what the student's choice reveals"
-    }}
-  ]
-}}
-
-Return ONLY valid JSON, no markdown fences, no extra text."""
-
-    model_started = time.monotonic()
-    fallback_used = False
-    try:
-        data = _generate_json_with_retry(prompt, model=EVAL_MODEL, retries=1)
-        model_duration_ms = elapsed_ms(model_started)
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.MODEL_COMPLETED,
-            assessment_kind=assessment_kind,
-            model=EVAL_MODEL,
-            latency_ms=model_duration_ms,
-            duration_ms=model_duration_ms,
-            stage="model",
-            result="success",
-        )
-    except Exception as exc:
-        fallback_used = True
-        model_duration_ms = elapsed_ms(model_started)
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.MODEL_FAILED,
-            assessment_kind=assessment_kind,
-            model=EVAL_MODEL,
-            latency_ms=model_duration_ms,
-            duration_ms=model_duration_ms,
-            stage="model",
-            result="failure",
-            error_type=type(exc).__name__,
-            fallback_used=True,
-        )
-        data = {
-            "feedback": "Correct!" if is_correct else "That's not quite right. Review the material and try again.",
-            "explanation": "",
-            "insights": [],
-        }
-
-    validation_started_at = time.monotonic()
-    # Validate insights
-    valid_concept_ids = {c["id"] for c in meta["concepts"]}
-    raw_insights = data.get("insights", [])
-    if not isinstance(raw_insights, list):
-        raw_insights = []
-    insights = []
-    for ins in raw_insights:
-        if not isinstance(ins, dict):
-            continue
-        concept_id = ins.get("concept_id", "")
-        ins_type = ins.get("type", "")
-        ins_category = ins.get("category", "conceptual")
-        if concept_id not in valid_concept_ids:
-            continue
-        if ins_type not in ("COMPETENCY", "PARTIAL_UNDERSTANDING", "MISCONCEPTION"):
-            continue
-        if ins_category not in ("conceptual", "mathematical"):
-            continue
-        insights.append({
-            "concept_id": concept_id,
-            "concept_name": ins.get("concept_name", ""),
-            "type": ins_type,
-            "category": ins_category,
-            "content": ins.get("content", ""),
-            "source_id": source_id,
-        })
-
-    assessment_event(
-        logger,
-        assessment_id,
-        AssessmentStatus.OUTPUT_VALIDATED,
-        assessment_kind=assessment_kind,
-        candidate_insight_count=len(raw_insights),
-        accepted_insight_count=len(insights),
-        rejected_insight_count=len(raw_insights) - len(insights),
-        stage="output_validation",
-        duration_ms=elapsed_ms(validation_started_at),
-        result="success",
     )
-    if user:
-        await run_in_threadpool(
-            record_assessment_evaluation,
-            assessment_id=assessment_id,
-            evaluation_model=EVAL_MODEL,
-            fallback_used=fallback_used,
-            is_correct=is_correct,
-            feedback=data.get("feedback", ""),
-            explanation=data.get("explanation", ""),
-            concept_ids=[ins["concept_id"] for ins in insights],
-        )
-    persistence_status = await _queue_assessment_insights(
-        background_tasks=background_tasks,
-        request=request,
-        user=user,
-        insights=insights,
-        assessment_id=assessment_id,
-        assessment_kind=assessment_kind,
-        assessment_started_at=assessment_started_at,
-    )
-
-    return {
-        "assessment_id": assessment_id,
-        "section_id": section_id,
-        "is_correct": is_correct,
-        "selected": body.selected,
-        "correct_answer": body.correct_answer,
-        "feedback": data.get("feedback", ""),
-        "explanation": data.get("explanation", ""),
-        "insights": insights,
-        "persistence_status": persistence_status,
-    }
 
 
 class ExerciseAnswerPayload(BaseModel):
@@ -1824,236 +1459,20 @@ async def evaluate_exercise_answer(
     background_tasks: BackgroundTasks,
     user: CurrentUser | None = Depends(get_optional_user),
 ):
-    """Evaluate chapter-end exercise answers (text or image) and persist reconciled insights."""
+    """Evaluate an exercise submission through the Assessment Execution module."""
     _set_no_store_headers(response)
-    answer_text = (body.answer_text or "").strip()
-    answer_images = body.answer_images or []
-    if body.answer_mode == "text" and not answer_text:
-        raise HTTPException(status_code=400, detail="answer_text is required for text mode")
-    if body.answer_mode == "image" and not answer_images:
-        raise HTTPException(status_code=400, detail="answer_images is required for image mode")
-
-    assessment_kind = "exercise"
-    assessment_id, assessment_started_at = _begin_assessment(
-        assessment_kind=assessment_kind,
-        section_id=section_id,
+    executor = _assessment_executor(
+        request=request,
+        background_tasks=background_tasks,
         user=user,
     )
-    if user:
-        await run_in_threadpool(
-            create_assessment_attempt,
-            assessment_id=assessment_id,
-            student_id=user.student_id,
-            assessment_kind=assessment_kind,
+    return await executor.execute(
+        ExerciseSubmission(
             section_id=section_id,
             exercise_id=body.exercise_id,
-            question=body.problem,
+            problem=body.problem,
             answer_mode=body.answer_mode,
-            answer_text=answer_text if body.answer_mode == "text" else None,
-            answer_images=answer_images if body.answer_mode == "image" else None,
+            answer_text=body.answer_text,
+            answer_images=body.answer_images,
         )
-    enforce_rate_limit(
-        request,
-        scope="test_exercise_evaluation",
-        limit=20,
-        window_seconds=60,
-        user_key=user.student_id if user else None,
     )
-    context_started_at = time.monotonic()
-    meta = await _fetch_section_meta(section_id)
-    assessment_event(
-        logger,
-        assessment_id,
-        AssessmentStatus.CONTEXT_LOADED,
-        assessment_kind=assessment_kind,
-        stage="context_fetch",
-        duration_ms=elapsed_ms(context_started_at),
-        result="success",
-        concept_count=len(meta["concepts"]),
-        concept_scope=meta.get("concept_scope", "section"),
-        subsection_count=len(meta["subsections"]),
-    )
-    context = meta["full_text"]
-    source_id = section_id
-
-    concept_heading, concept_list = _assessment_concept_prompt(meta)
-
-    answer_block = (
-        f"STUDENT ANSWER (TEXT): {answer_text}"
-        if body.answer_mode == "text"
-        else f"STUDENT ANSWER: {len(answer_images)} handwritten image(s) attached."
-    )
-    input_mode_line = "INPUT MODE: IMAGE" if body.answer_mode == "image" else "INPUT MODE: TEXT"
-
-    prompt = f"""You are an expert physics teacher evaluating a student's chapter-end exercise response.
-
-STUDY MATERIAL (ground truth):
-{context}
-
-EXERCISE ID: {body.exercise_id}
-EXERCISE QUESTION:
-{body.problem}
-
-{input_mode_line}
-{answer_block}
-
-{concept_heading}:
-{concept_list}
-
-TASK:
-1. Evaluate accuracy, completeness, and reasoning quality.
-2. If the answer is from image input, read the student's handwritten work from the attached images.
-3. Generate insights ONLY for concepts directly tested by this exercise and evidenced in the student's response.
-4. It is valid to return an empty insights array if no direct concept signal exists.
-
-Insight types:
-- COMPETENCY
-- PARTIAL_UNDERSTANDING
-- MISCONCEPTION
-
-Respond in STRICT JSON:
-{{
-  "score": <number 0-100>,
-  "grade": "<A/B/C/D/F>",
-  "feedback": "2-4 sentences",
-  "strengths": ["point1", "point2"],
-  "improvements": ["point1", "point2"],
-  "model_answer": "A concise ideal answer in 3-6 sentences",
-  "insights": [
-    {{
-      "concept_id": "<exact concept_id from the concept list above>",
-      "concept_name": "<concept name>",
-      "type": "<COMPETENCY|PARTIAL_UNDERSTANDING|MISCONCEPTION>",
-      "category": "<conceptual|mathematical>",
-      "content": "One sentence describing what the student understood or misunderstood"
-    }}
-  ]
-}}
-
-Return ONLY valid JSON."""
-
-    model_started = time.monotonic()
-    fallback_used = False
-    try:
-        data = _generate_gemini_json_with_retry(
-            prompt,
-            model=EXERCISE_EVAL_MODEL,
-            image_data_urls=answer_images if body.answer_mode == "image" else None,
-            retries=2,
-        )
-        model_duration_ms = elapsed_ms(model_started)
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.MODEL_COMPLETED,
-            assessment_kind=assessment_kind,
-            model=EXERCISE_EVAL_MODEL,
-            latency_ms=model_duration_ms,
-            duration_ms=model_duration_ms,
-            stage="model",
-            result="success",
-        )
-    except Exception as exc:
-        fallback_used = True
-        model_duration_ms = elapsed_ms(model_started)
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.MODEL_FAILED,
-            assessment_kind=assessment_kind,
-            model=EXERCISE_EVAL_MODEL,
-            latency_ms=model_duration_ms,
-            duration_ms=model_duration_ms,
-            stage="model",
-            result="failure",
-            error_type=type(exc).__name__,
-            fallback_used=True,
-        )
-        data = {
-            "score": 50,
-            "grade": "C",
-            "feedback": "Could not fully evaluate. Please try again.",
-            "strengths": [],
-            "improvements": ["Try providing clearer step-by-step reasoning."],
-            "model_answer": "",
-            "insights": [],
-        }
-
-    validation_started_at = time.monotonic()
-    valid_concept_ids = {c["id"] for c in meta["concepts"]}
-    raw_insights = data.get("insights", [])
-    if not isinstance(raw_insights, list):
-        raw_insights = []
-    insights = []
-    for ins in raw_insights:
-        if not isinstance(ins, dict):
-            continue
-        concept_id = ins.get("concept_id", "")
-        ins_type = ins.get("type", "")
-        ins_category = ins.get("category", "conceptual")
-        if concept_id not in valid_concept_ids:
-            continue
-        if ins_type not in ("COMPETENCY", "PARTIAL_UNDERSTANDING", "MISCONCEPTION"):
-            continue
-        if ins_category not in ("conceptual", "mathematical"):
-            continue
-        insights.append({
-            "concept_id": concept_id,
-            "concept_name": ins.get("concept_name", ""),
-            "type": ins_type,
-            "category": ins_category,
-            "content": ins.get("content", ""),
-            "source_id": source_id,
-        })
-
-    assessment_event(
-        logger,
-        assessment_id,
-        AssessmentStatus.OUTPUT_VALIDATED,
-        assessment_kind=assessment_kind,
-        candidate_insight_count=len(raw_insights),
-        accepted_insight_count=len(insights),
-        rejected_insight_count=len(raw_insights) - len(insights),
-        stage="output_validation",
-        duration_ms=elapsed_ms(validation_started_at),
-        result="success",
-    )
-    if user:
-        await run_in_threadpool(
-            record_assessment_evaluation,
-            assessment_id=assessment_id,
-            evaluation_model=EXERCISE_EVAL_MODEL,
-            fallback_used=fallback_used,
-            score=data.get("score"),
-            grade=data.get("grade"),
-            feedback=data.get("feedback", ""),
-            strengths=data.get("strengths", []),
-            improvements=data.get("improvements", []),
-            model_answer=data.get("model_answer", ""),
-            concept_ids=[ins["concept_id"] for ins in insights],
-        )
-    persistence_status = await _queue_assessment_insights(
-        background_tasks=background_tasks,
-        request=request,
-        user=user,
-        insights=insights,
-        assessment_id=assessment_id,
-        assessment_kind=assessment_kind,
-        assessment_started_at=assessment_started_at,
-    )
-
-    return {
-        "assessment_id": assessment_id,
-        "section_id": section_id,
-        "exercise_id": body.exercise_id,
-        "model": EXERCISE_EVAL_MODEL,
-        "answer_mode": body.answer_mode,
-        "score": data.get("score", 0),
-        "grade": data.get("grade", ""),
-        "feedback": data.get("feedback", ""),
-        "strengths": data.get("strengths", []),
-        "improvements": data.get("improvements", []),
-        "model_answer": data.get("model_answer", ""),
-        "insights": insights,
-        "persistence_status": persistence_status,
-    }
