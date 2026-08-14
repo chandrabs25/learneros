@@ -13,7 +13,7 @@ Routes:
 import json
 import time
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Query, HTTPException
 from pydantic import BaseModel
 
 from app.auth import get_current_user, CurrentUser
@@ -52,6 +52,14 @@ def _invalidate_student_cache(student_id: str) -> None:
             to_delete.append(k)
     for k in to_delete:
         _insights_cache.pop(k, None)
+
+
+def _persist_insight_and_invalidate_cache(student_id: str, evidence: dict) -> None:
+    """Persist learner evidence off the response path, then expire derived views."""
+    from app.routers.test import _persist_insight_safe  # local import to avoid cycles
+
+    _persist_insight_safe(student_id, evidence)
+    _invalidate_student_cache(student_id)
 
 
 def _embed_text(text: str) -> list[float]:
@@ -401,6 +409,7 @@ Return STRICT JSON:
 async def evaluate_insight_mcq(
     insight_id: str,
     body: InsightMCQEvaluatePayload,
+    background_tasks: BackgroundTasks,
     user: CurrentUser = Depends(get_current_user),
 ):
     ctx = _get_insight_context(user.student_id, insight_id)
@@ -438,10 +447,8 @@ Return STRICT JSON:
         )
 
     if ctx.get("concept_id"):
-        # Reuse existing reconciliation + persistence implementation from test router.
-        from app.routers.test import _persist_insight_safe  # local import to avoid cycles
-
-        _persist_insight_safe(
+        background_tasks.add_task(
+            _persist_insight_and_invalidate_cache,
             user.student_id,
             {
                 "concept_id": ctx["concept_id"],
@@ -451,7 +458,6 @@ Return STRICT JSON:
                 "source_id": ctx.get("source_id") or ctx.get("section_id"),
             },
         )
-        _invalidate_student_cache(user.student_id)
 
     return {
         "insight_id": insight_id,
