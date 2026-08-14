@@ -26,7 +26,7 @@ from app.observability import fingerprint
 
 logger = logging.getLogger(__name__)
 EVAL_MODEL = settings.FIREWORKS_MODEL
-EXERCISE_EVAL_MODEL = "gemini-3.1-pro-preview"
+EXERCISE_EVAL_MODEL = settings.FIREWORKS_MODEL
 
 
 @dataclass(frozen=True)

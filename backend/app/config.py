@@ -24,7 +24,6 @@ class Settings(BaseSettings):
     NEO4J_DATABASE: str = ""
 
     # LLM
-    GEMINI_API_KEY: str = ""
     # OpenAI-compatible model providers
     FIREWORKS_API_KEY: str = ""
     FIREWORKS_API_KEY_EMBEDDINGS: str = Field(
@@ -34,17 +33,12 @@ class Settings(BaseSettings):
     FIREWORKS_BASE_URL: str = "https://api.fireworks.ai/inference/v1"
     FIREWORKS_MODEL: str = "accounts/fireworks/models/minimax-m3"
     FIREWORKS_EMBEDDING_MODEL: str = "fireworks/qwen3-embedding-8b"
-    # Cerebras — ultra-fast inference for tutor chat & question generation
-    CEREBRAS_API_KEY: str = ""
-    CEREBRAS_BASE_URL: str = "https://api.cerebras.ai/v1"
-    CEREBRAS_MODEL: str = "gemma-4-31b"
-    GEMINI_OPENAI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta/openai/"
-
     # Optional OpenTelemetry/OpenInference export (Phoenix or any OTLP collector).
     OTEL_ENABLED: bool = False
     OTEL_SERVICE_NAME: str = "learneros-backend"
     OTEL_EXPORTER_OTLP_ENDPOINT: str = ""
     OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: str = ""
+    OTEL_EXPORTER_OTLP_LOGS_ENDPOINT: str = ""
     OTEL_EXPORTER_OTLP_HEADERS: str = ""
     OTEL_METRIC_EXPORT_INTERVAL_MS: int = Field(default=60000, ge=1000)
     OTEL_SAMPLE_RATIO: float = Field(default=1.0, ge=0.0, le=1.0)

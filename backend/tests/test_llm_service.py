@@ -4,10 +4,24 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from app.services.llm import LLMService, ModelTarget, parse_json_response, strip_code_fence
+from app.config import settings
+from app.services.llm import (
+    LLMService,
+    ModelTarget,
+    default_generation_targets,
+    parse_json_response,
+    strip_code_fence,
+)
 
 
 class LLMServiceTests(unittest.TestCase):
+    @patch("app.services.llm.settings.FIREWORKS_API_KEY", "fireworks-key")
+    def test_default_generation_uses_only_fireworks(self) -> None:
+        self.assertEqual(
+            default_generation_targets(),
+            [ModelTarget("fireworks", settings.FIREWORKS_MODEL)],
+        )
+
     def test_fenced_json_is_parsed(self) -> None:
         self.assertEqual(parse_json_response('```json\n{"ok": true}\n```'), {"ok": True})
 
@@ -32,35 +46,39 @@ class LLMServiceTests(unittest.TestCase):
     def test_code_fence_stripping(self) -> None:
         self.assertEqual(strip_code_fence("```json\n{}\n```"), "{}")
 
-    def test_generation_falls_back_after_provider_payment_error(self) -> None:
+    def test_generation_falls_back_to_another_fireworks_model_after_error(self) -> None:
         class PaymentRequired(Exception):
             status_code = 402
 
-        cerebras_create = Mock(side_effect=PaymentRequired("payment required"))
         fireworks_create = Mock(
-            return_value=SimpleNamespace(
-                choices=[SimpleNamespace(message=SimpleNamespace(content='{"ok": true}'))],
-                usage=None,
-            )
+            side_effect=[
+                PaymentRequired("payment required"),
+                SimpleNamespace(
+                    choices=[
+                        SimpleNamespace(
+                            message=SimpleNamespace(content='{"ok": true}')
+                        )
+                    ],
+                    usage=None,
+                ),
+            ]
         )
-        clients = {
-            "cerebras": SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=cerebras_create))),
-            "fireworks": SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=fireworks_create))),
-        }
+        client = SimpleNamespace(
+            chat=SimpleNamespace(completions=SimpleNamespace(create=fireworks_create))
+        )
         service = LLMService()
 
-        with patch.object(service, "client", side_effect=lambda provider: clients[provider]):
+        with patch.object(service, "client", return_value=client):
             output = service.generate_json(
-                provider="cerebras",
-                model="gemma-4-31b",
+                provider="fireworks",
+                model="accounts/fireworks/models/primary",
                 prompt="Return JSON",
-                fallbacks=[ModelTarget("fireworks", "accounts/fireworks/models/minimax-m3")],
+                fallbacks=[ModelTarget("fireworks", "accounts/fireworks/models/fallback")],
                 retries=1,
             )
 
         self.assertEqual(output, {"ok": True})
-        cerebras_create.assert_called_once()
-        fireworks_create.assert_called_once()
+        self.assertEqual(fireworks_create.call_count, 2)
 
 
 if __name__ == "__main__":

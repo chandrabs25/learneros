@@ -16,7 +16,7 @@ from app.config import settings
 from app.observability import fingerprint, get_request_id, trace_event, trace_exception
 
 
-LLMProvider = Literal["cerebras", "fireworks", "gemini"]
+LLMProvider = Literal["fireworks"]
 Message = dict[str, Any]
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("learneros.llm")
@@ -33,16 +33,8 @@ class ModelTarget:
 
 
 def default_generation_targets() -> list[ModelTarget]:
-    """Return the configured generation chain in priority order."""
-    targets: list[ModelTarget] = []
-    if settings.CEREBRAS_API_KEY:
-        targets.append(ModelTarget("cerebras", settings.CEREBRAS_MODEL))
-    if settings.FIREWORKS_API_KEY:
-        targets.append(ModelTarget("fireworks", settings.FIREWORKS_MODEL))
-    if not targets:
-        # Preserve the useful FIREWORKS_API_KEY configuration error at call time.
-        targets.append(ModelTarget("fireworks", settings.FIREWORKS_MODEL))
-    return targets
+    """Return the single supported default generation target."""
+    return [ModelTarget("fireworks", settings.FIREWORKS_MODEL)]
 
 
 def default_generation_target() -> ModelTarget:
@@ -90,27 +82,15 @@ class LLMService:
         self._clients: dict[tuple[LLMProvider, str], OpenAI] = {}
 
     def _provider_config(self, provider: LLMProvider, purpose: str) -> tuple[str, str]:
-        if provider == "cerebras":
-            api_key = settings.CEREBRAS_API_KEY
-            base_url = settings.CEREBRAS_BASE_URL
-        elif provider == "gemini":
-            api_key = settings.GEMINI_API_KEY
-            base_url = settings.GEMINI_OPENAI_BASE_URL
-        else:
-            api_key = (
-                settings.FIREWORKS_API_KEY_EMBEDDINGS or settings.FIREWORKS_API_KEY
-                if purpose == "embedding"
-                else settings.FIREWORKS_API_KEY
-            )
-            base_url = settings.FIREWORKS_BASE_URL
+        api_key = (
+            settings.FIREWORKS_API_KEY_EMBEDDINGS or settings.FIREWORKS_API_KEY
+            if purpose == "embedding"
+            else settings.FIREWORKS_API_KEY
+        )
+        base_url = settings.FIREWORKS_BASE_URL
 
         if not api_key:
-            key_name = {
-                "cerebras": "CEREBRAS_API_KEY",
-                "gemini": "GEMINI_API_KEY",
-                "fireworks": "FIREWORKS_API_KEY",
-            }[provider]
-            raise LLMConfigurationError(f"{key_name} not configured")
+            raise LLMConfigurationError("FIREWORKS_API_KEY not configured")
         return api_key, base_url
 
     def client(self, provider: LLMProvider, *, purpose: str = "generation") -> OpenAI:

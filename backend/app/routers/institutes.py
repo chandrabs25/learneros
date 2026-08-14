@@ -69,7 +69,7 @@ async def list_institutes():
                i.name AS name,
                i.location AS location,
                i.description AS description,
-               i.logo AS logo
+               properties(i)['logo'] AS logo
         ORDER BY coalesce(i.name, i.id) ASC
         """,
         _query_name="institutes.list",
@@ -127,7 +127,7 @@ async def get_student_institute(
                i.name AS name,
                i.location AS location,
                i.description AS description,
-               i.logo AS logo,
+               properties(i)['logo'] AS logo,
                i.is_active AS is_active
         LIMIT 1
         """,
@@ -162,7 +162,7 @@ async def get_student_institute(
                i.name AS name,
                i.location AS location,
                i.description AS description,
-               i.logo AS logo,
+               properties(i)['logo'] AS logo,
                i.is_active AS is_active
         LIMIT 1
         """,
@@ -192,7 +192,7 @@ async def get_student_profile(
                i.name AS institute_name,
                i.location AS institute_location,
                i.description AS institute_description,
-               i.logo AS institute_logo,
+               properties(i)['logo'] AS institute_logo,
                i.is_active AS institute_is_active
         LIMIT 1
         """,

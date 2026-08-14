@@ -345,7 +345,7 @@ def test_exercise_route_preserves_assessment_execution_contract(
     _disable_route_boundaries(monkeypatch, section_meta)
     monkeypatch.setattr(
         test_router,
-        "_generate_gemini_json_with_retry",
+        "_generate_json_with_retry",
         lambda *args, **kwargs: {
             "score": 75,
             "grade": "B",

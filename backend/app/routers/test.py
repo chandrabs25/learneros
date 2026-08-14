@@ -42,7 +42,7 @@ from app.services.assessment_execution import (
     WrittenAnswerSubmission,
 )
 from app.services.generation_cache import build_generation_cache, stable_cache_key
-from app.services.llm import ModelTarget, default_generation_targets, llm_service
+from app.services.llm import default_generation_targets, llm_service
 from app.services.rate_limit import enforce_rate_limit
 
 router = APIRouter(prefix="/api", tags=["test"])
@@ -50,8 +50,7 @@ logger = logging.getLogger(__name__)
 
 MODEL = settings.FIREWORKS_MODEL
 EVAL_MODEL = settings.FIREWORKS_MODEL
-CEREBRAS_MODEL = settings.CEREBRAS_MODEL
-EXERCISE_EVAL_MODEL = "gemini-3.1-pro-preview"
+EXERCISE_EVAL_MODEL = settings.FIREWORKS_MODEL
 GEN_BROWSER_TTL_SECONDS = 300
 GEN_EDGE_TTL_SECONDS = 604800
 GEN_STALE_WHILE_REVALIDATE_SECONDS = 86400
@@ -74,15 +73,9 @@ def _generate_with_fireworks(
     model: str,
     temperature: float = 0.0,
     json_mode: bool = False,
-    use_cerebras: bool = False,
 ) -> str:
-    fallbacks = (
-        [ModelTarget("fireworks", settings.FIREWORKS_MODEL)]
-        if use_cerebras and settings.FIREWORKS_API_KEY
-        else []
-    )
     return llm_service.generate_text(
-        provider="cerebras" if use_cerebras else "fireworks",
+        provider="fireworks",
         model=model,
         prompt=prompt,
         system=(
@@ -94,7 +87,6 @@ def _generate_with_fireworks(
         json_mode=json_mode,
         timeout=60,
         operation="test_generation",
-        fallbacks=fallbacks,
     )
 
 
@@ -102,22 +94,18 @@ def _generate_json_with_retry(
     prompt: str,
     *,
     model: str,
+    image_data_urls: list[str] | None = None,
     retries: int = 2,
-    use_cerebras: bool = False,
     operation: str = "json_generation",
 ) -> dict:
-    fallbacks = (
-        [ModelTarget("fireworks", settings.FIREWORKS_MODEL)]
-        if use_cerebras and settings.FIREWORKS_API_KEY
-        else []
-    )
     return llm_service.generate_json(
-        provider="cerebras" if use_cerebras else "fireworks",
+        provider="fireworks",
         model=model,
         prompt=prompt,
+        images=image_data_urls,
         retries=retries,
+        timeout=90 if image_data_urls else 60,
         operation=operation,
-        fallbacks=fallbacks,
     )
 
 
@@ -129,25 +117,6 @@ def _embed_text_with_fireworks(text: str, retries: int = 2) -> list[float]:
         text=text,
         retries=retries,
         operation="insight_embedding",
-    )
-
-
-def _generate_gemini_json_with_retry(
-    prompt: str,
-    *,
-    model: str,
-    image_data_urls: list[str] | None = None,
-    retries: int = 2,
-) -> dict:
-    """Generate strict JSON via Gemini's OpenAI-compatible API."""
-    return llm_service.generate_json(
-        provider="gemini",
-        model=model,
-        prompt=prompt,
-        images=image_data_urls,
-        retries=retries,
-        timeout=90,
-        operation="exercise_evaluation",
     )
 
 
@@ -510,7 +479,6 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
             prompt,
             model=gen_model,
             retries=2,
-            use_cerebras=bool(settings.CEREBRAS_API_KEY),
             operation="question_generation",
         )
     except Exception as exc:
@@ -608,16 +576,10 @@ class _ProductionAssessmentRuntime:
         )
 
     async def generate(self, **values) -> dict:
-        if values["kind"] == "exercise":
-            return _generate_gemini_json_with_retry(
-                values["prompt"],
-                model=values["model"],
-                image_data_urls=values.get("images"),
-                retries=values["retries"],
-            )
         return _generate_json_with_retry(
             values["prompt"],
             model=values["model"],
+            image_data_urls=values.get("images"),
             retries=values["retries"],
             operation=values["operation"],
         )
@@ -1347,7 +1309,6 @@ RULES:
             prompt,
             model=gen_model,
             retries=2,
-            use_cerebras=bool(settings.CEREBRAS_API_KEY),
             operation="mcq_generation",
         )
     except Exception as exc:
