@@ -2,6 +2,7 @@
 LearnerOS — FastAPI Application Entry Point
 """
 
+import asyncio
 import logging
 import time
 from contextlib import asynccontextmanager
@@ -29,6 +30,7 @@ from app.routers import (
 from app.database import close_drivers
 from app.observability import new_request_id, reset_request_id, set_request_id, trace_event, trace_exception
 from app.telemetry import configure_telemetry, shutdown_telemetry
+from app.services.learner_evidence import run_learner_evidence_recovery
 
 
 logger = logging.getLogger(__name__)
@@ -43,11 +45,24 @@ async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
     # Startup: initialize connections
     print(f"🚀 LearnerOS Backend starting up (env: {settings.ENVIRONMENT})")
-    yield
-    # Shutdown: close connections
-    await close_drivers()
-    shutdown_telemetry()
-    print("👋 LearnerOS Backend shutting down")
+    evidence_stop = asyncio.Event()
+    evidence_worker = asyncio.create_task(run_learner_evidence_recovery(evidence_stop))
+    try:
+        yield
+    finally:
+        evidence_stop.set()
+        recovery_stopped = False
+        try:
+            # Finish at most the currently claimed job; the durable lease lets a
+            # replacement worker recover it if platform shutdown wins the race.
+            await asyncio.wait_for(asyncio.shield(evidence_worker), timeout=10)
+            recovery_stopped = True
+        except TimeoutError:
+            logger.warning("Learner Evidence worker exceeded shutdown grace period")
+        if recovery_stopped:
+            await close_drivers()
+        shutdown_telemetry()
+        print("👋 LearnerOS Backend shutting down")
 
 
 app = FastAPI(

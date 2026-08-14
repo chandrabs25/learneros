@@ -174,6 +174,28 @@ class LLMServiceTests(unittest.TestCase):
         self.assertEqual(output, {"ok": True})
         self.assertEqual(fireworks_create.call_count, 2)
 
+    def test_llm_failure_telemetry_does_not_export_exception_message(self) -> None:
+        create = Mock(side_effect=RuntimeError("secret learner response"))
+        client = SimpleNamespace(
+            chat=SimpleNamespace(completions=SimpleNamespace(create=create))
+        )
+        service = LLMService()
+
+        with (
+            patch.object(service, "client", return_value=client),
+            patch("app.services.llm.trace_event") as event,
+        ):
+            with self.assertRaises(RuntimeError):
+                service.generate_text(
+                    provider="fireworks",
+                    model=settings.FIREWORKS_MODEL,
+                    prompt="private learner content",
+                )
+
+        serialized = repr(event.call_args_list)
+        self.assertNotIn("secret learner response", serialized)
+        self.assertIn("RuntimeError", serialized)
+
 
 if __name__ == "__main__":
     unittest.main()

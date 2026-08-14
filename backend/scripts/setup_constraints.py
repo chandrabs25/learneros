@@ -42,6 +42,7 @@ CONSTRAINTS: list[tuple[str, str, str, str]] = [
     ("StudentClusterSnapshot", "id", "student_cluster_snapshot_id_unique", "UNIQUE"),
     ("StudentCluster", "id", "student_cluster_id_unique", "UNIQUE"),
     ("AssessmentAttempt", "id", "assessment_attempt_id_unique", "UNIQUE"),
+    ("LearnerEvidenceJob", "id", "learner_evidence_job_id_unique", "UNIQUE"),
 
     # ── NOT NULL guards on critical properties ─────────────────────────
     ("Student",   "id",    "student_id_exists",   "NOT NULL"),
@@ -61,6 +62,8 @@ CONSTRAINTS: list[tuple[str, str, str, str]] = [
     ("AssessmentAttempt", "kind", "assessment_attempt_kind_exists", "NOT NULL"),
     ("AssessmentAttempt", "evaluation_status", "assessment_attempt_evaluation_status_exists", "NOT NULL"),
     ("AssessmentAttempt", "insight_status", "assessment_attempt_insight_status_exists", "NOT NULL"),
+    ("LearnerEvidenceJob", "id", "learner_evidence_job_id_exists", "NOT NULL"),
+    ("LearnerEvidenceJob", "status", "learner_evidence_job_status_exists", "NOT NULL"),
 ]
 
 INDEXES: list[tuple[str, str, str]] = [
@@ -89,6 +92,11 @@ INDEXES: list[tuple[str, str, str]] = [
     ("AssessmentAttempt", "evaluation_status", "assessment_attempt_evaluation_status_idx"),
     ("AssessmentAttempt", "insight_status", "assessment_attempt_insight_status_idx"),
     ("AssessmentAttempt", "section_id", "assessment_attempt_section_idx"),
+
+    # ── Durable Learner Evidence recovery ─────────────────────────────
+    ("LearnerEvidenceJob", "status", "learner_evidence_job_status_idx"),
+    ("LearnerEvidenceJob", "lease_expires_at", "learner_evidence_job_lease_idx"),
+    ("LearnerEvidenceJob", "created_at", "learner_evidence_job_created_idx"),
 ]
 
 

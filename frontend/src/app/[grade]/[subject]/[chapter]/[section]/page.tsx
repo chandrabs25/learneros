@@ -153,9 +153,15 @@ export default function SectionViewerPage() {
     const section = params.section as string;
     const requestedSubsection = searchParams.get("subsection") || "";
     const refreshInsightsRequested = searchParams.get("refreshInsights") === "1";
+    const urlAssessmentIds = (searchParams.get("assessmentIds") || "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
     const { user, getIdToken } = useAuth();
 
     const [subsections, setSubsections] = useState<Subsection[]>([]);
+    const [localAssessmentIds, setLocalAssessmentIds] = useState<string[]>([]);
+    const assessmentIds = Array.from(new Set([...urlAssessmentIds, ...localAssessmentIds]));
     const [currentIndex, setCurrentIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [contentError, setContentError] = useState("");
@@ -234,7 +240,7 @@ export default function SectionViewerPage() {
                 setChapterTitle(currentChapter?.title || "");
             })
             .catch(() => setChapterTitle(""));
-    }, [sectionId, chapterId]);
+    }, [sectionId, chapterId, grade, subject]);
 
     // Scroll to top when changing subsection
     useEffect(() => {
@@ -407,6 +413,13 @@ export default function SectionViewerPage() {
                     done: true,
                 },
             }));
+            if (data.persistence_status === "queued" && data.assessment_id) {
+                setLocalAssessmentIds((currentIds) =>
+                    currentIds.includes(data.assessment_id)
+                        ? currentIds
+                        : [...currentIds, data.assessment_id]
+                );
+            }
             await loadSubsectionInsights();
             scheduleSubsectionInsightRefresh();
         } catch (e: unknown) {
@@ -477,6 +490,73 @@ export default function SectionViewerPage() {
 
     useEffect(() => {
         if (
+            assessmentIds.length > 0
+            && current?.id
+            && current.id === requestedSubsection
+            && user
+        ) {
+            let cancelled = false;
+            const deadline = Date.now() + 240_000;
+            const terminalStatuses = new Set(["COMPLETED", "PARTIAL", "FAILED", "SKIPPED"]);
+
+            const poll = async () => {
+                try {
+                    const token = await getIdToken();
+                    if (!token) throw new Error("Sign in required to refresh saved insights.");
+                    const statuses = await Promise.all(
+                        assessmentIds.map(async (assessmentId) => {
+                            const res = await fetch(
+                                `${API_URL}/api/assessment-attempts/${encodeURIComponent(assessmentId)}/status`,
+                                { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+                            );
+                            const data = await res.json();
+                            if (!res.ok) {
+                                const pollError = new Error(data?.detail || `HTTP ${res.status}`) as Error & {
+                                    terminal?: boolean;
+                                };
+                                pollError.terminal = [401, 403, 404].includes(res.status);
+                                throw pollError;
+                            }
+                            return String(data.insight_status || "");
+                        })
+                    );
+                    if (cancelled) return;
+                    if (statuses.every((status) => terminalStatuses.has(status))) {
+                        await loadSubsectionInsights({ silent: true });
+                        if (statuses.some((status) => status === "FAILED" || status === "PARTIAL")) {
+                            setInsightsError("Some learning insights could not be saved. Please try another question.");
+                        }
+                        return;
+                    }
+                    if (Date.now() >= deadline) {
+                        await loadSubsectionInsights({ silent: true });
+                        setInsightsError("Insights are taking longer than expected to update. Please try again shortly.");
+                        return;
+                    }
+                    insightRefreshTimers.current = [window.setTimeout(poll, 1500)];
+                } catch (error: unknown) {
+                    if (cancelled) return;
+                    const terminal = Boolean((error as Error & { terminal?: boolean })?.terminal);
+                    if (terminal) {
+                        setInsightsError(error instanceof Error ? error.message : "Failed to refresh insights.");
+                        return;
+                    }
+                    if (Date.now() >= deadline) {
+                        await loadSubsectionInsights({ silent: true });
+                        setInsightsError("Insights are taking longer than expected to update. Please try again shortly.");
+                        return;
+                    }
+                    insightRefreshTimers.current = [window.setTimeout(poll, 1500)];
+                }
+            };
+
+            void poll();
+            return () => {
+                cancelled = true;
+                clearScheduledInsightRefreshes();
+            };
+        }
+        if (
             refreshInsightsRequested
             && current?.id
             && current.id === requestedSubsection
@@ -486,7 +566,7 @@ export default function SectionViewerPage() {
         }
         return clearScheduledInsightRefreshes;
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [refreshInsightsRequested, requestedSubsection, current?.id, user]);
+    }, [searchParams, refreshInsightsRequested, requestedSubsection, current?.id, user, localAssessmentIds]);
 
     useEffect(() => clearScheduledInsightRefreshes, []);
 

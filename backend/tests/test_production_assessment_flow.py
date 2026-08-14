@@ -10,9 +10,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.assessment_observability import AssessmentStatus
-from app.auth import CurrentUser, get_optional_user
+from app.auth import CurrentUser, get_current_user, get_optional_user
 from app.routers import test as test_router
-from app.services import assessment_execution
+from app.services import assessment_execution, learner_evidence
 
 
 @pytest.fixture
@@ -37,12 +37,14 @@ def section_meta() -> dict[str, Any]:
 def client() -> TestClient:
     app = FastAPI()
     app.include_router(test_router.router)
-    app.dependency_overrides[get_optional_user] = lambda: CurrentUser(
+    current_user = CurrentUser(
         uid="student-1",
         email="student@example.com",
         name="Student One",
         role="student",
     )
+    app.dependency_overrides[get_optional_user] = lambda: current_user
+    app.dependency_overrides[get_current_user] = lambda: current_user
     with TestClient(app) as test_client:
         yield test_client
 
@@ -64,6 +66,11 @@ def lifecycle_events(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
 
     monkeypatch.setattr(test_router, "assessment_event", record_event)
     monkeypatch.setattr(assessment_execution, "assessment_event", record_event)
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "emit_event",
+        record_event,
+    )
     return events
 
 
@@ -88,9 +95,43 @@ def durable_assessment_calls(
 
     monkeypatch.setattr(test_router, "create_assessment_attempt", recorder("created"))
     monkeypatch.setattr(test_router, "record_assessment_evaluation", recorder("evaluated"))
-    monkeypatch.setattr(test_router, "mark_assessment_insights_queued", recorder("queued"))
-    monkeypatch.setattr(test_router, "mark_assessment_insights_skipped", recorder("skipped"))
-    monkeypatch.setattr(test_router, "record_assessment_insight_result", recorder("results"))
+
+    def queue(
+        student_id: str,
+        evidence_items: list[dict[str, Any]],
+        *,
+        assessment_id: str,
+        assessment_kind: str,
+        assessment_started_at: float | None = None,
+        schedule: Any,
+    ) -> bool:
+        calls["queued"].append(
+            {"assessment_id": assessment_id, "expected_count": len(evidence_items)}
+        )
+        for index, _evidence in enumerate(evidence_items, start=1):
+            schedule(learner_evidence.process_learner_evidence_job, f"job:{index}")
+        return True
+
+    def skip(**kwargs: Any) -> bool:
+        calls["skipped"].append(kwargs)
+        return True
+
+    def record_result(**kwargs: Any) -> dict[str, Any]:
+        calls["results"].append(kwargs)
+        return {"insight_status": "COMPLETED" if kwargs["success"] else "FAILED"}
+
+    monkeypatch.setattr(test_router, "queue_learner_evidence", queue)
+    monkeypatch.setattr(test_router, "skip_learner_evidence", skip)
+    monkeypatch.setattr(
+        learner_evidence,
+        "process_learner_evidence_job",
+        lambda _job_id: True,
+    )
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "record_result",
+        record_result,
+    )
     return calls
 
 
@@ -123,7 +164,30 @@ def _assert_timed_stages(events: list[dict[str, Any]]) -> None:
     )
 
 
-def test_written_evaluation_runs_real_reconcile_and_persistence_path(
+def test_assessment_status_route_returns_owned_terminal_state(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        test_router,
+        "get_assessment_attempt_status",
+        lambda **_kwargs: {
+            "assessment_id": "assessment:1",
+            "insight_status": "COMPLETED",
+            "expected_insight_count": 1,
+            "persisted_insight_count": 1,
+            "failed_insight_count": 0,
+        },
+    )
+
+    response = client.get("/api/assessment-attempts/assessment:1/status")
+
+    assert response.status_code == 200
+    assert response.json()["insight_status"] == "COMPLETED"
+    assert response.headers["cache-control"] == "private, no-store"
+
+
+def test_written_evaluation_queues_validated_durable_evidence_job(
     client: TestClient,
     monkeypatch: pytest.MonkeyPatch,
     section_meta: dict[str, Any],
@@ -153,8 +217,8 @@ def test_written_evaluation_runs_real_reconcile_and_persistence_path(
         },
     )
     monkeypatch.setattr(
-        test_router,
-        "read_query",
+        learner_evidence.learner_evidence_persistence.adapters,
+        "read",
         lambda *args, **kwargs: [
             {
                 "id": "insight:old",
@@ -164,17 +228,17 @@ def test_written_evaluation_runs_real_reconcile_and_persistence_path(
         ],
     )
     monkeypatch.setattr(
-        test_router,
-        "_generate_reconcile_text",
+        learner_evidence.learner_evidence_persistence.adapters,
+        "reconcile_text",
         lambda _prompt: (
             '{"action":"MERGE","type":"PARTIAL_UNDERSTANDING",'
             '"content":"The student relates work to displacement but still needs direction."}'
         ),
     )
     monkeypatch.setattr(
-        test_router,
-        "_embed_text_with_fireworks",
-        lambda _text, retries=2: [0.1, 0.2, 0.3],
+        learner_evidence.learner_evidence_persistence.adapters,
+        "embed",
+        lambda _text: [0.1, 0.2, 0.3],
     )
     writes: list[dict[str, Any]] = []
 
@@ -182,7 +246,11 @@ def test_written_evaluation_runs_real_reconcile_and_persistence_path(
         writes.append(params)
         return [{"id": "insight:new"}]
 
-    monkeypatch.setattr(test_router, "write_query", record_write)
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "write",
+        record_write,
+    )
 
     response = client.post(
         "/api/sections/section:work/test/evaluate",
@@ -200,22 +268,12 @@ def test_written_evaluation_runs_real_reconcile_and_persistence_path(
     assert payload["persistence_status"] == "queued"
     assert response.headers["cache-control"] == "private, no-store"
 
-    assert len(writes) == 1
-    write = writes[0]
-    assert write["student_id"] == "student:student-1"
-    assert write["assessment_id"] == payload["assessment_id"]
-    assert write["concept_id"] == "concept:work"
-    assert write["source_id"] == "subsection:work"
-    assert write["type"] == "PARTIAL_UNDERSTANDING"
-    assert write["content"].endswith("still needs direction.")
-    assert write["embedding"] == [0.1, 0.2, 0.3]
+    assert writes == []
 
     assert durable_assessment_calls["created"][0]["assessment_id"] == payload["assessment_id"]
     assert durable_assessment_calls["evaluated"][0]["score"] == 82
     assert durable_assessment_calls["queued"][0]["expected_count"] == 1
-    assert durable_assessment_calls["results"] == [
-        {"assessment_id": payload["assessment_id"], "success": True}
-    ]
+    assert durable_assessment_calls["results"] == []
 
     assert _event_statuses(lifecycle_events) == [
         "received",
@@ -224,14 +282,6 @@ def test_written_evaluation_runs_real_reconcile_and_persistence_path(
         "output_validated",
         "persistence_queued",
         "request_completed",
-        "persistence_started",
-        "db_read_completed",
-        "reconciled",
-        "embedded",
-        "persisted",
-        "persistence_attempt_completed",
-        "persistence_completed",
-        "assessment_completed",
     ]
     _assert_timed_stages(lifecycle_events)
     assert {event["assessment_id"] for event in lifecycle_events} == {
@@ -255,8 +305,8 @@ def test_written_evaluation_model_failure_returns_safe_fallback(
 
     monkeypatch.setattr(test_router, "_generate_json_with_retry", fail_model)
     monkeypatch.setattr(
-        test_router,
-        "write_query",
+        learner_evidence.learner_evidence_persistence.adapters,
+        "write",
         lambda *args, **kwargs: pytest.fail("fallback must not write an insight"),
     )
 
@@ -409,8 +459,8 @@ def test_mcq_rejects_unlinked_and_invalid_insights_before_persistence(
         },
     )
     monkeypatch.setattr(
-        test_router,
-        "write_query",
+        learner_evidence.learner_evidence_persistence.adapters,
+        "write",
         lambda *args, **kwargs: pytest.fail("rejected insights must not be persisted"),
     )
 
@@ -471,23 +521,25 @@ def test_background_persistence_reports_retry_then_terminal_dead_letter(
 ) -> None:
     attempts: list[int] = []
 
-    def fail_persistence(*args: Any, **kwargs: Any) -> None:
+    def fail_persistence(*args: Any, **kwargs: Any) -> list[dict[str, Any]]:
         attempts.append(1)
         raise RuntimeError("database unavailable")
 
     dead_letters: list[dict[str, Any]] = []
-    monkeypatch.setattr(test_router, "_persist_insight", fail_persistence)
     monkeypatch.setattr(
-        test_router,
-        "_record_persistence_failure",
-        lambda student_id, ins, error, **kwargs: dead_letters.append(
-            {
-                "student_id": student_id,
-                "insight": ins,
-                "error": error,
-                **kwargs,
-            }
-        ),
+        learner_evidence.learner_evidence_persistence.adapters,
+        "read",
+        fail_persistence,
+    )
+
+    def record_dead_letter(_query: str, **params: Any) -> list[dict[str, Any]]:
+        dead_letters.append(params)
+        return [{"id": params["failure_id"]}]
+
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "write",
+        record_dead_letter,
     )
     insight = {
         "concept_id": "concept:work",
@@ -497,7 +549,7 @@ def test_background_persistence_reports_retry_then_terminal_dead_letter(
         "content": "The student confuses work and force.",
     }
 
-    test_router._persist_insight_safe(
+    learner_evidence._persist_learner_evidence(
         "student:student-1",
         insight,
         assessment_id="assessment:test",
@@ -513,6 +565,7 @@ def test_background_persistence_reports_retry_then_terminal_dead_letter(
         "persistence_started",
         "persistence_retry",
         "persistence_failed",
+        "dead_letter_recorded",
         "persistence_completed",
         "assessment_completed",
     ]
@@ -523,12 +576,12 @@ def test_background_persistence_reports_retry_then_terminal_dead_letter(
     assert retry_event["failed_attempt"] == 1
     assert retry_event["next_attempt"] == 2
     assert dead_letters[0]["assessment_id"] == "assessment:test"
-    assert dead_letters[0]["assessment_kind"] == "written_answer"
+    assert dead_letters[0]["student_id"] == "student:student-1"
     assert durable_assessment_calls["results"] == [
         {
             "assessment_id": "assessment:test",
             "success": False,
-            "error": "database unavailable",
+            "error": "RuntimeError",
         }
     ]
 
@@ -544,12 +597,22 @@ def test_successful_assessment_persistence_invalidates_subsection_insight_cache(
     cache_key = f"subsection_insights|{student_id}|{subsection_id}"
     insights_router._cache_set(cache_key, [{"id": "insight:stale"}])
     monkeypatch.setattr(
-        test_router,
-        "_persist_insight",
-        lambda *_args, **_kwargs: None,
+        learner_evidence.learner_evidence_persistence.adapters,
+        "read",
+        lambda *_args, **_kwargs: [],
+    )
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "embed",
+        lambda _text: [0.1, 0.2],
+    )
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "write",
+        lambda *_args, **params: [{"id": params.get("insight_id", "failure:1")}],
     )
 
-    test_router._persist_insight_safe(
+    learner_evidence._persist_learner_evidence(
         student_id,
         {
             "concept_id": "concept:work",
@@ -569,17 +632,29 @@ def test_successful_assessment_persistence_invalidates_subsection_insight_cache(
     assert insights_router._cache_get(cache_key) is None
 
 
-def test_persistence_rejects_database_write_without_created_record(
+def test_persistence_reports_database_write_without_created_record(
     monkeypatch: pytest.MonkeyPatch,
     lifecycle_events: list[dict[str, Any]],
 ) -> None:
-    monkeypatch.setattr(test_router, "read_query", lambda *args, **kwargs: [])
     monkeypatch.setattr(
-        test_router,
-        "_embed_text_with_fireworks",
-        lambda _text, retries=2: [0.1, 0.2],
+        learner_evidence.learner_evidence_persistence.adapters,
+        "read",
+        lambda *args, **kwargs: [],
     )
-    monkeypatch.setattr(test_router, "write_query", lambda *args, **kwargs: [])
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "embed",
+        lambda _text: [0.1, 0.2],
+    )
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "write",
+        lambda *args, **kwargs: (
+            [{"id": "failure:1"}]
+            if kwargs.get("_query_name") == "insight.dead_letter"
+            else []
+        ),
+    )
     insight = {
         "concept_id": "concept:work",
         "source_id": "subsection:work",
@@ -588,24 +663,36 @@ def test_persistence_rejects_database_write_without_created_record(
         "content": "The student understands work.",
     }
 
-    with pytest.raises(RuntimeError, match="without creating a record"):
-        test_router._persist_insight(
-            "student:student-1",
-            insight,
-            assessment_id="assessment:test",
-            assessment_kind="written_answer",
-            insight_index=1,
-            insight_total=1,
-        )
+    learner_evidence._persist_learner_evidence(
+        "student:student-1",
+        insight,
+        assessment_id="assessment:test",
+        assessment_kind="written_answer",
+        insight_index=1,
+        insight_total=1,
+    )
 
     assert _event_statuses(lifecycle_events) == [
+        "persistence_started",
         "db_read_completed",
         "reconciled",
         "embedded",
         "invariant_failed",
+        "persistence_retry",
+        "db_read_completed",
+        "reconciled",
+        "embedded",
+        "invariant_failed",
+        "persistence_failed",
+        "dead_letter_recorded",
+        "persistence_completed",
+        "assessment_completed",
     ]
     _assert_timed_stages(lifecycle_events)
-    assert lifecycle_events[-1]["reason"] == "insight_create_returned_no_rows"
+    assert any(
+        event.get("reason") == "insight_create_returned_no_rows"
+        for event in lifecycle_events
+    )
 
 
 def test_persistence_keeps_new_record_when_no_competing_insight(
@@ -614,18 +701,26 @@ def test_persistence_keeps_new_record_when_no_competing_insight(
 ) -> None:
     captured: dict[str, Any] = {}
 
-    monkeypatch.setattr(test_router, "read_query", lambda *args, **kwargs: [])
     monkeypatch.setattr(
-        test_router,
-        "_embed_text_with_fireworks",
-        lambda _text, retries=2: [0.1, 0.2],
+        learner_evidence.learner_evidence_persistence.adapters,
+        "read",
+        lambda *args, **kwargs: [],
+    )
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "embed",
+        lambda _text: [0.1, 0.2],
     )
 
     def successful_write(query: str, **params: Any) -> list[dict[str, str]]:
         captured["query"] = query
         return [{"id": params["insight_id"]}]
 
-    monkeypatch.setattr(test_router, "write_query", successful_write)
+    monkeypatch.setattr(
+        learner_evidence.learner_evidence_persistence.adapters,
+        "write",
+        successful_write,
+    )
     insight = {
         "concept_id": "concept:work",
         "source_id": "subsection:work",
@@ -634,7 +729,7 @@ def test_persistence_keeps_new_record_when_no_competing_insight(
         "content": "The student understands work.",
     }
 
-    test_router._persist_insight(
+    learner_evidence._persist_learner_evidence(
         "student:student-1",
         insight,
         assessment_id="assessment:test",
@@ -646,5 +741,7 @@ def test_persistence_keeps_new_record_when_no_competing_insight(
     assert insight["persisted"] is True
     assert "OPTIONAL MATCH" in captured["query"]
     assert "collect(other)" in captured["query"]
+    assert "job.status = 'PERSISTED'" in captured["query"]
     assert "RETURN new.id AS id" in captured["query"]
-    assert _event_statuses(lifecycle_events)[-1] == "persisted"
+    assert "persisted" in _event_statuses(lifecycle_events)
+    assert _event_statuses(lifecycle_events)[-1] == "assessment_completed"

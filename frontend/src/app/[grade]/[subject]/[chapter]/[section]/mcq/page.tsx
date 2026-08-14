@@ -26,7 +26,7 @@ interface MCQResult {
     correct_answer: string;
     feedback: string;
     explanation: string;
-    persistence_status?: "queued" | "skipped_unauthenticated" | "skipped_invalid_auth" | "skipped_no_insights";
+    persistence_status?: "queued" | "failed_to_queue" | "skipped_unauthenticated" | "skipped_invalid_auth" | "skipped_no_insights";
     insights: Array<{
         concept_id: string;
         concept_name: string;
@@ -78,13 +78,17 @@ export default function MCQPracticePage() {
     const [submitting, setSubmitting] = useState(false);
     const [score, setScore] = useState({ correct: 0, total: 0 });
     const [allInsights, setAllInsights] = useState<MCQResult["insights"]>([]);
+    const [queuedAssessmentIds, setQueuedAssessmentIds] = useState<string[]>([]);
     const [persistenceMessage, setPersistenceMessage] = useState("");
     const [error, setError] = useState("");
     const totalQuestions = 2;
-    const lessonHref = `/${grade}/${subject}/${chapter}/${section}${targetSubsection
-        ? `?subsection=${encodeURIComponent(targetSubsection)}${result?.persistence_status === "queued" ? "&refreshInsights=1" : ""}`
-        : ""
-        }`;
+    const lessonParams = new URLSearchParams();
+    if (targetSubsection) lessonParams.set("subsection", targetSubsection);
+    if (queuedAssessmentIds.length > 0) {
+        lessonParams.set("assessmentIds", queuedAssessmentIds.join(","));
+    }
+    const lessonQuery = lessonParams.toString();
+    const lessonHref = `/${grade}/${subject}/${chapter}/${section}${lessonQuery ? `?${lessonQuery}` : ""}`;
 
     // Questions are generated from subsection content only. Concepts are introduced
     // later by the evaluation endpoint when it creates learning insights.
@@ -142,6 +146,13 @@ export default function MCQPracticePage() {
             if (resultData.insights?.length) {
                 setAllInsights((prev) => [...prev, ...resultData.insights]);
                 if (resultData.persistence_status === "queued") {
+                    if (resultData.assessment_id) {
+                        setQueuedAssessmentIds((current) =>
+                            current.includes(resultData.assessment_id as string)
+                                ? current
+                                : [...current, resultData.assessment_id as string]
+                        );
+                    }
                     setPersistenceMessage("Insights are being saved to your profile.");
                 } else if (!token) {
                     const existing = loadGuestInsights();
@@ -158,6 +169,10 @@ export default function MCQPracticePage() {
                 } else if (resultData.persistence_status === "skipped_unauthenticated") {
                     setPersistenceMessage(
                         "Insights were generated but this request reached backend as unauthenticated."
+                    );
+                } else if (resultData.persistence_status === "failed_to_queue") {
+                    setPersistenceMessage(
+                        "Your answer was evaluated, but insights could not be queued. Please try another question."
                     );
                 }
             }

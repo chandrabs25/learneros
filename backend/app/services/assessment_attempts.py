@@ -7,7 +7,7 @@ import json
 import logging
 from typing import Any
 
-from app.database import write_query
+from app.database import read_query, write_query
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +215,7 @@ def mark_assessment_insights_skipped(*, assessment_id: str, reason: str) -> bool
 
 def record_assessment_insight_result(
     *, assessment_id: str, success: bool, error: str | None = None
-) -> bool:
+) -> dict[str, Any] | None:
     rows = _run(
         "insight_result",
         """
@@ -240,10 +240,34 @@ def record_assessment_insight_result(
                 WHEN persisted + failed >= expected THEN datetime()
                 ELSE a.reconciliation_completed_at
             END
-        RETURN a.id AS id
+        RETURN a.id AS id,
+               a.insight_status AS insight_status,
+               persisted AS persisted_insight_count,
+               failed AS failed_insight_count,
+               expected AS expected_insight_count
         """,
         assessment_id=assessment_id,
         success=success,
         error=error,
     )
-    return bool(rows)
+    return rows[0] if rows else None
+
+
+def get_assessment_attempt_status(
+    *, assessment_id: str, student_id: str
+) -> dict[str, Any] | None:
+    """Return persistence reconciliation state for an attempt owned by a student."""
+    rows = read_query(
+        """
+        MATCH (s:Student {id: $student_id})-[:SUBMITTED]->(a:AssessmentAttempt {id: $assessment_id})
+        RETURN a.id AS assessment_id,
+               a.insight_status AS insight_status,
+               coalesce(a.expected_insight_count, 0) AS expected_insight_count,
+               coalesce(a.persisted_insight_count, 0) AS persisted_insight_count,
+               coalesce(a.failed_insight_count, 0) AS failed_insight_count
+        LIMIT 1
+        """,
+        assessment_id=assessment_id,
+        student_id=student_id,
+    )
+    return rows[0] if rows else None

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import Any
 
 import pytest
@@ -12,6 +13,44 @@ from fastapi.testclient import TestClient
 
 from app.auth import CurrentUser, get_current_user
 from app.routers import insights
+
+
+def test_insight_llm_failure_is_sanitized_before_http_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    app = FastAPI()
+    app.include_router(insights.router)
+    app.dependency_overrides[get_current_user] = lambda: CurrentUser(
+        uid="student-1",
+        email="student@example.com",
+        name="Student One",
+        role="student",
+    )
+    monkeypatch.setattr(
+        insights,
+        "_get_insight_context",
+        lambda *_args: {
+            "id": "insight:old",
+            "type": "MISCONCEPTION",
+            "category": "conceptual",
+            "content": "private evidence",
+            "concept_id": "concept:work",
+        },
+    )
+    secret = "provider echoed the learner answer"
+    monkeypatch.setattr(
+        insights,
+        "_llm_json",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(RuntimeError(secret)),
+    )
+
+    with caplog.at_level(logging.ERROR), TestClient(app) as client:
+        response = client.post("/api/students/me/insights/insight:old/explain")
+
+    assert response.status_code == 502
+    assert secret not in caplog.text
+    assert secret not in response.text
 
 
 def test_insight_mcq_generation_normalizes_flat_nemotron_options(
@@ -160,15 +199,23 @@ def test_insight_mcq_returns_feedback_before_persisting_learner_evidence(
 
     events: list[str] = []
 
-    def record_persistence(_student_id: str, _evidence: dict[str, Any]) -> None:
+    def record_persistence() -> None:
         events.append("persist")
 
-    monkeypatch.setattr("app.routers.test._persist_insight_safe", record_persistence)
-    monkeypatch.setattr(
-        insights,
-        "_invalidate_student_cache",
-        lambda _student_id: events.append("invalidate_cache"),
-    )
+    monkeypatch.setattr(insights, "create_assessment_attempt", lambda **_kwargs: True)
+    monkeypatch.setattr(insights, "record_assessment_evaluation", lambda **_kwargs: True)
+
+    def queue_evidence(
+        _student_id: str,
+        _evidence: list[dict[str, Any]],
+        *,
+        schedule: Any,
+        **_kwargs: Any,
+    ) -> bool:
+        schedule(record_persistence)
+        return True
+
+    monkeypatch.setattr(insights, "queue_learner_evidence", queue_evidence)
 
     request_payload = json.dumps(
         {
@@ -231,6 +278,7 @@ def test_insight_mcq_returns_feedback_before_persisting_learner_evidence(
 
     payload = json.loads(response_body)
     assert payload["is_correct"] is True
+    assert payload["persistence_status"] == "queued"
     assert payload["feedback"] == "Correct; displacement is required for work."
     assert payload["new_insight"] == {
         "type": "COMPETENCY",
@@ -240,4 +288,3 @@ def test_insight_mcq_returns_feedback_before_persisting_learner_evidence(
         "source_id": "subsection:work",
     }
     assert events.index("response_body") < events.index("persist")
-    assert events.index("persist") < events.index("invalidate_cache")

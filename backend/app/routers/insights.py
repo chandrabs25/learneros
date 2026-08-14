@@ -12,14 +12,22 @@ Routes:
 
 import json
 import logging
+import time
+import uuid
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Query, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from app.auth import get_current_user, CurrentUser
 from app.config import settings
 from app.database import read_query
 from app.services.llm import llm_service
+from app.services.assessment_attempts import (
+    create_assessment_attempt,
+    record_assessment_evaluation,
+)
+from app.services.learner_evidence import queue_learner_evidence, skip_learner_evidence
 from app.observability import trace_event
 from app.services import insight_cache
 from app.services.mcq import (
@@ -39,18 +47,6 @@ def _cache_get(key: str):
 
 def _cache_set(key: str, payload):
     insight_cache.set(key, payload)
-
-
-def _invalidate_student_cache(student_id: str) -> None:
-    insight_cache.invalidate_student(student_id)
-
-
-def _persist_insight_and_invalidate_cache(student_id: str, evidence: dict) -> None:
-    """Persist learner evidence off the response path, then expire derived views."""
-    from app.routers.test import _persist_insight_safe  # local import to avoid cycles
-
-    _persist_insight_safe(student_id, evidence)
-    _invalidate_student_cache(student_id)
 
 
 def _embed_text(text: str) -> list[float]:
@@ -85,6 +81,25 @@ def _llm_json(
         json_schema=json_schema,
         schema_name=schema_name,
     )
+
+
+def _safe_llm_json(prompt: str, *, operation: str, **kwargs) -> dict:
+    """Keep provider exception content out of the generic HTTP exception logger."""
+    try:
+        return _llm_json(prompt, **kwargs)
+    except Exception as exc:
+        trace_event(
+            logger,
+            "insight.llm.failed",
+            operation=operation,
+            provider="fireworks",
+            model=settings.FIREWORKS_MODEL,
+            error_type=type(exc).__name__,
+        )
+        raise HTTPException(
+            status_code=502,
+            detail="The AI service could not complete this insight action. Please try again.",
+        ) from None
 
 
 def _get_insight_context(student_id: str, insight_id: str) -> dict | None:
@@ -203,10 +218,8 @@ async def get_subsection_insights(
     user: CurrentUser = Depends(get_current_user),
 ):
     """Return active insights linked to a specific subsection for the current student."""
-    cache_key = f"subsection_insights|{user.student_id}|{subsection_id}"
-    cached = _cache_get(cache_key)
-    if cached is not None:
-        return cached
+    # This projection must converge immediately after background persistence.
+    # A process-local cache can be stale when the write and read hit different workers.
     rows = read_query(
         """
         MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true})
@@ -225,7 +238,6 @@ async def get_subsection_insights(
         student_id=user.student_id,
         subsection_id=subsection_id,
     )
-    _cache_set(cache_key, rows)
     return rows
 
 
@@ -362,7 +374,7 @@ Respond in strict JSON:
   "quick_check": "One short self-check question"
 }}
 """
-    data = _llm_json(prompt)
+    data = _safe_llm_json(prompt, operation="insight_explanation")
     return {
         "insight_id": insight_id,
         "explanation": data.get("explanation", ""),
@@ -400,8 +412,9 @@ The four choices MUST be nested inside the "options" object. Do not return A,
 B, C, or D as top-level JSON keys.
 """
     data = normalize_mcq_options(
-        _llm_json(
+        _safe_llm_json(
             prompt,
+            operation="insight_mcq_generation",
             max_tokens=MCQ_MAX_TOKENS,
             json_schema=INSIGHT_MCQ_JSON_SCHEMA,
             schema_name="insight_mcq",
@@ -439,6 +452,7 @@ async def evaluate_insight_mcq(
     background_tasks: BackgroundTasks,
     user: CurrentUser = Depends(get_current_user),
 ):
+    assessment_started_at = time.monotonic()
     ctx = _get_insight_context(user.student_id, insight_id)
     if not ctx:
         raise HTTPException(status_code=404, detail="Insight not found or inactive.")
@@ -461,7 +475,7 @@ Return STRICT JSON:
   "content": "Single sentence new insight content"
 }}
 """
-    data = _llm_json(prompt)
+    data = _safe_llm_json(prompt, operation="insight_mcq_evaluation")
     new_type = data.get("type", "PARTIAL_UNDERSTANDING")
     if new_type not in ("COMPETENCY", "PARTIAL_UNDERSTANDING", "MISCONCEPTION"):
         new_type = "COMPETENCY" if is_correct else "PARTIAL_UNDERSTANDING"
@@ -473,20 +487,59 @@ Return STRICT JSON:
             else "Student still has gaps in this concept and needs more targeted practice."
         )
 
+    assessment_id = f"assessment:{uuid.uuid4().hex}"
+    section_id = ctx.get("section_id") or ctx.get("source_id") or "unknown"
+    source_id = ctx.get("source_id") or section_id
+    await run_in_threadpool(
+        create_assessment_attempt,
+        assessment_id=assessment_id,
+        student_id=user.student_id,
+        assessment_kind="insight_mcq",
+        section_id=section_id,
+        subsection_id=source_id if source_id != section_id else None,
+        question=body.question,
+        answer_mode="mcq",
+        options=body.options,
+        selected_answer=body.selected,
+        correct_answer=body.correct_answer,
+    )
+    await run_in_threadpool(
+        record_assessment_evaluation,
+        assessment_id=assessment_id,
+        evaluation_model=settings.FIREWORKS_MODEL,
+        fallback_used=False,
+        concept_ids=[ctx["concept_id"]] if ctx.get("concept_id") else [],
+        is_correct=is_correct,
+        feedback=data.get("feedback", ""),
+    )
+
     if ctx.get("concept_id"):
-        background_tasks.add_task(
-            _persist_insight_and_invalidate_cache,
+        persistence_status = "queued" if await run_in_threadpool(
+            queue_learner_evidence,
             user.student_id,
-            {
+            [{
                 "concept_id": ctx["concept_id"],
                 "type": new_type,
                 "category": ctx.get("category") or "conceptual",
                 "content": new_content,
-                "source_id": ctx.get("source_id") or ctx.get("section_id"),
-            },
+                "source_id": source_id,
+            }],
+            assessment_id=assessment_id,
+            assessment_kind="insight_mcq",
+            assessment_started_at=assessment_started_at,
+            schedule=background_tasks.add_task,
+        ) else "failed_to_queue"
+    else:
+        await run_in_threadpool(
+            skip_learner_evidence,
+            assessment_id=assessment_id,
+            reason="no_valid_concept",
         )
+        persistence_status = "skipped_no_insights"
 
     return {
+        "assessment_id": assessment_id,
+        "persistence_status": persistence_status,
         "insight_id": insight_id,
         "is_correct": is_correct,
         "feedback": data.get("feedback", ""),

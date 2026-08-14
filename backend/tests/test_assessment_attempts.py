@@ -131,3 +131,24 @@ def test_database_failure_does_not_break_learner_response(
         assessment_kind="mcq",
         section_id="section:1",
     ) is False
+
+
+def test_attempt_status_is_scoped_to_the_authenticated_student(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    reads: list[dict[str, Any]] = []
+
+    def record_read(query: str, **params: Any) -> list[dict[str, Any]]:
+        reads.append({"query": query, "params": params})
+        return [{"assessment_id": params["assessment_id"], "insight_status": "COMPLETED"}]
+
+    monkeypatch.setattr(assessment_attempts, "read_query", record_read)
+
+    status = assessment_attempts.get_assessment_attempt_status(
+        assessment_id="assessment:1",
+        student_id="student:1",
+    )
+
+    assert status == {"assessment_id": "assessment:1", "insight_status": "COMPLETED"}
+    assert reads[0]["params"]["student_id"] == "student:1"
+    assert "(s:Student {id: $student_id})-[:SUBMITTED]->" in reads[0]["query"]

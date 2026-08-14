@@ -9,10 +9,8 @@ in the background (guest flow can keep local fallback storage).
 
 from __future__ import annotations
 
-import json
 import logging
 import time
-import uuid
 from typing import Literal
 from pydantic import BaseModel
 
@@ -23,17 +21,15 @@ from app.assessment_observability import (
     assessment_event,
     elapsed_ms,
 )
-from app.auth import get_optional_user, CurrentUser
+from app.auth import get_current_user, get_optional_user, CurrentUser
 
 from app.config import settings
-from app.database import async_read_query, read_query, write_query
+from app.database import async_read_query
 from app.observability import trace_event, trace_exception
 from app.services.assessment_attempts import (
     create_assessment_attempt,
-    mark_assessment_insights_queued,
-    mark_assessment_insights_skipped,
+    get_assessment_attempt_status,
     record_assessment_evaluation,
-    record_assessment_insight_result,
 )
 from app.services.assessment_execution import (
     AssessmentExecutor,
@@ -42,7 +38,7 @@ from app.services.assessment_execution import (
     WrittenAnswerSubmission,
 )
 from app.services.generation_cache import build_generation_cache, stable_cache_key
-from app.services.insight_cache import invalidate_student as invalidate_student_insight_cache
+from app.services.learner_evidence import queue_learner_evidence, skip_learner_evidence
 from app.services.llm import default_generation_targets, llm_service
 from app.services.mcq import (
     MCQ_MAX_TOKENS,
@@ -56,7 +52,6 @@ router = APIRouter(prefix="/api", tags=["test"])
 logger = logging.getLogger(__name__)
 
 MODEL = settings.FIREWORKS_MODEL
-EVAL_MODEL = settings.FIREWORKS_MODEL
 EXERCISE_EVAL_MODEL = settings.FIREWORKS_MODEL
 GEN_BROWSER_TTL_SECONDS = 300
 GEN_EDGE_TTL_SECONDS = 604800
@@ -67,11 +62,6 @@ _generation_cache = build_generation_cache(
     upstash_url=settings.UPSTASH_REDIS_REST_URL,
     upstash_token=settings.UPSTASH_REDIS_REST_TOKEN,
 )
-
-
-def _generate_reconcile_text(prompt: str) -> str:
-    """Generate reconciliation output text via the configured Fireworks model."""
-    return _generate_with_fireworks(prompt, model=EVAL_MODEL, temperature=0.1, json_mode=True)
 
 
 def _generate_with_fireworks(
@@ -119,17 +109,6 @@ def _generate_json_with_retry(
         max_tokens=max_tokens,
         json_schema=json_schema,
         schema_name=schema_name,
-    )
-
-
-def _embed_text_with_fireworks(text: str, retries: int = 2) -> list[float]:
-    """Create an embedding vector for text using Fireworks embeddings API."""
-    return llm_service.embed(
-        provider="fireworks",
-        model=settings.FIREWORKS_EMBEDDING_MODEL,
-        text=text,
-        retries=retries,
-        operation="insight_embedding",
     )
 
 
@@ -255,6 +234,24 @@ def _set_no_store_headers(response: Response) -> None:
     response.headers["CDN-Cache-Control"] = "no-store"
 
 
+@router.get("/assessment-attempts/{assessment_id}/status")
+async def assessment_attempt_status(
+    assessment_id: str,
+    response: Response,
+    user: CurrentUser = Depends(get_current_user),
+):
+    """Return the authenticated student's background insight-persistence status."""
+    _set_no_store_headers(response)
+    status = await run_in_threadpool(
+        get_assessment_attempt_status,
+        assessment_id=assessment_id,
+        student_id=user.student_id,
+    )
+    if status is None:
+        raise HTTPException(status_code=404, detail="Assessment attempt not found")
+    return status
+
+
 async def _queue_assessment_insights(
     *,
     background_tasks: BackgroundTasks,
@@ -270,24 +267,15 @@ async def _queue_assessment_insights(
     auth_header_present = bool(request.headers.get("authorization"))
     if user and insights:
         insight_total = len(insights)
-        await run_in_threadpool(
-            mark_assessment_insights_queued,
+        queued = await run_in_threadpool(
+            queue_learner_evidence,
+            user.student_id,
+            [dict(insight) for insight in insights],
             assessment_id=assessment_id,
-            expected_count=insight_total,
+            assessment_kind=assessment_kind,
+            assessment_started_at=assessment_started_at,
+            schedule=background_tasks.add_task,
         )
-        queued_at = time.monotonic()
-        for insight_index, insight in enumerate(insights, start=1):
-            background_tasks.add_task(
-                _persist_insight_safe,
-                user.student_id,
-                dict(insight),
-                assessment_id=assessment_id,
-                insight_index=insight_index,
-                insight_total=insight_total,
-                assessment_kind=assessment_kind,
-                assessment_started_at=assessment_started_at,
-                queued_at=queued_at,
-            )
         assessment_event(
             logger,
             assessment_id,
@@ -296,9 +284,9 @@ async def _queue_assessment_insights(
             insight_count=insight_total,
             stage="queue_setup",
             duration_ms=elapsed_ms(queue_started_at),
-            result="success",
+            result="success" if queued else "failure",
         )
-        persistence_status = "queued"
+        persistence_status = "queued" if queued else "failed_to_queue"
     else:
         if user:
             reason = "no_valid_insights"
@@ -311,7 +299,7 @@ async def _queue_assessment_insights(
             persistence_status = "skipped_unauthenticated"
         if user:
             await run_in_threadpool(
-                mark_assessment_insights_skipped,
+                skip_learner_evidence,
                 assessment_id=assessment_id,
                 reason=reason,
             )
@@ -490,10 +478,10 @@ Return ONLY valid JSON, no markdown fences, no extra text."""
             operation="question_generation",
         )
     except Exception as exc:
-        trace_exception(
+        trace_event(
             logger,
             "question.generation.failed",
-            exc,
+            error_type=type(exc).__name__,
             provider=provider,
             model=gen_model,
             section_id=section_id,
@@ -643,536 +631,6 @@ async def evaluate_answer(
             answer=body.answer,
         )
     )
-
-# ── Smart Insight Reconciliation ───────────────────────────────────────
-
-def _reconcile_insight(
-    old_insights: list[dict],
-    new_type: str,
-    new_content: str,
-) -> dict:
-    """Reconcile a new insight against all currently active matching insights."""
-    if not old_insights:
-        # No existing insight — use the new one as-is
-        return {"type": new_type, "content": new_content}
-
-    old_block = "\n".join(
-        f'  - type: {r.get("type", "")}, content: "{(r.get("content") or "").strip()}"'
-        for r in old_insights
-    )
-
-    # Ask the LLM to reconcile
-    prompt = f"""Respond in STRICT JSON with exactly this schema:
-{{
-  "action": "REPLACE or MERGE",
-  "type": "COMPETENCY or PARTIAL_UNDERSTANDING or MISCONCEPTION",
-  "content": "Reconciled insight text"
-}}
-
-Do not output markdown, code fences, or additional keys.
-
-You have multiple active learning insights about the SAME concept/source for the SAME student.
-
-EXISTING ACTIVE INSIGHTS (most recent first):
-{old_block}
-
-NEW INSIGHT (from the current assessment):
-  type: {new_type}
-  content: "{new_content}"
-
-Insight types:
-- COMPETENCY: student demonstrates solid understanding
-- PARTIAL_UNDERSTANDING: student understands some aspects but has gaps
-- MISCONCEPTION: student holds a factually incorrect belief
-
-Decision policy:
-1. If the new insight directly contradicts the old one, use action "REPLACE".
-2. If both are compatible (different, non-contradictory facets), use action "MERGE".
-3. For MERGE, preserve all still-valid evidence from both insights in content.
-4. For REPLACE, content should reflect the latest assessment.
-5. Final type must reflect unresolved understanding level:
-   - both competency -> COMPETENCY
-   - any gap without clear misconception -> PARTIAL_UNDERSTANDING
-   - unresolved factual error -> MISCONCEPTION
-"""
-
-    try:
-        raw = _generate_reconcile_text(prompt)
-        if raw.startswith("```"):
-            raw = raw.split("\n", 1)[1]
-            raw = raw.rsplit("```", 1)[0]
-        result = json.loads(raw)
-
-        action = str(result.get("action", "")).upper()
-        if action not in ("MERGE", "REPLACE"):
-            action = "REPLACE"
-
-        rtype = result.get("type", new_type)
-        if rtype not in ("COMPETENCY", "PARTIAL_UNDERSTANDING", "MISCONCEPTION"):
-            rtype = new_type
-
-        content = result.get("content", new_content)
-        if not isinstance(content, str) or not content.strip():
-            content = new_content
-
-        # Respect action explicitly. Keep the model-selected type/content when valid.
-        if action == "REPLACE":
-            return {"action": "REPLACE", "type": rtype, "content": content}
-
-        return {"action": "MERGE", "type": rtype, "content": content}
-    except Exception:
-        # If LLM call fails, fall back to the new insight as-is
-        return {"action": "REPLACE", "type": new_type, "content": new_content}
-
-
-def _persist_insight(
-    student_id: str,
-    ins: dict,
-    *,
-    assessment_id: str | None = None,
-    assessment_kind: str = "unknown",
-    insight_index: int | None = None,
-    insight_total: int | None = None,
-) -> None:
-    """Reconcile with any existing active insight, then persist to Neo4j.
-    Modifies `ins` in-place with the reconciled type/content and sets `persisted`."""
-    concept_id = ins.get("concept_id", "")
-    if not concept_id:
-        ins["persisted"] = False
-        if assessment_id:
-            assessment_event(
-                logger,
-                assessment_id,
-                AssessmentStatus.INVARIANT_FAILED,
-                assessment_kind=assessment_kind,
-                stage="precondition",
-                duration_ms=0.0,
-                result="failure",
-                reason="missing_concept_id",
-                insight_index=insight_index,
-                insight_total=insight_total,
-            )
-        raise ValueError("Cannot persist an insight without concept_id")
-
-    db_read_started_at = time.monotonic()
-    old_rows = read_query(
-        """
-        MATCH (s:Student {id: $student_id})-[:HAS_INSIGHT]->(i:Insight {is_active: true, category: $category})
-              -[:ABOUT_CONCEPT]->(:Concept {id: $concept_id})
-        WHERE (i)-[:ABOUT_SOURCE]->({id: $source_id})
-        RETURN i.id AS id, i.type AS type, i.content AS content, i.created_at AS created_at
-        ORDER BY i.created_at DESC
-        """,
-        _query_name="insight.lookup_active",
-        student_id=student_id,
-        concept_id=concept_id,
-        source_id=ins["source_id"],
-        category=ins["category"],
-    )
-    if assessment_id:
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.DB_READ_COMPLETED,
-            assessment_kind=assessment_kind,
-            stage="db_read",
-            duration_ms=elapsed_ms(db_read_started_at),
-            result="success",
-            insight_index=insight_index,
-            insight_total=insight_total,
-            prior_active_count=len(old_rows),
-        )
-
-    # Reconcile with existing insights (MERGE or REPLACE via LLM)
-    reconciliation_started_at = time.monotonic()
-    reconciled = _reconcile_insight(
-        old_insights=old_rows,
-        new_type=ins["type"],
-        new_content=ins["content"],
-    )
-    ins["type"] = reconciled["type"]
-    ins["content"] = reconciled["content"]
-    if assessment_id:
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.RECONCILED,
-            assessment_kind=assessment_kind,
-            stage="reconciliation",
-            duration_ms=elapsed_ms(reconciliation_started_at),
-            result="success",
-            concept_id=concept_id,
-            source_id=ins.get("source_id"),
-            insight_index=insight_index,
-            insight_total=insight_total,
-            prior_active_count=len(old_rows),
-            reconcile_action=reconciled.get("action", "NEW"),
-            reconciled_type=ins["type"],
-        )
-    embedding_started_at = time.monotonic()
-    ins["embedding"] = _embed_text_with_fireworks(ins["content"], retries=2)
-    if assessment_id:
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.EMBEDDED,
-            assessment_kind=assessment_kind,
-            stage="embedding",
-            duration_ms=elapsed_ms(embedding_started_at),
-            result="success",
-            model=settings.FIREWORKS_EMBEDDING_MODEL,
-            concept_id=concept_id,
-            insight_index=insight_index,
-            insight_total=insight_total,
-            embedding_dimensions=len(ins["embedding"]),
-            embedding_model=settings.FIREWORKS_EMBEDDING_MODEL,
-        )
-
-    insight_id = f"insight:{uuid.uuid4().hex}"
-    db_write_started_at = time.monotonic()
-    try:
-        rows = write_query(
-            """
-        MATCH (s:Student {id: $student_id})
-        MATCH (source {id: $source_id})
-        MATCH (concept:Concept {id: $concept_id})
-        OPTIONAL MATCH (s)-[:HAS_INSIGHT]->(old:Insight {is_active: true, category: $category})
-                      -[:ABOUT_CONCEPT]->(:Concept {id: $concept_id})
-        WHERE (old)-[:ABOUT_SOURCE]->({id: $source_id})
-        SET old.is_active = false
-        WITH s, source, concept, collect(old) AS old_insights
-        OPTIONAL MATCH (attempt:AssessmentAttempt {id: $assessment_id})
-        WITH s, source, concept, old_insights, attempt
-
-        CREATE (new:Insight {
-            id:         $insight_id,
-            assessment_id: $assessment_id,
-            type:       $type,
-            category:   $category,
-            content:    $content,
-            embedding:  $embedding,
-            embedding_model: $embedding_model,
-            is_active:  true,
-            created_at: datetime()
-        })
-        CREATE (s)-[:HAS_INSIGHT]->(new)
-
-        WITH s, new, old_insights, source, concept, attempt
-        CREATE (new)-[:ABOUT_SOURCE]->(source)
-        CREATE (new)-[:ABOUT_CONCEPT]->(concept)
-        FOREACH (_ IN CASE WHEN attempt IS NULL THEN [] ELSE [1] END |
-            MERGE (attempt)-[:PRODUCED]->(new))
-
-        FOREACH (old IN old_insights | CREATE (new)-[:SUPERSEDES]->(old))
-        // Concurrency safety: enforce only one active insight for this key.
-        WITH s, new
-        OPTIONAL MATCH (s)-[:HAS_INSIGHT]->(other:Insight {is_active: true, category: $category})
-                       -[:ABOUT_CONCEPT]->(:Concept {id: $concept_id})
-        WHERE other.id <> new.id AND (other)-[:ABOUT_SOURCE]->({id: $source_id})
-        WITH new, [candidate IN collect(other) WHERE candidate IS NOT NULL] AS competing_insights
-        FOREACH (other IN competing_insights | SET other.is_active = false)
-        RETURN new.id AS id
-            """,
-            _query_name="insight.persist",
-            student_id=student_id,
-            insight_id=insight_id,
-            assessment_id=assessment_id,
-            type=ins["type"],
-            category=ins["category"],
-            content=ins["content"],
-            embedding=ins["embedding"],
-            embedding_model=settings.FIREWORKS_EMBEDDING_MODEL,
-            source_id=ins["source_id"],
-            concept_id=concept_id,
-        )
-    except Exception as exc:
-        if assessment_id:
-            assessment_event(
-                logger,
-                assessment_id,
-                AssessmentStatus.INVARIANT_FAILED,
-                assessment_kind=assessment_kind,
-                stage="db_write",
-                duration_ms=elapsed_ms(db_write_started_at),
-                result="failure",
-                reason="database_write_failed",
-                error_type=type(exc).__name__,
-                concept_id=concept_id,
-                insight_index=insight_index,
-                insight_total=insight_total,
-            )
-        raise
-    ins["persisted"] = bool(rows)
-    if not rows:
-        if assessment_id:
-            assessment_event(
-                logger,
-                assessment_id,
-                AssessmentStatus.INVARIANT_FAILED,
-                assessment_kind=assessment_kind,
-                stage="db_write",
-                duration_ms=elapsed_ms(db_write_started_at),
-                result="failure",
-                reason="insight_create_returned_no_rows",
-                concept_id=concept_id,
-                insight_index=insight_index,
-                insight_total=insight_total,
-            )
-        raise RuntimeError("Insight write completed without creating a record")
-    if assessment_id:
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.PERSISTED,
-            assessment_kind=assessment_kind,
-            stage="db_write",
-            duration_ms=elapsed_ms(db_write_started_at),
-            result="success",
-            concept_id=concept_id,
-            source_id=ins.get("source_id"),
-            insight_id=rows[0].get("id"),
-            insight_index=insight_index,
-            insight_total=insight_total,
-        )
-
-
-def _record_persistence_failure(
-    student_id: str,
-    ins: dict,
-    error: str,
-    *,
-    assessment_id: str | None = None,
-    assessment_kind: str = "unknown",
-    insight_index: int | None = None,
-    insight_total: int | None = None,
-) -> None:
-    """Best-effort dead-letter record for failed background persistence."""
-    dead_letter_started_at = time.monotonic()
-    try:
-        write_query(
-            """
-            CREATE (f:InsightPersistenceFailure {
-                id: $failure_id,
-                assessment_id: $assessment_id,
-                student_id: $student_id,
-                concept_id: $concept_id,
-                source_id: $source_id,
-                category: $category,
-                insight_type: $insight_type,
-                content: $content,
-                error: $error,
-                created_at: datetime()
-            })
-            """,
-            _query_name="insight.dead_letter",
-            failure_id=f"insight_failure:{uuid.uuid4().hex}",
-            assessment_id=assessment_id,
-            student_id=student_id,
-            concept_id=ins.get("concept_id"),
-            source_id=ins.get("source_id"),
-            category=ins.get("category"),
-            insight_type=ins.get("type"),
-            content=ins.get("content"),
-            error=error[:2000],
-        )
-        if assessment_id:
-            assessment_event(
-                logger,
-                assessment_id,
-                AssessmentStatus.DEAD_LETTER_RECORDED,
-                assessment_kind=assessment_kind,
-                stage="dead_letter",
-                duration_ms=elapsed_ms(dead_letter_started_at),
-                result="success",
-                insight_index=insight_index,
-                insight_total=insight_total,
-            )
-    except Exception as exc:
-        if assessment_id:
-            assessment_event(
-                logger,
-                assessment_id,
-                AssessmentStatus.INVARIANT_FAILED,
-                assessment_kind=assessment_kind,
-                stage="dead_letter",
-                duration_ms=elapsed_ms(dead_letter_started_at),
-                result="failure",
-                reason="dead_letter_write_failed",
-                error_type=type(exc).__name__,
-                insight_index=insight_index,
-                insight_total=insight_total,
-            )
-        logger.exception(
-            "Failed to write insight persistence dead-letter record",
-            extra={"student_id": student_id, "concept_id": ins.get("concept_id")},
-        )
-
-
-def _persist_insight_safe(
-    student_id: str,
-    ins: dict,
-    *,
-    assessment_id: str | None = None,
-    assessment_kind: str = "unknown",
-    assessment_started_at: float | None = None,
-    queued_at: float | None = None,
-    insight_index: int | None = None,
-    insight_total: int | None = None,
-) -> None:
-    """Background wrapper: never let persistence errors fail the response path."""
-    persistence_started_at = time.monotonic()
-    if assessment_id:
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.PERSISTENCE_STARTED,
-            assessment_kind=assessment_kind,
-            stage="queue_wait",
-            duration_ms=elapsed_ms(queued_at) if queued_at is not None else 0.0,
-            result="success",
-            insight_index=insight_index,
-            insight_total=insight_total,
-        )
-    last_error = ""
-    for attempt in range(2):
-        attempt_started_at = time.monotonic()
-        try:
-            _persist_insight(
-                student_id,
-                ins,
-                assessment_id=assessment_id,
-                assessment_kind=assessment_kind,
-                insight_index=insight_index,
-                insight_total=insight_total,
-            )
-            invalidate_student_insight_cache(student_id)
-            if assessment_id:
-                record_assessment_insight_result(
-                    assessment_id=assessment_id,
-                    success=True,
-                )
-            if assessment_id:
-                assessment_event(
-                    logger,
-                    assessment_id,
-                    AssessmentStatus.PERSISTENCE_ATTEMPT_COMPLETED,
-                    assessment_kind=assessment_kind,
-                    stage="persistence_attempt",
-                    duration_ms=elapsed_ms(attempt_started_at),
-                    result="success",
-                    attempt=attempt + 1,
-                    attempt_limit=2,
-                    insight_index=insight_index,
-                    insight_total=insight_total,
-                )
-                assessment_event(
-                    logger,
-                    assessment_id,
-                    AssessmentStatus.PERSISTENCE_COMPLETED,
-                    assessment_kind=assessment_kind,
-                    stage="persistence_total",
-                    duration_ms=elapsed_ms(persistence_started_at),
-                    result="success",
-                    insight_index=insight_index,
-                    insight_total=insight_total,
-                )
-                if assessment_started_at is not None and insight_index == insight_total:
-                    assessment_event(
-                        logger,
-                        assessment_id,
-                        AssessmentStatus.ASSESSMENT_COMPLETED,
-                        assessment_kind=assessment_kind,
-                        stage="assessment_total",
-                        duration_ms=elapsed_ms(assessment_started_at),
-                        result="success",
-                        insight_total=insight_total,
-                    )
-            return
-        except Exception as exc:
-            last_error = str(exc)
-            has_another_attempt = attempt + 1 < 2
-            if assessment_id and has_another_attempt:
-                assessment_event(
-                    logger,
-                    assessment_id,
-                    AssessmentStatus.PERSISTENCE_RETRY,
-                    assessment_kind=assessment_kind,
-                    stage="persistence_attempt",
-                    duration_ms=elapsed_ms(attempt_started_at),
-                    result="retry",
-                    failed_attempt=attempt + 1,
-                    next_attempt=attempt + 2,
-                    attempt_limit=2,
-                    concept_id=ins.get("concept_id"),
-                    source_id=ins.get("source_id"),
-                    insight_index=insight_index,
-                    insight_total=insight_total,
-                    error_type=type(exc).__name__,
-                )
-            logger.exception(
-                "Insight persistence failed (attempt %s/2)",
-                attempt + 1,
-                extra={
-                    "student_id": student_id,
-                    "concept_id": ins.get("concept_id"),
-                    "source_id": ins.get("source_id"),
-                    "category": ins.get("category"),
-                    "error": last_error,
-                },
-            )
-    if assessment_id:
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.PERSISTENCE_FAILED,
-            assessment_kind=assessment_kind,
-            stage="persistence_attempt",
-            duration_ms=elapsed_ms(attempt_started_at),
-            result="failure",
-            concept_id=ins.get("concept_id"),
-            source_id=ins.get("source_id"),
-            insight_index=insight_index,
-            insight_total=insight_total,
-        )
-    _record_persistence_failure(
-        student_id,
-        ins,
-        last_error or "unknown error",
-        assessment_id=assessment_id,
-        assessment_kind=assessment_kind,
-        insight_index=insight_index,
-        insight_total=insight_total,
-    )
-    if assessment_id:
-        record_assessment_insight_result(
-            assessment_id=assessment_id,
-            success=False,
-            error=last_error or "unknown error",
-        )
-    if assessment_id:
-        assessment_event(
-            logger,
-            assessment_id,
-            AssessmentStatus.PERSISTENCE_COMPLETED,
-            assessment_kind=assessment_kind,
-            stage="persistence_total",
-            duration_ms=elapsed_ms(persistence_started_at),
-            result="failure",
-            insight_index=insight_index,
-            insight_total=insight_total,
-        )
-        if assessment_started_at is not None and insight_index == insight_total:
-            assessment_event(
-                logger,
-                assessment_id,
-                AssessmentStatus.ASSESSMENT_COMPLETED,
-                assessment_kind=assessment_kind,
-                stage="assessment_total",
-                duration_ms=elapsed_ms(assessment_started_at),
-                result="failure",
-                insight_total=insight_total,
-            )
-
 
 # ── MCQ Generation ─────────────────────────────────────────────────────
 
@@ -1327,10 +785,10 @@ RULES:
             schema_name="section_mcq",
         )
     except Exception as exc:
-        trace_exception(
+        trace_event(
             logger,
             "mcq.generation.failed",
-            exc,
+            error_type=type(exc).__name__,
             provider=provider,
             model=gen_model,
             section_id=section_id,

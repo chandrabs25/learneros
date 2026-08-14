@@ -13,7 +13,7 @@ from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 
 from app.config import settings
-from app.observability import fingerprint, get_request_id, trace_event, trace_exception
+from app.observability import fingerprint, get_request_id, trace_event
 
 
 LLMProvider = Literal["fireworks"]
@@ -21,6 +21,29 @@ Message = dict[str, Any]
 logger = logging.getLogger(__name__)
 tracer = trace.get_tracer("learneros.llm")
 NEMOTRON_LIGHTNING_MODEL = "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b"
+
+
+def _record_safe_llm_error(span: Any, exc: Exception) -> None:
+    """Mark a span failed without exporting provider text or learner content."""
+    error_type = type(exc).__name__
+    span.set_attribute("error.type", error_type)
+    status_code = getattr(exc, "status_code", None)
+    if status_code is not None:
+        try:
+            span.set_attribute("http.response.status_code", int(status_code))
+        except (TypeError, ValueError):
+            span.set_attribute("http.response.status_code", "unparseable")
+    span.set_status(Status(StatusCode.ERROR, error_type))
+
+
+def _trace_safe_llm_error(event: str, exc: Exception, **fields: Any) -> None:
+    trace_event(
+        logger,
+        event,
+        error_type=type(exc).__name__,
+        status_code=getattr(exc, "status_code", None),
+        **fields,
+    )
 
 
 class LLMConfigurationError(RuntimeError):
@@ -229,8 +252,7 @@ class LLMService:
                 )
                 return content
             except Exception as exc:
-                span.record_exception(exc)
-                span.set_status(Status(StatusCode.ERROR, str(exc)[:250]))
+                _record_safe_llm_error(span, exc)
                 remaining = list(fallbacks or [])
                 if remaining:
                     fallback = remaining.pop(0)
@@ -262,8 +284,7 @@ class LLMService:
                         operation=operation,
                         fallbacks=remaining,
                     )
-                trace_exception(
-                    logger,
+                _trace_safe_llm_error(
                     "llm.request.failed",
                     exc,
                     operation=operation,
@@ -323,8 +344,7 @@ class LLMService:
                 return data
             except Exception as exc:
                 last_error = exc
-                trace_exception(
-                    logger,
+                _trace_safe_llm_error(
                     "llm.response.retry",
                     exc,
                     operation=operation,
@@ -382,8 +402,16 @@ class LLMService:
                     return [float(value) for value in vector]
                 except Exception as exc:
                     last_error = exc
-                    span.record_exception(exc)
-                    span.set_status(Status(StatusCode.ERROR, str(exc)[:250]))
+                    _record_safe_llm_error(span, exc)
+                    _trace_safe_llm_error(
+                        "llm.embedding.failed",
+                        exc,
+                        operation=operation,
+                        provider=provider,
+                        model=model,
+                        attempt=attempt,
+                        retries=retries,
+                    )
                     if attempt == retries:
                         raise
         raise RuntimeError(f"Embedding generation failed: {last_error}")
